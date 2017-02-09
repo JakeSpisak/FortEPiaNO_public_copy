@@ -1,0 +1,10 @@
+*.pyc
+*.geany
+0*.sh
+*tmp*
+*.o
+*.mod
+*.a
+*.exe
+*.ini
+*.log
