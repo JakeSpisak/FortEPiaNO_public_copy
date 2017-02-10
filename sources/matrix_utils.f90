@@ -1,5 +1,6 @@
 module ndMatrices
 	use precision
+	use ndErrors
 	implicit none
 	
 	contains
@@ -98,8 +99,7 @@ module ndMatrices
 		s = shape(inM)
 		
 		if (s(1) .ne. s(2)) then
-			write (*,*) "Error: non-squared matrices have no defined track"
-			call exit()
+			call criticalError("non-squared matrices have no defined track!")
 		end if
 		
 		trackMat = 0.d0
@@ -165,8 +165,7 @@ module ndMatrices
 		determ = 0.d0
 		
 		if (s(1) .ne. s(2)) then
-			write (*,*) "Error: non-squared matrices have no det"
-			call exit()
+			call criticalError("non-squared matrices have no det!")
 		end if
 		if (s(1) .eq. 1) then
 			determ = mat(1,1)
@@ -201,12 +200,10 @@ module ndMatrices
 		s=shape(inM)
 		det = determMat(inM)
 		if (det.eq.0) then
-			write (*,*) "Error: the matrix is degenerate!"
-			call exit()
+			call criticalError("the matrix is degenerate!")
 		end if
 		if (s(1) .ne. s(2)) then
-			write (*,*) "Error: non-squared matrices have no inverse"
-			call exit()
+			call criticalError("non-squared matrices have no inverse!")
 		else
 			n=s(1)
 		end if
@@ -226,14 +223,13 @@ module ndMatrices
 		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
 		integer :: i,j,k
 		integer, dimension(2) :: size1, size2
+		character(len=12) :: sizestr
 		
 		size1=shape(mat1)
 		size2=shape(mat2)
-		
+		write (sizestr,"(2('(',I1,',',I1,') '))") size1(:), size2(:)
 		if (size1(2) .ne. size2(1)) then
-			write (*,*) "Error! cannot multiply matrices with these sizes:"
-			write (*,*) size1, size2
-			call exit()
+			call criticalError("cannot multiply matrices with these sizes: "//sizestr)
 		end if
 		
 		if (.not. allocated(outMat)) allocate(outMat(size1(1), size2(2)))
@@ -280,17 +276,17 @@ module ndMatrices
 		integer, intent(in) :: s
 		integer, dimension(2) :: size1, size2
 		integer :: d
+		character(len=2) :: sstr
+		
+		write(sstr, "(I2)") s
 		
 		size1=shape(mat1)
 		size2=shape(mat2)
-		if (abs(s).ne.1) then
-			write (*,*) "Error! wrong sign in CommAntiComm (it must be either -1 or 1): ", s
-			call exit()
-		end if
+		if (abs(s).ne.1) &
+			call criticalError("wrong sign in CommAntiComm (it must be either -1 or 1): "//sstr)
 		
 		if ((size1(2) .ne. size1(2)) .or. (size1(2) .ne. size2(1)) .or. (size2(1) .ne. size2(2))) then
-			write (*,*) "Error! cannot compute commutator of non-square matrices!"
-			call exit()
+			call criticalError("cannot compute commutator of non-square matrices!")
 		else
 			d = size1(1)
 		end if

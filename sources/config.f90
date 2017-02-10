@@ -1,7 +1,8 @@
 module ndConfig
 	use precision
-	use FileIni
 	use constants
+	use ndErrors
+	use FileIni
 	use ndMatrices
 	implicit none
 
@@ -14,12 +15,6 @@ module ndConfig
 	
 	character(LEN=*), parameter :: mainPath="/home/gariazzo/software/nuDensity/"
 
-	logical :: massOrdering
-	integer :: flavorNumber
-	real(dl) :: m_lightest
-	real(dl) :: theta12, dm12
-	real(dl) :: theta13, theta23, dm23, deltaCP13
-	real(dl) :: theta14, theta24, theta34, dm14
 	real(dl), dimension(:), allocatable :: nuMasses
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	
@@ -131,12 +126,15 @@ module ndConfig
 	subroutine setMixingMatrix()
 		integer :: nf
 		real(dl), dimension(:,:), allocatable :: m1, m2, m3, m4
+		character(len=1) :: nfstr
 		integer :: ix
 		real(dl) :: tmp
 		
 		nf = flavorNumber
+		write(nfstr,"(I1)") nf
 		
-		if (verbose.gt.1) write (*,"(' [config] creating mixing matrix, using ',I2,' flavors')") nf
+		if (verbose.gt.1) &
+			call addToLog("[config] creating mixing matrix, using "//nfstr//" flavors")
 		allocate(m1(nf,nf), m2(nf,nf), m3(nf,nf), m4(nf,nf))
 		
 		if (nf.gt.3) then
@@ -191,7 +189,7 @@ module ndConfig
 			call get_command_argument(ixa,args(ixa))
 		end do
 		if(num_args.gt.0) then
-			write (*,*) "[config] reading additional configuration from "//mainPath//trim(args(1))
+			call addToLog("[config] reading additional configuration from "//mainPath//trim(args(1)))
 			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
 			verbose = read_ini_int('verbose',verbose)
 			
@@ -216,12 +214,15 @@ module ndConfig
 				dm14         = read_ini_real('dm14', zero)
 			end if
 			if (flavorNumber .gt. 4) then
-				write(*,*) "[config] WARNING: only up to 4 neutrino flavors are supported. Using N=4"
+				call error("[config] WARNING: only up to 4 neutrino flavors are supported. Using N=4")
 				flavorNumber = 4
 			end if
 			
 			call setMixingMatrix()
 			call setMassMatrix()
+			
+			hubbleParam = read_ini_real('hubbleParam', i_HubbleParam)
+			photonTemperatureToday = read_ini_real('photonTemperatureToday', i_photonTempToday)
 			
 !			tmparg=trim(read_ini_char('pionFluxFile'))
 !			if (trim(tmparg)/="") pionFluxFile=tmparg
