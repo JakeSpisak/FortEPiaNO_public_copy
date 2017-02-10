@@ -4,6 +4,35 @@ module ndMatrices
 	
 	contains
 	
+	function numRows(mat)
+		real(dl), dimension(:,:), allocatable, intent(in) :: mat
+		integer :: numRows
+		integer, dimension(2) :: s
+		
+		s = shape(mat)
+		numRows = s(1)
+	end function numRows
+	
+	function numColumns(mat)
+		real(dl), dimension(:,:), allocatable, intent(in) :: mat
+		integer :: numColumns
+		integer, dimension(2) :: s
+		
+		s = shape(mat)
+		numColumns = s(2)
+	end function numColumns
+	
+	subroutine createEmptyMat(mat, nc)
+		integer, intent(in) :: nc
+		real(dl), dimension(:,:), allocatable, intent(out) :: mat
+		
+		if (.not. allocated(mat)) then
+			allocate(mat(nc, nc))
+		end if
+		
+		mat = 0.d0
+	end subroutine createEmptyMat
+	
 	subroutine createIdentityMat(mat, nc)
 		integer, intent(in) :: nc
 		real(dl), dimension(:,:), allocatable, intent(out) :: mat
@@ -192,7 +221,7 @@ module ndMatrices
 	
 	end subroutine inverseMat
 
-	subroutine multMat(mat1, mat2, outMat)
+	subroutine multiplyMat(mat1, mat2, outMat)
 		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
 		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
 		integer :: i,j,k
@@ -218,7 +247,59 @@ module ndMatrices
 				end do
 			end do
 		end do
-	end subroutine multMat
+	end subroutine multiplyMat
+
+	subroutine tripleProdMat(mat1, mat2, mat3, outMat)
+		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2, mat3
+		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
+		real(dl), dimension(:,:), allocatable :: m1
+		
+		call multiplyMat(mat1, mat2, m1)
+		call multiplyMat(m1, mat3, outMat)
+	end subroutine tripleProdMat
+	
+	subroutine Commutator(mat1, mat2, outmat)
+		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
+		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
+		
+		call CommAntiComm(mat1, mat2, outmat, 1)
+	end subroutine Commutator
+	
+	subroutine AntiCommutator(mat1, mat2, outmat)
+		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
+		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
+		
+		call CommAntiComm(mat1, mat2, outmat, -1)
+	end subroutine antiCommutator
+	
+	subroutine CommAntiComm(mat1, mat2, outmat, s)
+		!use the sign s to switch between commutator and anticommutator
+		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
+		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
+		real(dl), dimension(:,:), allocatable :: m1, m2
+		integer, intent(in) :: s
+		integer, dimension(2) :: size1, size2
+		integer :: d
+		
+		size1=shape(mat1)
+		size2=shape(mat2)
+		if (abs(s).ne.1) then
+			write (*,*) "Error! wrong sign in CommAntiComm (it must be either -1 or 1): ", s
+			call exit()
+		end if
+		
+		if ((size1(2) .ne. size1(2)) .or. (size1(2) .ne. size2(1)) .or. (size2(1) .ne. size2(2))) then
+			write (*,*) "Error! cannot compute commutator of non-square matrices!"
+			call exit()
+		else
+			d = size1(1)
+		end if
+		
+		allocate(m1(d,d), m2(d,d), outMat(d,d))
+		call multiplyMat(mat1, mat2, m1)
+		call multiplyMat(mat2, mat1, m2)
+		outMat = m1 + s * m2
+	end subroutine
 	
 	subroutine printMat(m)
 		real(dl), dimension(:,:), allocatable, intent(in) :: m

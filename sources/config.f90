@@ -100,10 +100,10 @@ module ndConfig
 		integer :: nf
 		integer :: ix
 		real(dl), dimension(:), allocatable :: mv
-		real(dl), dimension(:,:), allocatable :: m1, m2
+		real(dl), dimension(:,:), allocatable :: m1
 		
 		nf = flavorNumber
-		allocate(mv(nf), m1(nf,nf), m2(nf,nf))
+		allocate(mv(nf), m1(nf,nf))
 		
 		if (nf .eq. 2) then
 			mv(1) = m_lightest
@@ -124,46 +124,41 @@ module ndConfig
 		end if
 		
 		call createDiagMat(m1, nf, mv)
-		call multMat(mixMat, m1, m2)
-		call multMat(m2, mixMatInv, nuMassesMat)
+		call tripleProdMat(mixMat, m1, mixMatInv, nuMassesMat)
 		call printMat(nuMassesMat)
 	end subroutine setMassMatrix
 	
 	subroutine setMixingMatrix()
 		integer :: nf
-		real(dl), dimension(:,:), allocatable :: m1, m2, m3
+		real(dl), dimension(:,:), allocatable :: m1, m2, m3, m4
 		integer :: ix
 		real(dl) :: tmp
 		
 		nf = flavorNumber
 		
 		if (verbose.gt.1) write (*,"(' [config] creating mixing matrix, using ',I2,' flavors')") nf
-		allocate(m1(nf,nf), m2(nf,nf), m3(nf,nf))
+		allocate(m1(nf,nf), m2(nf,nf), m3(nf,nf), m4(nf,nf))
 		
 		if (nf.gt.3) then
 			call createRotMat(m1, nf, 3, 4, theta34)
 			call createRotMat(m2, nf, 2, 4, theta24)
-			call multMat(m1, m2, m3)
-			m1=m3
-			call createRotMat(m2, nf, 1, 4, theta14)
-			call multMat(m1, m2, m3)
-			m1=m3
+			call createRotMat(m3, nf, 1, 4, theta14)
+			call tripleProdMat(m1, m2, m3, m4)
+			m1=m4
 		else
-			call createRotMat(m1, nf, 1, 2, 0.0d0)
+			call createIdentityMat(m1, nf)
 		end if
 		if (nf.gt.2) then
 			call createRotMat(m2, nf, 2, 3, theta23)
-			call multMat(m1, m2, m3)
-			m1=m3
-			call createRotMat(m2, nf, 1, 3, theta13)
-			call multMat(m1, m2, m3)
-			m1=m3
+			call createRotMat(m3, nf, 1, 3, theta13)
+			call tripleProdMat(m1, m2, m3, m4)
+			m1=m4
 		else
 			call createRotMat(m1, nf, 1, 2, 0.0d0)
 		end if
 		
 		call createRotMat(m2, nf, 1, 2, theta12)
-		call multMat(m1, m2, m3)
+		call multiplyMat(m1, m2, m3)
 		
 		mixMat=m3
 		call inverseMat(mixMat, mixMatInv)
