@@ -2,7 +2,7 @@
 F90=gfortran
 F90FLAGS=-O3 -L/usr/lib -Jbuild/ -Ibuild/
 
-OBJ_FILES=build/const.o build/config.o build/IniFile.o
+OBJ_FILES=build/const.o build/config.o build/IniFile.o build/matrix_utils.o
 
 default: all
 
@@ -13,7 +13,8 @@ build/%.o: sources/%.f90 Makefile
 	$(F90) $(F90FLAGS) -c sources/$*.f90 -o build/$*.o
 
 build/IniFile.o: build/const.o
-build/config.o: build/const.o build/IniFile.o
+build/matrix_utils.o: build/const.o
+build/config.o: build/const.o build/IniFile.o build/matrix_utils.o
 #build/data.o: build/const.o build/config.o
 #build/flux.o: build/const.o build/config.o build/mc.o
 #build/likelihood.o: build/const.o build/config.o
