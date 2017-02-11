@@ -33,6 +33,7 @@ module constants
 	real(dl), parameter :: m_e = 0.5109989461*Mev2eV!eV
 	real(dl), parameter :: G_F = 1.1663787d-5/(Gev2eV*Gev2eV)
 	real(dl), parameter :: G_Fsq = G_F * G_F
+	real(dl), parameter :: sin2thW =  0.23129
 	
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2016: C. Patrignani et al.(Particle Data Group), Chin. Phys. C, 40, 100001 (2016).

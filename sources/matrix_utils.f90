@@ -258,14 +258,14 @@ module ndMatrices
 		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
 		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
 		
-		call CommAntiComm(mat1, mat2, outmat, 1)
+		call CommAntiComm(mat1, mat2, outmat, -1)
 	end subroutine Commutator
 	
 	subroutine AntiCommutator(mat1, mat2, outmat)
 		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
 		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
 		
-		call CommAntiComm(mat1, mat2, outmat, -1)
+		call CommAntiComm(mat1, mat2, outmat, 1)
 	end subroutine antiCommutator
 	
 	subroutine CommAntiComm(mat1, mat2, outmat, s)
