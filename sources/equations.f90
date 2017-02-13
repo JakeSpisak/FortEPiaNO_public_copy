@@ -128,12 +128,18 @@ module ndEquations
 	function dz_o_dx(x,z)
 		real(dl) :: dz_o_dx
 		real(dl), intent(in) :: x,z
-		real(dl) :: x_o_z
+		real(dl) :: x_o_z, jxoz
+		real(dl), dimension(2) :: g12
 		
 		x_o_z = x/z
+		jxoz = J_func(x_o_z)
+		g12 = g12_func(x_o_z)
 		
-		
-		
+		dz_o_dx = x_o_z * jxoz + g12(1) &
+			!- 1.d0/(2 * z**3 *PISQ)* (&
+!				rombint_obj(params, funcA, 0, upper, tol) + &
+!				rombint_obj(params, funcB, 0, upper, tol) ) &
+			/ (x_o_z**2*jxoz +Y_func(x_o_z) + PISQ/7.5d0 +g12(2))
 		
 	end function dz_o_dx
 

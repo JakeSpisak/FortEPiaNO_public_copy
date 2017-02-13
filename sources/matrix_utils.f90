@@ -219,7 +219,7 @@ module ndMatrices
 	end subroutine inverseMat
 
 	subroutine multiplyMat(mat1, mat2, outMat)
-		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
+		real(dl), dimension(:,:), intent(in) :: mat1, mat2
 		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
 		integer :: i,j,k
 		integer, dimension(2) :: size1, size2
@@ -246,13 +246,23 @@ module ndMatrices
 	end subroutine multiplyMat
 
 	subroutine tripleProdMat(mat1, mat2, mat3, outMat)
-		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2, mat3
+		real(dl), dimension(:,:), intent(in) :: mat1, mat2, mat3
 		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
 		real(dl), dimension(:,:), allocatable :: m1
 		
 		call multiplyMat(mat1, mat2, m1)
 		call multiplyMat(m1, mat3, outMat)
 	end subroutine tripleProdMat
+
+	subroutine quadrupleProdMat(mat1, mat2, mat3, mat4, outMat)
+		real(dl), dimension(:,:), intent(in) :: mat1, mat2, mat3, mat4
+		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
+		real(dl), dimension(:,:), allocatable :: m1, m2
+		
+		call multiplyMat(mat1, mat2, m1)
+		call multiplyMat(m1, mat3, m2)
+		call multiplyMat(m2, mat4, outMat)
+	end subroutine quadrupleProdMat
 	
 	subroutine Commutator(mat1, mat2, outmat)
 		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2

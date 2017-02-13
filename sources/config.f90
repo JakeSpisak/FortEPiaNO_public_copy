@@ -17,6 +17,9 @@ module ndConfig
 
 	real(dl), dimension(:), allocatable :: nuMasses
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
+	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
+	real(dl), dimension(:,:,:), allocatable :: GLR_vec
+	
 	
 !	integer, parameter :: numNuisance = 6
 !	type nuisanceParam
@@ -44,6 +47,7 @@ module ndConfig
 		allocate(nuMasses(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
+		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 	end subroutine allocateStuff
 	
 !	subroutine setParam(param, pname, defaultval, fixed, prior, mean, devst)
@@ -162,6 +166,31 @@ module ndConfig
 		call inverseMat(mixMat, mixMatInv)
 	end subroutine setMixingMatrix
 	
+	subroutine init_matrices
+		real(dl), dimension(:), allocatable :: diag_el
+		
+		allocate(diag_el(flavorNumber))
+		
+		!GL
+		diag_el = sin2thW - 0.5d0
+		diag_el(1) = sin2thW + 0.5d0
+		call createDiagMat(GL_mat, flavorNumber, diag_el)
+		GLR_vec(1,:,:) = GL_mat
+		
+		!GR
+		diag_el = sin2thW
+		call createDiagMat(GR_mat, flavorNumber, diag_el)
+		GLR_vec(2,:,:) = GR_mat
+		
+		!lepton densities
+		leptonDensities = 0.d0
+!		leptonDensities(1,1) = ...
+
+		!...
+		
+		deallocate(diag_el)
+	end subroutine init_matrices
+	
 	subroutine initConfig()
 		character(len=300) :: tmparg
 		
@@ -193,6 +222,7 @@ module ndConfig
 			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
 			verbose = read_ini_int('verbose',verbose)
 			
+			!read mixing parameters and create matrices
 			m_lightest   = read_ini_real('m_lightest', 0.0d0)
 			massOrdering = read_ini_logical('massOrdering', .true.)
 			
@@ -221,8 +251,12 @@ module ndConfig
 			call setMixingMatrix()
 			call setMassMatrix()
 			
+			!read cosmo parameters
 			hubbleParam = read_ini_real('hubbleParam', i_HubbleParam)
 			photonTemperatureToday = read_ini_real('photonTemperatureToday', i_photonTempToday)
+			
+			!create other matrices
+			call init_matrices
 			
 !			tmparg=trim(read_ini_char('pionFluxFile'))
 !			if (trim(tmparg)/="") pionFluxFile=tmparg
