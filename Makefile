@@ -2,8 +2,9 @@
 F90=gfortran
 F90FLAGS=-O3 -L/usr/lib -Jbuild/ -Ibuild/
 
-OBJ_FILES=build/const.o build/errors.o build/config.o build/IniFile.o build/matrix_utils.o \
-	build/interactions.o build/cosmology.o \
+OBJ_FILES=build/const.o build/errors.o build/config.o build/IniFile.o \
+	build/utilities.o build/matrix_utils.o \
+	build/interactions.o build/cosmology.o build/equations.o \
 	build/opkdmain.o build/opkda1.o build/opkda2.o
 
 default: all
@@ -20,9 +21,9 @@ build/opkdmain.o: build/opkda1.o build/opkda2.o
 build/IniFile.o: build/const.o
 build/matrix_utils.o: build/const.o build/errors.o
 build/config.o: build/const.o build/IniFile.o build/matrix_utils.o build/errors.o
-build/interactions.o: build/const.o build/config.o build/errors.o
+build/interactions.o: build/const.o build/config.o build/errors.o build/utilities.o
 build/cosmology.o: build/const.o build/config.o build/errors.o
-#build/flux.o: build/const.o build/config.o build/mc.o
+build/equations.o: build/const.o build/errors.o build/cosmology.o build/interactions.o build/utilities.o
 #build/likelihood.o: build/const.o build/config.o
 #build/mc.o: build/const.o build/config.o
 #build/minimize.o: build/const.o build/config.o

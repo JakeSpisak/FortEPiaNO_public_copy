@@ -2,7 +2,7 @@ program icsteriles
 	use precision
 	use ndConfig
 	use ndErrors
-!	use icsData
+	use ndEquations
 !	use icsFlux
 !	use icsMC
 !	use icsMinim
@@ -12,6 +12,7 @@ program icsteriles
 
 	call openLogFile
 	call initConfig
+	call init_interp_jkyg12
 !	call initData
 !	call initmc
 !	call initminim(.true.)
