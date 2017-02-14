@@ -32,33 +32,43 @@ module ndInteractions
 		dme2_e_i1 = k*k/E_k_m(k,m)*fermiDirac(k,m,T)
 	end function dme2_e_i1
 	
-	function dme2_e_i2(vec, k)
-		real(dl) :: dme2_e_i2
-		real(dl), intent(in) :: k
-		real(dl), dimension(3) :: vec
-		real(dl) :: m,T,p
-		m=vec(1)
-		T=vec(2)
-		p=vec(3)
-		dme2_e_i2 = k/E_k_m(k,m)*fermiDirac(k,m,T)*log(abs((p+k)/(p-k)))
-	end function dme2_e_i2
+!	function dme2_e_i2(vec, k)
+!		real(dl) :: dme2_e_i2
+!		real(dl), intent(in) :: k
+!		real(dl), dimension(3) :: vec
+!		real(dl) :: m,T,p
+!		m=vec(1)
+!		T=vec(2)
+!		p=vec(3)
+!		dme2_e_i2 = k/E_k_m(k,m)*fermiDirac(k,m,T)*log(abs((p+k)/(p-k)))
+!	end function dme2_e_i2
 	
-	function dme2_electron(p,T)
+	function dme2_electron(x,y,z)
 		real(dl) :: dme2_electron, tmp, rombint_obj
-		real(dl), intent(in) :: p,T
+		real(dl), intent(in) :: x,y,z
 		real(dl), dimension(3) :: vec
 		external rombint_obj
 		
-		vec(1) = m_e
-		vec(2) = T
-		vec(3) = p
+		vec(1) = x
+		vec(2) = z
+		vec(3) = y !not used
 		
-		dme2_electron = PIx2 * alpha_fine * T*T/3.d0
 		tmp = rombint_obj(vec, dme2_e_i1, 0.d0, 1d8, 1d-3, 200, 5)
-		dme2_electron = dme2_electron + tmp*alpha_fine/PId4
-		tmp = rombint_obj(vec, dme2_e_i2, 0.d0, 1d8, 1d-3, 200, 5)
-		dme2_electron = dme2_electron + tmp*alpha_fine*m_e*m_e/(PId2*p)
+		dme2_electron = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
 	end function dme2_electron
+	
+	function Ebar_i(s,x,y,z)
+		real(dl) :: Ebar_i
+		real(dl), intent(in) :: x,y,z
+		logical, intent(in) :: s !True for e+/e-, False for nu
+		
+		if (s) then
+			Ebar_i = sqrt(x*x+y*y+dme2_electron(x,y,z)**2)
+		else
+			Ebar_i = y
+		end if
+	
+	end function Ebar_i
 	
 	function F_ab_ann(n1,n2,e3,e4,a,b)
 		real(dl), dimension(:,:), allocatable :: F_ab_ann
@@ -117,5 +127,104 @@ module ndInteractions
 		
 		F_ab_sc = (1-e2)*e4 * tm7 - e2*(1-e4)*tm1
 	end function F_ab_sc
+	
+	function D1_f(y1, y2, y3, y4)
+		real(dl) :: D1_f
+		real(dl), intent(in) :: y1, y2, y3, y4
+		
+		D1_f = &
+			abs( y1+y2+y3-y4) + &
+			abs( y1+y2-y3+y4) + &
+			abs( y1-y2+y3+y4) + &
+			abs(-y1+y2+y3+y4) - &
+			abs( y1+y2-y3-y4) - &
+			abs( y1-y2-y3+y4) - &
+			abs( y1-y2+y3-y4) - &
+			abs( y1+y2+y3+y4)
+	end function D1_f
+	
+	function D2_f(y1, y2, y3, y4)
+		real(dl) :: D2_f
+		real(dl), intent(in) :: y1, y2, y3, y4
+		real(dl) :: &
+			p1m2m3m4, m1p2m3m4, m1m2p3m4, m1m2m3p4, &
+			p1p2m3m4, m1p2p3m4, m1m2p3p4, p1m2m3p4, &
+			p1m2p3m4, m1p2m3p4, m1p2p3p4, p1m2p3p4, &
+			p1p2m3p4, p1p2p3m4, p1p2p3p4, m1m2m3m4 
+		
+		p1m2m3m4 =  y1 -y2 -y3 -y4 
+		m1p2m3m4 = -y1 +y2 -y3 -y4 
+		m1m2p3m4 = -y1 -y2 +y3 -y4 
+		m1m2m3p4 = -y1 -y2 -y3 +y4 
+		
+		p1p2m3m4 =  y1 +y2 -y3 -y4 
+		m1p2p3m4 = -y1 +y2 +y3 -y4 
+		m1m2p3p4 = -y1 -y2 +y3 +y4 
+		p1m2m3p4 =  y1 -y2 -y3 +y4 
+		p1m2p3m4 =  y1 -y2 +y3 -y4 
+		m1p2m3p4 = -y1 +y2 -y3 +y4 
+		
+		m1p2p3p4 = -p1m2m3m4
+		p1m2p3p4 = -m1p2m3m4
+		p1p2m3p4 = -m1m2p3m4
+		p1p2p3m4 = -m1m2m3p4
+		
+		p1p2p3p4 =  y1 +y2 +y3 +y4 
+		m1m2m3m4 = - p1p2p3p4
+				
+		D2_f = 0. + &
+			Abs(p1p2m3m4)**3 + &
+			Abs(p1m2p3m4)**3 - &
+			Abs(p1p2p3m4)**3 + &
+			Abs(p1m2m3p4)**3 - &
+			Abs(p1p2m3p4)**3 - &
+			Abs(p1m2p3p4)**3 - &
+			Abs(m1p2p3p4)**3 + &
+			Abs(p1p2p3p4)**3 + &
+			6 * y1 * y2 * ( &
+				Abs(p1p2m3m4) - &
+				Abs(p1m2p3m4) - &
+				Abs(p1p2p3m4) - &
+				Abs(p1m2m3p4) - &
+				Abs(p1p2m3p4) + &
+				Abs(p1m2p3p4) + &
+				Abs(m1p2p3p4) + &
+				Abs(p1p2p3p4) &
+			) - &
+			3 * y1 * ( &
+				- Sign(p1m2m3m4, (m1p2p3p4)**2) &
+				+ Sign(p1p2m3m4, (p1p2m3m4)**2) &
+				+ Sign(p1m2p3m4, (p1m2p3m4)**2) &
+				- Sign(p1p2p3m4, (p1p2p3m4)**2) &
+				+ Sign(p1m2m3p4, (p1m2m3p4)**2) &
+				- Sign(p1p2m3p4, (p1p2m3p4)**2) &
+				- Sign(p1m2p3p4, (p1m2p3p4)**2) &
+				+ Sign(p1p2p3p4, (p1p2p3p4)**2) &
+			) &
+			- 3 * y2 * ( &
+				  Sign(p1m2m3m4, (m1p2p3p4)**2) &
+				+ Sign(p1p2m3m4, (p1p2m3m4)**2) &
+				- Sign(p1m2p3m4, (p1m2p3m4)**2) &
+				- Sign(p1p2p3m4, (p1p2p3m4)**2) &
+				- Sign(p1m2m3p4, (p1m2m3p4)**2) &
+				- Sign(p1p2m3p4, (p1p2m3p4)**2) &
+				+ Sign(p1m2p3p4, (p1m2p3p4)**2) &
+				+ Sign(p1p2p3p4, (p1p2p3p4)**2) &
+			)
+	end function D2_f
+	
+	function D3_f(y1, y2, y3, y4)
+		real(dl) :: D3_f
+		real(dl), intent(in) :: y1, y2, y3, y4
+		
+		D3_f = 0.
+	end function D3_f
+	
+	function PI1_f (y1, y2, y3, y4)
+		real(dl) :: PI1_f
+		real(dl), intent(in) :: y1, y2, y3, y4
+		
+		PI1_f=0
+	end function PI1_f
 
 end module

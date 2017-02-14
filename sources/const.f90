@@ -16,6 +16,7 @@ module constants
 	real(dl), parameter :: PIx4=4.d0*PI
 	real(dl), parameter :: PIx8=8.d0*PI
 	real(dl), parameter :: PID2=PI/2.d0
+	real(dl), parameter :: PID3=PI/3.d0
 	real(dl), parameter :: PID4=PI/4.d0
 	real(dl), parameter :: SQRTPI = sqrt(PI)
 	real(dl), parameter :: PISQ = PI*PI
