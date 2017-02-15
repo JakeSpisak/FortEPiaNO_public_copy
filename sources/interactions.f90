@@ -72,17 +72,30 @@ module ndInteractions
 		dme2_electron = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
 	end function dme2_electron
 	
+	function Ebare_i(x,y,z)!for electrons
+		real(dl) :: Ebare_i
+		real(dl), intent(in) :: x,y,z
+		
+		Ebare_i = sqrt(x*x+y*y+dme2_electron(x,y,z)**2)
+	end function Ebare_i
+	
+	function Ebarn_i(x,y,z)!for neutrinos
+		real(dl) :: Ebarn_i
+		real(dl), intent(in) :: x,y,z
+		
+		Ebarn_i = y
+	end function Ebarn_i
+	
 	function Ebar_i(s,x,y,z)!s: True for e+/e-, False for nu
 		real(dl) :: Ebar_i
 		real(dl), intent(in) :: x,y,z
 		logical, intent(in) :: s !True for e+/e-, False for nu
 		
 		if (s) then
-			Ebar_i = sqrt(x*x+y*y+dme2_electron(x,y,z)**2)
+			Ebar_i = Ebare_i(x,y,z)
 		else
-			Ebar_i = y
+			Ebar_i = Ebarn_i(x,y,z)
 		end if
-	
 	end function Ebar_i
 	
 	function F_ab_ann(x,z, n1,n2,e3,e4, a,b)!a, b must be either 1(=L) or 2(=R)
@@ -345,49 +358,67 @@ module ndInteractions
 			+ e2 * e4 * D2_f(y1, y3, y2, y4) )
 	end function PI2_f
 
-	function coll_nue_sc_inn(obj, y4)
-		real(dl) :: coll_nue_sc_inn
+	function interp_nuDens(y)
+		real(dl), dimension(:,:), allocatable :: interp_nuDens
+		real(dl), intent(in) :: y
+	
+	end function interp_nuDens
+	
+	function coll_nue_sc_int(n, ve, obj)
+		real(dl) :: coll_nue_sc_int
 		real(dl), dimension(:,:), allocatable :: matrix
 		real(dl), dimension(2) :: pi1_vec
 		real(dl), dimension(3) :: pi2_vec
-		real(dl), intent(in) :: y4
+		real(dl), intent(in), dimension(2) :: ve
+		real(dl), dimension(:,:), allocatable :: n3
+		real(dl) :: y2,y3,y4
+		integer :: n
 		type(coll_args) :: obj
 		
-		allocate(matrix(flavorNumber, flavorNumber))
+		allocate(matrix(flavorNumber, flavorNumber), n3(flavorNumber, flavorNumber))
 		
-		pi1_vec = PI1_f (obj%x, obj%z, obj%y1, obj%y2, obj%y3, y4, obj%s1, obj%s2, obj%s3)
-		pi2_vec = PI2_f (obj%x, obj%z, obj%y1, obj%y2, obj%y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
+		y2=ve(1)
+		y4=ve(2)
+		y3 = obj%y1 + y2 - y4
+		n3 = interp_nuDens(y3)
+		
+		pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
+		pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
 		
 		matrix = &
-			obj%y2/Ebar_i(.true., obj%x, obj%y2, obj%z) * &
-			y4/Ebar_i(.true., obj%x, y4, obj%z) * &
+			obj%y2/Ebare_i(obj%x, y2, obj%z) * &
+			    y4/Ebare_i(obj%x, y4, obj%z) * &
 			( &
-				pi2_vec(1) * F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, obj%a,obj%a) + &
-				pi2_vec(2) * F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, obj%b,obj%b) - &
+				pi2_vec(1) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%a,obj%a) + &
+				pi2_vec(2) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%b,obj%b) - &
 				(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
-					F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, 2,1) + F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, 1,2)) &
+					F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 2,1) + F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 1,2)) &
 			)
-		coll_nue_sc_inn = matrix(obj%ix1,obj%ix2)
-	end function coll_nue_sc_inn
+		coll_nue_sc_int = matrix(obj%ix1,obj%ix2)
+	end function coll_nue_sc_int
 	
-	function coll_nue_sc_med (obj, y2)
-		real(dl) :: coll_nue_sc_med, rombint_obj
-		real(dl), intent(in) :: y2
-		type(coll_args) :: obj
-		external rombint_obj
-		
-		obj%y2=y2
-		coll_nue_sc_med = rombint_obj(obj, coll_nue_sc_inn, y_min, y_max, toler, maxiter)
-	end function coll_nue_sc_med
-	
-	function collision_terms (x, z, n1, n2, n3)
+	SUBROUTINE region(ndim,x,j,c,d)
+		use precision
+		IMPLICIT NONE
+		REAL (dl), INTENT (OUT) :: c, d
+		INTEGER, INTENT (IN)    :: j, ndim
+		REAL (dl), INTENT (IN)  :: x(ndim)
+		c = y_min
+		d = y_max
+		RETURN
+	END SUBROUTINE region
+       
+	function collision_terms (x, z, y1, n1, n2, n3)
 		real(dl), dimension(:,:), allocatable :: collision_terms
-		real(dl), intent(in) :: x,z
+		real(dl), intent(in) :: x,z, y1
 		real(dl), dimension(:,:), intent(in) :: n1, n2, n3
 		type(coll_args) :: collArgs
 		integer :: i,j
 		real(dl) :: rombint_obj
 		external rombint_obj
+		real(dl) :: ERRr, RES
+		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
+		real(dl) ::  VK(2)
 		
 		collArgs%s1 = .false.
 		collArgs%s2 = .true.
@@ -395,6 +426,7 @@ module ndInteractions
 		collArgs%s4 = .true.
 		collArgs%x = x
 		collArgs%z = z
+		collArgs%y1 = y1
 		
 		collArgs%na = n1
 		collArgs%nb = n2
@@ -406,19 +438,31 @@ module ndInteractions
 			do j=1, flavorNumber
 				collArgs%ix1 = i
 				collArgs%ix2 = j
-				collision_terms(i,j) = rombint_obj(collArgs, coll_nue_sc_med, y_min, y_max, toler, maxiter)
+				nrand=1
+				ifail=0
+				itrans=0
+				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				collision_terms(i,j) = res
 			end do
 		end do
-!		....
 
 		!scattering of neutrinos vs positrons:
 		collArgs%a = 1
 		collArgs%b = 2
-!		....
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				nrand=1
+				ifail=0
+				itrans=0
+				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				collision_terms(i,j) = collision_terms(i,j) + res
+			end do
+		end do
 		
-!		collision_terms(1) = & !nu e- ---> nu e-
-!			rombint_obj(collArgs, )
+		collision_terms(:,:) = collision_terms(:,:) * G_Fsq/(y1*y1*8.d0*PICub)
 		
-!		collision_terms(:) = collision_terms(:) * G_Fsq/(y1*y1*8.d0*PICub)
+		!annihilation in e+e-
 	end function collision_terms
 end module
