@@ -188,16 +188,19 @@ module ndConfig
 		open(unit=3154, file='test_fd.dat') !save the initial Fermi-Dirac distribution for nu
 		do ix=1, Ny
 			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
+			nuDensMatVec(ix)%y = y_arr(ix)
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdm = fermiDirac_massless(y_arr(ix),z_in)
 			write(3154,"(2F14.7)") y_arr(ix), fdm
 			nuDensMatVec(ix)%re(1,1) = fdm
-			nuDensMatVec(ix)%re(2,2) = fdm
-			if (flavorNumber.gt.2) &
-				nuDensMatVec(ix)%re(3,3) = fdm
-			if (flavorNumber.gt.3) &
-				nuDensMatVec(ix)%re(4,4) = 0.d0
+			if (flavorNumber.ne.2 .or. (.not. only_1a_1s)) then
+				nuDensMatVec(ix)%re(2,2) = fdm
+				if (flavorNumber.gt.2) &
+					nuDensMatVec(ix)%re(3,3) = fdm
+				if (flavorNumber.gt.3) &
+					nuDensMatVec(ix)%re(4,4) = 0.d0
+			end if
 		end do
 		close(3154)
 		
@@ -254,6 +257,7 @@ module ndConfig
 			m_lightest   = read_ini_real('m_lightest', 0.0d0)
 			massOrdering = read_ini_logical('massOrdering', .true.)
 			
+			only_1a_1s = read_ini_logical('only_1a_1s', .false.)
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 			call allocateStuff
 			

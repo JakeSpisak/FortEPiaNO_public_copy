@@ -55,7 +55,7 @@ module variables
 	implicit none
 	
 	!variables that will be read from config file
-	logical :: massOrdering
+	logical :: massOrdering, only_1a_1s
 	integer :: flavorNumber
 	real(dl) :: m_lightest
 	real(dl) :: theta12, dm12
@@ -67,7 +67,7 @@ module variables
 	!matrix
 	type cmplxMatNN
 		real(dl), dimension(:,:), allocatable :: re, im
-!		integer :: cols
+		real(dl) :: y
 	end type cmplxMatNN
 	
 	real(dl), dimension(:), allocatable :: nuMasses

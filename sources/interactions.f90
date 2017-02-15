@@ -85,10 +85,10 @@ module ndInteractions
 	
 	end function Ebar_i
 	
-	function F_ab_ann(n1,n2,e3,e4,a,b)!a, b must be either 1(=L) or 2(=R)
+	function F_ab_ann(x,z, n1,n2,e3,e4, a,b)!a, b must be either 1(=L) or 2(=R)
 		real(dl), dimension(:,:), allocatable :: F_ab_ann
 		real(dl), dimension(:,:), intent(in) :: n1,n2
-		real(dl), intent(in) :: e3,e4
+		real(dl), intent(in) :: e3,e4, x,z
 		integer, intent(in) :: a,b
 		integer :: nf
 		real(dl), dimension(:,:), allocatable :: tm1, tm2, tm3, tm4, tm5, tm6, tm7
@@ -111,13 +111,13 @@ module ndInteractions
 		call quadrupleProdMat(n1, tm3, n2, tm4, tm6)
 		tm1=tm5+tm6
 		
-		F_ab_ann = e3*e4 * tm7 - (1-e3)*(1-e4)*tm1
+		F_ab_ann = fermiDirac(e3,x,z)*fermiDirac(e4,x,z) * tm7 - (1-fermiDirac(e3,x,z))*(1-fermiDirac(e4,x,z))*tm1
 	end function F_ab_ann
 	
-	function F_ab_sc (n1,e2,n3,e4,a,b)!a, b must be either 1(=L) or 2(=R)
+	function F_ab_sc (x,z, n1,e2,n3,e4, a,b)!a, b must be either 1(=L) or 2(=R)
 		real(dl), dimension(:,:), allocatable :: F_ab_sc
 		real(dl), dimension(:,:), intent(in) :: n1,n3
-		real(dl), intent(in) :: e2,e4
+		real(dl), intent(in) :: e2,e4, x,z
 		integer, intent(in) :: a,b
 		integer :: nf
 		real(dl), dimension(:,:), allocatable :: tm1, tm2, tm3, tm4, tm5, tm6, tm7
@@ -140,7 +140,7 @@ module ndInteractions
 		call quadrupleProdMat(tm4, tm3, tm2, n1, tm6)
 		tm1=tm5+tm6
 		
-		F_ab_sc = (1-e2)*e4 * tm7 - e2*(1-e4)*tm1
+		F_ab_sc = (1-fermiDirac(e2,x,z))*fermiDirac(e4,x,z) * tm7 - fermiDirac(e2,x,z)*(1-fermiDirac(e4,x,z))*tm1
 	end function F_ab_sc
 	
 	function D1_f(y1, y2, y3, y4)
@@ -362,10 +362,10 @@ module ndInteractions
 			obj%y2/Ebar_i(.true., obj%x, obj%y2, obj%z) * &
 			y4/Ebar_i(.true., obj%x, y4, obj%z) * &
 			( &
-				pi2_vec(1) * F_ab_sc(obj%na,obj%y2,obj%nb,y4, obj%a,obj%a) + &
-				pi2_vec(2) * F_ab_sc(obj%na,obj%y2,obj%nb,y4, obj%b,obj%b) - &
+				pi2_vec(1) * F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, obj%a,obj%a) + &
+				pi2_vec(2) * F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, obj%b,obj%b) - &
 				(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
-					F_ab_sc(obj%na,obj%y2,obj%nb,y4, 2,1) + F_ab_sc(obj%na,obj%y2,obj%nb,y4, 1,2)) &
+					F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, 2,1) + F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, 1,2)) &
 			)
 		coll_nuem_sc_inn = matrix(obj%ix1,obj%ix2)
 	end function coll_nuem_sc_inn
