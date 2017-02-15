@@ -1,10 +1,11 @@
-*.pyc
-*.geany
-0*.sh
 *tmp*
+*.pyc
 *.o
 *.mod
 *.a
 *.exe
 *.ini
+!ini/explanatory.ini
 *.log
+*.dat
+*.txt
