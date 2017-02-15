@@ -345,8 +345,8 @@ module ndInteractions
 			+ e2 * e4 * D2_f(y1, y3, y2, y4) )
 	end function PI2_f
 
-	function coll_nuem_sc_inn(obj, y4)
-		real(dl) :: coll_nuem_sc_inn
+	function coll_nue_sc_inn(obj, y4)
+		real(dl) :: coll_nue_sc_inn
 		real(dl), dimension(:,:), allocatable :: matrix
 		real(dl), dimension(2) :: pi1_vec
 		real(dl), dimension(3) :: pi2_vec
@@ -367,14 +367,27 @@ module ndInteractions
 				(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
 					F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, 2,1) + F_ab_sc(obj%x,obj%z,obj%na,obj%y2,obj%nb,y4, 1,2)) &
 			)
-		coll_nuem_sc_inn = matrix(obj%ix1,obj%ix2)
-	end function coll_nuem_sc_inn
+		coll_nue_sc_inn = matrix(obj%ix1,obj%ix2)
+	end function coll_nue_sc_inn
+	
+	function coll_nue_sc_med (obj, y2)
+		real(dl) :: coll_nue_sc_med, rombint_obj
+		real(dl), intent(in) :: y2
+		type(coll_args) :: obj
+		external rombint_obj
+		
+		obj%y2=y2
+		coll_nue_sc_med = rombint_obj(obj, coll_nue_sc_inn, y_min, y_max, toler, maxiter)
+	end function coll_nue_sc_med
 	
 	function collision_terms (x, z, n1, n2, n3)
-		real(dl), dimension(:,:,:), allocatable :: collision_terms
+		real(dl), dimension(:,:), allocatable :: collision_terms
 		real(dl), intent(in) :: x,z
 		real(dl), dimension(:,:), intent(in) :: n1, n2, n3
 		type(coll_args) :: collArgs
+		integer :: i,j
+		real(dl) :: rombint_obj
+		external rombint_obj
 		
 		collArgs%s1 = .false.
 		collArgs%s2 = .true.
@@ -389,6 +402,13 @@ module ndInteractions
 		!scattering of neutrinos vs electrons:
 		collArgs%a = 2
 		collArgs%b = 1
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				collision_terms(i,j) = rombint_obj(collArgs, coll_nue_sc_med, y_min, y_max, toler, maxiter)
+			end do
+		end do
 !		....
 
 		!scattering of neutrinos vs positrons:

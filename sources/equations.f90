@@ -6,7 +6,7 @@ module ndEquations
 	use ndcosmology
 	implicit none
 	
-	real(dl), parameter :: upper = 1.d8, tol=1.d-3
+	real(dl), parameter :: upper = 1.d8
 	contains 
 	
 	function J_int(o, u)
@@ -23,7 +23,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		J_func = rombint_obj(o, J_int,0,upper,tol)/PISQ
+		J_func = rombint_obj(o, J_int,0,upper,toler)/PISQ
 	end function J_func
 	
 	function Jprime_int(o, u)
@@ -44,7 +44,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
-		Jprime = rombint_obj(o, Jprime_int,0,upper,tol) * o / PISQ
+		Jprime = rombint_obj(o, Jprime_int,0,upper,toler) * o / PISQ
 	end function Jprime
 	
 	function K_int(o, u)
@@ -61,7 +61,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		k_func = rombint_obj(o, k_int,0,upper,tol)/PISQ
+		k_func = rombint_obj(o, k_int,0,upper,toler)/PISQ
 	end function K_func
 	
 	function Kprime_int(o, u)
@@ -83,7 +83,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
-		Kprime = rombint_obj(o, Kprime_int,0,upper,tol) * o / PISQ
+		Kprime = rombint_obj(o, Kprime_int,0,upper,toler) * o / PISQ
 	end function Kprime
 	
 	function Y_int(o, u)
@@ -100,7 +100,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		Y_func = rombint_obj(o, Y_int,0,upper,tol)/PISQ
+		Y_func = rombint_obj(o, Y_int,0,upper,toler)/PISQ
 	end function Y_func
 	
 	function G12_func(o)

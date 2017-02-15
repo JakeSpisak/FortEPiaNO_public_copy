@@ -238,6 +238,8 @@ module ndConfig
 			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
 			
 			verbose = read_ini_int('verbose',verbose)
+			maxiter = read_ini_int('maxiter',100)
+			toler   = read_ini_real('tolerance', 1.d-3)
 			
 			Nx = read_ini_int('Nx',100000)
 			Ny = read_ini_int('Ny',100)
