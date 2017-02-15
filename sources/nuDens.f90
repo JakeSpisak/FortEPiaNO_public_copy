@@ -1,4 +1,4 @@
-program icsteriles
+program nuDens
 	use precision
 	use ndConfig
 	use ndErrors
@@ -23,4 +23,4 @@ program icsteriles
 	
 	call addToLog("finished")
 	call closeLogFile
-end program icsteriles
+end program nuDens

@@ -48,6 +48,11 @@ module constants
 	
 	real(dl), parameter :: i_photonTempToday = 2.7255
 	real(dl), parameter :: i_HubbleParam = 70.
+end module constants
+
+module variables
+	use precision
+	implicit none
 	
 	!variables that will be read from config file
 	logical :: massOrdering
@@ -59,4 +64,23 @@ module constants
 	
 	real(dl) :: photonTemperatureToday, hubbleParam
 
-end module constants
+	!matrix
+	type cmplxMatNN
+		real(dl), dimension(:,:), allocatable :: re, im
+!		integer :: cols
+	end type cmplxMatNN
+	
+	real(dl), dimension(:), allocatable :: nuMasses
+	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
+	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
+	real(dl), dimension(:,:,:), allocatable :: GLR_vec
+	
+	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec
+	
+	!technical settings
+	integer :: verbose = 1
+	integer :: Nx, Ny
+	real(dl) :: x_in, x_fin, y_min, y_max, z_in
+	real(dl), dimension(:), allocatable :: x_arr, y_arr
+	
+end module variables

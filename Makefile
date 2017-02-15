@@ -15,13 +15,13 @@ build/%.o: sources/%.f90 Makefile
 build/%.o: sources/%.f Makefile
 	$(F90) $(F90FLAGS) --std=legacy -c sources/$*.f -o build/$*.o
 
-build/opkda1.o: build/const.o
-build/opkda2.o: build/const.o
+#build/opkda1.o: build/const.o
+#build/opkda2.o: build/const.o
 build/opkdmain.o: build/opkda1.o build/opkda2.o
 build/IniFile.o: build/const.o
 build/matrix_utils.o: build/const.o build/errors.o
-build/config.o: build/const.o build/IniFile.o build/matrix_utils.o build/errors.o
-build/interactions.o: build/const.o build/config.o build/errors.o build/utilities.o
+build/config.o: build/const.o build/interactions.o build/IniFile.o build/matrix_utils.o build/errors.o
+build/interactions.o: build/const.o build/errors.o build/matrix_utils.o build/utilities.o
 build/cosmology.o: build/const.o build/config.o build/errors.o
 build/equations.o: build/const.o build/errors.o build/cosmology.o build/interactions.o build/utilities.o
 #build/likelihood.o: build/const.o build/config.o

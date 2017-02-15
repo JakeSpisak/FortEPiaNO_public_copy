@@ -1,9 +1,11 @@
 module ndConfig
 	use precision
 	use constants
+	use variables
 	use ndErrors
 	use FileIni
 	use ndMatrices
+	use ndInteractions
 	implicit none
 
 	integer :: num_args, ixa
@@ -11,15 +13,8 @@ module ndConfig
 	
 !	real(dl) :: minim_prec = 1d-4
 !	integer :: itmax_root=5000
-	integer :: verbose = 1
 	
-	character(LEN=*), parameter :: mainPath="/home/gariazzo/software/nuDensity/"
-
-	real(dl), dimension(:), allocatable :: nuMasses
-	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
-	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
-	real(dl), dimension(:,:,:), allocatable :: GLR_vec
-	
+	character(LEN=*), parameter :: mainPath="/home/gariazzo/software/nuDensity/"	
 	
 !	integer, parameter :: numNuisance = 6
 !	type nuisanceParam
@@ -168,6 +163,8 @@ module ndConfig
 	
 	subroutine init_matrices
 		real(dl), dimension(:), allocatable :: diag_el
+		integer :: ix
+		real(dl) :: fdm
 		
 		allocate(diag_el(flavorNumber))
 		
@@ -186,7 +183,20 @@ module ndConfig
 		leptonDensities = 0.d0
 !		leptonDensities(1,1) = ...
 
-		!...
+		!nu density matrix
+		allocate(nuDensMatVec(Ny))
+		do ix=1, Ny
+			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
+			nuDensMatVec(ix)%re(:,:) = 0.d0
+			nuDensMatVec(ix)%im(:,:) = 0.d0
+			fdm = fermiDirac_massless(y_arr(ix),z_in)
+			nuDensMatVec(ix)%re(1,1) = fdm
+			nuDensMatVec(ix)%re(2,2) = fdm
+			if (flavorNumber.gt.2) &
+				nuDensMatVec(ix)%re(3,3) = fdm
+			if (flavorNumber.gt.3) &
+				nuDensMatVec(ix)%re(4,4) = 0.d0
+		end do
 		
 		deallocate(diag_el)
 	end subroutine init_matrices
@@ -220,7 +230,22 @@ module ndConfig
 		if(num_args.gt.0) then
 			call addToLog("[config] reading additional configuration from "//mainPath//trim(args(1)))
 			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
+			
 			verbose = read_ini_int('verbose',verbose)
+			
+			Nx = read_ini_int('Nx',100000)
+			Ny = read_ini_int('Ny',100)
+			allocate(x_arr(Nx), y_arr(Ny))
+			
+			x_in    = read_ini_real('x_in', 0.01d0)
+			x_fin   = read_ini_real('x_fin', 40.d0)
+			x_arr = logspace(log10(x_in), log10(x_fin), Nx)
+
+			y_min   = read_ini_real('y_min', 0.0d0)
+			y_max   = read_ini_real('y_max', 20.0d0)
+			y_arr = logspace(log10(y_min), log10(y_max), Ny)
+
+			z_in    = read_ini_real('z_in', 1.00003d0)
 			
 			!read mixing parameters and create matrices
 			m_lightest   = read_ini_real('m_lightest', 0.0d0)
