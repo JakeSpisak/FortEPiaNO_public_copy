@@ -20,6 +20,9 @@ module constants
 	real(dl), parameter :: PID4=PI/4.d0
 	real(dl), parameter :: SQRTPI = sqrt(PI)
 	real(dl), parameter :: PISQ = PI*PI
+	real(dl), parameter :: PISQD2 = PISQ/2.d0
+	real(dl), parameter :: PISQD15=PISQ/15.d0
+	real(dl), parameter :: PISQD30=PISQ/30.d0
 	real(dl), parameter :: PICub = PI*PI*PI
 	real(dl), parameter :: e_neper = 2.718281828459045235d0
 	real(dl), parameter :: gamma_par = 0.577215664901532861d0

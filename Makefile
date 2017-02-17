@@ -22,7 +22,7 @@ build/IniFile.o: build/const.o
 build/matrix_utils.o: build/const.o build/errors.o
 build/config.o: build/const.o build/interactions.o build/IniFile.o build/matrix_utils.o build/errors.o
 build/interactions.o: build/const.o build/errors.o build/matrix_utils.o build/utilities.o
-build/cosmology.o: build/const.o build/config.o build/errors.o
+build/cosmology.o: build/const.o build/errors.o build/interactions.o build/utilities.o
 build/equations.o: build/const.o build/errors.o build/cosmology.o build/interactions.o build/utilities.o
 #build/likelihood.o: build/const.o build/config.o
 #build/mc.o: build/const.o build/config.o

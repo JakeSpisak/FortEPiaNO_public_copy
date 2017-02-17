@@ -196,7 +196,7 @@ module ndConfig
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdm = fermiDirac_massless(y_arr(ix),z_in)
-			write(3154,"(2F14.7)") y_arr(ix), fdm
+			write(3154,"(2F14.7)") y_arr(ix), y_arr(ix)*y_arr(ix)*fdm
 			nuDensMatVec(ix)%re(1,1) = fdm
 			if (flavorNumber.ne.2 .or. (.not. only_1a_1s)) then
 				nuDensMatVec(ix)%re(2,2) = fdm

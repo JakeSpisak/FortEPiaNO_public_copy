@@ -559,7 +559,7 @@ module ndInteractions
 			end do
 		end do
 		
-		collision_terms(:,:) = collision_terms(:,:) * G_Fsq/(y1*y1*8.d0*PICub)
+		collision_terms(:,:) = collision_terms(:,:) * G_Fsq/(y1*y1*8.d0*PICub) * (planck_mass * m_e**3/x**4)
 		
 	end function collision_terms
 end module
