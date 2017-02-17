@@ -6,6 +6,12 @@ module ndEquations
 	use ndcosmology
 	implicit none
 	
+	type collTerm
+		type(cmplxMatNN) :: mat
+		real(dl) :: x,y,z
+	end type collTerm
+	type(collTerm) :: lastColl
+	
 	real(dl), parameter :: upper = 1.d8
 	contains 
 	
@@ -142,5 +148,29 @@ module ndEquations
 			/ (x_o_z**2*jxoz +Y_func(x_o_z) + PISQ/7.5d0 +g12(2))
 		
 	end function dz_o_dx
+	
+	function drhoy_dx_ij_rI (x,y,z, i, j, rI)
+		type(cmplxMatNN) :: matrix
+		real(dl) :: drhoy_dx_ij_rI
+		real(dl) :: x,y,z
+		integer :: i,j,k, rI
+		type(cmplxMatNN) :: n1
+		
+		drhoy_dx_ij_rI = 0.d0
+		
+		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
+			lastColl%mat = collision_terms(x, z, y)
+			lastColl%x = x
+			lastColl%y = y
+			lastColl%z = z
+			matrix%re = matrix%re + lastColl%mat%re * planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
+			matrix%im = matrix%im + lastColl%mat%im * planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
+		end if
+		if (rI.eq.1) then
+			drhoy_dx_ij_rI = matrix%re(i,j)
+		else if (rI.eq.2) then
+			drhoy_dx_ij_rI = matrix%im(i,j)
+		end if
+	end function drhoy_dx_ij_rI
 
 end module ndEquations

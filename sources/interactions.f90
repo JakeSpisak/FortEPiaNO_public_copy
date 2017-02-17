@@ -12,6 +12,7 @@ module ndInteractions
 		real(dl) :: y1, y2, y3, y4, x, z
 		logical :: s1, s2, s3, s4
 		integer :: ix1, ix2, a, b
+		integer :: rI !return real or imaginary part
 	end type coll_args
 	
 	contains
@@ -98,13 +99,13 @@ module ndInteractions
 		end if
 	end function Ebar_i
 	
-	function F_ab_ann(x,z, n1,n2,e3,e4, a,b, i, j)!a, b must be either 1(=L) or 2(=R)
-		real(dl), dimension(2) :: F_ab_ann
+	function F_ab_ann(x,z, n1,n2,e3,e4, a,b, i, j, rI)!a, b must be either 1(=L) or 2(=R)
+		real(dl) :: F_ab_ann
 		type(cmplxMatNN), intent(in) :: n1,n2
 		real(dl), intent(in) :: e3,e4, x,z
-		integer, intent(in) :: a,b, i, j
+		integer, intent(in) :: a,b, i, j, rI
 		integer :: k
-		real(dl), dimension(2) :: term1a, term1b, term2a, term2b
+		real(dl) :: term1a, term1b, term2a, term2b
 		
 		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 			call criticalError("a and b must be either 1(=L) or 2(=R)")
@@ -113,57 +114,66 @@ module ndInteractions
 		term1b=0.d0
 		term2a=0.d0
 		term2b=0.d0
-		do k=1, flavorNumber
-			!Ga (1-rho2) Gb (1-rho1)
-			term1a(1) = term1a(1) + GLR_vec(b,k,k) * ( &
-				(idMat(i,k)-n2%re(i,k))*(idMat(k,j)-n1%re(k,j)) - &
-				(-n2%im(i,k))*(-n1%im(k,j))&	!idMat ha im=0
-				)
-			term1a(2) = term1a(2) + GLR_vec(b,k,k) * ( &
-				(-n2%im(i,k))*(idMat(k,j)-n1%re(k,j)) - &
-				(idMat(i,k)-n2%re(i,k))*(-n1%im(k,j))&
-				)
-			!(1-rho1) Gb (1-rho2) Ga
-			term1b(1) = term1b(1) + GLR_vec(b,k,k) * ( &
-				(idMat(i,k)-n1%re(i,k))*(idMat(k,j)-n2%re(k,j)) - &
-				(-n1%im(i,k))*(-n2%im(k,j))&
-				)
-			term1b(2) = term1b(2) + GLR_vec(b,k,k) * ( &
-				(-n1%im(i,k))*(idMat(k,j)-n2%re(k,j)) - &
-				(idMat(i,k)-n1%re(i,k))*(-n2%im(k,j))&
-				)
-			!rho1 Gb rho2 Ga
-			term2a(1) = term2a(1) + GLR_vec(b,k,k) * ( &
-				(n1%re(i,k))*(n2%re(k,j)) - &
-				(n1%im(i,k))*(n2%im(k,j))&
-				)
-			term2a(2) = term2a(2) + GLR_vec(b,k,k) * ( &
-				(n1%im(i,k))*(n2%re(k,j)) - &
-				(n1%re(i,k))*(n2%im(k,j))&
-				)
-			!Ga Rho2 Gb rho1
-			term2b(1) = term2b(1) + GLR_vec(b,k,k) * ( &
-				(n2%re(i,k))*(n1%re(k,j)) - &
-				(n2%im(i,k))*(n1%im(k,j))&
-				)
-			term2b(2) = term2b(2) + GLR_vec(b,k,k) * ( &
-				(n2%im(i,k))*(n1%re(k,j)) - &
-				(n2%re(i,k))*(n1%im(k,j))&
-				)
-		end do
-		F_ab_ann(:) = fermiDirac(e3,x,z)*fermiDirac(e4,x,z) * &
-				(term1a(:) * GLR_vec(a,i,i) + term1b(:) * GLR_vec(a,j,j))&
+		if (rI.eq.1) then !take real part
+			do k=1, flavorNumber
+				!Ga (1-rho2) Gb (1-rho1)
+				term1a = term1a + GLR_vec(b,k,k) * ( &
+					(idMat(i,k)-n2%re(i,k))*(idMat(k,j)-n1%re(k,j)) - &
+					(-n2%im(i,k))*(-n1%im(k,j))&	!idMat ha im=0
+					)
+				!(1-rho1) Gb (1-rho2) Ga
+				term1b = term1b + GLR_vec(b,k,k) * ( &
+					(idMat(i,k)-n1%re(i,k))*(idMat(k,j)-n2%re(k,j)) - &
+					(-n1%im(i,k))*(-n2%im(k,j))&
+					)
+				!rho1 Gb rho2 Ga
+				term2a = term2a + GLR_vec(b,k,k) * ( &
+					(n1%re(i,k))*(n2%re(k,j)) - &
+					(n1%im(i,k))*(n2%im(k,j))&
+					)
+				!Ga Rho2 Gb rho1
+				term2b = term2b + GLR_vec(b,k,k) * ( &
+					(n2%re(i,k))*(n1%re(k,j)) - &
+					(n2%im(i,k))*(n1%im(k,j))&
+					)
+			end do
+		else if (rI .eq.2) then!take imaginary part
+			do k=1, flavorNumber
+				!Ga (1-rho2) Gb (1-rho1)
+				term1a = term1a + GLR_vec(b,k,k) * ( &
+					(-n2%im(i,k))*(idMat(k,j)-n1%re(k,j)) - &
+					(idMat(i,k)-n2%re(i,k))*(-n1%im(k,j))&
+					)
+				!(1-rho1) Gb (1-rho2) Ga
+				term1b = term1b + GLR_vec(b,k,k) * ( &
+					(-n1%im(i,k))*(idMat(k,j)-n2%re(k,j)) - &
+					(idMat(i,k)-n1%re(i,k))*(-n2%im(k,j))&
+					)
+				!rho1 Gb rho2 Ga
+				term2a = term2a + GLR_vec(b,k,k) * ( &
+					(n1%im(i,k))*(n2%re(k,j)) - &
+					(n1%re(i,k))*(n2%im(k,j))&
+					)
+				!Ga Rho2 Gb rho1
+				term2b = term2b + GLR_vec(b,k,k) * ( &
+					(n2%im(i,k))*(n1%re(k,j)) - &
+					(n2%re(i,k))*(n1%im(k,j))&
+					)
+			end do
+		end if
+		F_ab_ann = fermiDirac(e3,x,z)*fermiDirac(e4,x,z) * &
+				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
 			- (1-fermiDirac(e3,x,z))*(1-fermiDirac(e4,x,z)) * &
-				(term2a(:) * GLR_vec(a,j,j) + term2b(:) * GLR_vec(a,i,i))
+				(term2a * GLR_vec(a,j,j) + term2b * GLR_vec(a,i,i))
 	end function F_ab_ann
 	
-	function F_ab_sc (x,z, n1,e2,n3,e4, a,b, i, j)!a, b must be either 1(=L) or 2(=R)
-		real(dl), dimension(2) :: F_ab_sc
+	function F_ab_sc (x,z, n1,e2,n3,e4, a,b, i, j, rI)!a, b must be either 1(=L) or 2(=R)
+		real(dl) :: F_ab_sc
 		type(cmplxMatNN), intent(in) :: n1,n3
 		real(dl), intent(in) :: e2,e4, x,z
-		integer, intent(in) :: a,b, i, j
+		integer, intent(in) :: a,b, i, j, rI
 		integer :: k
-		real(dl), dimension(2) :: term1a, term1b, term2a, term2b
+		real(dl) :: term1a, term1b, term2a, term2b
 		
 		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 			call criticalError("a and b must be either 1(=L) or 2(=R)")
@@ -172,48 +182,57 @@ module ndInteractions
 		term1b=0.d0
 		term2a=0.d0
 		term2b=0.d0
-		do k=1, flavorNumber
-			!Ga rho3 Gb (1-rho1)
-			term1a(1) = term1a(1) + GLR_vec(b,k,k) * ( &
-				(n3%re(i,k))*(idMat(k,j)-n1%re(k,j)) - &
-				(n3%im(i,k))*(-n1%im(k,j))&	!idMat ha im=0
-				)
-			term1a(2) = term1a(2) + GLR_vec(b,k,k) * ( &
-				(n3%im(i,k))*(idMat(k,j)-n1%re(k,j)) - &
-				(n3%re(i,k))*(-n1%im(k,j))&
-				)
-			!(1-rho1) Gb rho3 Ga
-			term1b(1) = term1b(1) + GLR_vec(b,k,k) * ( &
-				(idMat(i,k)-n1%re(i,k))*(n3%re(k,j)) - &
-				(-n1%im(i,k))*(n3%im(k,j))&
-				)
-			term1b(2) = term1b(2) + GLR_vec(b,k,k) * ( &
-				(-n1%im(i,k))*(n3%re(k,j)) - &
-				(idMat(i,k)-n1%re(i,k))*(n3%im(k,j))&
-				)
-			!rho1 Gb (1-rho3) Ga
-			term2a(1) = term2a(1) + GLR_vec(b,k,k) * ( &
-				(n1%re(i,k))*(idMat(k,j)-n3%re(k,j)) - &
-				(n1%im(i,k))*(-n3%im(k,j))&
-				)
-			term2a(2) = term2a(2) + GLR_vec(b,k,k) * ( &
-				(n1%im(i,k))*(idMat(k,j)-n3%re(k,j)) - &
-				(n1%re(i,k))*(-n3%im(k,j))&
-				)
-			!Ga (1-rho3) Gb rho1
-			term2b(1) = term2b(1) + GLR_vec(b,k,k) * ( &
-				(idMat(i,k)-n3%re(i,k))*(n1%re(k,j)) - &
-				(-n3%im(i,k))*(n1%im(k,j))&
-				)
-			term2b(2) = term2b(2) + GLR_vec(b,k,k) * ( &
-				(-n3%im(i,k))*(n1%re(k,j)) - &
-				(idMat(i,k)-n3%re(i,k))*(n1%im(k,j))&
-				)
-		end do
-		F_ab_sc(:) = (1-fermiDirac(e2,x,z))*fermiDirac(e4,x,z) * &
-				(term1a(:) * GLR_vec(a,i,i) + term1b(:) * GLR_vec(a,j,j))&
+		if (rI.eq.1) then !take real part
+			do k=1, flavorNumber
+				!Ga rho3 Gb (1-rho1)
+				term1a = term1a + GLR_vec(b,k,k) * ( &
+					(n3%re(i,k))*(idMat(k,j)-n1%re(k,j)) - &
+					(n3%im(i,k))*(-n1%im(k,j))&	!idMat ha im=0
+					)
+				!(1-rho1) Gb rho3 Ga
+				term1b = term1b + GLR_vec(b,k,k) * ( &
+					(idMat(i,k)-n1%re(i,k))*(n3%re(k,j)) - &
+					(-n1%im(i,k))*(n3%im(k,j))&
+					)
+				!rho1 Gb (1-rho3) Ga
+				term2a = term2a + GLR_vec(b,k,k) * ( &
+					(n1%re(i,k))*(idMat(k,j)-n3%re(k,j)) - &
+					(n1%im(i,k))*(-n3%im(k,j))&
+					)
+				!Ga (1-rho3) Gb rho1
+				term2b = term2b + GLR_vec(b,k,k) * ( &
+					(idMat(i,k)-n3%re(i,k))*(n1%re(k,j)) - &
+					(-n3%im(i,k))*(n1%im(k,j))&
+					)
+			end do
+		else if (rI .eq.2) then!take imaginary part
+			do k=1, flavorNumber
+				!Ga rho3 Gb (1-rho1)
+				term1a = term1a + GLR_vec(b,k,k) * ( &
+					(n3%im(i,k))*(idMat(k,j)-n1%re(k,j)) - &
+					(n3%re(i,k))*(-n1%im(k,j))&
+					)
+				!(1-rho1) Gb rho3 Ga
+				term1b = term1b + GLR_vec(b,k,k) * ( &
+					(-n1%im(i,k))*(n3%re(k,j)) - &
+					(idMat(i,k)-n1%re(i,k))*(n3%im(k,j))&
+					)
+				!rho1 Gb (1-rho3) Ga
+				term2a = term2a + GLR_vec(b,k,k) * ( &
+					(n1%im(i,k))*(idMat(k,j)-n3%re(k,j)) - &
+					(n1%re(i,k))*(-n3%im(k,j))&
+					)
+				!Ga (1-rho3) Gb rho1
+				term2b = term2b + GLR_vec(b,k,k) * ( &
+					(-n3%im(i,k))*(n1%re(k,j)) - &
+					(idMat(i,k)-n3%re(i,k))*(n1%im(k,j))&
+					)
+			end do
+		end if
+		F_ab_sc = (1-fermiDirac(e2,x,z))*fermiDirac(e4,x,z) * &
+				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
 			- fermiDirac(e2,x,z)*(1-fermiDirac(e4,x,z)) * &
-				(term2a(:) * GLR_vec(a,j,j) + term2b(:) * GLR_vec(a,i,i))
+				(term2a * GLR_vec(a,j,j) + term2b * GLR_vec(a,i,i))
 	end function F_ab_sc
 	
 	function D1_f(y1, y2, y3, y4)
@@ -421,7 +440,40 @@ module ndInteractions
 	function interp_nuDens(y)
 		type(cmplxMatNN) :: interp_nuDens
 		real(dl), intent(in) :: y
-	
+		integer :: ix,i,j,k
+		logical :: exact
+		
+		if (y .eq. nuDensMatVec(Ny)%y) then
+			interp_nuDens = nuDensMatVec(Ny)
+		else
+			ix=0
+			do k=1, Ny-1
+				if (y .lt. nuDensMatVec(k+1)%y .and. y .ge. nuDensMatVec(k)%y) then
+					ix=k
+				end if
+				if (y .eq. nuDensMatVec(k)%y) &
+					exact = .true.
+			end do
+			if (ix .gt. 0 .and. ix .lt. Ny) then
+				if (exact) then
+					interp_nuDens = nuDensMatVec(ix)
+				else
+					interp_nuDens%y = y
+					do i=1, flavorNumber
+						do j=1, flavorNumber
+							interp_nuDens%re(i,j) = nuDensMatVec(ix)%re(i,j) + (y-nuDensMatVec(ix)%y) / &
+								(nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)* &
+								(nuDensMatVec(ix+1)%re(i,j) - nuDensMatVec(ix)%re(i,j))
+							interp_nuDens%im(i,j) =  nuDensMatVec(ix)%im(i,j) + (y-nuDensMatVec(ix)%y) / &
+								(nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)* &
+								(nuDensMatVec(ix+1)%im(i,j) - nuDensMatVec(ix)%im(i,j))
+						end do
+					end do
+				end if
+			else
+				call Error("k out of range or errors occurred in interpolation")
+			end if
+		end if
 	end function interp_nuDens
 	
 	function coll_nue_sc_int(n, ve, obj)
@@ -446,10 +498,11 @@ module ndInteractions
 			obj%y2/Ebare_i(obj%x, y2, obj%z) * &
 			    y4/Ebare_i(obj%x, y4, obj%z) * &
 			( &
-				pi2_vec(1) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%a,obj%a, obj%ix1,obj%ix2) + &
-				pi2_vec(2) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%b,obj%b, obj%ix1,obj%ix2) - &
+				pi2_vec(1) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
+				pi2_vec(2) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) - &
 				(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
-					F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 2,1, obj%ix1,obj%ix2) + F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 1,2, obj%ix1,obj%ix2)) &
+					F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
+					F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 1,2, obj%ix1,obj%ix2, obj%rI)) &
 			)
 	end function coll_nue_sc_int
 	
@@ -475,10 +528,11 @@ module ndInteractions
 			obj%y2/Ebare_i(obj%x, y2, obj%z) * &
 			    y4/Ebare_i(obj%x, y4, obj%z) * &
 			( &
-				pi2_vec(1) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2) + &
-				pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2) - &
+				pi2_vec(1) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
+				pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) - &
 				(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
-					F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 2,1, obj%ix1,obj%ix2) + F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 1,2, obj%ix1,obj%ix2)) &
+					F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
+					F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 1,2, obj%ix1,obj%ix2, obj%rI)) &
 			)
 	end function coll_nue_ann_int
 	
@@ -493,12 +547,12 @@ module ndInteractions
 		RETURN
 	END SUBROUTINE region
        
-	function collision_terms (x, z, y1, n1, n2, n3)
-		real(dl), dimension(:,:), allocatable :: collision_terms
+	function collision_terms (x, z, y1)
+		type(cmplxMatNN) :: collision_terms
 		real(dl), intent(in) :: x,z, y1
-		type(cmplxMatNN), intent(in) :: n1, n2, n3
+		type(cmplxMatNN) :: n1
 		type(coll_args) :: collArgs
-		integer :: i,j
+		integer :: i,j, k
 		real(dl) :: rombint_obj
 		external rombint_obj
 		real(dl) :: ERRr, RES
@@ -512,9 +566,10 @@ module ndInteractions
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%y1 = y1
-		
-		collArgs%na = n1
-		collArgs%nb = n2
+		do k=1, Ny
+			if (nuDensMatVec(k)%y .eq. y1) &
+				collArgs%na = nuDensMatVec(k)
+		end do
 		
 		!scattering of neutrinos vs electrons:
 		collArgs%a = 2
@@ -523,11 +578,19 @@ module ndInteractions
 			do j=1, flavorNumber
 				collArgs%ix1 = i
 				collArgs%ix2 = j
+				collArgs%rI = 1
 				nrand=1
 				ifail=0
 				itrans=0
 				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
-				collision_terms(i,j) = res
+				collision_terms%re(i,j) = res
+				
+				collArgs%rI = 2
+				nrand=1
+				ifail=0
+				itrans=0
+				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				collision_terms%im(i,j) = res
 			end do
 		end do
 
@@ -538,28 +601,47 @@ module ndInteractions
 			do j=1, flavorNumber
 				collArgs%ix1 = i
 				collArgs%ix2 = j
+				collArgs%rI = 1
 				nrand=1
 				ifail=0
 				itrans=0
 				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
-				collision_terms(i,j) = collision_terms(i,j) + res
+				collision_terms%re(i,j) = collision_terms%re(i,j) + res
+				
+				collArgs%rI = 2
+				nrand=1
+				ifail=0
+				itrans=0
+				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				collision_terms%im(i,j) = collision_terms%im(i,j) + res
 			end do
 		end do
 		
+		collArgs%s2 = .false.
+		collArgs%s3 = .true.
 		!annihilation in e+e-
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
 				collArgs%ix2 = j
+				collArgs%rI = 1
 				nrand=1
 				ifail=0
 				itrans=0
 				call D01GCF(2,coll_nue_ann_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
-				collision_terms(i,j) = collision_terms(i,j) + res
+				collision_terms%re(i,j) = collision_terms%re(i,j) + res
+				
+				collArgs%rI = 2
+				nrand=1
+				ifail=0
+				itrans=0
+				call D01GCF(2,coll_nue_ann_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				collision_terms%im(i,j) = collision_terms%im(i,j) + res
 			end do
 		end do
 		
-		collision_terms(:,:) = collision_terms(:,:) * G_Fsq/(y1*y1*8.d0*PICub) * (planck_mass * m_e**3/x**4)
+		collision_terms%re(:,:) = collision_terms%re(:,:) * G_Fsq/(y1*y1*8.d0*PICub) * (m_e**3) / (x**4)
+		collision_terms%im(:,:) = collision_terms%im(:,:) * G_Fsq/(y1*y1*8.d0*PICub) * (m_e**3) / (x**4)
 		
 	end function collision_terms
 end module
