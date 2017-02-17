@@ -36,6 +36,7 @@ module constants
 	real(dl), parameter :: G_Fsq = G_F * G_F
 	real(dl), parameter :: sin2thW =  0.23129
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
+	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 	
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2016: C. Patrignani et al.(Particle Data Group), Chin. Phys. C, 40, 100001 (2016).
@@ -74,6 +75,7 @@ module variables
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
+	real(dl), dimension(:,:), allocatable :: idMat
 	
 	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec
 	

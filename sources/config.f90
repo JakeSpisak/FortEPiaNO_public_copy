@@ -183,6 +183,10 @@ module ndConfig
 		leptonDensities = 0.d0
 !		leptonDensities(1,1) = ...
 
+		!identity (Matrix complex)
+		allocate(idMat(flavorNumber,flavorNumber))
+		call createIdentityMat(idMat, flavorNumber)
+		
 		!nu density matrix
 		allocate(nuDensMatVec(Ny))
 		open(unit=3154, file='test_fd.dat') !save the initial Fermi-Dirac distribution for nu
