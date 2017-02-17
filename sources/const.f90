@@ -72,7 +72,7 @@ module variables
 	!matrix
 	type cmplxMatNN
 		real(dl), dimension(:,:), allocatable :: re, im
-		real(dl) :: y
+		real(dl) :: x, y, z
 	end type cmplxMatNN
 	
 	real(dl), dimension(:), allocatable :: nuMasses

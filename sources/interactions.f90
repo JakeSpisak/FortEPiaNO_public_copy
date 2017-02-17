@@ -570,6 +570,9 @@ module ndInteractions
 			if (nuDensMatVec(k)%y .eq. y1) &
 				collArgs%na = nuDensMatVec(k)
 		end do
+		collision_terms%y = y1
+		collision_terms%x = x
+		collision_terms%z = z
 		
 		!scattering of neutrinos vs electrons:
 		collArgs%a = 2
