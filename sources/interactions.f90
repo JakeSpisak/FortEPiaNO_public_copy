@@ -251,143 +251,158 @@ module ndInteractions
 	end function D1_f
 	
 	function D2_f(y1, y2, y3, y4)
+		implicit none
 		real(dl) :: D2_f
 		real(dl), intent(in) :: y1, y2, y3, y4
 		real(dl) :: &
-			p1m2m3m4, m1p2m3m4, m1m2p3m4, m1m2m3p4, &
-			p1p2m3m4, m1p2p3m4, m1m2p3p4, p1m2m3p4, &
-			p1m2p3m4, m1p2m3p4, m1p2p3p4, p1m2p3p4, &
-			p1p2m3p4, p1p2p3m4, p1p2p3p4, m1m2m3m4 
-		
-		p1m2m3m4 =  y1 -y2 -y3 -y4 
-		m1p2m3m4 = -y1 +y2 -y3 -y4 
-		m1m2p3m4 = -y1 -y2 +y3 -y4 
-		m1m2m3p4 = -y1 -y2 -y3 +y4 
+			p1p2p3p4, p1p2m3m4, p1m2m3p4, p1m2p3m4, &
+			m1p2p3p4, p1m2p3p4, p1p2m3p4, p1p2p3m4
+		real(dl) :: a, b
+		real(dl) :: &
+			Ap1p2m3m4, Ap1m2p3m4, Ap1p2p3m4, Ap1m2m3p4, &
+			Ap1p2m3p4, Ap1m2p3p4, Am1p2p3p4, Ap1p2p3p4
 		
 		p1p2m3m4 =  y1 +y2 -y3 -y4 
-		m1p2p3m4 = -y1 +y2 +y3 -y4 
-		m1m2p3p4 = -y1 -y2 +y3 +y4 
 		p1m2m3p4 =  y1 -y2 -y3 +y4 
 		p1m2p3m4 =  y1 -y2 +y3 -y4 
-		m1p2m3p4 = -y1 +y2 -y3 +y4 
 		
-		m1p2p3p4 = -p1m2m3m4
-		p1m2p3p4 = -m1p2m3m4
-		p1p2m3p4 = -m1m2p3m4
-		p1p2p3m4 = -m1m2m3p4
+		m1p2p3p4 = -y1 +y2 +y3 +y4
+		p1m2p3p4 =  y1 -y2 +y3 +y4
+		p1p2m3p4 =  y1 +y2 -y3 +y4
+		p1p2p3m4 =  y1 +y2 +y3 -y4
 		
 		p1p2p3p4 =  y1 +y2 +y3 +y4 
-		m1m2m3m4 = - p1p2p3p4
-				
+
+		Ap1p2m3m4 = Abs(p1p2m3m4)
+		Ap1m2p3m4 = Abs(p1m2p3m4)
+		Ap1p2p3m4 = Abs(p1p2p3m4)
+		Ap1m2m3p4 = Abs(p1m2m3p4)
+		Ap1p2m3p4 = Abs(p1p2m3p4)
+		Ap1m2p3p4 = Abs(p1m2p3p4)
+		Am1p2p3p4 = Abs(m1p2p3p4)
+		Ap1p2p3p4 = Abs(p1p2p3p4)
+
+		a = Sign(p1p2m3m4, (p1p2m3m4)**2) - Sign(p1p2p3m4, (p1p2p3m4)**2) - &
+			Sign(p1p2m3p4, (p1p2m3p4)**2) + Sign(p1p2p3p4, (p1p2p3p4)**2)
+		b = - Sign(m1p2p3p4, (m1p2p3p4)**2) + Sign(p1m2p3m4, (p1m2p3m4)**2) &
+			+ Sign(p1m2m3p4, (p1m2m3p4)**2) - Sign(p1m2p3p4, (p1m2p3p4)**2)
+
 		D2_f = ( &
-			Abs(p1p2m3m4)**3 + &
-			Abs(p1m2p3m4)**3 - &
-			Abs(p1p2p3m4)**3 + &
-			Abs(p1m2m3p4)**3 - &
-			Abs(p1p2m3p4)**3 - &
-			Abs(p1m2p3p4)**3 - &
-			Abs(m1p2p3p4)**3 + &
-			Abs(p1p2p3p4)**3 + &
+			Ap1p2m3m4**3 + Ap1m2p3m4**3 - &
+			Ap1p2p3m4**3 + Ap1m2m3p4**3 - &
+			Ap1p2m3p4**3 - Ap1m2p3p4**3 - &
+			Am1p2p3p4**3 + Ap1p2p3p4**3 + &
 			6 * y1 * y2 * ( &
-				Abs(p1p2m3m4) - &
-				Abs(p1m2p3m4) - &
-				Abs(p1p2p3m4) - &
-				Abs(p1m2m3p4) - &
-				Abs(p1p2m3p4) + &
-				Abs(p1m2p3p4) + &
-				Abs(m1p2p3p4) + &
-				Abs(p1p2p3p4) &
+				Ap1p2m3m4 - Ap1m2p3m4 - &
+				Ap1p2p3m4 - Ap1m2m3p4 - &
+				Ap1p2m3p4 + Ap1m2p3p4 + &
+				Am1p2p3p4 + Ap1p2p3p4 &
 			) - &
-			3 * y1 * ( &
-				- Sign(p1m2m3m4, (m1p2p3p4)**2) &
-				+ Sign(p1p2m3m4, (p1p2m3m4)**2) &
-				+ Sign(p1m2p3m4, (p1m2p3m4)**2) &
-				- Sign(p1p2p3m4, (p1p2p3m4)**2) &
-				+ Sign(p1m2m3p4, (p1m2m3p4)**2) &
-				- Sign(p1p2m3p4, (p1p2m3p4)**2) &
-				- Sign(p1m2p3p4, (p1m2p3p4)**2) &
-				+ Sign(p1p2p3p4, (p1p2p3p4)**2) &
-			) &
-			- 3 * y2 * ( &
-				  Sign(p1m2m3m4, (m1p2p3p4)**2) &
-				+ Sign(p1p2m3m4, (p1p2m3m4)**2) &
-				- Sign(p1m2p3m4, (p1m2p3m4)**2) &
-				- Sign(p1p2p3m4, (p1p2p3m4)**2) &
-				- Sign(p1m2m3p4, (p1m2m3p4)**2) &
-				- Sign(p1p2m3p4, (p1p2m3p4)**2) &
-				+ Sign(p1m2p3p4, (p1m2p3p4)**2) &
-				+ Sign(p1p2p3p4, (p1p2p3p4)**2) &
-			)) / 6.d0
+			3 * y1 * ( a + b ) &
+			- 3 * y2 * ( a - b )) / 6.d0
 	end function D2_f
 	
 	function D3_f(y1, y2, y3, y4)
-	!copied from Pablo
+	!from 1605.09383
 		real(dl) :: D3_f
 		real(dl), intent(in) :: y1, y2, y3, y4
-		
-		real(dl) :: a12,a13,a14,a123,a124,a134,a234,a1234,P1234,s12,s13,s14
-		real(dl) :: absa12,absa13,absa14,absa12e3,absa13e3,absa14e3
-		real(dl) :: ampp,appm,apmp,a123e2,a124e2,a134e2,a234e2,a1234e2
-		real(dl) :: a123e3,a124e3,a134e3,a234e3,a1234e3
-		real(dl) :: a123e5,a124e5,a134e5,a234e5,a1234e5
+		real(dl) :: &
+			p1p2m3m4, p1m2m3p4, p1m2p3m4, &
+			m1p2p3p4, p1m2p3p4, p1p2m3p4, p1p2p3m4
+		real(dl) :: p123, p234, p12, p23, p34, m34
+		real(dl) :: y1234, y12, y23, y34, y13, y24
+		real(dl) :: &
+			Ap1p2m3m4, Ap1m2p3m4, Ap1p2p3m4, Ap1m2m3p4, &
+			Ap1p2m3p4, Ap1m2p3p4, Am1p2p3p4
 
-		a12=y1+y2-y3-y4
-		a13=y1-y2+y3-y4
-		a14=y1-y2-y3+y4
-		a123=y1+y2+y3-y4
-		a124=y1+y2-y3+y4
-		a134=y1-y2+y3+y4
-		a234=-y1+y2+y3+y4
-		a1234=y1+y2+y3+y4
-		s12=a12**2*dsign(1.0d0,a12)
-		s13=a13**2*dsign(1.0d0,a13)
-		s14=a14**2*dsign(1.0d0,a14)
-		P1234=-120.d0*y1*y2*y3*y4
+		p1p2m3m4 =  y1 +y2 -y3 -y4
+		p1m2m3p4 =  y1 -y2 -y3 +y4
+		p1m2p3m4 =  y1 -y2 +y3 -y4
 
-		absa12=dabs(a12)
-		absa13=dabs(a13)
-		absa14=dabs(a14)
-		absa12e3=absa12**3
-		absa13e3=absa13**3
-		absa14e3=absa14**3
-		ampp=-absa12e3 + absa13e3 + absa14e3
-		appm=absa12e3 + absa13e3 - absa14e3
-		apmp=absa12e3 - absa13e3 + absa14e3
-		a123e2=a123*a123
-		a124e2=a124*a124
-		a134e2=a134*a134
-		a234e2=a234*a234
-		a1234e2=a1234*a1234
-		a123e3=a123e2*a123
-		a124e3=a124e2*a124
-		a134e3=a134e2*a134
-		a234e3=a234e2*a234
-		a1234e3=a1234e2*a1234
+		m1p2p3p4 = -y1 +y2 +y3 +y4
+		p1m2p3p4 =  y1 -y2 +y3 +y4
+		p1p2m3p4 =  y1 +y2 -y3 +y4
+		p1p2p3m4 =  y1 +y2 +y3 -y4
 
-		a123e5=a123e3*a123e2
-		a124e5=a124e3*a124e2
-		a134e5=a134e3*a134e2
-		a234e5=a234e3*a234e2
-		a1234e5=a1234e3*a1234e2
-          
+		p123 = y1+y2+y3
+		p234 = y2+y3+y4
+		p12 = y1+y2
+		p23 = y2+y3
+		p34 = y3+y4
+		m34 = y3-y4
+
+		y1234 = y1*y2*y3*y4
+		y12 = y1*y2
+		y13 = y1*y3
+		y23 = y2*y3
+		y24 = y2*y4
+		y34 = y3*y4
+
+		Ap1p2m3m4 = Abs(p1p2m3m4)
+		Ap1m2p3m4 = Abs(p1m2p3m4)
+		Ap1p2p3m4 = Abs(p1p2p3m4)
+		Ap1m2m3p4 = Abs(p1m2m3p4)
+		Ap1p2m3p4 = Abs(p1p2m3p4)
+		Ap1m2p3p4 = Abs(p1m2p3p4)
+		Am1p2p3p4 = Abs(m1p2p3p4)
+
 		D3_f = &
-			(4.d0*(a1234e5 - a123e5 - a124e5 - a134e5 - a234e5) - &
-			absa12**5 - absa13**5 - absa14**5 + &
-			(a123 + a1234 + a124 + a134 + a234 + absa12 + absa13 + absa14)*P1234 + &
-			5.d0*(a12**3*s12+a13**3*s13 +a14**3*s14) + &
-			20.d0*(&
-				(-a1234e3 + a123e3 + a124e3 - a134e3 - a234e3 + ampp)*y1*y2 + &
-				(-a1234e3 + a123e3 - a124e3 + a134e3 - a234e3 + apmp)*y1*y3 + &
-				(-a1234e3 + a123e3 - a124e3 - a134e3 + a234e3 + appm)*y2*y3 + &
-				(-a1234e3 - a123e3 + a124e3 + a134e3 - a234e3 + appm)*y1*y4 + &
-				(-a1234e3 - a123e3 + a124e3 - a134e3 + a234e3 + apmp)*y2*y4 + &
-				(-a1234e3 - a123e3 - a124e3 + a134e3 + a234e3 + ampp)*y3*y4) + &
-			60.d0*(&
-				(a1234e2 + a123e2 - a124e2 + a134e2 + a234e2 - s12 + s13 - s14)*y1*y2*y4 + &
-				(a1234e2 - a123e2 + a124e2 + a134e2 + a234e2 - s12 - s13 + s14)*y1*y2*y3 + &
-				(a1234e2 + a123e2 + a124e2 - a134e2 + a234e2 + s12 - s13 - s14)*y1*y3*y4 + &
-				(a1234e2 + a123e2 + a124e2 + a134e2 - a234e2 + s12 + s13 + s14)*y2*y3*y4)&
-			)/120.d0
+			(     y1**5 + y2**5 &
+				- 5*( &
+					y1**2 * ( &
+						(y2**2 + y3**2 + y4**2) * y1 + &
+						(y2**3 + y3**3 + y4**3) ) + &
+					y2**2 * ( &
+						(y3**2 + y4**2) * y2 + &
+						(y3**3 + y4**3) ) )&
+				+  p34**3 * (y3**2 - 3*y34 + y4**2)&
+			)/120.d0 + &
+			( 	  am1p2p3p4**5 - ap1p2m3m4**5 - ap1m2p3m4**5 + ap1p2p3m4**5 &
+				- ap1m2m3p4**5 + ap1p2m3p4**5 + ap1m2p3p4**5 &
+			)/480.d0 + &
+			(	- 6 * y1234 * ( &
+					am1p2p3p4 + ap1m2m3p4 + ap1p2p3m4 + ap1m2p3m4 + &
+					ap1p2m3p4 + ap1m2p3p4 + ap1p2m3m4 &
+				) + &
+				am1p2p3p4**3 * (y34 + y2*p34 - y1*p234) + &
+				ap1m2m3p4**3 * (y1 + (p23-y4) - y23 + y4*p23) + &
+				ap1p2p3m4**3 * (y12 + y23 + y13 - y4*p123) + &
+				ap1m2p3m4**3 * (y2*(m34) + y34 + y1*(y24-y3)) + &
+				ap1p2m3p4**3 * (-y2*(m34) - y34 + y1*(y24-y3)) + &
+				ap1m2p3p4**3 * (y34 - y2*p34 + y1*(p34-y2)) + &
+				ap1p2m3m4**3 * (y2*p34 - y34 + y1*(p34-y2)) &
+			)/24.d0 + &
+			(	sign(p1p2m3m4,p1p2m3m4**2) * ( &
+					y1**3+y2**3+3*y1*(y2**2+y3**2+y4**2+6*(y34-p34*y2)) + &
+					p34**3 + 3*(y2*(y3**2+y4**2+6*y34)-y2**2*p34+y1**2*(y2-p34))&
+				) + &
+				sign(p1p2m3p4,p1p2m3p4**2) * ( &
+					- p1p2m3p4**3 + 12*(y12*m34+p12*y34) &
+				) + &
+				sign(p1m2p3p4,p1m2p3p4**2) * ( &
+					- p1m2p3p4**3 + 12*(y12*p34+(y2-y1)*y34) &
+				) + &
+				sign(p1p2p3m4,p1p2p3m4**2) * ( &
+					3*((y2**2+6*y23+y3**2)*y4 - (p23-y4)*y1**2 - p23*y4**2 - &
+						(y2**2+6*y23+y3**2+y4**2-6*p23*y4)*y1) +&
+					y4**3-y1**3-p23**3 &
+				) + &
+				sign(p1m2m3p4,p1m2m3p4**2) * ( &
+					3*((y2**2+6*y23+y3**2)*y4 - (p23-y4)*y1**2 - p23*y4**2 + &
+						(y2**2+6*y23+y3**2+y4**2-6*p23*y4)*y1) +&
+					y1**3+y4**3-p23**3 &
+				) + &
+				sign(p1m2p3m4,p1m2p3m4**2) * ( &
+					3*(-(y3**2-6*y34+y4**2)*y4 - (p23-y3)*y1**2 + m34*y2**2 + &
+						(y2**2-6*(m34)*y2+y3**2+y4**2-6*y23)*y1) +&
+					y1**3-y2**3-(m34)**3 &
+				) + &
+				sign(-m1p2p3p4,m1p2p3p4**2) * ( &
+					3*((y3**2+6*y34+y4**2)*y2 + (p234)*y1**2 + p34*y2**2 - &
+						(y2**2+6*p34*y2+y3**2+y4**2+6*y34)*y1) +&
+					y2**3-y1**3+p34**3 &
+				) &
+			)/96.d0
 
 	end function D3_f
 	
