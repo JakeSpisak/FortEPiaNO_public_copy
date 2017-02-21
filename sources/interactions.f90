@@ -491,6 +491,41 @@ module ndInteractions
 		end if
 	end function interp_nuDens
 	
+	function interp_nuDensIJ(y, i, j)
+		type(cmplxMatNN) :: interp_nuDensIJ
+		real(dl), intent(in) :: y
+		integer :: ix,i,j,k
+		logical :: exact
+		
+		if (y .eq. nuDensMatVec(Ny)%y) then
+			interp_nuDensIJ = nuDensMatVec(Ny)
+		else
+			ix=0
+			do k=1, Ny-1
+				if (y .lt. nuDensMatVec(k+1)%y .and. y .ge. nuDensMatVec(k)%y) then
+					ix=k
+				end if
+				if (y .eq. nuDensMatVec(k)%y) &
+					exact = .true.
+			end do
+			if (ix .gt. 0 .and. ix .lt. Ny) then
+				if (exact) then
+					interp_nuDensIJ = nuDensMatVec(ix)
+				else
+					interp_nuDensIJ%y = y
+					interp_nuDensIJ%re(i,j) = nuDensMatVec(ix)%re(i,j) + (y-nuDensMatVec(ix)%y) / &
+						(nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)* &
+						(nuDensMatVec(ix+1)%re(i,j) - nuDensMatVec(ix)%re(i,j))
+					interp_nuDensIJ%im(i,j) =  nuDensMatVec(ix)%im(i,j) + (y-nuDensMatVec(ix)%y) / &
+						(nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)* &
+						(nuDensMatVec(ix+1)%im(i,j) - nuDensMatVec(ix)%im(i,j))
+				end if
+			else
+				call Error("k out of range or errors occurred in interpolation")
+			end if
+		end if
+	end function interp_nuDensIJ
+	
 	function coll_nue_sc_int(n, ve, obj)
 		real(dl), dimension(2) :: coll_nue_sc_int
 		real(dl), dimension(2) :: pi1_vec
@@ -503,7 +538,7 @@ module ndInteractions
 		
 		y2=ve(1)
 		y4=ve(2)
-		y3 = obj%y1 + y2 - y4
+		y3 = obj%y1 + E_k_m(y2,obj%x) - E_k_m(y4,obj%x)
 		n3 = interp_nuDens(y3)
 		
 		pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
@@ -533,7 +568,7 @@ module ndInteractions
 		
 		y3=ve(1)
 		y4=ve(2)
-		y2 = obj%y1 - y3 - y4
+		y2 = obj%y1 - E_k_m(y3,obj%x) - E_k_m(y4,obj%x)
 		n2 = interp_nuDens(y2)
 		
 		pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)

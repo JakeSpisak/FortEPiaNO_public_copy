@@ -5,12 +5,19 @@ module ndCosmology
 	use ndInteractions
 	implicit none
 	
+	type nuDensArgs
+		real(dl) :: x,z
+		integer iFl
+	end type nuDensArgs
+	
 	contains
 	
 	function radDensity(x,y,z)
 		real(dl) :: radDensity,x,y,z
 		
-		radDensity = photonDensity(z) + electronDensity(x,z) 
+		radDensity = photonDensity(z) + &
+			electronDensity(x,z) + &
+			allNuDensity(x,z)
 	end function
 	
 	function photonDensity(z)
@@ -36,5 +43,38 @@ module ndCosmology
 		electronDensity = rombint_obj(vec, integr_rho_e, 0., 60., 1d-3)
 		electronDensity = electronDensity / PISQD2
 	end function electronDensity
+
+	function integr_rho_nu(vec,y)
+		real(dl) :: integr_rho_nu, y,a
+		type(nuDensArgs) :: vec
+		type(cmplxMatNN) :: mat
+		
+		mat = interp_nuDensIJ(y, vec%iFl, vec%iFl)
+		
+		integr_rho_nu = y*y*y*mat%re(vec%iFl, vec%iFl)
+	end function integr_rho_nu
+	
+	function nuDensity(x,z, iFl)
+		real(dl) :: nuDensity, x,z, rombint_obj
+		type(nuDensArgs) :: vec
+		integer :: iFl
+		external rombint_obj
+		
+		vec%x=x
+		vec%z=z
+		vec%iFl=iFl
+		nuDensity = rombint_obj(vec, integr_rho_nu, y_min, y_max, 1d-3) / PISQD2
+	end function nuDensity
+	
+	function allNuDensity(x,z)
+		real(dl) :: allNuDensity, x,z
+		integer :: ix
+		
+		allNuDensity = 0.d0
+		do ix=1, flavorNumber
+			allNuDensity = allNuDensity + nuDensity(x,z,ix)
+		end do
+		allNuDensity = allNuDensity / PISQD2
+	end function allNuDensity
 
 end module
