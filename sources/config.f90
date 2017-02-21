@@ -181,7 +181,6 @@ module ndConfig
 		
 		!lepton densities
 		leptonDensities = 0.d0
-!		leptonDensities(1,1) = ...
 
 		!identity (Matrix complex)
 		allocate(idMat(flavorNumber,flavorNumber))

@@ -36,6 +36,9 @@ module constants
 	real(dl), parameter :: c = 299792458!m/s
 	real(dl), parameter :: hbar = 1.054571800d-34 !Js
 	real(dl), parameter :: m_e = 0.5109989461*Mev2eV!eV
+	real(dl), parameter :: m_e_sq = m_e**2
+	real(dl), parameter :: m_e_cub = m_e**3
+	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
 	real(dl), parameter :: G_F = 1.1663787d-5/(Gev2eV*Gev2eV)
 	real(dl), parameter :: G_Fsq = G_F * G_F
 	real(dl), parameter :: sin2thW =  0.23129
@@ -53,6 +56,8 @@ module constants
 	
 	real(dl), parameter :: i_photonTempToday = 2.7255
 	real(dl), parameter :: i_HubbleParam = 70.
+	
+	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
 end module constants
 
 module variables

@@ -152,25 +152,42 @@ module ndEquations
 	function drhoy_dx_ij_rI (x,y,z, i, j, rI)
 		type(cmplxMatNN) :: matrix
 		real(dl) :: drhoy_dx_ij_rI
-		real(dl) :: x,y,z
+		real(dl) :: x,y,z, overallNorm
 		integer :: i,j,k, rI
-		type(cmplxMatNN) :: n1
+		type(cmplxMatNN) :: n1, term1, comm
 		
 		drhoy_dx_ij_rI = 0.d0
+		overallNorm = planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
+		
+		n1 = interp_nuDens(y)
+		leptonDensities(1,1) = leptDensFactor * y / x**6 * 2 * electronDensity(x,z)
+		term1%im = 0
+		term1%re(:,:) = nuMassesMat/(2*y) + leptonDensities
+		!switch imaginary and real parts because of the "-i" factor
+		call Commutator(term1%re, n1%re, comm%im)
+		call Commutator(term1%re, n1%im, comm%re)
+		
+		comm%im = - comm%im * x**2/m_e_cub
+		comm%re = comm%re * x**2/m_e_cub
+		
+		matrix%re = overallNorm * comm%re
+		matrix%im = overallNorm * comm%im 
 		
 		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
 			lastColl%mat = collision_terms(x, z, y)
 			lastColl%x = x
 			lastColl%y = y
 			lastColl%z = z
-			matrix%re = matrix%re + lastColl%mat%re * planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
-			matrix%im = matrix%im + lastColl%mat%im * planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
 		end if
+		matrix%re = matrix%re + lastColl%mat%re * overallNorm
+		matrix%im = matrix%im + lastColl%mat%im * overallNorm
+
 		if (rI.eq.1) then
 			drhoy_dx_ij_rI = matrix%re(i,j)
 		else if (rI.eq.2) then
 			drhoy_dx_ij_rI = matrix%im(i,j)
 		end if
+
 	end function drhoy_dx_ij_rI
 
 end module ndEquations
