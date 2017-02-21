@@ -20,10 +20,10 @@ module ndCosmology
 	end function photonDensity
 	
 	function integr_rho_e(vec,y)
-		real(dl) :: integr_rho_e, x,y,z,a
+		real(dl) :: integr_rho_e, y,a
 		real(dl), dimension(2) :: vec
-		a = E_k_m(y,x)
-		integr_rho_e = y*y*a*fermiDirac_massless(a,z)
+		a = E_k_m(y,vec(1))
+		integr_rho_e = y*y*a*fermiDirac_massless(a,vec(2))
 	end function integr_rho_e
 	
 	function electronDensity(x,z)
@@ -34,7 +34,7 @@ module ndCosmology
 		vec(1)=x
 		vec(2)=z
 		electronDensity = rombint_obj(vec, integr_rho_e, 0., 60., 1d-3)
-		electronDensity = electronDensity * PISQD2
+		electronDensity = electronDensity / PISQD2
 	end function electronDensity
 
 end module

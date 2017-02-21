@@ -244,6 +244,7 @@ module ndConfig
 			verbose = read_ini_int('verbose',verbose)
 			maxiter = read_ini_int('maxiter',100)
 			toler   = read_ini_real('tolerance', 1.d-3)
+			printEveryNIter = read_ini_int('printEveryNIter',1000)
 			
 			Nx = read_ini_int('Nx',100000)
 			Ny = read_ini_int('Ny',100)

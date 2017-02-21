@@ -287,7 +287,7 @@ module ndInteractions
 		b = - Sign(m1p2p3p4, (m1p2p3p4)**2) + Sign(p1m2p3m4, (p1m2p3m4)**2) &
 			+ Sign(p1m2m3p4, (p1m2m3p4)**2) - Sign(p1m2p3p4, (p1m2p3p4)**2)
 
-		D2_f = ( &
+		D2_f = - ( &
 			Ap1p2m3m4**3 + Ap1m2p3m4**3 - &
 			Ap1p2p3m4**3 + Ap1m2m3p4**3 - &
 			Ap1p2m3p4**3 - Ap1m2p3p4**3 - &
@@ -356,10 +356,10 @@ module ndInteractions
 						(y3**2 + y4**2) * y2 + &
 						(y3**3 + y4**3) ) )&
 				+  p34**3 * (y3**2 - 3*y34 + y4**2)&
-			)/120.d0 + &
+			)/30.d0 + &
 			( 	  am1p2p3p4**5 - ap1p2m3m4**5 - ap1m2p3m4**5 + ap1p2p3m4**5 &
 				- ap1m2m3p4**5 + ap1p2m3p4**5 + ap1m2p3p4**5 &
-			)/480.d0 + &
+			)/120.d0 + &
 			(	- 6 * y1234 * ( &
 					am1p2p3p4 + ap1m2m3p4 + ap1p2p3m4 + ap1m2p3m4 + &
 					ap1p2m3p4 + ap1m2p3p4 + ap1p2m3m4 &
@@ -371,7 +371,7 @@ module ndInteractions
 				ap1p2m3p4**3 * (-y2*(m34) - y34 + y1*(y24-y3)) + &
 				ap1m2p3p4**3 * (y34 - y2*p34 + y1*(p34-y2)) + &
 				ap1p2m3m4**3 * (y2*p34 - y34 + y1*(p34-y2)) &
-			)/24.d0 + &
+			)/6.d0 + &
 			(	sign(p1p2m3m4,p1p2m3m4**2) * ( &
 					y1**3+y2**3+3*y1*(y2**2+y3**2+y4**2+6*(y34-p34*y2)) + &
 					p34**3 + 3*(y2*(y3**2+y4**2+6*y34)-y2**2*p34+y1**2*(y2-p34))&
@@ -402,7 +402,7 @@ module ndInteractions
 						(y2**2+6*p34*y2+y3**2+y4**2+6*y34)*y1) +&
 					y2**3-y1**3+p34**3 &
 				) &
-			)/96.d0
+			)/24.d0
 
 	end function D3_f
 	
