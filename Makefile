@@ -1,10 +1,17 @@
 # FLAGS
-F90=gfortran
-F90FLAGS=-O3 -L/usr/lib -Jbuild/ -Ibuild/
+#ifort
+F90=ifort
+F90FLAGS=-O3 -L/usr/lib -Ibuild/ -g -traceback
+stdFlag=
+
+#gnuplot
+#F90=gnuplot
+#F90FLAGS=-O3 -L/usr/lib -Jbuild/ -Ibuild/ -g -traceback
+#stdFlat= --std=legacy
 
 OBJ_FILES=build/const.o build/errors.o build/config.o build/IniFile.o \
 	build/utilities.o build/matrix_utils.o \
-	build/interactions.o build/cosmology.o build/equations.o \
+	build/interactions.o build/cosmology.o build/equations.o build/functions.o \
 	build/opkdmain.o build/opkda1.o build/opkda2.o
 
 default: all
@@ -13,7 +20,7 @@ build/%.o: sources/%.f90 Makefile
 	$(F90) $(F90FLAGS) -c sources/$*.f90 -o build/$*.o
 
 build/%.o: sources/%.f Makefile
-	$(F90) $(F90FLAGS) --std=legacy -c sources/$*.f -o build/$*.o
+	$(F90) $(F90FLAGS) $(stdFlag) -c sources/$*.f -o build/$*.o
 
 #build/opkda1.o: build/const.o
 #build/opkda2.o: build/const.o
@@ -24,7 +31,7 @@ build/config.o: build/const.o build/interactions.o build/IniFile.o build/matrix_
 build/interactions.o: build/const.o build/errors.o build/matrix_utils.o build/utilities.o
 build/cosmology.o: build/const.o build/errors.o build/interactions.o build/utilities.o
 build/equations.o: build/const.o build/errors.o build/cosmology.o build/interactions.o build/utilities.o
-#build/likelihood.o: build/const.o build/config.o
+build/functions.o: build/const.o build/errors.o build/cosmology.o build/interactions.o build/utilities.o build/equations.o
 #build/mc.o: build/const.o build/config.o
 #build/minimize.o: build/const.o build/config.o
 build/nuDens.o: $(OBJ_FILES)

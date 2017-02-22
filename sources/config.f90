@@ -11,28 +11,7 @@ module ndConfig
 	integer :: num_args, ixa
 	character(len=300), dimension(:), allocatable :: args
 	
-!	real(dl) :: minim_prec = 1d-4
-!	integer :: itmax_root=5000
-	
 	character(LEN=*), parameter :: mainPath="/home/gariazzo/software/nuDensity/"	
-	
-!	integer, parameter :: numNuisance = 6
-!	type nuisanceParam
-!		character(LEN=15) :: paramName
-!		real(dl) :: defaultVal
-!		logical :: fixed, setPrior
-!		real(dl) :: mean, devst
-!	end type nuisanceParam
-!	type (nuisanceParam), dimension(numNuisance) :: nuisanceParams
-!	integer :: varyingNuisance
-!	integer :: atmFluxNormIX, pi2kaRatioIX, nu2anuRatioIX, CRSpectralIndexIX, deltaIX, medianEnergyIX
-	
-!	integer, parameter :: EMuRecoBins=10 !10 for the 2D analysis, 28 for the 1D (not used)
-!	integer, parameter :: cosThetaBins=21
-!	real(dl), dimension(2) :: EMuRecoInterval  = [400.,20000.]
-!	real(dl), dimension(2) :: cosThetaInterval = [-1., 0.2]
-!	real(dl), dimension(EMuRecoBins) :: EMuRecoEdges
-!	real(dl), dimension(cosThetaBins) :: cosThetaEdges
 	
 	contains
 	
@@ -44,21 +23,6 @@ module ndConfig
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 	end subroutine allocateStuff
-	
-!	subroutine setParam(param, pname, defaultval, fixed, prior, mean, devst)
-!		integer, intent(in) :: param
-!		character(LEN=*), intent(in) :: pname
-!		logical, intent(in) :: fixed, prior
-!		real(dl), intent(in) :: mean, devst, defaultval
-		
-!		nuisanceParams(param)%paramName = pname
-!		nuisanceParams(param)%fixed = fixed
-!		if (.not. fixed) varyingNuisance = varyingNuisance + 1
-!		nuisanceParams(param)%setPrior = prior
-!		nuisanceParams(param)%defaultVal = defaultval
-!		nuisanceParams(param)%mean = mean
-!		nuisanceParams(param)%devst = devst
-!	end subroutine setParam
 	
 	function linspace(minv, maxv, numb)
 		real(dl), intent(in) :: minv, maxv
@@ -188,6 +152,8 @@ module ndConfig
 		
 		!nu density matrix
 		allocate(nuDensMatVec(Ny))
+		ntot = Ny*(flavorNumber**2) + 1 !independent elements in nuDensity(y) + z
+		allocate(nuDensVec(ntot))
 		open(unit=3154, file='test_fd.dat') !save the initial Fermi-Dirac distribution for nu
 		do ix=1, Ny
 			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
@@ -195,7 +161,7 @@ module ndConfig
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdm = fermiDirac_massless(y_arr(ix),z_in)
-			write(3154,"(2F14.7)") y_arr(ix), y_arr(ix)*y_arr(ix)*fdm
+			write(3154,"(2F14.7)") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
 			nuDensMatVec(ix)%re(1,1) = fdm
 			if (flavorNumber.ne.2 .or. (.not. only_1a_1s)) then
 				nuDensMatVec(ix)%re(2,2) = fdm
@@ -216,22 +182,6 @@ module ndConfig
 		if (verbose>0) write(*,*) '[config] init configuration'
 		num_args = command_argument_count()
 		
-!		atmFluxNormIX    = 1
-!		pi2kaRatioIX     = 2
-!		nu2anuRatioIX    = 3
-!		CRSpectralIndexIX= 4
-!		deltaIX          = 5
-!		medianEnergyIX   = 6
-!		call setParam(atmFluxNormIX,     "atmFluxNorm",     1.0d0, .false., .true., 1.d0, 0.4d0)
-!		call setParam(pi2kaRatioIX,      "pi2kaRatio",      1.0d0, .false., .true., 1.d0, 0.1d0)
-!		call setParam(nu2anuRatioIX,     "nu2anuRatio",     1.0d0, .false., .true., 1.d0, 2.5d-2)
-!		call setParam(CRSpectralIndexIX, "CRSpectralIndex", 0.0d0, .false., .true., 0.d0, 5.d-2)
-!		call setParam(deltaIX,           "delta",           0.0d0, .false., .true., 0.d0, 5.d-2)
-!		call setParam(medianEnergyIX,    "medianEnergy",    2.0d3, .true., .false., 0.d0, 0.d0) !in GeV
-		
-!		EMuRecoEdges = logspace(log10(EMuRecoInterval(1)), log10(EMuRecoInterval(2)), EMuRecoBins)
-!		cosThetaEdges= linspace(cosThetaInterval(1),       cosThetaInterval(2),       cosThetaBins)
-		
 		allocate(args(num_args))
 		do ixa = 1, num_args
 			call get_command_argument(ixa,args(ixa))
@@ -248,6 +198,9 @@ module ndConfig
 			Nx = read_ini_int('Nx',100000)
 			Ny = read_ini_int('Ny',100)
 			allocate(x_arr(Nx), y_arr(Ny))
+			
+			if(mod(Nx, printEveryNIter).ne.0) &
+				call criticalError("Nx must be a multiple of printEveryNIter!")
 			
 			x_in    = read_ini_real('x_in', 0.01d0)
 			x_fin   = read_ini_real('x_fin', 40.d0)

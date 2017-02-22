@@ -87,6 +87,8 @@ module variables
 	real(dl), dimension(:,:), allocatable :: idMat
 	
 	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec
+	real(dl), dimension(:), allocatable :: nuDensVec
+	integer :: ntot
 	
 	!technical settings
 	integer :: verbose = 1
