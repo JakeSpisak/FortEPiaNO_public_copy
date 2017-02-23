@@ -12,7 +12,8 @@ stdFlag=
 OBJ_FILES=build/const.o build/errors.o build/config.o build/IniFile.o \
 	build/utilities.o build/matrix_utils.o \
 	build/interactions.o build/cosmology.o build/equations.o build/functions.o \
-	build/opkdmain.o build/opkda1.o build/opkda2.o
+	build/odepack.o build/odepack-sub1.o build/odepack-sub2.o
+#build/opkdmain.o build/opkda1.o build/opkda2.o
 
 default: all
 
@@ -22,9 +23,8 @@ build/%.o: sources/%.f90 Makefile
 build/%.o: sources/%.f Makefile
 	$(F90) $(F90FLAGS) $(stdFlag) -c sources/$*.f -o build/$*.o
 
-#build/opkda1.o: build/const.o
-#build/opkda2.o: build/const.o
-build/opkdmain.o: build/opkda1.o build/opkda2.o
+#build/opkdmain.o: build/opkda1.o build/opkda2.o
+build/odepack.o: build/odepack-sub1.o build/odepack-sub2.o
 build/IniFile.o: build/const.o
 build/matrix_utils.o: build/const.o build/errors.o
 build/config.o: build/const.o build/interactions.o build/IniFile.o build/matrix_utils.o build/errors.o

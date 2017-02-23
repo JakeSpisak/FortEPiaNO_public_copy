@@ -1,6 +1,7 @@
 module ndCosmology
 	use precision
 	use constants
+	use utilities
 	use ndErrors
 	use ndInteractions
 	implicit none
@@ -40,7 +41,7 @@ module ndCosmology
 		
 		vec(1)=x
 		vec(2)=z
-		electronDensity = rombint_obj(vec, integr_rho_e, 0., 60., 1d-3)
+		electronDensity = rombint_obj(vec, integr_rho_e, 0., 60., 1d-3, maxiter)
 		electronDensity = electronDensity / PISQD2
 	end function electronDensity
 
@@ -48,6 +49,8 @@ module ndCosmology
 		real(dl) :: integr_rho_nu, y,a
 		type(nuDensArgs) :: vec
 		type(cmplxMatNN) :: mat
+		
+		call allocateCmplxMat(mat)
 		
 		mat = interp_nuDensIJ(y, vec%iFl, vec%iFl)
 		
@@ -63,7 +66,7 @@ module ndCosmology
 		vec%x=x
 		vec%z=z
 		vec%iFl=iFl
-		nuDensity = rombint_obj(vec, integr_rho_nu, y_min, y_max, 1d-3) / PISQD2
+		nuDensity = rombint_obj(vec, integr_rho_nu, y_min, y_max, 1d-3, maxiter) / PISQD2
 	end function nuDensity
 	
 	function allNuDensity(x,z)

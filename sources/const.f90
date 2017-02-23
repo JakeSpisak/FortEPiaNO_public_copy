@@ -78,7 +78,16 @@ module variables
 	type cmplxMatNN
 		real(dl), dimension(:,:), allocatable :: re, im
 		real(dl) :: x, y, z
+		logical :: a=.false. !allocated?
 	end type cmplxMatNN
+	
+	type coll_args
+		type(cmplxMatNN) :: na, nb
+		real(dl) :: y1, y2, y3, y4, x, z
+		logical :: s1, s2, s3, s4
+		integer :: ix1, ix2, a, b
+		integer :: rI !return real or imaginary part
+	end type coll_args
 	
 	real(dl), dimension(:), allocatable :: nuMasses
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
@@ -98,4 +107,14 @@ module variables
 	integer :: maxiter
 	real(dl) :: toler
 	
+	contains
+	
+	subroutine allocateCmplxMat(m)
+		type(cmplxMatNN) :: m
+		
+		if (.not. m%a) then
+			m%a=.true.
+			allocate(m%re(flavorNumber,flavorNumber), m%im(flavorNumber,flavorNumber))
+		end if
+	end subroutine allocateCmplxMat
 end module variables

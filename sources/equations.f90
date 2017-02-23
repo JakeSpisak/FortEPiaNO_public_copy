@@ -137,7 +137,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
-		Kprime = rombint_obj(o, Kprime_int,0,upper,toler) * o / PISQ
+		Kprime = rombint_obj(o, Kprime_int,0,upper,toler, maxiter) * o / PISQ
 	end function Kprime
 	
 	function Y_int(o, u)
@@ -154,7 +154,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		Y_func = rombint_obj(o, Y_int,0,upper,toler)/PISQ
+		Y_func = rombint_obj(o, Y_int,0,upper,toler, maxiter)/PISQ
 	end function Y_func
 	
 	function G12_func(o)
@@ -205,7 +205,7 @@ module ndEquations
 
 		do ix=1, flavorNumber
 			params%flavor = ix
-			tmp = tmp + rombint_obj(params, integrate_dRhoNu, y_min, y_max, toler)
+			tmp = tmp + rombint_obj(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)
 		end do
 		
 		dz_o_dx = (x_o_z * jxoz + g12(1) &
@@ -220,6 +220,11 @@ module ndEquations
 		real(dl) :: x,y,z, overallNorm
 		integer :: i,j,k, rI
 		type(cmplxMatNN) :: n1, term1, comm
+		
+		call allocateCmplxMat(n1)
+		call allocateCmplxMat(term1)
+		call allocateCmplxMat(comm)
+		call allocateCmplxMat(matrix)
 		
 		drhoy_dx_ij_rI = 0.d0
 		overallNorm = planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
@@ -262,6 +267,11 @@ module ndEquations
 		integer :: iy,k
 		type(cmplxMatNN) :: n1, term1, comm
 		
+		call allocateCmplxMat(n1)
+		call allocateCmplxMat(term1)
+		call allocateCmplxMat(comm)
+		call allocateCmplxMat(drhoy_dx_fullMat)
+		
 		n1 = nuDensMatVec(iy)
 		y = nuDensMatVec(iy)%y
 		
@@ -299,19 +309,21 @@ module ndEquations
 	
 	subroutine solver
 		real(dl) :: xstart, xend
+		real(dl), dimension(:), allocatable :: y, ydot
 		integer :: ix
+		character(len=3) :: istchar
 		!for dlsoda:
 		real(dl) :: rtol
 		integer :: itol, itask, istate, iopt, lrw, liw, jt
 		real(dl), dimension(:), allocatable :: rwork, atol
 		integer, dimension(:), allocatable :: iwork
-		external derivatives, jdum
+!		external jdum!derivatives, 
 		
 		itol=2
 		rtol=1.d-3
 		itask=1
 		istate=1
-		iopt=0
+		iopt=1
 		
 		lrw=22+ntot*(ntot+9)
 		liw=20+ntot
@@ -323,7 +335,6 @@ module ndEquations
 		
 		call densMat_2_vec(nuDensVec)
 		nuDensVec(ntot)=z_in
-		print *,nuDensVec
 		
 		xstart=x_arr(1)
 		do ix=1, Nx/printEveryNIter
@@ -332,10 +343,44 @@ module ndEquations
 						itol,rtol,atol,itask,istate, &
 						iopt,rwork,lrw,iwork,liw,jdum,jt)
 			if (istate.lt.0) &
-				call criticalError('istate=')!,istate
+				write(istchar, "(I)") istate
+				call criticalError('istate='//istchar)
 				
-			call saveRelevantInfo(xend, nuDensVec)
+			call saveRelevantInfo(xend, y)
 			xstart=xend
 		end do
 	end subroutine solver
+	
+	subroutine derivatives(n, x, vars, ydot)
+		type(cmplxMatNN) :: mat
+		integer :: n, i, j, k, m
+		real(dl) :: x, z
+		real(dl), dimension(n), intent(in) :: vars
+		real(dl), dimension(n), intent(out) :: ydot
+		
+		call allocateCmplxMat(mat)
+		z = vars(n)
+		call vec_2_densMat(vars(1:n-1))
+		k=1
+		do m=1, Ny
+			mat = drhoy_dx_fullMat(x,z,m)
+			do i=1, flavorNumber
+				do j=i, flavorNumber
+					ydot(k) = mat%re(i,j)
+					k=k+1
+				end do
+				if (i.lt.flavorNumber) then
+					do j=i+1, flavorNumber
+						ydot(k) = mat%im(i,j)
+						k=k+1
+					end do
+				end if
+			end do
+		end do
+		ydot(ntot) = dz_o_dx(x,z)
+	end subroutine derivatives
+	
+	subroutine jdum
+
+	end subroutine jdum
 end module ndEquations

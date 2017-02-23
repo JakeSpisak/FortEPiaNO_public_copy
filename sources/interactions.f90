@@ -2,18 +2,11 @@ module ndInteractions
 	use precision
 	use constants
 	use variables
+	use utilities
 	use ndErrors
 	use ndMatrices
 !	use ndconfig
 	implicit none
-	
-	type coll_args
-		type(cmplxMatNN) :: na, nb
-		real(dl) :: y1, y2, y3, y4, x, z
-		logical :: s1, s2, s3, s4
-		integer :: ix1, ix2, a, b
-		integer :: rI !return real or imaginary part
-	end type coll_args
 	
 	contains
 	
@@ -458,6 +451,7 @@ module ndInteractions
 		integer :: ix,i,j,k
 		logical :: exact
 		
+		call allocateCmplxMat(interp_nuDens)
 		if (y .eq. nuDensMatVec(Ny)%y) then
 			interp_nuDens = nuDensMatVec(Ny)
 		else
@@ -497,7 +491,8 @@ module ndInteractions
 		integer :: ix,i,j,k
 		logical :: exact
 		
-		if (y .eq. nuDensMatVec(Ny)%y) then
+		call allocateCmplxMat(interp_nuDensIJ)
+		if (abs(y - nuDensMatVec(Ny)%y).lt.1d-6) then
 			interp_nuDensIJ = nuDensMatVec(Ny)
 		else
 			ix=0
@@ -526,15 +521,17 @@ module ndInteractions
 		end if
 	end function interp_nuDensIJ
 	
-	function coll_nue_sc_int(n, ve, obj)
-		real(dl), dimension(2) :: coll_nue_sc_int
+	function coll_nue_sc_int(ndim, ve, obj)
+		integer :: ndim
+		type(coll_args) :: obj
+		real(dl), dimension(20) :: ve
+		real(dl) :: coll_nue_sc_int
 		real(dl), dimension(2) :: pi1_vec
 		real(dl), dimension(3) :: pi2_vec
-		real(dl), intent(in), dimension(2) :: ve
 		type(cmplxMatNN) :: n3
 		real(dl) :: y2,y3,y4
-		integer :: n
-		type(coll_args) :: obj
+		
+		call allocateCmplxMat(n3)
 		
 		y2=ve(1)
 		y4=ve(2)
@@ -557,7 +554,7 @@ module ndInteractions
 	end function coll_nue_sc_int
 	
 	function coll_nue_ann_int(n, ve, obj)
-		real(dl), dimension(2) :: coll_nue_ann_int
+		real(dl) :: coll_nue_ann_int
 		real(dl), dimension(2) :: pi1_vec
 		real(dl), dimension(3) :: pi2_vec
 		real(dl), intent(in), dimension(2) :: ve
@@ -565,6 +562,8 @@ module ndInteractions
 		real(dl) :: y2,y3,y4
 		integer :: n
 		type(coll_args) :: obj
+		
+		call allocateCmplxMat(n2)
 		
 		y3=ve(1)
 		y4=ve(2)
@@ -609,6 +608,14 @@ module ndInteractions
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
 		
+		npts=6
+		n=2
+		
+		call allocateCmplxMat(n1)
+		call allocateCmplxMat(collision_terms)
+		call allocateCmplxMat(collArgs%na)
+		call allocateCmplxMat(collArgs%nb)
+		
 		collArgs%s1 = .false.
 		collArgs%s2 = .true.
 		collArgs%s3 = .false.
@@ -635,14 +642,14 @@ module ndInteractions
 				nrand=1
 				ifail=0
 				itrans=0
-				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%re(i,j) = res
 				
 				collArgs%rI = 2
 				nrand=1
 				ifail=0
 				itrans=0
-				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%im(i,j) = res
 			end do
 		end do
@@ -658,14 +665,14 @@ module ndInteractions
 				nrand=1
 				ifail=0
 				itrans=0
-				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%re(i,j) = collision_terms%re(i,j) + res
 				
 				collArgs%rI = 2
 				nrand=1
 				ifail=0
 				itrans=0
-				call D01GCF(2,coll_nue_sc_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%im(i,j) = collision_terms%im(i,j) + res
 			end do
 		end do
@@ -681,14 +688,14 @@ module ndInteractions
 				nrand=1
 				ifail=0
 				itrans=0
-				call D01GCF(2,coll_nue_ann_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%re(i,j) = collision_terms%re(i,j) + res
 				
 				collArgs%rI = 2
 				nrand=1
 				ifail=0
 				itrans=0
-				call D01GCF(2,coll_nue_ann_int, region, 6, vk, nrand,itrans,res,ERRr,ifail)
+				call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%im(i,j) = collision_terms%im(i,j) + res
 			end do
 		end do

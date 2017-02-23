@@ -296,6 +296,7 @@ module ndMatrices
 			call criticalError("wrong sign in CommAntiComm (it must be either -1 or 1): "//sstr)
 		
 		if ((size1(2) .ne. size1(2)) .or. (size1(2) .ne. size2(1)) .or. (size2(1) .ne. size2(2))) then
+			print *, size1, size2
 			call criticalError("cannot compute commutator of non-square matrices!")
 		else
 			d = size1(1)
