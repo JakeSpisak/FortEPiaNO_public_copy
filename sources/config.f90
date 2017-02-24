@@ -255,8 +255,8 @@ module ndConfig
 !			if (trim(tmparg)/="") kaonFluxFile=tmparg
 !			tmparg=trim(read_ini_char('outMinInfo'))
 !			if (trim(tmparg)/="") outMinInfo=tmparg
-!			tmparg=trim(read_ini_char('outPlotNames'))
-!			if (trim(tmparg)/="") outPlotNames=tmparg
+			tmparg=trim(read_ini_char('outputFolder'))
+			if (trim(tmparg)/="") outputFolder=tmparg
 			
 		end if
 		call ini_file_close()

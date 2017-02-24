@@ -1,7 +1,23 @@
 module utilities
-		use precision
-		use variables
+	use precision
+	use ndErrors
+	use variables
 	contains
+	
+	subroutine openFile(u, fname, overwrite)
+		integer :: u
+		character(len=*), intent(in) :: fname
+		logical :: overwrite
+		character(len=5) :: tmpchar
+		
+		if (overwrite) then
+			write(tmpchar,'(I5)') u
+			call addToLog("Opening new file "//fname//" in unit "//tmpchar)
+			open(unit=u, file=fname, status="unknown", action="write")
+		else
+			open(unit=u, file=fname, status="old", position="append", action="write")
+		end if
+	end subroutine openFile
 	
 subroutine spline(x,y,n,yp1,ypn,y2)
 	use precision

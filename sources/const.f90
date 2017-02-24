@@ -64,6 +64,9 @@ module variables
 	use precision
 	implicit none
 	
+	character(len=300) :: outputFolder
+	logical :: firstWrite = .true.
+	
 	!variables that will be read from config file
 	logical :: massOrdering, only_1a_1s
 	integer :: flavorNumber

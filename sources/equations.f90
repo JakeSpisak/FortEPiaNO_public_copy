@@ -1,5 +1,6 @@
 module ndEquations
 	use precision
+	use variables
 	use constants
 	use ndErrors
 	use ndinteractions
@@ -77,7 +78,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		J_func = rombint_obj(o, J_int,0,upper,toler)/PISQ
+		J_func = rombint_obj(o, J_int,0,upper,toler,maxiter)/PISQ
 	end function J_func
 	
 	function Jprime_int(o, u)
@@ -98,7 +99,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
-		Jprime = rombint_obj(o, Jprime_int,0,upper,toler) * o / PISQ
+		Jprime = rombint_obj(o, Jprime_int,0,upper,toler,maxiter) * o / PISQ
 	end function Jprime
 	
 	function K_int(o, u)
@@ -115,7 +116,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		k_func = rombint_obj(o, k_int,0,upper,toler)/PISQ
+		k_func = rombint_obj(o, k_int,0,upper,toler,maxiter)/PISQ
 	end function K_func
 	
 	function Kprime_int(o, u)
@@ -304,7 +305,60 @@ module ndEquations
 	subroutine saveRelevantInfo(x, vec)
 		real(dl) :: x
 		real(dl), dimension(:) :: vec
-	
+		real(dl), dimension(:), allocatable :: tmpvec
+		integer :: k, i, j, iy, totFiles
+		integer, dimension(:), allocatable :: units
+		character(len=200) :: fname
+		
+		print *,'a'
+		print *,flavorNumber
+		totFiles=flavorNumber**2+1
+		allocate(units(totFiles),tmpvec(Ny))
+		do i=1, totFiles
+			units(i) = 8972 + i
+		end do
+		print *,units
+		
+		do k=1, flavorNumber
+			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag',k,'.dat'
+			call openFile(units(k), trim(fname),firstWrite)
+			do iy=1, nY
+				tmpvec(iy)=nuDensMatVec(iy)%re(k,k)
+			end do
+			write(units(k), '(*(E14.7))') x, tmpvec
+		end do
+		do i=1, flavorNumber
+			do j=i,flavorNumber
+				if (j.gt.i) then
+					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_re.dat'
+					call openFile(units(k), trim(fname),firstWrite)
+					tmpvec=0
+					do iy=1, nY
+						tmpvec(iy)=nuDensMatVec(iy)%re(i,j)
+					end do
+					write(units(k), '(*(E14.7))') x, tmpvec
+					
+					k=k+1
+					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_im.dat'
+					call openFile(units(k), trim(fname),firstWrite)
+					tmpvec=0
+					do iy=1, nY
+						tmpvec(iy)=nuDensMatVec(iy)%im(i,j)
+					end do
+					write(units(k), '(*(E14.7))') x, tmpvec
+					k=k+1
+				end if
+			end do
+		end do
+		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
+		write(units(k), '(*(E14.7))') x, vec(ntot)
+		
+		do i=1, totFiles
+			close(units(i))
+		end do
+		deallocate(units,tmpvec)
+		
+		firstWrite=.false.
 	end subroutine saveRelevantInfo
 	
 	subroutine solver
@@ -342,11 +396,14 @@ module ndEquations
 			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
 						itol,rtol,atol,itask,istate, &
 						iopt,rwork,lrw,iwork,liw,jdum,jt)
-			if (istate.lt.0) &
-				write(istchar, "(I)") istate
+			
+			if (istate.lt.0) then
+				write(istchar, "(I3)") istate
 				call criticalError('istate='//istchar)
-				
-			call saveRelevantInfo(xend, y)
+			end if
+			
+			call vec_2_densMat(nuDensVec)
+			call saveRelevantInfo(xend, nuDensVec)
 			xstart=xend
 		end do
 	end subroutine solver

@@ -450,6 +450,7 @@ module ndInteractions
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
 		logical :: exact
+		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDens)
 		if (y .eq. nuDensMatVec(Ny)%y) then
@@ -480,7 +481,8 @@ module ndInteractions
 					end do
 				end if
 			else
-				call Error("k out of range or errors occurred in interpolation")
+				write(vals,"('y=',E14.7,'    ix=',I3)") y, ix
+				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
 			end if
 		end if
 	end function interp_nuDens
@@ -490,6 +492,7 @@ module ndInteractions
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
 		logical :: exact
+		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDensIJ)
 		if (abs(y - nuDensMatVec(Ny)%y).lt.1d-6) then
@@ -516,7 +519,8 @@ module ndInteractions
 						(nuDensMatVec(ix+1)%im(i,j) - nuDensMatVec(ix)%im(i,j))
 				end if
 			else
-				call Error("k out of range or errors occurred in interpolation")
+				write(vals,"('y=',E14.7,'    ix=',I3)") y, ix
+				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
 			end if
 		end if
 	end function interp_nuDensIJ
@@ -536,6 +540,7 @@ module ndInteractions
 		y2=ve(1)
 		y4=ve(2)
 		y3 = obj%y1 + E_k_m(y2,obj%x) - E_k_m(y4,obj%x)
+		print *,'y3',y3
 		n3 = interp_nuDens(y3)
 		
 		pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
@@ -568,6 +573,7 @@ module ndInteractions
 		y3=ve(1)
 		y4=ve(2)
 		y2 = obj%y1 - E_k_m(y3,obj%x) - E_k_m(y4,obj%x)
+		print *,'y2',y2
 		n2 = interp_nuDens(y2)
 		
 		pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
