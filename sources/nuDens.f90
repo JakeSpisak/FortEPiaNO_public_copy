@@ -20,6 +20,6 @@ program nuDens
 	call solver
 !	call printVec(nuDensVec,flavorNumber**2)
 	
-	call addToLog("finished")
+	call addToLog("Finished. closing log file.")
 	call closeLogFile
 end program nuDens

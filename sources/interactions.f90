@@ -8,7 +8,24 @@ module ndInteractions
 !	use ndconfig
 	implicit none
 	
+	logical :: dme2_e_loaded = .false.
 	contains
+	
+	subroutine dme2_e_load()
+		integer :: ix, iz
+		integer, parameter :: npi = 100
+		real(dl), dimension(npi) :: arrx, arrz
+		
+		
+		arrz=0.0
+	end subroutine 
+	
+	function dme2_e_interp(x,z)
+		real(dl) :: dme2_e_interp
+		real(dl) :: x,z
+		
+		dme2_e_interp = 0.
+	end function dme2_e_interp
 	
 	function E_k_m(k,m)
 		real(dl), intent(in) :: k,m
@@ -58,12 +75,16 @@ module ndInteractions
 		real(dl), dimension(3) :: vec
 		external rombint_obj
 		
-		vec(1) = x
-		vec(2) = z
-		vec(3) = y !not used
+		if (dme2_e_loaded) then
+			dme2_electron = dme2_e_interp(x,z)
+		else
+			vec(1) = x
+			vec(2) = z
+			vec(3) = y !not used
 		
-		tmp = rombint_obj(vec, dme2_e_i1, 0.d0, 1d8, 1d-3, 200, 5)
-		dme2_electron = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
+			tmp = rombint_obj(vec, dme2_e_i1, 0.d0, 60.d0, 1d-3, 200)
+			dme2_electron = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
+		end if
 	end function dme2_electron
 	
 	function Ebare_i(x,y,z)!for electrons
@@ -453,7 +474,11 @@ module ndInteractions
 		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDens)
-		if (y .eq. nuDensMatVec(Ny)%y) then
+		
+		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
+			interp_nuDens%re =0.d0
+			interp_nuDens%im =0.d0
+		elseif (abs(y-nuDensMatVec(Ny)%y) .lt. 1.d-6) then
 			interp_nuDens = nuDensMatVec(Ny)
 		else
 			ix=0
@@ -495,7 +520,10 @@ module ndInteractions
 		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDensIJ)
-		if (abs(y - nuDensMatVec(Ny)%y).lt.1d-6) then
+		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
+			interp_nuDensIJ%re =0.d0
+			interp_nuDensIJ%im =0.d0
+		elseif (abs(y - nuDensMatVec(Ny)%y).lt.1d-6) then
 			interp_nuDensIJ = nuDensMatVec(Ny)
 		else
 			ix=0
@@ -539,23 +567,30 @@ module ndInteractions
 		
 		y2=ve(1)
 		y4=ve(2)
-		y3 = obj%y1 + E_k_m(y2,obj%x) - E_k_m(y4,obj%x)
-		print *,'y3',y3
-		n3 = interp_nuDens(y3)
-		
-		pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
-		pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
-		
-		coll_nue_sc_int = &
-			obj%y2/Ebare_i(obj%x, y2, obj%z) * &
-			    y4/Ebare_i(obj%x, y4, obj%z) * &
-			( &
-				pi2_vec(1) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
-				pi2_vec(2) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) - &
-				(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
-					F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
-					F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 1,2, obj%ix1,obj%ix2, obj%rI)) &
-			)
+		y3 = obj%y1 + Ebare_i(obj%x,y2,obj%z) - Ebare_i(obj%x,y4,obj%z)
+		if (y3.lt.0.d0 &
+			.or. obj%y1.gt.y3+y2+y4 &
+			.or. y2.gt.obj%y1+y3+y4 &
+			.or. y3.gt.obj%y1+y2+y4 &
+			.or. y4.gt.obj%y1+y2+y3) then
+			coll_nue_sc_int = 0.0
+		else
+			n3 = interp_nuDens(y3)
+			
+			pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
+			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
+			
+			coll_nue_sc_int = &
+				y2/Ebare_i(obj%x, y2, obj%z) * &
+				y4/Ebare_i(obj%x, y4, obj%z) * &
+				( &
+					pi2_vec(1) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
+					pi2_vec(2) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) - &
+					(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
+						F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
+						F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 1,2, obj%ix1,obj%ix2, obj%rI)) &
+				)
+		end if
 	end function coll_nue_sc_int
 	
 	function coll_nue_ann_int(n, ve, obj)
@@ -572,23 +607,30 @@ module ndInteractions
 		
 		y3=ve(1)
 		y4=ve(2)
-		y2 = obj%y1 - E_k_m(y3,obj%x) - E_k_m(y4,obj%x)
-		print *,'y2',y2
-		n2 = interp_nuDens(y2)
-		
-		pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
-		pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
-		
-		coll_nue_ann_int = &
-			obj%y2/Ebare_i(obj%x, y2, obj%z) * &
-			    y4/Ebare_i(obj%x, y4, obj%z) * &
-			( &
-				pi2_vec(1) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
-				pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) - &
-				(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
-					F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
-					F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 1,2, obj%ix1,obj%ix2, obj%rI)) &
-			)
+		y2 = Ebare_i(obj%x,y3,obj%z) + Ebare_i(obj%x,y4,obj%z) - obj%y1
+		if (y2.lt.0.d0 &
+			.or. obj%y1.gt.y3+y2+y4 &
+			.or. y2.gt.obj%y1+y3+y4 &
+			.or. y3.gt.obj%y1+y2+y4 &
+			.or. y4.gt.obj%y1+y2+y3) then
+			coll_nue_ann_int = 0.0
+		else
+			n2 = interp_nuDens(y2)
+			
+			pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
+			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
+			
+			coll_nue_ann_int = &
+				y2/Ebare_i(obj%x, y2, obj%z) * &
+				y4/Ebare_i(obj%x, y4, obj%z) * &
+				( &
+					pi2_vec(1) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
+					pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) - &
+					(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
+						F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
+						F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 1,2, obj%ix1,obj%ix2, obj%rI)) &
+				)
+		end if
 	end function coll_nue_ann_int
 	
 	SUBROUTINE region(ndim,x,j,c,d)
@@ -613,8 +655,8 @@ module ndInteractions
 		real(dl) :: ERRr, RES
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
-		
-		npts=6
+
+		npts=5
 		n=2
 		
 		call allocateCmplxMat(n1)

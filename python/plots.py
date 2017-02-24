@@ -20,12 +20,12 @@ def plot_momentum(fname, columns):
 		
 	plt.subplot(111)
 	plt.xscale('log')
-	#plt.xlabel("weight")
-	#plt.ylabel("loglikelihood")
+	plt.xlabel(r"$y=pa$")
+	plt.ylabel(r"$f(y)$")
 	#plt.xlim([1e-10,1])
 	#plt.ylim([11260,11450])
 	for q in columns:
-		print q, ptsStruc[q][0]#, ptsStruc[q][1]
+		#print q, ptsStruc[q][0]#, ptsStruc[q][1]
 		plt.plot(yarr,ptsStruc[q][1],label="%f"%ptsStruc[q][0])
 	plt.legend(loc='upper right')
 	pdf.savefig()#time.strftime("%y%m%d_%H%M%S")+
@@ -42,8 +42,8 @@ def plot_z(fname):
 		
 	plt.subplot(111)
 	plt.xscale('log')
-	#plt.xlabel("weight")
-	#plt.ylabel("loglikelihood")
+	plt.xlabel(r"x=m_e a")
+	plt.ylabel(r"z=T_\gamma a")
 	#plt.xlim([1e-10,1])
 	#plt.ylim([11260,11450])
 	plt.plot(x,y,label="z")

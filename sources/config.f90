@@ -261,5 +261,7 @@ module ndConfig
 		end if
 		call ini_file_close()
 		
+		call addToLog("[config] Read configuration from ini file: complete.")
+		
 	end subroutine initconfig
 end module ndConfig

@@ -41,7 +41,7 @@ module ndCosmology
 		
 		vec(1)=x
 		vec(2)=z
-		electronDensity = rombint_obj(vec, integr_rho_e, 0., 60., 1d-3, maxiter)
+		electronDensity = rombint_obj(vec, integr_rho_e, 0.d0, 60.d0, 1d-3, maxiter)
 		electronDensity = electronDensity / PISQD2
 	end function electronDensity
 
