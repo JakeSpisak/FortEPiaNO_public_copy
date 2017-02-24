@@ -19,6 +19,8 @@ module ndEquations
 	end type integrRhoNuPar
 	
 	real(dl), parameter :: upper = 1.d2
+	real(dl) :: komax=0, jomax=0, yomax=0, k1omax=0, j1omax=0, g12omax=0
+	real(dl) :: komin=1e10, jomin=1e10, yomin=1e10, k1omin=1e10, j1omin=1e10, g12omin=1e10
 
 	contains 
 
@@ -78,6 +80,9 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
+		if(o.gt.jomax) jomax=o
+		if(o.lt.jomin) jomin=o
+		write(*,'(A,3E13.5)') 'j',jomin,o,jomax
 		J_func = rombint_obj(o, J_int,0,upper,toler,maxiter)/PISQ
 	end function J_func
 	
@@ -99,6 +104,9 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
+		if(o.gt.j1omax) j1omax=o
+		if(o.lt.j1omin) j1omin=o
+		write(*,'(A,3E13.5)') 'jp',j1omin,o,j1omax
 		Jprime = rombint_obj(o, Jprime_int,0,upper,toler,maxiter) * o / PISQ
 	end function Jprime
 	
@@ -116,6 +124,9 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
+		if(o.gt.komax) komax=o
+		if(o.lt.komin) komin=o
+		write(*,'(A,3E13.5)') 'k',komin,o,komax
 		k_func = rombint_obj(o, k_int,0,upper,toler,maxiter)/PISQ
 	end function K_func
 	
@@ -138,6 +149,9 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
+		if(o.gt.k1omax) k1omax=o
+		if(o.lt.k1omin) k1omin=o
+		write(*,'(A,3E13.5)') 'kp',k1omin,o,k1omax
 		Kprime = rombint_obj(o, Kprime_int,0,upper,toler, maxiter) * o / PISQ
 	end function Kprime
 	
@@ -155,6 +169,9 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
+		if(o.gt.yomax) yomax=o
+		if(o.lt.yomin) yomin=o
+		write(*,'(A,3E13.5)') 'y',yomin,o,yomax
 		Y_func = rombint_obj(o, Y_int,0,upper,toler, maxiter)/PISQ
 	end function Y_func
 	
@@ -168,6 +185,9 @@ module ndEquations
 		jp=jprime(o)
 		tmp = (kp/6.d0 - ko*kp + jp/6.d0 +jp*ko + jo*kp)
 		
+		if(o.gt.g12omax) g12omax=o
+		if(o.lt.g12omin) g12omin=o
+		write(*,'(A,3E13.5)') 'g12',g12omin,o,g12omax
 		G12_func(1) = PIx2*alpha_fine *(&
 			(ko/3.d0 + 2*ko*ko - jo/6.d0 -ko*jo)/o + &
 			tmp )
@@ -198,7 +218,7 @@ module ndEquations
 		
 		x_o_z = x/z
 		jxoz = J_func(x_o_z)
-		g12 = g12_func(x_o_z)
+		g12 = G12_func(x_o_z)
 		
 		params%x=x
 		params%z=z
