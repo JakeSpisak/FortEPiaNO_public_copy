@@ -263,7 +263,6 @@ module ndEquations
 	
 	function drhoy_dx_fullMat (x,z,iy)
 		type(cmplxMatNN) :: drhoy_dx_fullMat
-		real(dl) :: drhoy_dx_ij_rI
 		real(dl) :: x,y,z, overallNorm
 		integer :: iy,k
 		type(cmplxMatNN) :: n1, term1, comm
@@ -281,6 +280,9 @@ module ndEquations
 		leptonDensities(1,1) = leptDensFactor * y / x**6 * 2 * electronDensity(x,z)
 		term1%im = 0
 		term1%re(:,:) = nuMassesMat/(2*y) + leptonDensities
+!		print *,leptDensFactor, y , x**6 , electronDensity(x,z)
+!		print *,'comm',leptonDensities, nuMassesMat, term1%re, n1%re
+		
 		!switch imaginary and real parts because of the "-i" factor
 		call Commutator(term1%re, n1%re, comm%im)
 		call Commutator(term1%re, n1%im, comm%re)
@@ -288,6 +290,7 @@ module ndEquations
 		comm%im = - comm%im * x**2/m_e_cub
 		comm%re = comm%re * x**2/m_e_cub
 		
+!		print *,'comm2',comm%re, comm%im
 		drhoy_dx_fullMat%re = overallNorm * comm%re
 		drhoy_dx_fullMat%im = overallNorm * comm%im 
 		
@@ -300,6 +303,7 @@ module ndEquations
 		drhoy_dx_fullMat%re = drhoy_dx_fullMat%re + lastColl%mat%re * overallNorm
 		drhoy_dx_fullMat%im = drhoy_dx_fullMat%im + lastColl%mat%im * overallNorm
 
+!		print *,'fullMat',lastColl%mat%re,lastColl%mat%im
 	end function drhoy_dx_fullMat
 	
 	subroutine saveRelevantInfo(x, vec)
@@ -310,20 +314,20 @@ module ndEquations
 		integer, dimension(:), allocatable :: units
 		character(len=200) :: fname
 		
-		print *,'a'
-		print *,flavorNumber
 		totFiles=flavorNumber**2+1
 		allocate(units(totFiles),tmpvec(Ny))
 		do i=1, totFiles
 			units(i) = 8972 + i
 		end do
-		print *,units
+		
+		write(fname, '(A,E14.7)') 'Saving info at x=',x
+		call addToLog(fname)
 		
 		do k=1, flavorNumber
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag',k,'.dat'
 			call openFile(units(k), trim(fname),firstWrite)
 			do iy=1, nY
-				tmpvec(iy)=nuDensMatVec(iy)%re(k,k)
+				tmpvec(iy)=nuDensMatVec(iy)%y**2*nuDensMatVec(iy)%re(k,k)
 			end do
 			write(units(k), '(*(E14.7))') x, tmpvec
 		end do
@@ -390,6 +394,7 @@ module ndEquations
 		call densMat_2_vec(nuDensVec)
 		nuDensVec(ntot)=z_in
 		
+		call addToLog("[solver] Starting DLSODA...")
 		xstart=x_arr(1)
 		do ix=1, Nx/printEveryNIter
 			xend   = x_arr((ix)*printEveryNIter)
@@ -414,27 +419,43 @@ module ndEquations
 		real(dl) :: x, z
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
+		integer :: flsq
+		real(dl), dimension(:,:), allocatable :: tmpvec
 		
+		flsq=flavorNumber**2
+		allocate(tmpvec(Ny,flsq))
+		call addToLog("[eq] Calling derivatives...")
 		call allocateCmplxMat(mat)
 		z = vars(n)
 		call vec_2_densMat(vars(1:n-1))
-		k=1
+		
+		!!$omp parallel &
+		!!$omp default(shared) &
+		!!$omp private(mat,i,j)
 		do m=1, Ny
+			k=1
 			mat = drhoy_dx_fullMat(x,z,m)
 			do i=1, flavorNumber
 				do j=i, flavorNumber
-					ydot(k) = mat%re(i,j)
+					tmpvec(m,k) = mat%re(i,j)
 					k=k+1
 				end do
 				if (i.lt.flavorNumber) then
 					do j=i+1, flavorNumber
-						ydot(k) = mat%im(i,j)
+						tmpvec(m,k) = mat%im(i,j)
 						k=k+1
 					end do
 				end if
 			end do
 		end do
+		!!$omp end parallel
+		do m=1, Ny
+			do k=1,flsq
+				ydot(k+(m-1)*flsq)=tmpvec(m,k)
+			end do
+		end do
 		ydot(ntot) = dz_o_dx(x,z)
+		call densMat_2_vec(nuDensVec)
 	end subroutine derivatives
 	
 	subroutine jdum
