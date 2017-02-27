@@ -6,10 +6,15 @@ module ndCosmology
 	use ndInteractions
 	implicit none
 	
+	logical :: loadedEDens = .false.
+	type(TInterpGrid2D) :: elDens
+	
 	type nuDensArgs
 		real(dl) :: x,z
 		integer iFl
 	end type nuDensArgs
+
+	procedure (funcXY), pointer :: electronDensity => null ()
 	
 	contains
 	
@@ -34,17 +39,44 @@ module ndCosmology
 		integr_rho_e = y*y*a*fermiDirac_massless(a,vec(2))
 	end function integr_rho_e
 	
-	function electronDensity(x,z)
-		real(dl) :: electronDensity, x,z, rombint_obj
+	function electronDensityFull(x,z)
+		real(dl) :: electronDensityFull, x,z, rombint_obj
 		real(dl), dimension(2) :: vec
 		external rombint_obj
 		
-		vec(1)=x
-		vec(2)=z
-		electronDensity = rombint_obj(vec, integr_rho_e, 0.d0, 60.d0, 1d-3, maxiter)
-		electronDensity = electronDensity / PISQD2
-	end function electronDensity
+		if (loadedEDens) then
+			electronDensityFull = elDens%Value(log10(x),z)
+		else
+			vec(1)=x
+			vec(2)=z
+		
+			electronDensityFull = rombint_obj(vec, integr_rho_e, 0.d0, 60.d0, 1d-3, maxiter)
+			electronDensityFull = electronDensityFull / PISQD2
+		end if
+	end function electronDensityFull
+	
+	function electronDensityInterp(x,z)
+		real(dl) :: electronDensityInterp, x,z
+		
+		electronDensityInterp = elDens%Value(log10(x),z)
+	end function electronDensityInterp
 
+	subroutine loadElDensity
+		real(dl), dimension(interp_nx,interp_nz) :: ed_vec
+		integer :: ix, iz
+		
+		call addToLog("[cosmo] Initializing interpolation for electron density...")
+		do ix=1, interp_nx
+			do iz=1, interp_nz
+				ed_vec(ix,iz) = electronDensity(interp_xvec(ix),interp_zvec(iz))
+			end do
+		end do
+		call elDens%Init(interp_xvec,interp_zvec,ed_vec)
+		loadedEDens = .true.
+		electronDensity => electronDensityInterp
+		call addToLog("[cosmo] ...done!")
+	end subroutine loadElDensity
+	
 	function integr_rho_nu(vec,y)
 		real(dl) :: integr_rho_nu, y,a
 		type(nuDensArgs) :: vec

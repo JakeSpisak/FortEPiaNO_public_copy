@@ -9,15 +9,24 @@ module ndInteractions
 	implicit none
 	
 	logical :: dme2_e_loaded = .false.
+	type(TInterpGrid2D) :: dmeCorr
+	procedure (funcXYZ), pointer :: dme2_electron => null ()
 	contains
 	
 	subroutine dme2_e_load()
+		real(dl), dimension(interp_nx,interp_nz) :: dme_vec
 		integer :: ix, iz
-		integer, parameter :: npi = 100
-		real(dl), dimension(npi) :: arrx, arrz
 		
-		
-		arrz=0.0
+		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
+		do ix=1, interp_nx
+			do iz=1, interp_nz
+				dme_vec(ix,iz) = dme2_electronFull(interp_xvec(ix),0.d0,interp_zvec(iz))
+			end do
+		end do
+		call dmeCorr%Init(interp_xvec,interp_zvec,dme_vec)
+		dme2_e_loaded = .true.
+		dme2_electron => dme2_electronInterp
+		call addToLog("[interactions] ...done!")
 	end subroutine 
 	
 	function dme2_e_interp(x,z)
@@ -69,23 +78,30 @@ module ndInteractions
 		dme2_e_i2 = k/E_k_m(k,m)*fermiDirac(k,m,T)*log(abs((p+k)/(p-k)))
 	end function dme2_e_i2
 	
-	function dme2_electron(x,y,z)
-		real(dl) :: dme2_electron, tmp, rombint_obj
+	function dme2_electronFull(x,y,z)
+		real(dl) :: dme2_electronFull, tmp, rombint_obj
 		real(dl), intent(in) :: x,y,z
 		real(dl), dimension(3) :: vec
 		external rombint_obj
 		
 		if (dme2_e_loaded) then
-			dme2_electron = dme2_e_interp(x,z)
+			dme2_electronFull = dme2_e_interp(x,z)
 		else
 			vec(1) = x
 			vec(2) = z
 			vec(3) = y !not used
 		
 			tmp = rombint_obj(vec, dme2_e_i1, 0.d0, 60.d0, 1d-3, 200)
-			dme2_electron = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
+			dme2_electronFull = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
 		end if
-	end function dme2_electron
+	end function dme2_electronFull
+	
+	function dme2_electronInterp(x,y,z)
+		real(dl) :: dme2_electronInterp
+		real(dl), intent(in) :: x,y,z
+		
+		dme2_electronInterp = dmeCorr%Value(x,z)
+	end function dme2_electronInterp
 	
 	function Ebare_i(x,y,z)!for electrons
 		real(dl) :: Ebare_i
