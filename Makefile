@@ -1,12 +1,13 @@
 # FLAGS
 #ifort
 F90=ifort
-F90FLAGS=-O3 -L/usr/lib -Ibuild/ -module build/ -g -p -traceback
+F90FLAGS=-O3 -L/usr/lib -Ibuild/ -module build/ -g -p -traceback -no-prec-div
+# -openmp
 stdFlag=
 
-#gnuplot
-#F90=gnuplot
-#F90FLAGS=-O3 -L/usr/lib -Jbuild/ -Ibuild/ -g -traceback
+#gfortran
+#F90=gfortran
+#F90FLAGS=-O3 -L/usr/lib -Jbuild/ -Ibuild/ -g -traceback -fopenmp
 #stdFlat= --std=legacy
 
 OBJ_FILES=build/const.o build/errors.o build/config.o build/IniFile.o \

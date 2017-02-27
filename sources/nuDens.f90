@@ -3,11 +3,7 @@ program nuDens
 	use ndConfig
 	use ndErrors
 	use ndEquations
-!	use icsFlux
-!	use icsMC
-!	use icsMinim
-!	use icsLLH
-	
+!	use omp_lib
 	implicit none
 
 	call initConfig
@@ -18,17 +14,13 @@ program nuDens
 	Kprime   => KprimeFull 
 	Y_func   => Y_funcFull 
 	G12_func => G12_funcFull
-	call init_interp_jkyg12
-	
 	electronDensity => electronDensityFull
-	call loadElDensity
 	dme2_electron => dme2_electronFull
+	
+	call init_interp_jkyg12
+	call loadElDensity
 	call dme2_e_load
 
-!	call initData
-!	call initmc
-!	call initminim(.true.)
-	
 	call solver
 	
 	call addToLog("Finished. closing log file.")

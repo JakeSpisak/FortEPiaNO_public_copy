@@ -187,12 +187,14 @@ module ndEquations
 	end function G12_funcFull
 	
 	subroutine init_interp_jkyg12
-		real(dl), dimension(interp_nx) :: j, k, jp, kp, y, g1, g2
+		real(dl), dimension(:),allocatable :: j, k, jp, kp, y, g1, g2
 		real(dl), dimension(2) :: g12
-		integer::ix
+		integer::ix, nx
 		
 		call addToLog("[equations] Initializing interpolation for J, J', K, K', Y, G_1, G_2...")
-		do ix=1, interp_nx
+		nx=interp_nx
+		allocate(j(nx),jp(nx),k(nx),kp(nx),y(nx),g1(nx),g2(nx))
+		do ix=1, nx
 			j(ix)  = J_funcFull(interp_xozvec(ix))
 			jp(ix) = JprimeFull(interp_xozvec(ix))
 			k(ix)  = K_funcFull(interp_xozvec(ix))
@@ -216,6 +218,7 @@ module ndEquations
 		Kprime   => KprimeInterp
 		Y_func   => Y_funcInterp
 		G12_func => G12_funcInterp
+		deallocate(j, k, jp, kp, y, g1, g2)
 		call addToLog("[equations] ...done!")
 	end subroutine init_interp_jkyg12
 	
@@ -491,6 +494,8 @@ module ndEquations
 	end subroutine solver
 	
 	subroutine derivatives(n, x, vars, ydot)
+		use omp_lib
+		
 		type(cmplxMatNN) :: mat
 		integer :: n, i, j, k, m
 		real(dl) :: x, z
@@ -506,10 +511,11 @@ module ndEquations
 		z = vars(n)
 		call vec_2_densMat(vars(1:n-1))
 		
-		!!$omp parallel &
-		!!$omp default(shared) &
-		!!$omp private(mat,i,j)
+		!$omp parallel do &
+		!$omp default(shared) &
+		!$omp private(mat,i,j)
 		do m=1, Ny
+!			print *,OMP_GET_THREAD_NUM(),"/",OMP_GET_NUM_THREADS()
 			k=1
 			mat = drhoy_dx_fullMat(x,z,m)
 			do i=1, flavorNumber
@@ -525,14 +531,17 @@ module ndEquations
 				end if
 			end do
 		end do
-		!!$omp end parallel
+		!$omp end parallel do
 		do m=1, Ny
 			do k=1,flsq
 				ydot(k+(m-1)*flsq)=tmpvec(m,k)
 			end do
 		end do
+		deallocate(tmpvec)
+		
 		ydot(ntot) = dz_o_dx(x,z)
 		call densMat_2_vec(nuDensVec)
+		call deallocateCmplxMat(mat)
 	end subroutine derivatives
 	
 	subroutine jdum

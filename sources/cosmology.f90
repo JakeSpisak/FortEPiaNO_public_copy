@@ -44,15 +44,15 @@ module ndCosmology
 		real(dl), dimension(2) :: vec
 		external rombint_obj
 		
-		if (loadedEDens) then
-			electronDensityFull = elDens%Value(log10(x),z)
-		else
+!		if (loadedEDens) then
+!			electronDensityFull = elDens%Value(log10(x),z)
+!		else
 			vec(1)=x
 			vec(2)=z
 		
 			electronDensityFull = rombint_obj(vec, integr_rho_e, 0.d0, 60.d0, 1d-3, maxiter)
 			electronDensityFull = electronDensityFull / PISQD2
-		end if
+!		end if
 	end function electronDensityFull
 	
 	function electronDensityInterp(x,z)
@@ -62,18 +62,19 @@ module ndCosmology
 	end function electronDensityInterp
 
 	subroutine loadElDensity
-		real(dl), dimension(interp_nx,interp_nz) :: ed_vec
+		real(dl), dimension(:,:), allocatable :: ed_vec
 		integer :: ix, iz
 		
 		call addToLog("[cosmo] Initializing interpolation for electron density...")
+		allocate(ed_vec(interp_nx,interp_nz))
 		do ix=1, interp_nx
 			do iz=1, interp_nz
-				ed_vec(ix,iz) = electronDensity(interp_xvec(ix),interp_zvec(iz))
+				ed_vec(ix,iz) = electronDensityFull(interp_xvec(ix),interp_zvec(iz))
 			end do
 		end do
 		call elDens%Init(interp_xvec,interp_zvec,ed_vec,"electronDensity")
-		loadedEDens = .true.
 		electronDensity => electronDensityInterp
+		loadedEDens = .true.
 		call addToLog("[cosmo] ...done!")
 	end subroutine loadElDensity
 	

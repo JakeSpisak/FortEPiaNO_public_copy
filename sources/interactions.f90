@@ -14,10 +14,11 @@ module ndInteractions
 	contains
 	
 	subroutine dme2_e_load()
-		real(dl), dimension(interp_nx,interp_nz) :: dme_vec
+		real(dl), dimension(:,:), allocatable :: dme_vec
 		integer :: ix, iz
 		
 		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
+		allocate(dme_vec(interp_nx,interp_nz))
 		do ix=1, interp_nx
 			do iz=1, interp_nz
 				dme_vec(ix,iz) = dme2_electronFull(interp_xvec(ix),0.d0,interp_zvec(iz))
@@ -26,6 +27,7 @@ module ndInteractions
 		call dmeCorr%Init(interp_xvec,interp_zvec,dme_vec,"dme2Corrections")
 		dme2_e_loaded = .true.
 		dme2_electron => dme2_electronInterp
+		deallocate(dme_vec)
 		call addToLog("[interactions] ...done!")
 	end subroutine 
 	
@@ -84,16 +86,16 @@ module ndInteractions
 		real(dl), dimension(3) :: vec
 		external rombint_obj
 		
-		if (dme2_e_loaded) then
-			dme2_electronFull = dme2_e_interp(x,z)
-		else
+!		if (dme2_e_loaded) then
+!			dme2_electronFull = dme2_e_interp(x,z)
+!		else
 			vec(1) = x
 			vec(2) = z
 			vec(3) = y !not used
 		
 			tmp = rombint_obj(vec, dme2_e_i1, 0.d0, 60.d0, 1d-3, 200)
 			dme2_electronFull = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
-		end if
+!		end if
 	end function dme2_electronFull
 	
 	function dme2_electronInterp(x,y,z)

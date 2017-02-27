@@ -46,7 +46,6 @@ module utilities
     end Type TSaveLoadStateObject
     
     Type, extends(TSaveLoadStateObject) :: TInterpolator
-        private
         logical :: initialized =.false.
         character(len=50) :: nameString
     contains
@@ -62,6 +61,7 @@ module utilities
     procedure :: Init => TSpline1D_Init
     procedure :: Value => TSpline1D_Value !one point
     procedure :: Clear => TSpline1D_Clear
+    FINAL :: TSpline1D_Free
     end Type TSpline1D
 
     Type, extends(TInterpolator) :: TInterpGrid2D
@@ -114,29 +114,29 @@ module utilities
 	end function logspace
 	
     subroutine LoadState(this)
-    class(TSaveLoadStateObject) :: this
-!    class(TFileStream) :: F
+		class(TSaveLoadStateObject) :: this
+	!    class(TFileStream) :: F
     end subroutine LoadState
 
     subroutine SaveState(this)
-    class(TSaveLoadStateObject) :: this
-!    class(TFileStream) :: F
+		class(TSaveLoadStateObject) :: this
+	!    class(TFileStream) :: F
     end subroutine SaveState
 	
     subroutine TInterpolator_FirstUse(this)
-    class(TInterpolator) this
+		class(TInterpolator) this
 
-    this%Initialized = .true.
-    call this%error('TInterpolator not initialized')
+		this%Initialized = .true.
+		call this%error('TInterpolator not initialized: '//trim(this%nameString))
 
     end subroutine TInterpolator_FirstUse
 
     subroutine TInterpolator_error(this,S,v1,v2)
-    class(TInterpolator):: this
-    character(LEN=*), intent(in) :: S
-    class(*), intent(in), optional :: v1, v2
+		class(TInterpolator):: this
+		character(LEN=*), intent(in) :: S
+		class(*), intent(in), optional :: v1, v2
 
-    call criticalError('Interpolation error! '//trim(S))!,v1,v2
+		call criticalError('Interpolation error! '//trim(S))!,v1,v2
 
     end subroutine TInterpolator_error
     
@@ -145,15 +145,15 @@ module utilities
 		real(dl), intent(in)      :: x(:)
 		real(dl), intent(in)      :: y(:)
 		character(len=*), intent(in)      :: nome
+		
 		this%nameString = nome
 		this%nx = size(x)
 		allocate(this%x, source = x)
 		allocate(this%y, source = y)
 		allocate(this%y2(this%nx))
-
-         call spline(this%x, this%y, this%nx, 1.d30, 1.d30, this%y2)  
 		this%Initialized = .true.
-    end subroutine
+        call spline(this%x, this%y, this%nx, 1.d30, 1.d30, this%y2)
+    end subroutine TSpline1D_init
     
     function TSpline1D_Value(this, x)
 		class(TSpline1D):: this
@@ -165,16 +165,22 @@ module utilities
     end function TSpline1D_Value
     
     subroutine TSpline1D_clear (this)
-    class(TSpline1D):: this
+		class(TSpline1D):: this
 
-    if (allocated(this%y2)) then
-        deallocate(this%x)
-        deallocate(this%y)
-        deallocate(this%y2)
-    end if
-    this%Initialized = .false.
+		if (allocated(this%y2)) then
+			deallocate(this%x)
+			deallocate(this%y)
+			deallocate(this%y2)
+		end if
+		this%Initialized = .false.
     
     end subroutine TSpline1D_clear
+    
+    subroutine TSpline1D_Free(this)
+		Type(TSpline1D):: this
+
+		call this%Clear()
+    end subroutine TSpline1D_Free
 	
     subroutine TInterpGrid2D_InitInterp(this)
     class(TInterpGrid2D):: this
