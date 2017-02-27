@@ -10,7 +10,6 @@ program nuDens
 	
 	implicit none
 
-	call openLogFile
 	call initConfig
 	
 	J_func   => J_funcFull 

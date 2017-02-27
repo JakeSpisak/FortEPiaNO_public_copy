@@ -157,6 +157,10 @@ module ndConfig
 		do ixa = 1, num_args
 			call get_command_argument(ixa,args(ixa))
 		end do
+		if(num_args.gt.1) then
+			logFile = trim(args(2))
+		end if
+		call openLogFile
 		if(num_args.gt.0) then
 			call addToLog("[config] reading additional configuration from "//mainPath//trim(args(1)))
 			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
@@ -232,7 +236,8 @@ module ndConfig
 !			if (trim(tmparg)/="") outMinInfo=tmparg
 			tmparg=trim(read_ini_char('outputFolder'))
 			if (trim(tmparg)/="") outputFolder=tmparg
-			
+		else
+			call error("You are not reading a configuration file...are you sure you are doing things properly?")
 		end if
 		call ini_file_close()
 		

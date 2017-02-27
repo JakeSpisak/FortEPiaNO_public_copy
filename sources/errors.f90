@@ -3,21 +3,33 @@ module ndErrors
 	implicit none
 	
 	integer :: totErrors
-	character(len=50), parameter :: logFile = "messages.log"
+	character(len=50) :: logFile = "messages.log"
 	integer, parameter :: lfu=2411
 	
 	contains
 	
 	subroutine openLogFile
-		open(unit=lfu, file=trim(logFile))
+		write(*,*) "Writing log into: log/", trim(logFile)
+		open(unit=lfu, file="log/"//trim(logFile))
 		totErrors=0
+		call timeToLog
 	end subroutine openLogFile
 	
 	subroutine closeLogFile
 		write(*,*)   "Total errors: ",totErrors
 		write(lfu,*) "Total errors: ",totErrors
+		call timeToLog
 		close(lfu)
 	end subroutine closeLogFile
+	
+	subroutine timeToLog
+		character(8)  :: date
+		character(10) :: time
+		integer,dimension(8) :: values
+        call date_and_time(VALUES=values)
+		write(*  , '("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2)') values(3), values(2), values(1), values(5),values(6),values(7)
+		write(lfu, '("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2)') values(3), values(2), values(1), values(5),values(6),values(7)
+	end subroutine timeToLog
 	
 	subroutine addToLog(message)
 		character(len=*), intent(in) :: message
