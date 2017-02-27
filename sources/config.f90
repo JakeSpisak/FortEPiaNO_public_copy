@@ -6,6 +6,7 @@ module ndConfig
 	use FileIni
 	use ndMatrices
 	use ndInteractions
+	use utilities
 	implicit none
 
 	integer :: num_args, ixa
@@ -23,36 +24,6 @@ module ndConfig
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 	end subroutine allocateStuff
-	
-	function linspace(minv, maxv, numb)
-		real(dl), intent(in) :: minv, maxv
-		integer,  intent(in) :: numb
-		real(dl), dimension(numb) :: linspace
-		
-		real(dl) :: dx
-		integer :: i
-		
-		dx = (maxv-minv) / (numb-1)
-		do i=1, numb
-			linspace(i) = (i-1)*dx +minv
-		end do
-		return
-	end function linspace
-	
-	function logspace(minv, maxv, numb)
-		real(dl), intent(in) :: minv, maxv
-		integer,  intent(in) :: numb
-		real(dl), dimension(numb) :: logspace
-		
-		real(dl) :: dx
-		integer :: i
-		
-		dx = (maxv-minv) / (numb-1)
-		do i=1, numb
-			logspace(i) = 10.d0**((i-1)*dx +minv)
-		end do
-		return
-	end function logspace
 	
 	subroutine setMassMatrix()
 		integer :: nf
@@ -249,6 +220,9 @@ module ndConfig
 			!create other matrices
 			call init_matrices
 			
+			interp_xvec = logspace(log10(x_in), log10(x_fin), interp_nx)
+			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
+		
 !			tmparg=trim(read_ini_char('pionFluxFile'))
 !			if (trim(tmparg)/="") pionFluxFile=tmparg
 !			tmparg=trim(read_ini_char('kaonFluxFile'))

@@ -109,6 +109,12 @@ module variables
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
 	integer :: maxiter
 	real(dl) :: toler
+
+	!used for 2d interpolation:
+	integer, parameter :: interp_nx = 1000, interp_nz = 100
+	real(dl), parameter :: interp_zmin = 1.0d0, interp_zmax = 1.5d0
+	real(dl), dimension(interp_nx) :: interp_xvec
+	real(dl), dimension(interp_nz) :: interp_zvec
 	
 	contains
 	
