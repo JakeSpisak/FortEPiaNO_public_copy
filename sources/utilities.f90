@@ -7,6 +7,22 @@ module utilities
     integer, parameter :: sp_acc = DL
     
 	abstract interface
+	  function funcX (x)
+		use precision
+		 real(dl) :: funcX
+		 real(dl), intent (in) :: x
+	  end function funcX
+	end interface
+    
+	abstract interface
+	  function func2_X (x)
+		use precision
+		 real(dl), dimension(2) :: func2_X
+		 real(dl), intent (in) :: x
+	  end function func2_X
+	end interface
+    
+	abstract interface
 	  function funcXY (x,y)
 		use precision
 		 real(dl) :: funcXY
@@ -32,35 +48,21 @@ module utilities
     Type, extends(TSaveLoadStateObject) :: TInterpolator
         private
         logical :: initialized =.false.
+        character(len=50) :: nameString
     contains
     procedure :: FirstUse => TInterpolator_FirstUse
     procedure :: Error => TInterpolator_Error
     end Type TInterpolator
 	
-!    type, extends(TInterpolator) :: TInterpolator1D
-!        real(sp_acc) :: Xmin_interp, Xmax_interp
-!        integer :: n = 0 !number of function points
-!        real(sp_acc), allocatable :: F(:) !function values
-!        real(sp_acc) :: fraction_tol =  1.e-5_sp_acc !fraction of step size allowed past end
-!        real(sp_acc), private :: Xmin_check, Xmax_check, Xend_tol_interp
-!    contains
-!    procedure, private :: TInterpolator1D_IntValue
-!    procedure, private :: GetValue => TInterpolator1D_Value
-!    procedure :: Clear => TInterpolator1D_Clear
-!    procedure :: FirstUse =>  TInterpolator1D_FirstUse
-!    procedure :: InitInterp => TInterpolator1D_InitInterp
-!    generic :: Value => GetValue, TInterpolator1D_IntValue
-!    end Type TInterpolator1D
-
-!    Type, extends(TInterpolator1D) :: TSpline1D
-!        real(sp_acc), allocatable :: ddF(:)
-!    contains
-!    procedure :: Clear => TSpline1D_Clear
-!    procedure :: GetValue => TSpline1D_Value
-!    procedure, private :: TSpline1D_ArrayValue
-!    procedure, private :: TSpline1D_IntRangeValue
-!    procedure :: FindValue => TSpline1D_FindValue
-!    end Type TSpline1D
+    Type, extends(TInterpolator) :: TSpline1D
+        REAL(GI), private, allocatable :: y2(:)
+        REAL(GI), allocatable :: x(:), y(:)
+        integer :: nx=0
+    contains
+    procedure :: Init => TSpline1D_Init
+    procedure :: Value => TSpline1D_Value !one point
+    procedure :: Clear => TSpline1D_Clear
+    end Type TSpline1D
 
     Type, extends(TInterpolator) :: TInterpGrid2D
         !      ALGORITHM 760, COLLECTED ALGORITHMS FROM ACM.
@@ -137,6 +139,42 @@ module utilities
     call criticalError('Interpolation error! '//trim(S))!,v1,v2
 
     end subroutine TInterpolator_error
+    
+    subroutine TSpline1D_init(this, x, y, nome)
+		class(TSpline1D):: this
+		real(dl), intent(in)      :: x(:)
+		real(dl), intent(in)      :: y(:)
+		character(len=*), intent(in)      :: nome
+		this%nameString = nome
+		this%nx = size(x)
+		allocate(this%x, source = x)
+		allocate(this%y, source = y)
+		allocate(this%y2(this%nx))
+
+         call spline(this%x, this%y, this%nx, 1.d30, 1.d30, this%y2)  
+		this%Initialized = .true.
+    end subroutine
+    
+    function TSpline1D_Value(this, x)
+		class(TSpline1D):: this
+		REAL(dl), INTENT(IN)      :: x
+		REAL(dl) :: TSpline1D_Value
+		
+		if (.not. this%Initialized)  call this%FirstUse
+		call splint(this%x, this%y, this%y2, this%nx, x, TSpline1D_Value)
+    end function TSpline1D_Value
+    
+    subroutine TSpline1D_clear (this)
+    class(TSpline1D):: this
+
+    if (allocated(this%y2)) then
+        deallocate(this%x)
+        deallocate(this%y)
+        deallocate(this%y2)
+    end if
+    this%Initialized = .false.
+    
+    end subroutine TSpline1D_clear
 	
     subroutine TInterpGrid2D_InitInterp(this)
     class(TInterpGrid2D):: this
@@ -148,11 +186,14 @@ module utilities
     end subroutine TInterpGrid2D_InitInterp
 
     !F2003 wrappers by AL, 2013
-    subroutine TInterpGrid2D_Init(this, x, y, z)
+    subroutine TInterpGrid2D_Init(this, x, y, z, nome)
     class(TInterpGrid2D):: this
     REAL(GI), INTENT(IN)      :: x(:)
     REAL(GI), INTENT(IN)      :: y(:)
     REAL(GI), INTENT(IN)      :: z(:,:)
+	character(len=*), intent(in)      :: nome
+	
+	this%nameString = nome
 
     call this%Clear()
     this%nx = size(x)
@@ -1503,63 +1544,63 @@ module utilities
 		end if
 	end subroutine openFile
 	
-subroutine spline(x,y,n,yp1,ypn,y2)
-	use precision
-	implicit none
-	integer :: n,i,k
-	real(dl) :: yp1,ypn,x(n),y(n),y2(n)
-	integer, parameter :: NMAX=500
-	real(dl) :: p,qn,sig,un,u(NMAX)
+	subroutine spline(x,y,n,yp1,ypn,y2)
+		use precision
+		implicit none
+		integer :: n,i,k
+		real(dl) :: yp1,ypn,x(n),y(n),y2(n)
+		integer, parameter :: NMAX=500
+		real(dl) :: p,qn,sig,un,u(NMAX)
 
-	if (yp1.gt..99e30) then
-	   y2(1)=0.
-	   u(1)=0.
-	else
-	   y2(1)=-0.5
-	   u(1)=(3./(x(2)-x(1)))*((y(2)-y(1))/(x(2)-x(1))-yp1)
-	endif
-	do i=2,n-1
-	   sig=(x(i)-x(i-1))/(x(i+1)-x(i-1))
-	   p=sig*y2(i-1)+2.
-	   y2(i)=(sig-1.)/p
-	   u(i)=(6.*((y(i+1)-y(i))/(x(i+1)-x(i))-(y(i)-y(i-1))/(x(i)-x(i-1)))/(x(i+1)-x(i-1))-sig*u(i-1))/p
-	 end do
-	if (ypn.gt..99e30) then
-	  qn=0.
-	  un=0.
-	else
-	  qn=0.5
-	  un=(3./(x(n)-x(n-1)))*(ypn-(y(n)-y(n-1))/(x(n)-x(n-1)))
-	endif
-	y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+1.)
-	do k=n-1,1,-1
-	  y2(k)=y2(k)*y2(k+1)+u(k)
-	end do
-end subroutine spline
+		if (yp1.gt..99e30) then
+		   y2(1)=0.
+		   u(1)=0.
+		else
+		   y2(1)=-0.5
+		   u(1)=(3./(x(2)-x(1)))*((y(2)-y(1))/(x(2)-x(1))-yp1)
+		endif
+		do i=2,n-1
+		   sig=(x(i)-x(i-1))/(x(i+1)-x(i-1))
+		   p=sig*y2(i-1)+2.
+		   y2(i)=(sig-1.)/p
+		   u(i)=(6.*((y(i+1)-y(i))/(x(i+1)-x(i))-(y(i)-y(i-1))/(x(i)-x(i-1)))/(x(i+1)-x(i-1))-sig*u(i-1))/p
+		 end do
+		if (ypn.gt..99e30) then
+		  qn=0.
+		  un=0.
+		else
+		  qn=0.5
+		  un=(3./(x(n)-x(n-1)))*(ypn-(y(n)-y(n-1))/(x(n)-x(n-1)))
+		endif
+		y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+1.)
+		do k=n-1,1,-1
+		  y2(k)=y2(k)*y2(k+1)+u(k)
+		end do
+	end subroutine spline
 
-subroutine splint(xa,ya,y2a,n,x,y)
-	use precision
-	use ndErrors
-	implicit none
-	integer :: n,k,khi,klo
-	real(dl) :: x,y,xa(n),y2a(n),ya(n),a,b,h
+	subroutine splint(xa,ya,y2a,n,x,y)
+		use precision
+		use ndErrors
+		implicit none
+		integer :: n,k,khi,klo
+		real(dl) :: x,y,xa(n),y2a(n),ya(n),a,b,h
 
-	klo=1
-	khi=n
-	do while (khi-klo.gt.1) 
-	   k=(khi+klo)/2
-	   if(xa(k).gt.x)then
-		  khi=k
-	   else
-		  klo=k
-	   endif
-	end do   
-	h=xa(khi)-xa(klo)
-	if (h.eq.0.) call criticalError('bad xa input in sbl_splint')
-	a=(xa(khi)-x)/h
-	b=(x-xa(klo))/h
-	y=a*ya(klo)+b*ya(khi)+((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.
-end subroutine splint
+		klo=1
+		khi=n
+		do while (khi-klo.gt.1) 
+		   k=(khi+klo)/2
+		   if(xa(k).gt.x)then
+			  khi=k
+		   else
+			  klo=k
+		   endif
+		end do   
+		h=xa(khi)-xa(klo)
+		if (h.eq.0.) call criticalError('bad xa input in sbl_splint')
+		a=(xa(khi)-x)/h
+		b=(x-xa(klo))/h
+		y=a*ya(klo)+b*ya(khi)+((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.
+	end subroutine splint
 
 SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
 !C     MARK 10 RELEASE. NAG COPYRIGHT 1982.

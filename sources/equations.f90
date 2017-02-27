@@ -7,6 +7,16 @@ module ndEquations
 	use ndcosmology
 	implicit none
 	
+	type(TSpline1D) :: Jfunc_interp, JPrime_interp, Kfunc_interp, Kprime_interp, yfunc_interp
+	type(TSpline1D) :: g1func_interp, g2func_interp
+	
+	procedure (funcX), pointer :: J_func => null ()
+	procedure (funcX), pointer :: K_func => null ()
+	procedure (funcX), pointer :: Jprime => null ()
+	procedure (funcX), pointer :: Kprime => null ()
+	procedure (funcX), pointer :: Y_func => null ()
+	procedure (func2_X), pointer :: G12_func => null ()
+	
 	type collTerm
 		type(cmplxMatNN) :: mat
 		real(dl) :: x,y,z
@@ -19,8 +29,6 @@ module ndEquations
 	end type integrRhoNuPar
 	
 	real(dl), parameter :: upper = 1.d2
-	real(dl) :: komax=0, jomax=0, yomax=0, k1omax=0, j1omax=0, g12omax=0
-	real(dl) :: komin=1e10, jomin=1e10, yomin=1e10, k1omin=1e10, j1omin=1e10, g12omin=1e10
 
 	contains 
 
@@ -74,17 +82,14 @@ module ndEquations
 		J_int = u*u * esuo / ((1.d0+esuo)**2)
 	end function J_int
 	
-	function J_func(o)
-		real(dl) :: J_func
+	function J_funcFull(o)
+		real(dl) :: J_funcFull
 		real(dl), intent(in) :: o
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		if(o.gt.jomax) jomax=o
-		if(o.lt.jomin) jomin=o
-		write(*,'(A,3E13.5)') 'j',jomin,o,jomax
-		J_func = rombint_obj(o, J_int,0,upper,toler,maxiter)/PISQ
-	end function J_func
+		J_funcFull = rombint_obj(o, J_int,0,upper,toler,maxiter)/PISQ
+	end function J_funcFull
 	
 	function Jprime_int(o, u)
 		real(dl) :: Jprime_int
@@ -98,17 +103,14 @@ module ndEquations
 		Jprime_int = u*u * expsqrtuuoo * (1.d0-expsqrtuuoo) /(sqrtuuoo*(expsqrtuuoo+1)**3)
 	end function Jprime_int
 	
-	function Jprime(o)
-		real(dl) :: Jprime
+	function JprimeFull(o)
+		real(dl) :: JprimeFull
 		real(dl), intent(in) :: o
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
-		if(o.gt.j1omax) j1omax=o
-		if(o.lt.j1omin) j1omin=o
-		write(*,'(A,3E13.5)') 'jp',j1omin,o,j1omax
-		Jprime = rombint_obj(o, Jprime_int,0,upper,toler,maxiter) * o / PISQ
-	end function Jprime
+		JprimeFull = rombint_obj(o, Jprime_int,0,upper,toler,maxiter) * o / PISQ
+	end function JprimeFull
 	
 	function K_int(o, u)
 		real(dl) :: K_int,suo
@@ -118,17 +120,14 @@ module ndEquations
 		K_int = u*u / (suo * (1.d0+exp(suo)))
 	end function K_int
 	
-	function K_func(o)
-		real(dl) :: K_func
+	function K_funcFull(o)
+		real(dl) :: K_funcFull
 		real(dl), intent(in) :: o
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		if(o.gt.komax) komax=o
-		if(o.lt.komin) komin=o
-		write(*,'(A,3E13.5)') 'k',komin,o,komax
-		k_func = rombint_obj(o, k_int,0,upper,toler,maxiter)/PISQ
-	end function K_func
+		k_funcFull = rombint_obj(o, k_int,0,upper,toler,maxiter)/PISQ
+	end function K_funcFull
 	
 	function Kprime_int(o, u)
 		real(dl) :: Kprime_int
@@ -143,17 +142,14 @@ module ndEquations
 			(1.d0 + expsqrtuuoo*(sqrtuuoo+1.d0))
 	end function Kprime_int
 	
-	function Kprime(o)
-		real(dl) :: Kprime
+	function KprimeFull(o)
+		real(dl) :: KprimeFull
 		real(dl), intent(in) :: o
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
-		if(o.gt.k1omax) k1omax=o
-		if(o.lt.k1omin) k1omin=o
-		write(*,'(A,3E13.5)') 'kp',k1omin,o,k1omax
-		Kprime = rombint_obj(o, Kprime_int,0,upper,toler, maxiter) * o / PISQ
-	end function Kprime
+		KprimeFull = rombint_obj(o, Kprime_int,0,upper,toler, maxiter) * o / PISQ
+	end function KprimeFull
 	
 	function Y_int(o, u)
 		real(dl) :: Y_int, esuo
@@ -163,20 +159,17 @@ module ndEquations
 		Y_int = u**4 * esuo / ((1.d0+esuo)**2)
 	end function Y_int
 	
-	function Y_func(o)
-		real(dl) :: Y_func
+	function Y_funcFull(o)
+		real(dl) :: Y_funcFull
 		real(dl), intent(in) :: o
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		if(o.gt.yomax) yomax=o
-		if(o.lt.yomin) yomin=o
-		write(*,'(A,3E13.5)') 'y',yomin,o,yomax
-		Y_func = rombint_obj(o, Y_int,0,upper,toler, maxiter)/PISQ
-	end function Y_func
+		Y_funcFull = rombint_obj(o, Y_int,0,upper,toler, maxiter)/PISQ
+	end function Y_funcFull
 	
-	function G12_func(o)
-		real(dl), dimension(2) :: G12_func
+	function G12_funcFull(o)
+		real(dl), dimension(2) :: G12_funcFull
 		real(dl), intent(in) :: o
 		real(dl) :: ko, jo, kp, jp, tmp
 		ko=k_func(o)
@@ -185,20 +178,84 @@ module ndEquations
 		jp=jprime(o)
 		tmp = (kp/6.d0 - ko*kp + jp/6.d0 +jp*ko + jo*kp)
 		
-		if(o.gt.g12omax) g12omax=o
-		if(o.lt.g12omin) g12omin=o
-		write(*,'(A,3E13.5)') 'g12',g12omin,o,g12omax
-		G12_func(1) = PIx2*alpha_fine *(&
+		G12_funcFull(1) = PIx2*alpha_fine *(&
 			(ko/3.d0 + 2*ko*ko - jo/6.d0 -ko*jo)/o + &
 			tmp )
-		G12_func(2) = PIx2*alpha_fine*( &
+		G12_funcFull(2) = PIx2*alpha_fine*( &
 			o * tmp &
 			- 4.d0*( (ko+jo)/6.d0 + ko*jo -ko*ko/2.d0) )
-	end function G12_func
+	end function G12_funcFull
 	
 	subroutine init_interp_jkyg12
-		!must be written
+		real(dl), dimension(interp_nx) :: j, k, jp, kp, y, g1, g2
+		real(dl), dimension(2) :: g12
+		integer::ix
+		
+		call addToLog("[equations] Initializing interpolation for J, J', K, K', Y, G_1, G_2...")
+		do ix=1, interp_nx
+			j(ix)  = J_funcFull(interp_xozvec(ix))
+			jp(ix) = JprimeFull(interp_xozvec(ix))
+			k(ix)  = K_funcFull(interp_xozvec(ix))
+			kp(ix) = KprimeFull(interp_xozvec(ix))
+			y(ix)  = Y_funcFull(interp_xozvec(ix))
+			g12    = G12_funcFull(interp_xozvec(ix))
+			g1(ix) = g12(1)
+			g2(ix) = g12(2)
+		end do
+		call Jfunc_interp%Init(interp_xozvec,j,"J")
+		call JPrime_interp%Init(interp_xozvec,jp,"J'")
+		call Kfunc_interp%Init(interp_xozvec,k,"K")
+		call Kprime_interp%Init(interp_xozvec,kp,"K'")
+		call yfunc_interp%Init(interp_xozvec,y,"Y")
+		call g1func_interp%Init(interp_xozvec,g1,"G_1")
+		call g2func_interp%Init(interp_xozvec,g2,"G_2")
+
+		J_func   => J_funcInterp
+		K_func   => K_funcInterp
+		Jprime   => JprimeInterp
+		Kprime   => KprimeInterp
+		Y_func   => Y_funcInterp
+		G12_func => G12_funcInterp
+		call addToLog("[equations] ...done!")
 	end subroutine init_interp_jkyg12
+	
+	function J_funcInterp(o)
+		real(dl) :: J_funcInterp
+		real(dl), intent(in) :: o
+		J_funcInterp = Jfunc_interp%Value(o)
+	end function J_funcInterp
+	
+	function K_funcInterp(o)
+		real(dl) :: K_funcInterp
+		real(dl), intent(in) :: o
+		K_funcInterp = Kfunc_interp%Value(o)
+	end function K_funcInterp
+	
+	function jprimeInterp(o)
+		real(dl) :: jprimeInterp
+		real(dl), intent(in) :: o
+		jprimeInterp = JPrime_interp%Value(o)
+	end function jprimeInterp
+	
+	function kprimeInterp(o)
+		real(dl) :: kprimeInterp
+		real(dl), intent(in) :: o
+		kprimeInterp = Kprime_interp%Value(o)
+	end function kprimeInterp
+	
+	function Y_funcInterp(o)
+		real(dl) :: Y_funcInterp
+		real(dl), intent(in) :: o
+		Y_funcInterp = yfunc_interp%Value(o)
+	end function Y_funcInterp
+	
+	function G12_funcInterp(o)
+		real(dl), dimension(2) :: G12_funcInterp
+		real(dl), intent(in) :: o
+		
+		G12_funcInterp(1) = g1func_interp%Value(o)
+		G12_funcInterp(2) = g2func_interp%Value(o)
+	end function G12_funcInterp
 	
 	function integrate_dRhoNu(params, y)
 		real(dl) :: integrate_dRhoNu, y

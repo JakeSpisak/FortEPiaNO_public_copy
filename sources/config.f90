@@ -222,6 +222,7 @@ module ndConfig
 			
 			interp_xvec = logspace(log10(x_in), log10(x_fin), interp_nx)
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
+			interp_xozvec = logspace(log10(x_in/interp_zmax), log10(x_fin), interp_nx)
 		
 !			tmparg=trim(read_ini_char('pionFluxFile'))
 !			if (trim(tmparg)/="") pionFluxFile=tmparg

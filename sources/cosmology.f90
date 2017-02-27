@@ -71,7 +71,7 @@ module ndCosmology
 				ed_vec(ix,iz) = electronDensity(interp_xvec(ix),interp_zvec(iz))
 			end do
 		end do
-		call elDens%Init(interp_xvec,interp_zvec,ed_vec)
+		call elDens%Init(interp_xvec,interp_zvec,ed_vec,"electronDensity")
 		loadedEDens = .true.
 		electronDensity => electronDensityInterp
 		call addToLog("[cosmo] ...done!")

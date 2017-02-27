@@ -115,6 +115,7 @@ module variables
 	real(dl), parameter :: interp_zmin = 1.0d0, interp_zmax = 1.5d0
 	real(dl), dimension(interp_nx) :: interp_xvec
 	real(dl), dimension(interp_nz) :: interp_zvec
+	real(dl), dimension(interp_nx) :: interp_xozvec
 	
 	contains
 	

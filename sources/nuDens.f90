@@ -12,6 +12,13 @@ program nuDens
 
 	call openLogFile
 	call initConfig
+	
+	J_func   => J_funcFull 
+	K_func   => K_funcFull 
+	Jprime   => JprimeFull 
+	Kprime   => KprimeFull 
+	Y_func   => Y_funcFull 
+	G12_func => G12_funcFull
 	call init_interp_jkyg12
 	
 	electronDensity => electronDensityFull

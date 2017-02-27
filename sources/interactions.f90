@@ -23,7 +23,7 @@ module ndInteractions
 				dme_vec(ix,iz) = dme2_electronFull(interp_xvec(ix),0.d0,interp_zvec(iz))
 			end do
 		end do
-		call dmeCorr%Init(interp_xvec,interp_zvec,dme_vec)
+		call dmeCorr%Init(interp_xvec,interp_zvec,dme_vec,"dme2Corrections")
 		dme2_e_loaded = .true.
 		dme2_electron => dme2_electronInterp
 		call addToLog("[interactions] ...done!")
