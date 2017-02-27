@@ -74,7 +74,7 @@ module ndMatrices
 		if (.not. allocated(mat)) then
 			allocate(mat(nc, nc))
 		end if
-		if (ix1.lt.ix2) then
+		if (i1.lt.i2) then
 			ix1=i1
 			ix2=i2
 		else

@@ -113,9 +113,9 @@ module variables
 	!used for 2d interpolation:
 	integer, parameter :: interp_nx = 1000, interp_nz = 100
 	real(dl), parameter :: interp_zmin = 1.0d0, interp_zmax = 1.5d0
-	real(dl), dimension(interp_nx) :: interp_xvec
-	real(dl), dimension(interp_nz) :: interp_zvec
-	real(dl), dimension(interp_nx) :: interp_xozvec
+	real(dl), dimension(:), allocatable :: interp_xvec
+	real(dl), dimension(:), allocatable :: interp_zvec
+	real(dl), dimension(:), allocatable :: interp_xozvec
 	
 	contains
 	
@@ -127,4 +127,13 @@ module variables
 			allocate(m%re(flavorNumber,flavorNumber), m%im(flavorNumber,flavorNumber))
 		end if
 	end subroutine allocateCmplxMat
+	
+	subroutine deallocateCmplxMat(m)
+		type(cmplxMatNN) :: m
+		
+		if (.not. m%a) then
+			m%a=.false.
+			deallocate(m%re, m%im)
+		end if
+	end subroutine deallocateCmplxMat
 end module variables
