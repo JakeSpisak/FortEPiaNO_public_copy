@@ -401,7 +401,7 @@ module ndEquations
 		end do
 		
 		write(fname, '(A,E14.7)') 'Saving info at x=',x
-		call addToLog(fname)
+		call addToLog(fname)!not a filename but the above string
 		
 		do k=1, flavorNumber
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag',k,'.dat'
@@ -476,6 +476,7 @@ module ndEquations
 		
 		call addToLog("[solver] Starting DLSODA...")
 		xstart=x_arr(1)
+		call saveRelevantInfo(xstart, nuDensVec)
 		do ix=1, Nx/printEveryNIter
 			xend   = x_arr((ix)*printEveryNIter)
 			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&

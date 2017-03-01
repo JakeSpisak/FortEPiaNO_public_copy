@@ -485,43 +485,35 @@ module ndInteractions
 	end function PI2_f
 
 	function interp_nuDens(y)
-		type(cmplxMatNN) :: interp_nuDens
+		type(cmplxMatNN) :: interp_nuDens, mu, ml
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
+		real(dl) :: ixr, yr
 		logical :: exact
 		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDens)
-		
+		call allocateCmplxMat(mu)
+		call allocateCmplxMat(ml)
 		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
 			interp_nuDens%re =0.d0
 			interp_nuDens%im =0.d0
 		elseif (abs(y-nuDensMatVec(Ny)%y) .lt. 1.d-6) then
 			interp_nuDens = nuDensMatVec(Ny)
 		else
-			ix=0
-			do k=1, Ny-1
-				if (y .lt. nuDensMatVec(k+1)%y .and. y .ge. nuDensMatVec(k)%y) then
-					ix=k
-				end if
-				if (y .eq. nuDensMatVec(k)%y) &
-					exact = .true.
-			end do
+			ixr=(Ny-1)*(log10(y)-log10(y_min))/(log10(y_max)-log10(y_min))+1
+			ix=int(ixr)
+			exact = abs(ixr-ix) .lt. 1d-5
 			if (ix .gt. 0 .and. ix .lt. Ny) then
 				if (exact) then
 					interp_nuDens = nuDensMatVec(ix)
 				else
+					ml = nuDensMatVec(ix)
+					mu = nuDensMatVec(ix+1)
+					yr = (y - nuDensMatVec(ix)%y) / (nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)
 					interp_nuDens%y = y
-					do i=1, flavorNumber
-						do j=1, flavorNumber
-							interp_nuDens%re(i,j) = nuDensMatVec(ix)%re(i,j) + (y-nuDensMatVec(ix)%y) / &
-								(nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)* &
-								(nuDensMatVec(ix+1)%re(i,j) - nuDensMatVec(ix)%re(i,j))
-							interp_nuDens%im(i,j) =  nuDensMatVec(ix)%im(i,j) + (y-nuDensMatVec(ix)%y) / &
-								(nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)* &
-								(nuDensMatVec(ix+1)%im(i,j) - nuDensMatVec(ix)%im(i,j))
-						end do
-					end do
+					interp_nuDens%re(:,:) = ml%re(:,:) + yr * (mu%re(:,:) - ml%re(:,:))
+					interp_nuDens%im(:,:) = ml%im(:,:) + yr * (mu%im(:,:) - ml%im(:,:))
 				end if
 			else
 				write(vals,"('y=',E14.7,'    ix=',I3)") y, ix
@@ -531,38 +523,35 @@ module ndInteractions
 	end function interp_nuDens
 	
 	function interp_nuDensIJ(y, i, j)
-		type(cmplxMatNN) :: interp_nuDensIJ
+		type(cmplxMatNN) :: interp_nuDensIJ, mu, ml
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
+		real(dl) :: ixr, yr
 		logical :: exact
 		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDensIJ)
+		call allocateCmplxMat(mu)
+		call allocateCmplxMat(ml)
 		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
 			interp_nuDensIJ%re =0.d0
 			interp_nuDensIJ%im =0.d0
 		elseif (abs(y - nuDensMatVec(Ny)%y).lt.1d-6) then
 			interp_nuDensIJ = nuDensMatVec(Ny)
 		else
-			ix=0
-			do k=1, Ny-1
-				if (y .lt. nuDensMatVec(k+1)%y .and. y .ge. nuDensMatVec(k)%y) then
-					ix=k
-				end if
-				if (y .eq. nuDensMatVec(k)%y) &
-					exact = .true.
-			end do
+			ixr=(Ny-1)*(log10(y)-log10(y_min))/(log10(y_max)-log10(y_min))+1
+			ix=int(ixr)
+			exact = abs(ixr-ix) .lt. 1d-6
 			if (ix .gt. 0 .and. ix .lt. Ny) then
 				if (exact) then
 					interp_nuDensIJ = nuDensMatVec(ix)
 				else
+					ml = nuDensMatVec(ix)
+					mu = nuDensMatVec(ix+1)
+					yr = (y - nuDensMatVec(ix)%y) / (nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)
 					interp_nuDensIJ%y = y
-					interp_nuDensIJ%re(i,j) = nuDensMatVec(ix)%re(i,j) + (y-nuDensMatVec(ix)%y) / &
-						(nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)* &
-						(nuDensMatVec(ix+1)%re(i,j) - nuDensMatVec(ix)%re(i,j))
-					interp_nuDensIJ%im(i,j) =  nuDensMatVec(ix)%im(i,j) + (y-nuDensMatVec(ix)%y) / &
-						(nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)* &
-						(nuDensMatVec(ix+1)%im(i,j) - nuDensMatVec(ix)%im(i,j))
+					interp_nuDensIJ%re(i,j) = ml%re(i,j) + yr * (mu%re(i,j) - ml%re(i,j))
+					interp_nuDensIJ%im(i,j) = ml%im(i,j) + yr * (mu%im(i,j) - ml%im(i,j))
 				end if
 			else
 				write(vals,"('y=',E14.7,'    ix=',I3)") y, ix

@@ -237,6 +237,7 @@ module ndConfig
 !			if (trim(tmparg)/="") outMinInfo=tmparg
 			tmparg=trim(read_ini_char('outputFolder'))
 			if (trim(tmparg)/="") outputFolder=tmparg
+			call system('mkdir -p '//trim(outputFolder))
 		else
 			call error("You are not reading a configuration file...are you sure you are doing things properly?")
 		end if
