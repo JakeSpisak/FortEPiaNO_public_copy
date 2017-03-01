@@ -109,8 +109,15 @@ module ndInteractions
 		real(dl) :: Ebare_i
 		real(dl), intent(in) :: x,y,z
 		
-		Ebare_i = sqrt(x*x+y*y+dme2_electron(x,y,z)**2)
+		Ebare_i = sqrt(x*x+y*y+dme2_electron(x,y,z))
 	end function Ebare_i
+	
+	function Ebare_i_dme(x,y,z,dme2)!for electrons
+		real(dl) :: Ebare_i_dme
+		real(dl), intent(in) :: x,y,z,dme2
+		
+		Ebare_i_dme = sqrt(x*x+y*y+dme2)
+	end function Ebare_i_dme
 	
 	function Ebarn_i(x,y,z)!for neutrinos
 		real(dl) :: Ebarn_i
@@ -568,13 +575,16 @@ module ndInteractions
 		real(dl), dimension(2) :: pi1_vec
 		real(dl), dimension(3) :: pi2_vec
 		type(cmplxMatNN) :: n3
-		real(dl) :: y2,y3,y4
+		real(dl) :: y2,y3,y4, E2, E4, dme2
 		
 		call allocateCmplxMat(n3)
 		
-		y2=ve(1)
-		y4=ve(2)
-		y3 = obj%y1 + Ebare_i(obj%x,y2,obj%z) - Ebare_i(obj%x,y4,obj%z)
+		y2 = ve(1)
+		y4 = ve(2)
+		dme2 = dme2_electron(obj%x,0.d0, obj%z)
+		E2 = Ebare_i_dme(obj%x,y2,obj%z, dme2)
+		E4 = Ebare_i_dme(obj%x,y4,obj%z, dme2)
+		y3 = obj%y1 + E2 - E4
 		if (y3.lt.0.d0 &
 			.or. obj%y1.gt.y3+y2+y4 &
 			.or. y2.gt.obj%y1+y3+y4 &
@@ -588,12 +598,12 @@ module ndInteractions
 			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
 			
 			coll_nue_sc_int = &
-				y2/Ebare_i(obj%x, y2, obj%z) * &
-				y4/Ebare_i(obj%x, y4, obj%z) * &
+				y2/E2 * &
+				y4/E4 * &
 				( &
 					pi2_vec(1) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
 					pi2_vec(2) * F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) - &
-					(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
+					(obj%x*obj%x + dme2) * pi1_vec(1)* (&
 						F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
 						F_ab_sc(obj%x,obj%z,obj%na,y2,n3,y4, 1,2, obj%ix1,obj%ix2, obj%rI)) &
 				)
@@ -606,7 +616,7 @@ module ndInteractions
 		real(dl), dimension(3) :: pi2_vec
 		real(dl), intent(in), dimension(2) :: ve
 		type(cmplxMatNN) :: n2
-		real(dl) :: y2,y3,y4
+		real(dl) :: y2,y3,y4, E3, E4, dme2
 		integer :: n
 		type(coll_args) :: obj
 		
@@ -614,7 +624,10 @@ module ndInteractions
 		
 		y3=ve(1)
 		y4=ve(2)
-		y2 = Ebare_i(obj%x,y3,obj%z) + Ebare_i(obj%x,y4,obj%z) - obj%y1
+		dme2 = dme2_electron(obj%x,0.d0, obj%z)
+		E3 = Ebare_i_dme(obj%x,y4,obj%z,dme2)
+		E4 = Ebare_i_dme(obj%x,y4,obj%z,dme2)
+		y2 = E3 + E4 - obj%y1
 		if (y2.lt.0.d0 &
 			.or. obj%y1.gt.y3+y2+y4 &
 			.or. y2.gt.obj%y1+y3+y4 &
@@ -628,12 +641,12 @@ module ndInteractions
 			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
 			
 			coll_nue_ann_int = &
-				y2/Ebare_i(obj%x, y2, obj%z) * &
-				y4/Ebare_i(obj%x, y4, obj%z) * &
+				y3/E3 * &
+				y4/E4 * &
 				( &
 					pi2_vec(1) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
-					pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) - &
-					(obj%x*obj%x + dme2_electron(obj%x,0.d0, obj%z)) * pi1_vec(1)* (&
+					pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) + &
+					(obj%x*obj%x + dme2) * pi1_vec(1)* (&
 						F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
 						F_ab_ann(obj%x,obj%z,obj%na,n2,y3,y4, 1,2, obj%ix1,obj%ix2, obj%rI)) &
 				)

@@ -256,14 +256,14 @@ module utilities
     integer md,ier
 
     md=2
-    if (.not. this%Initialized)  call this%FirstUse
+!    if (.not. this%Initialized)  call this%FirstUse
 
     call rgbi3p(this%Wk,md, this%nx, this%ny, this%x, this%y, this%z, nip, x, y, z, ier)
-    if (present(error)) then
-        error=ier
-    elseif (ier/=0) then
-        call this%Error('error interpolating value')
-    end if
+!    if (present(error)) then
+!        error=ier
+!    elseif (ier/=0) then
+!        call this%Error('error interpolating value')
+!    end if
 
     end subroutine TInterpGrid2D_Values
 
@@ -1549,6 +1549,17 @@ module utilities
 			open(unit=u, file=fname, status="old", position="append", action="write")
 		end if
 	end subroutine openFile
+	
+	subroutine writeCheckpoints(n,x,vars,ydot)
+		integer :: n
+		real(dl) :: x
+		real(dl), dimension(n), intent(in) :: vars, ydot
+		
+		if (verbose.gt.1) call addToLog("[ckpt] saving checkpoint")
+		
+		print *,outputFolder
+!		call rename("","")
+	end subroutine writeCheckpoints
 	
 	subroutine spline(x,y,n,yp1,ypn,y2)
 		use precision

@@ -543,6 +543,7 @@ module ndEquations
 		ydot(ntot) = dz_o_dx(x,z)
 		call densMat_2_vec(nuDensVec)
 		call deallocateCmplxMat(mat)
+		call writeCheckpoints(n, x, vars, ydot)
 	end subroutine derivatives
 	
 	subroutine jdum
