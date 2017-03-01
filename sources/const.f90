@@ -66,6 +66,7 @@ module variables
 	
 	character(len=300) :: outputFolder
 	logical :: firstWrite = .true.
+	logical :: firstPoint = .false.
 	
 	!variables that will be read from config file
 	logical :: massOrdering, only_1a_1s
@@ -86,7 +87,7 @@ module variables
 	
 	type coll_args
 		type(cmplxMatNN) :: na, nb
-		real(dl) :: y1, y2, y3, y4, x, z
+		real(dl) :: y1, y2, y3, y4, x, z, dme2
 		logical :: s1, s2, s3, s4
 		integer :: ix1, ix2, a, b
 		integer :: rI !return real or imaginary part

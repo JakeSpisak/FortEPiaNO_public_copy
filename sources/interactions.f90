@@ -6,16 +6,19 @@ module ndInteractions
 	use ndErrors
 	use ndMatrices
 !	use ndconfig
+	use bspline_module
 	implicit none
 	
 	logical :: dme2_e_loaded = .false.
-	type(TInterpGrid2D) :: dmeCorr
+!	type(TInterpGrid2D) :: dmeCorr
+	type(bspline_2d) :: dmeCorr
 	procedure (funcXYZ), pointer :: dme2_electron => null ()
 	contains
 	
 	subroutine dme2_e_load()
 		real(dl), dimension(:,:), allocatable :: dme_vec
-		integer :: ix, iz
+		integer :: ix, iz, iflag
+		real(dl) :: x,z
 		
 		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
 		allocate(dme_vec(interp_nx,interp_nz))
@@ -24,9 +27,19 @@ module ndInteractions
 				dme_vec(ix,iz) = dme2_electronFull(interp_xvec(ix),0.d0,interp_zvec(iz))
 			end do
 		end do
-		call dmeCorr%Init(interp_xvec,interp_zvec,dme_vec,"dme2Corrections")
-		dme2_e_loaded = .true.
+		call dmeCorr%initialize(interp_xvec,interp_zvec,dme_vec,4,4,iflag)
+!		call dmeCorr%Init(interp_xvec,interp_zvec,dme_vec,"dme2Corrections")
 		dme2_electron => dme2_electronInterp
+		
+		call random_seed()
+		call random_number(x)!=0.13151
+		call random_number(z)!=0.13151
+		x=(x_fin-x_in)*x + x_in
+		z=0.4d0*z + z_in
+		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x,z
+		write(*,"(' [interactions] comparison (true vs interp): ',*(E14.7))") dme2_electronFull(x,0.d0,z), dme2_electron(x,0.d0,z)
+		
+		dme2_e_loaded = .true.
 		deallocate(dme_vec)
 		call addToLog("[interactions] ...done!")
 	end subroutine 
@@ -101,8 +114,10 @@ module ndInteractions
 	function dme2_electronInterp(x,y,z)
 		real(dl) :: dme2_electronInterp
 		real(dl), intent(in) :: x,y,z
+		integer :: iflag
 		
-		dme2_electronInterp = dmeCorr%Value(x,z)
+		call dmeCorr%evaluate(x,z,0,0,dme2_electronInterp,iflag)
+!		dme2_electronInterp = dmeCorr%Value(x,z)
 	end function dme2_electronInterp
 	
 	function Ebare_i(x,y,z)!for electrons
@@ -581,7 +596,7 @@ module ndInteractions
 		
 		y2 = ve(1)
 		y4 = ve(2)
-		dme2 = dme2_electron(obj%x,0.d0, obj%z)
+		dme2 = obj%dme2
 		E2 = Ebare_i_dme(obj%x,y2,obj%z, dme2)
 		E4 = Ebare_i_dme(obj%x,y4,obj%z, dme2)
 		y3 = obj%y1 + E2 - E4
@@ -624,7 +639,7 @@ module ndInteractions
 		
 		y3=ve(1)
 		y4=ve(2)
-		dme2 = dme2_electron(obj%x,0.d0, obj%z)
+		dme2 = obj%dme2
 		E3 = Ebare_i_dme(obj%x,y4,obj%z,dme2)
 		E4 = Ebare_i_dme(obj%x,y4,obj%z,dme2)
 		y2 = E3 + E4 - obj%y1
@@ -691,6 +706,7 @@ module ndInteractions
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%y1 = y1
+		collArgs%dme2 = dme2_electron(x, 0.d0, z)
 		do k=1, Ny
 			if (nuDensMatVec(k)%y .eq. y1) &
 				collArgs%na = nuDensMatVec(k)

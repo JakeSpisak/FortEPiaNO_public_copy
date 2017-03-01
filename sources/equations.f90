@@ -446,10 +446,13 @@ module ndEquations
 	end subroutine saveRelevantInfo
 	
 	subroutine solver
-		real(dl) :: xstart, xend
+		real(dl) :: xstart, xend, xchk
 		real(dl), dimension(:), allocatable :: y, ydot
-		integer :: ix
+		integer :: ix, nchk
 		character(len=3) :: istchar
+		character(len=100) :: tmpstring
+		real(dl), dimension(:), allocatable :: ychk
+		logical :: chk
 		!for dlsoda:
 		real(dl) :: rtol
 		integer :: itol, itask, istate, iopt, lrw, liw, jt
@@ -474,8 +477,22 @@ module ndEquations
 		call densMat_2_vec(nuDensVec)
 		nuDensVec(ntot)=z_in
 		
+		call readCheckpoints(nchk, xchk, ychk, chk)
+		
+		if (chk .and. &
+			nchk.eq.ntot) then
+			xstart=xchk
+			nuDensVec=ychk
+			firstWrite=.false.
+			firstPoint=.true.
+			write(tmpstring,"('ntot =',I4,' - x =',E14.7,' - z =',E14.7)"), nchk, xchk, ychk(ntot)
+			call addToLog("[ckpt] ---Checkpoint file found. Will start from there.---")
+			call addToLog(trim(tmpstring))
+		else
+			xstart=x_arr(1)
+		end if
+		
 		call addToLog("[solver] Starting DLSODA...")
-		xstart=x_arr(1)
 		call saveRelevantInfo(xstart, nuDensVec)
 		do ix=1, Nx/printEveryNIter
 			xend   = x_arr((ix)*printEveryNIter)
@@ -504,6 +521,8 @@ module ndEquations
 		real(dl), dimension(n), intent(out) :: ydot
 		integer :: flsq
 		real(dl), dimension(:,:), allocatable :: tmpvec
+		
+		call writeCheckpoints(n, x, vars)
 		
 		flsq=flavorNumber**2
 		allocate(tmpvec(Ny,flsq))
@@ -543,7 +562,6 @@ module ndEquations
 		ydot(ntot) = dz_o_dx(x,z)
 		call densMat_2_vec(nuDensVec)
 		call deallocateCmplxMat(mat)
-		call writeCheckpoints(n, x, vars, ydot)
 	end subroutine derivatives
 	
 	subroutine jdum

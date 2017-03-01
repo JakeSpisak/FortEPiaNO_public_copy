@@ -1550,16 +1550,49 @@ module utilities
 		end if
 	end subroutine openFile
 	
-	subroutine writeCheckpoints(n,x,vars,ydot)
+	subroutine writeCheckpoints(n,x,vars)
 		integer :: n
 		real(dl) :: x
-		real(dl), dimension(n), intent(in) :: vars, ydot
+		real(dl), dimension(n), intent(in) :: vars
+		
+		if (firstPoint) then
+			firstPoint = .false.
+			return
+		end if
 		
 		if (verbose.gt.1) call addToLog("[ckpt] saving checkpoint")
 		
-		print *,outputFolder
-!		call rename("","")
+		!save a tmp file and then move to the real one
+		open(file=trim(outputFolder)//"/checkpoint.chk_tmp", unit=8643, status="unknown", form="binary")
+		write(8643) n
+		write(8643) x
+		write(8643) vars(:)
+		close(8643)
+		call rename(trim(outputFolder)//"/checkpoint.chk_tmp",trim(outputFolder)//"/checkpoint.chk")
 	end subroutine writeCheckpoints
+	
+	subroutine readCheckpoints(n,x,vars,p)
+		integer, intent(out) :: n
+		real(dl), intent(out) :: x
+		real(dl), dimension(:), allocatable, intent(out) :: vars
+		logical, intent(out) :: p
+		
+		inquire(file=trim(outputFolder)//"/checkpoint.chk", exist=p)
+		
+		if (.not. p) return
+		
+		call addToLog("[ckpt] reading checkpoint...")
+		
+		!save a tmp file and then move to the real one
+		open(file=trim(outputFolder)//"/checkpoint.chk", unit=8643, form="binary")
+		read(8643) n
+		read(8643) x
+		allocate(vars(n))
+		read(8643) vars(:)
+		close(8643)
+		
+		call addToLog("[ckpt] ...done!")
+	end subroutine readCheckpoints
 	
 	subroutine spline(x,y,n,yp1,ypn,y2)
 		use precision

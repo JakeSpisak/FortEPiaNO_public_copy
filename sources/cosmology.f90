@@ -4,10 +4,12 @@ module ndCosmology
 	use utilities
 	use ndErrors
 	use ndInteractions
+	use bspline_module
 	implicit none
 	
 	logical :: loadedEDens = .false.
-	type(TInterpGrid2D) :: elDens
+!	type(TInterpGrid2D) :: elDens
+	type(bspline_2d) :: elDens
 	
 	type nuDensArgs
 		real(dl) :: x,z
@@ -57,13 +59,16 @@ module ndCosmology
 	
 	function electronDensityInterp(x,z)
 		real(dl) :: electronDensityInterp, x,z
+		integer :: iflag
 		
-		electronDensityInterp = elDens%Value(log10(x),z)
+		call elDens%evaluate(x,z,0,0,electronDensityInterp,iflag)
+!		electronDensityInterp = elDens%Value(log10(x),z)
 	end function electronDensityInterp
 
 	subroutine loadElDensity
 		real(dl), dimension(:,:), allocatable :: ed_vec
-		integer :: ix, iz
+		integer :: ix, iz, iflag
+		real(dl) :: x,z
 		
 		call addToLog("[cosmo] Initializing interpolation for electron density...")
 		allocate(ed_vec(interp_nx,interp_nz))
@@ -72,8 +77,18 @@ module ndCosmology
 				ed_vec(ix,iz) = electronDensityFull(interp_xvec(ix),interp_zvec(iz))
 			end do
 		end do
-		call elDens%Init(interp_xvec,interp_zvec,ed_vec,"electronDensity")
+		call elDens%initialize(interp_xvec,interp_zvec,ed_vec,4,4,iflag)
+!		call elDens%Init(interp_xvec,interp_zvec,ed_vec,"electronDensity")
 		electronDensity => electronDensityInterp
+		
+		call random_seed()
+		call random_number(x)!=0.13151
+		call random_number(z)!=0.13151
+		x=(x_fin-x_in)*x + x_in
+		z=0.4d0*z + z_in
+		write(*,"(' [cosmo] test electronDensityInterp in ',*(E12.5))") x,z
+		write(*,"(' [cosmo] comparison (true vs interp): ',*(E14.7))") electronDensityFull(x,z), electronDensity(x,z)
+		
 		loadedEDens = .true.
 		call addToLog("[cosmo] ...done!")
 	end subroutine loadElDensity
