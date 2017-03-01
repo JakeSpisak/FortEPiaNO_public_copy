@@ -37,7 +37,7 @@ module ndInteractions
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
 		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x,z
-		write(*,"(' [interactions] comparison (true vs interp): ',*(E14.7))") dme2_electronFull(x,0.d0,z), dme2_electron(x,0.d0,z)
+		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") dme2_electronFull(x,0.d0,z), dme2_electron(x,0.d0,z)
 		
 		dme2_e_loaded = .true.
 		deallocate(dme_vec)

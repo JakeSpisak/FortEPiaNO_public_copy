@@ -87,7 +87,7 @@ module ndCosmology
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
 		write(*,"(' [cosmo] test electronDensityInterp in ',*(E12.5))") x,z
-		write(*,"(' [cosmo] comparison (true vs interp): ',*(E14.7))") electronDensityFull(x,z), electronDensity(x,z)
+		write(*,"(' [cosmo] comparison (true vs interp): ',*(E17.10))") electronDensityFull(x,z), electronDensity(x,z)
 		
 		loadedEDens = .true.
 		call addToLog("[cosmo] ...done!")
