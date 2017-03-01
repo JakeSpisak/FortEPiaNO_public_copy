@@ -67,6 +67,7 @@ module variables
 	character(len=300) :: outputFolder
 	logical :: firstWrite = .true.
 	logical :: firstPoint = .false.
+	logical :: checkpoint = .false.
 	
 	!variables that will be read from config file
 	logical :: massOrdering, only_1a_1s

@@ -1555,6 +1555,8 @@ module utilities
 		real(dl) :: x
 		real(dl), dimension(n), intent(in) :: vars
 		
+		if (.not. checkpoint) return
+		
 		if (firstPoint) then
 			firstPoint = .false.
 			return
@@ -1576,6 +1578,8 @@ module utilities
 		real(dl), intent(out) :: x
 		real(dl), dimension(:), allocatable, intent(out) :: vars
 		logical, intent(out) :: p
+		
+		if (.not. checkpoint) return
 		
 		inquire(file=trim(outputFolder)//"/checkpoint.chk", exist=p)
 		

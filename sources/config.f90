@@ -166,6 +166,7 @@ module ndConfig
 			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
 			
 			verbose = read_ini_int('verbose',verbose)
+			checkpoint = read_ini_logical('checkpoint', .true.)
 			maxiter = read_ini_int('maxiter',100)
 			toler   = read_ini_real('tolerance', 1.d-3)
 			printEveryNIter = read_ini_int('printEveryNIter',1000)
