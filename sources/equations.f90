@@ -400,8 +400,8 @@ module ndEquations
 			units(i) = 8972 + i
 		end do
 		
-		write(fname, '(A,E14.7)') 'Saving info at x=',x
-		call addToLog(fname)!not a filename but the above string
+		write(fname, '(A,E14.7)') '[output] Saving info at x=',x
+		call addToLog(trim(fname))!not a filename but the above string
 		
 		do k=1, flavorNumber
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag',k,'.dat'

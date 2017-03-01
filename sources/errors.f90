@@ -9,7 +9,7 @@ module ndErrors
 	contains
 	
 	subroutine openLogFile
-		write(*,*) "Writing log into: log/", trim(logFile)
+		write(*,*) "[log] Writing log into: log/", trim(logFile)
 		open(unit=lfu, file="log/"//trim(logFile))
 		totErrors=0
 		call timeToLog

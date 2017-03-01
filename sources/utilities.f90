@@ -1543,7 +1543,7 @@ module utilities
 		
 		if (overwrite) then
 			write(tmpchar,'(I5)') u
-			call addToLog("Opening new file "//fname//" in unit "//tmpchar)
+			call addToLog("[output] Opening new file "//fname//" in unit "//tmpchar)
 			open(unit=u, file=fname, status="unknown", action="write")
 		else
 			open(unit=u, file=fname, status="old", position="append", action="write")
