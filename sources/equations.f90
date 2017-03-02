@@ -490,7 +490,7 @@ module ndEquations
 			nuDensVec=ychk
 			firstWrite=.false.
 			firstPoint=.true.
-			ix_in=1 + int((log10(xchk)-log10(x_in))/(log10(x_fin)-log10(x_in))*(Nx/printEveryNIter-1))
+			ix_in=1 + int((log10(xchk)-logx_in)/(logx_fin-logx_in)*(Nx/printEveryNIter-1))
 			write(tmpstring,"('ntot =',I4,' - x =',E14.7,' (i=',I4,') - z =',E14.7)"), nchk, xchk, ix_in, ychk(ntot)
 			call addToLog("[ckpt] ##### Checkpoint file found. Will start from there. #####")
 			call addToLog(trim(tmpstring))

@@ -108,7 +108,7 @@ module variables
 	!technical settings
 	integer :: verbose = 1
 	integer :: Nx, Ny, printEveryNIter
-	real(dl) :: x_in, x_fin, y_min, y_max, z_in
+	real(dl) :: x_in, x_fin, y_min, y_max, z_in, logx_in, logx_fin, logy_min, logy_max
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
 	integer :: maxiter
 	real(dl) :: toler

@@ -45,15 +45,11 @@ module ndCosmology
 		real(dl), dimension(2) :: vec
 		external rombint_obj
 		
-!		if (loadedEDens) then
-!			electronDensityFull = elDens%Value(log10(x),z)
-!		else
-			vec(1)=x
-			vec(2)=z
-		
-			electronDensityFull = rombint_obj(vec, integr_rho_e, 0.d0, 60.d0, 1d-3, maxiter)
-			electronDensityFull = electronDensityFull / PISQD2
-!		end if
+		vec(1)=x
+		vec(2)=z
+	
+		electronDensityFull = rombint_obj(vec, integr_rho_e, 0.d0, 60.d0, 1d-3, maxiter)
+		electronDensityFull = electronDensityFull / PISQD2
 	end function electronDensityFull
 	
 	function electronDensityInterp(x,z)

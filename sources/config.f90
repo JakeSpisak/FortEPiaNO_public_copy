@@ -181,11 +181,15 @@ module ndConfig
 			
 			x_in    = read_ini_real('x_in', 0.01d0)
 			x_fin   = read_ini_real('x_fin', 40.d0)
-			x_arr = logspace(log10(x_in), log10(x_fin), Nx)
+			logx_in  = log10(x_in)
+			logx_fin = log10(x_fin)
+			x_arr = logspace(logx_in, logx_fin, Nx)
 
 			y_min   = read_ini_real('y_min', 0.0d0)
 			y_max   = read_ini_real('y_max', 20.0d0)
-			y_arr = logspace(log10(y_min), log10(y_max), Ny)
+			logy_min = log10(y_min)
+			logy_max = log10(y_max)
+			y_arr = logspace(logy_min, logy_max, Ny)
 
 			z_in    = read_ini_real('z_in', 1.00003d0)
 			
@@ -242,9 +246,9 @@ module ndConfig
 			call init_matrices
 			
 			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nx))
-			interp_xvec = logspace(log10(x_in), log10(x_fin), interp_nx)
+			interp_xvec = logspace(logx_in, logx_fin, interp_nx)
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-			interp_xozvec = logspace(log10(x_in/interp_zmax), log10(x_fin), interp_nx)
+			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nx)
 		
 !			tmparg=trim(read_ini_char('pionFluxFile'))
 !			if (trim(tmparg)/="") pionFluxFile=tmparg

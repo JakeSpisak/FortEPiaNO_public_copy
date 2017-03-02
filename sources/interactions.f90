@@ -520,7 +520,7 @@ module ndInteractions
 		elseif (abs(y-nuDensMatVec(Ny)%y) .lt. 1.d-6) then
 			interp_nuDens = nuDensMatVec(Ny)
 		else
-			ixr=(Ny-1)*(log10(y)-log10(y_min))/(log10(y_max)-log10(y_min))+1
+			ixr=(Ny-1)*(log10(y)-logy_min)/(logy_max-logy_min)+1
 			ix=int(ixr)
 			exact = abs(ixr-ix) .lt. 1d-5
 			if (ix .gt. 0 .and. ix .lt. Ny) then
@@ -558,7 +558,7 @@ module ndInteractions
 		elseif (abs(y - nuDensMatVec(Ny)%y).lt.1d-6) then
 			interp_nuDensIJ = nuDensMatVec(Ny)
 		else
-			ixr=(Ny-1)*(log10(y)-log10(y_min))/(log10(y_max)-log10(y_min))+1
+			ixr=(Ny-1)*(log10(y)-logy_min)/(logy_max-logy_min)+1
 			ix=int(ixr)
 			exact = abs(ixr-ix) .lt. 1d-6
 			if (ix .gt. 0 .and. ix .lt. Ny) then
