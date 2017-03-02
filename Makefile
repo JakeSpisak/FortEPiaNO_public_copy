@@ -1,7 +1,7 @@
 # FLAGS
 #ifort
 F90=ifort
-F90FLAGS=-O3 -L/usr/lib -Ibuild/ -module build/ -g -p -traceback -no-prec-div
+F90FLAGS=-O3 -L/usr/lib -Ibuild/ -module build/ -p -g -traceback -openmp-stubs -no-prec-div
 # -openmp
 stdFlag=
 
