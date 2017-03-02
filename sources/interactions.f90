@@ -10,7 +10,6 @@ module ndInteractions
 	implicit none
 	
 	logical :: dme2_e_loaded = .false.
-!	type(TInterpGrid2D) :: dmeCorr
 	type(bspline_2d) :: dmeCorr
 	procedure (funcXYZ), pointer :: dme2_electron => null ()
 	contains
@@ -28,7 +27,6 @@ module ndInteractions
 			end do
 		end do
 		call dmeCorr%initialize(interp_xvec,interp_zvec,dme_vec,4,4,iflag)
-!		call dmeCorr%Init(interp_xvec,interp_zvec,dme_vec,"dme2Corrections")
 		dme2_electron => dme2_electronInterp
 		
 		call random_seed()
@@ -117,7 +115,6 @@ module ndInteractions
 		integer :: iflag
 		
 		call dmeCorr%evaluate(x,z,0,0,dme2_electronInterp,iflag)
-!		dme2_electronInterp = dmeCorr%Value(x,z)
 	end function dme2_electronInterp
 	
 	function Ebare_i(x,y,z)!for electrons

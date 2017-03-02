@@ -94,7 +94,8 @@ module variables
 		integer :: rI !return real or imaginary part
 	end type coll_args
 	
-	real(dl), dimension(:), allocatable :: nuMasses
+	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
+	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
@@ -113,7 +114,7 @@ module variables
 	real(dl) :: toler
 
 	!used for 2d interpolation:
-	integer, parameter :: interp_nx = 1000, interp_nz = 100
+	integer, parameter :: interp_nx = 100, interp_nz = 50
 	real(dl), parameter :: interp_zmin = 1.0d0, interp_zmax = 1.5d0
 	real(dl), dimension(:), allocatable :: interp_xvec
 	real(dl), dimension(:), allocatable :: interp_zvec

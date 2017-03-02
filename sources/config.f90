@@ -19,7 +19,7 @@ module ndConfig
 	subroutine allocateStuff()
 		integer :: nf
 		nf = flavorNumber
-		allocate(nuMasses(nf))
+		allocate(nuMasses(nf), nuFactor(nf), sterile(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
@@ -148,7 +148,8 @@ module ndConfig
 	end subroutine init_matrices
 	
 	subroutine initConfig()
-		character(len=300) :: tmparg
+		character(len=300) :: tmparg, tmpstr
+		integer :: ix
 		
 		if (verbose>0) write(*,*) '[config] init configuration'
 		num_args = command_argument_count()
@@ -195,6 +196,21 @@ module ndConfig
 			only_1a_1s = read_ini_logical('only_1a_1s', .false.)
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 			call allocateStuff
+			
+			do ix=1, flavorNumber
+				write(tmparg,"('nuFactor',I1)") ix
+				nuFactor(ix) = read_ini_real(trim(tmparg), 1.d0)
+				write(tmparg,"('sterile',I1)") ix
+				if (ix.le.3) then
+					sterile(ix) = read_ini_logical(trim(tmparg), .false.)
+				else
+					sterile(ix) = read_ini_logical(trim(tmparg), .true.)
+				end if
+			end do
+			write (tmparg, &
+				"('[config] using ',I1,' neutrinos, counting as ',*(E10.3))") flavorNumber, nuFactor
+			write(tmpstr,"(A,', of which they are steriles:',*(L2))") trim(tmparg), sterile
+			call addToLog(trim(tmpstr))
 			
 			theta12      = read_ini_real('theta12', i_theta12)
 			dm12         = read_ini_real('dm12', i_dm12)

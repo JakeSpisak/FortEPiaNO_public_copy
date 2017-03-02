@@ -8,7 +8,6 @@ module ndCosmology
 	implicit none
 	
 	logical :: loadedEDens = .false.
-!	type(TInterpGrid2D) :: elDens
 	type(bspline_2d) :: elDens
 	
 	type nuDensArgs
@@ -62,7 +61,6 @@ module ndCosmology
 		integer :: iflag
 		
 		call elDens%evaluate(x,z,0,0,electronDensityInterp,iflag)
-!		electronDensityInterp = elDens%Value(log10(x),z)
 	end function electronDensityInterp
 
 	subroutine loadElDensity
@@ -78,7 +76,6 @@ module ndCosmology
 			end do
 		end do
 		call elDens%initialize(interp_xvec,interp_zvec,ed_vec,4,4,iflag)
-!		call elDens%Init(interp_xvec,interp_zvec,ed_vec,"electronDensity")
 		electronDensity => electronDensityInterp
 		
 		call random_seed()

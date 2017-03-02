@@ -9,8 +9,6 @@ module ndEquations
 	
 	type(bspline_1d) :: Jfunc_interp, JPrime_interp, Kfunc_interp, Kprime_interp, yfunc_interp
 	type(bspline_1d) :: g1func_interp, g2func_interp
-!	type(TSpline1D) :: Jfunc_interp, JPrime_interp, Kfunc_interp, Kprime_interp, yfunc_interp
-!	type(TSpline1D) :: g1func_interp, g2func_interp
 	
 	procedure (funcX), pointer :: J_func => null ()
 	procedure (funcX), pointer :: K_func => null ()
@@ -206,13 +204,6 @@ module ndEquations
 			g1(ix) = g12(1)
 			g2(ix) = g12(2)
 		end do
-!		call Jfunc_interp%Init(interp_xozvec,j,"J")
-!		call JPrime_interp%Init(interp_xozvec,jp,"J'")
-!		call Kfunc_interp%Init(interp_xozvec,k,"K")
-!		call Kprime_interp%Init(interp_xozvec,kp,"K'")
-!		call yfunc_interp%Init(interp_xozvec,y,"Y")
-!		call g1func_interp%Init(interp_xozvec,g1,"G_1")
-!		call g2func_interp%Init(interp_xozvec,g2,"G_2")
 		call  Jfunc_interp%initialize(interp_xozvec, j,4,iflag)
 		call JPrime_interp%initialize(interp_xozvec,jp,4,iflag)
 		call  Kfunc_interp%initialize(interp_xozvec, k,4,iflag)
@@ -236,7 +227,6 @@ module ndEquations
 		real(dl), intent(in) :: o
 		integer :: iflag
 		call Jfunc_interp%evaluate(o,0,J_funcInterp,iflag)
-!		J_funcInterp = Jfunc_interp%Value(o)
 	end function J_funcInterp
 	
 	function K_funcInterp(o)
@@ -244,7 +234,6 @@ module ndEquations
 		real(dl), intent(in) :: o
 		integer :: iflag
 		call Kfunc_interp%evaluate(o,0,K_funcInterp,iflag)
-!		K_funcInterp = Kfunc_interp%Value(o)
 	end function K_funcInterp
 	
 	function jprimeInterp(o)
@@ -252,7 +241,6 @@ module ndEquations
 		real(dl), intent(in) :: o
 		integer :: iflag
 		call JPrime_interp%evaluate(o,0,jprimeInterp,iflag)
-!		jprimeInterp = JPrime_interp%Value(o)
 	end function jprimeInterp
 	
 	function kprimeInterp(o)
@@ -260,7 +248,6 @@ module ndEquations
 		real(dl), intent(in) :: o
 		integer :: iflag
 		call Kprime_interp%evaluate(o,0,kprimeInterp,iflag)
-!		kprimeInterp = Kprime_interp%Value(o)
 	end function kprimeInterp
 	
 	function Y_funcInterp(o)
@@ -268,7 +255,6 @@ module ndEquations
 		real(dl), intent(in) :: o
 		integer :: iflag
 		call yfunc_interp%evaluate(o,0,Y_funcInterp,iflag)
-!		Y_funcInterp = yfunc_interp%Value(o)
 	end function Y_funcInterp
 	
 	function G12_funcInterp(o)
@@ -277,8 +263,6 @@ module ndEquations
 		integer :: iflag
 		call g1func_interp%evaluate(o,0,G12_funcInterp(1),iflag)
 		call g2func_interp%evaluate(o,0,G12_funcInterp(2),iflag)
-!		G12_funcInterp(1) = g1func_interp%Value(o)
-!		G12_funcInterp(2) = g2func_interp%Value(o)
 	end function G12_funcInterp
 	
 	function integrate_dRhoNu(params, y)
@@ -307,7 +291,7 @@ module ndEquations
 
 		do ix=1, flavorNumber
 			params%flavor = ix
-			tmp = tmp + rombint_obj(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)
+			tmp = tmp + rombint_obj(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)*nuFactor(ix)
 		end do
 		
 		dz_o_dx = (x_o_z * jxoz + g12(1) &
@@ -469,7 +453,7 @@ module ndEquations
 	subroutine solver
 		real(dl) :: xstart, xend, xchk
 		real(dl), dimension(:), allocatable :: y, ydot
-		integer :: ix, nchk
+		integer :: ix, nchk, ix_in
 		character(len=3) :: istchar
 		character(len=100) :: tmpstring
 		real(dl), dimension(:), allocatable :: ychk
@@ -506,21 +490,24 @@ module ndEquations
 			nuDensVec=ychk
 			firstWrite=.false.
 			firstPoint=.true.
-			write(tmpstring,"('ntot =',I4,' - x =',E14.7,' - z =',E14.7)"), nchk, xchk, ychk(ntot)
+			ix_in=1 + int((log10(xchk)-log10(x_in))/(log10(x_fin)-log10(x_in))*(Nx/printEveryNIter-1))
+			write(tmpstring,"('ntot =',I4,' - x =',E14.7,' (i=',I4,') - z =',E14.7)"), nchk, xchk, ix_in, ychk(ntot)
 			call addToLog("[ckpt] ##### Checkpoint file found. Will start from there. #####")
 			call addToLog(trim(tmpstring))
 		else
 			xstart=x_arr(1)
+			ix_in=1
 		end if
 		
 		call addToLog("[solver] Starting DLSODA...")
 		call saveRelevantInfo(xstart, nuDensVec)
-		do ix=1, Nx/printEveryNIter
+		do ix=ix_in, Nx/printEveryNIter
 			xend   = x_arr((ix)*printEveryNIter)
 			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
 						itol,rtol,atol,itask,istate, &
 						iopt,rwork,lrw,iwork,liw,jdum,jt)
 			
+			call writeCheckpoints(ntot, xend, nuDensVec)
 			if (istate.lt.0) then
 				write(istchar, "(I3)") istate
 				call criticalError('istate='//istchar)
@@ -542,17 +529,17 @@ module ndEquations
 		real(dl), dimension(n), intent(out) :: ydot
 		integer :: flsq
 		real(dl), dimension(:,:), allocatable :: tmpvec
-		
-		call writeCheckpoints(n, x, vars)
+		character(len=15) :: tmpstr
 		
 		flsq=flavorNumber**2
 		allocate(tmpvec(Ny,flsq))
-		call addToLog("[eq] Calling derivatives...")
+		write (tmpstr, '(E14.7)') x
+		call addToLog("[eq] Calling derivatives...x="//trim(tmpstr))
 		call allocateCmplxMat(mat)
 		z = vars(n)
 		call vec_2_densMat(vars(1:n-1))
-		
-		!$omp parallel do &
+		tmpvec=0
+		!$omp parallel &
 		!$omp default(shared) &
 		!$omp private(mat,i,j)
 		do m=1, Ny
@@ -572,7 +559,7 @@ module ndEquations
 				end if
 			end do
 		end do
-		!$omp end parallel do
+		!$omp end parallel
 		do m=1, Ny
 			do k=1,flsq
 				ydot(k+(m-1)*flsq)=tmpvec(m,k)
@@ -581,6 +568,7 @@ module ndEquations
 		deallocate(tmpvec)
 		
 		ydot(ntot) = dz_o_dx(x,z)
+		call sleep(1)
 		call densMat_2_vec(nuDensVec)
 		call deallocateCmplxMat(mat)
 	end subroutine derivatives
