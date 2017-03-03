@@ -1775,9 +1775,11 @@
         integer,dimension(:),intent(in)           :: ierrs !! int error codes for n,k,x,t,size(x),size(t) checks
         integer,intent(out)                       :: iflag !! status return code
         logical,intent(out)                       :: error !! true if there was an error
+        integer,dimension(2)                      :: tmpierr !!SG-added to avoid warning
 
         if (present(n) .and. present(k) .and. present(x) .and. present(t)) then
-            call check_n('n'//s,n,x,[ierrs(1),ierrs(5)],iflag,error); if (error) return
+			tmpierr = [ierrs(1),ierrs(5)] !SG
+            call check_n('n'//s,n,x,tmpierr,iflag,error); if (error) return!SG
             call check_k('k'//s,k,n,ierrs(2),iflag,error); if (error) return
             call check_x(s,n,x,ierrs(3),iflag,error); if (error) return
             if (iknot /= 0) then
