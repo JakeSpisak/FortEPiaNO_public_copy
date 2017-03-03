@@ -178,14 +178,10 @@ module ndConfig
 			checkpoint = read_ini_logical('checkpoint', .true.)
 			maxiter = read_ini_int('maxiter',100)
 			toler   = read_ini_real('tolerance', 1.d-3)
-			printEveryNIter = read_ini_int('printEveryNIter',1000)
 			
-			Nx = read_ini_int('Nx',100000)
+			Nx = read_ini_int('Nx',100)
 			Ny = read_ini_int('Ny',100)
 			allocate(x_arr(Nx), y_arr(Ny))
-			
-			if(mod(Nx, printEveryNIter).ne.0) &
-				call criticalError("Nx must be a multiple of printEveryNIter!")
 			
 			x_in    = read_ini_real('x_in', 0.01d0)
 			x_fin   = read_ini_real('x_fin', 40.d0)

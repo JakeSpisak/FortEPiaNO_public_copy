@@ -490,7 +490,7 @@ module ndEquations
 			nuDensVec=ychk
 			firstWrite=.false.
 			firstPoint=.true.
-			ix_in=1 + int((log10(xchk)-logx_in)/(logx_fin-logx_in)*(Nx/printEveryNIter-1))
+			ix_in=1 + int((log10(xchk)-logx_in)/(logx_fin-logx_in)*(Nx-1))
 			write(tmpstring,"('ntot =',I4,' - x =',E14.7,' (i=',I4,') - z =',E14.7)"), nchk, xchk, ix_in, ychk(ntot)
 			call addToLog("[ckpt] ##### Checkpoint file found. Will start from there. #####")
 			call addToLog(trim(tmpstring))
@@ -501,8 +501,8 @@ module ndEquations
 		
 		call addToLog("[solver] Starting DLSODA...")
 		call saveRelevantInfo(xstart, nuDensVec)
-		do ix=ix_in, Nx/printEveryNIter
-			xend   = x_arr((ix)*printEveryNIter)
+		do ix=ix_in, Nx
+			xend   = x_arr(ix)
 			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
 						itol,rtol,atol,itask,istate, &
 						iopt,rwork,lrw,iwork,liw,jdum,jt)
@@ -535,6 +535,10 @@ module ndEquations
 		allocate(tmpvec(Ny,flsq))
 		write (tmpstr, '(E14.7)') x
 		call addToLog("[eq] Calling derivatives...x="//trim(tmpstr))
+		call openFile(6587, "tmpfile.txt",.false.)
+		write(6587, '(*(E14.7))') x, vars
+		close(6587)
+
 		call allocateCmplxMat(mat)
 		z = vars(n)
 		call vec_2_densMat(vars(1:n-1))
