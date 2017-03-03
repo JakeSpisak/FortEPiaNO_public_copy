@@ -312,11 +312,12 @@ module ndMatrices
 		real(dl), dimension(:,:), allocatable, intent(in) :: m
 		integer, dimension(2) :: s
 		integer :: i
+		character(len=20) :: frmt
+		
 		
 		s = shape(m)
-		do i=1, s(1)
-			write(*,"(*(E14.6))") m(i,:)
-		end do
+		write (frmt,"('(',I4,'(E14.6))')") s(2)
+		write (*,frmt) m(:,:)
 	end subroutine printMat
 
 	subroutine printVec(vec,n)

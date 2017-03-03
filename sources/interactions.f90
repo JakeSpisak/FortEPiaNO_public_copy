@@ -508,7 +508,6 @@ module ndInteractions
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
 		real(dl) :: ixr, yr
-		logical :: exact
 		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDens)
@@ -522,9 +521,8 @@ module ndInteractions
 		else
 			ixr=(Ny-1)*(log10(y)-logy_min)/(logy_max-logy_min)+1
 			ix=int(ixr)
-			exact = abs(ixr-ix) .lt. 1d-5
 			if (ix .gt. 0 .and. ix .lt. Ny) then
-				if (exact) then
+				if (abs(ixr-ix) .lt. 1d-5) then
 					interp_nuDens = nuDensMatVec(ix)
 				else
 					ml = nuDensMatVec(ix)
@@ -546,7 +544,6 @@ module ndInteractions
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
 		real(dl) :: ixr, yr
-		logical :: exact
 		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDensIJ)
@@ -555,14 +552,13 @@ module ndInteractions
 		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
 			interp_nuDensIJ%re =0.d0
 			interp_nuDensIJ%im =0.d0
-		elseif (abs(y - nuDensMatVec(Ny)%y).lt.1d-6) then
+		elseif (abs(y - nuDensMatVec(Ny)%y).lt.1d-5) then
 			interp_nuDensIJ = nuDensMatVec(Ny)
 		else
 			ixr=(Ny-1)*(log10(y)-logy_min)/(logy_max-logy_min)+1
 			ix=int(ixr)
-			exact = abs(ixr-ix) .lt. 1d-6
 			if (ix .gt. 0 .and. ix .lt. Ny) then
-				if (exact) then
+				if (abs(ixr-ix) .lt. 1d-6) then
 					interp_nuDensIJ = nuDensMatVec(ix)
 				else
 					ml = nuDensMatVec(ix)
@@ -720,14 +716,14 @@ module ndInteractions
 				collArgs%ix1 = i
 				collArgs%ix2 = j
 				collArgs%rI = 1
-				nrand=1
+				nrand=3
 				ifail=0
 				itrans=0
 				call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%re(i,j) = res
 				
 				collArgs%rI = 2
-				nrand=1
+				nrand=3
 				ifail=0
 				itrans=0
 				call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
@@ -743,14 +739,14 @@ module ndInteractions
 				collArgs%ix1 = i
 				collArgs%ix2 = j
 				collArgs%rI = 1
-				nrand=1
+				nrand=3
 				ifail=0
 				itrans=0
 				call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%re(i,j) = collision_terms%re(i,j) + res
 				
 				collArgs%rI = 2
-				nrand=1
+				nrand=3
 				ifail=0
 				itrans=0
 				call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
@@ -766,14 +762,14 @@ module ndInteractions
 				collArgs%ix1 = i
 				collArgs%ix2 = j
 				collArgs%rI = 1
-				nrand=1
+				nrand=3
 				ifail=0
 				itrans=0
 				call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
 				collision_terms%re(i,j) = collision_terms%re(i,j) + res
 				
 				collArgs%rI = 2
-				nrand=1
+				nrand=3
 				ifail=0
 				itrans=0
 				call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)

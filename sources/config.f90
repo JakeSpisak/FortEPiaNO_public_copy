@@ -39,14 +39,16 @@ module ndConfig
 			mv(2) = sqrt(m_lightest*m_lightest + dm12)
 		end if
 		
-		if (massOrdering) then
-			mv(1) = m_lightest
-			mv(2) = sqrt(m_lightest*m_lightest + dm12)
-			mv(3) = sqrt(mv(2)*mv(2) + dm23)
-		else
-			mv(3) = m_lightest
-			mv(2) = sqrt(m_lightest*m_lightest + dm23)
-			mv(1) = sqrt(mv(2)*mv(2) - dm12)
+		if (nf .gt. 2) then
+			if (massOrdering) then
+				mv(1) = m_lightest
+				mv(2) = sqrt(m_lightest*m_lightest + dm12)
+				mv(3) = sqrt(mv(2)*mv(2) + dm23)
+			else
+				mv(3) = m_lightest
+				mv(2) = sqrt(m_lightest*m_lightest + dm23)
+				mv(1) = sqrt(mv(2)*mv(2) - dm12)
+			end if
 		end if
 		if (nf.gt.3) then
 			mv(4) = sqrt(mv(1)*mv(1) + dm14)
@@ -106,11 +108,17 @@ module ndConfig
 		!GL
 		diag_el = sin2thW - 0.5d0
 		diag_el(1) = sin2thW + 0.5d0
+		do ix=1, flavorNumber
+			if (sterile(ix)) diag_el(ix) = 0.d0
+		end do
 		call createDiagMat(GL_mat, flavorNumber, diag_el)
 		GLR_vec(1,:,:) = GL_mat
 		
 		!GR
 		diag_el = sin2thW
+		do ix=1, flavorNumber
+			if (sterile(ix)) diag_el(ix) = 0.d0
+		end do
 		call createDiagMat(GR_mat, flavorNumber, diag_el)
 		GLR_vec(2,:,:) = GR_mat
 		

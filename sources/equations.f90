@@ -77,7 +77,7 @@ module ndEquations
 	function J_int(o, u)
 		real(dl) :: J_int, esuo
 		real(dl), intent(in) :: o, u
-		
+
 		esuo=exp(sqrt(u*u+o*o))
 		J_int = u*u * esuo / ((1.d0+esuo)**2)
 	end function J_int
@@ -87,8 +87,8 @@ module ndEquations
 		real(dl), intent(in) :: o
 		real(dl) :: rombint_obj
 		external rombint_obj
-		
-		J_funcFull = rombint_obj(o, J_int,0,upper,toler,maxiter)/PISQ
+
+		J_funcFull = rombint_obj(o, J_int,0.d0,upper,toler,maxiter)/PISQ
 	end function J_funcFull
 	
 	function Jprime_int(o, u)
@@ -109,7 +109,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
-		JprimeFull = rombint_obj(o, Jprime_int,0,upper,toler,maxiter) * o / PISQ
+		JprimeFull = rombint_obj(o, Jprime_int,0.d0,upper,toler,maxiter) * o / PISQ
 	end function JprimeFull
 	
 	function K_int(o, u)
@@ -126,7 +126,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		k_funcFull = rombint_obj(o, k_int,0,upper,toler,maxiter)/PISQ
+		k_funcFull = rombint_obj(o, k_int,0.d0,upper,toler,maxiter)/PISQ
 	end function K_funcFull
 	
 	function Kprime_int(o, u)
@@ -148,7 +148,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 	
-		KprimeFull = rombint_obj(o, Kprime_int,0,upper,toler, maxiter) * o / PISQ
+		KprimeFull = rombint_obj(o, Kprime_int,0.d0,upper,toler, maxiter) * o / PISQ
 	end function KprimeFull
 	
 	function Y_int(o, u)
@@ -165,7 +165,7 @@ module ndEquations
 		real(dl) :: rombint_obj
 		external rombint_obj
 		
-		Y_funcFull = rombint_obj(o, Y_int,0,upper,toler, maxiter)/PISQ
+		Y_funcFull = rombint_obj(o, Y_int,0.d0,upper,toler, maxiter)/PISQ
 	end function Y_funcFull
 	
 	function G12_funcFull(o)
