@@ -111,7 +111,7 @@ module variables
 	real(dl) :: x_in, x_fin, y_min, y_max, z_in, logx_in, logx_fin, logy_min, logy_max
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
 	integer :: maxiter
-	real(dl) :: toler
+	real(dl) :: toler, dlsoda_atol, dlsoda_rtol
 
 	!used for 2d interpolation:
 	integer, parameter :: interp_nx = 100, interp_nz = 50

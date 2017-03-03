@@ -466,7 +466,7 @@ module ndEquations
 !		external jdum!derivatives, 
 		
 		itol=2
-		rtol=1.d-3
+		rtol=dlsoda_rtol
 		itask=1
 		istate=1
 		iopt=1
@@ -474,7 +474,7 @@ module ndEquations
 		lrw=22+ntot*(ntot+9)
 		liw=20+ntot
 		allocate(atol(ntot), rwork(lrw), iwork(liw))
-		atol=1.d-6
+		atol=dlsoda_atol
 		rwork=0.
 		iwork=0
 		jt=2

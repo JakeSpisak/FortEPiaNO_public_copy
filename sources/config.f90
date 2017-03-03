@@ -178,6 +178,8 @@ module ndConfig
 			checkpoint = read_ini_logical('checkpoint', .true.)
 			maxiter = read_ini_int('maxiter',100)
 			toler   = read_ini_real('tolerance', 1.d-3)
+			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-3)
+			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-3)
 			
 			Nx = read_ini_int('Nx',100)
 			Ny = read_ini_int('Ny',100)
@@ -264,7 +266,7 @@ module ndConfig
 			if (trim(tmparg)/="") outputFolder=tmparg
 			call system('mkdir -p '//trim(outputFolder))
 		else
-			call error("You are not reading a configuration file...are you sure you are doing things properly?")
+			call criticalError("You are not passing a configuration file...are you sure?")
 		end if
 		call ini_file_close()
 		
