@@ -405,7 +405,7 @@ module ndEquations
 			units(i) = 8972 + i
 		end do
 		
-		write(fname, '(A,E14.7)') '[output] Saving info at x=',x
+		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=',x
 		call addToLog(trim(fname))!not a filename but the above string
 		
 		do k=1, flavorNumber
@@ -414,7 +414,7 @@ module ndEquations
 			do iy=1, nY
 				tmpvec(iy)=nuDensMatVec(iy)%y**2*nuDensMatVec(iy)%re(k,k)
 			end do
-			write(units(k), '(*(E14.7))') x, tmpvec
+			write(units(k), '(*('//dblfmt//'))') x, tmpvec
 		end do
 		do i=1, flavorNumber
 			do j=i,flavorNumber
@@ -425,7 +425,7 @@ module ndEquations
 					do iy=1, nY
 						tmpvec(iy)=nuDensMatVec(iy)%re(i,j)
 					end do
-					write(units(k), '(*(E14.7))') x, tmpvec
+					write(units(k), '(*('//dblfmt//'))') x, tmpvec
 					
 					k=k+1
 					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_im.dat'
@@ -434,13 +434,13 @@ module ndEquations
 					do iy=1, nY
 						tmpvec(iy)=nuDensMatVec(iy)%im(i,j)
 					end do
-					write(units(k), '(*(E14.7))') x, tmpvec
+					write(units(k), '(*('//dblfmt//'))') x, tmpvec
 					k=k+1
 				end if
 			end do
 		end do
 		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
-		write(units(k), '(*(E14.7))') x, vec(ntot)
+		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)
 		
 		do i=1, totFiles
 			close(units(i))
@@ -491,7 +491,8 @@ module ndEquations
 			firstWrite=.false.
 			firstPoint=.true.
 			ix_in=1 + int((log10(xchk)-logx_in)/(logx_fin-logx_in)*(Nx-1))
-			write(tmpstring,"('ntot =',I4,' - x =',E14.7,' (i=',I4,') - z =',E14.7)"), nchk, xchk, ix_in, ychk(ntot)
+			write(tmpstring,"('ntot =',I4,' - x =',"//dblfmt//",' (i=',I4,') - z =',"//dblfmt//")") &
+				nchk, xchk, ix_in, ychk(ntot)
 			call addToLog("[ckpt] ##### Checkpoint file found. Will start from there. #####")
 			call addToLog(trim(tmpstring))
 		else
@@ -499,10 +500,11 @@ module ndEquations
 			ix_in=1
 		end if
 		
-		call addToLog("[solver] Starting DLSODA...")
 		call saveRelevantInfo(xstart, nuDensVec)
 		do ix=ix_in, Nx
 			xend   = x_arr(ix)
+			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")"), xstart, xend
+			call addToLog("[solver] Starting DLSODA..."//trim(tmpstring))
 			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
 						itol,rtol,atol,itask,istate, &
 						iopt,rwork,lrw,iwork,liw,jdum,jt)
@@ -533,11 +535,8 @@ module ndEquations
 		
 		flsq=flavorNumber**2
 		allocate(tmpvec(Ny,flsq))
-		write (tmpstr, '(E14.7)') x
+		write (tmpstr, "("//dblfmt//")") x
 		call addToLog("[eq] Calling derivatives...x="//trim(tmpstr))
-		call openFile(6587, "tmpfile.txt",.false.)
-		write(6587, '(*(E14.7))') x, vars
-		close(6587)
 
 		call allocateCmplxMat(mat)
 		z = vars(n)

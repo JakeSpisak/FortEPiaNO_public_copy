@@ -133,14 +133,14 @@ module ndConfig
 		allocate(nuDensMatVec(Ny))
 		ntot = Ny*(flavorNumber**2) + 1 !independent elements in nuDensity(y) + z
 		allocate(nuDensVec(ntot))
-		open(unit=3154, file='test_fd.dat') !save the initial Fermi-Dirac distribution for nu
+!		open(unit=3154, file='test_fd.dat') !save the initial Fermi-Dirac distribution for nu
 		do ix=1, Ny
 			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
 			nuDensMatVec(ix)%y = y_arr(ix)
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdm = fermiDirac_massless(y_arr(ix),z_in)
-			write(3154,"(2F14.7)") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
+!			write(3154,"(2"//dblfmt//")") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
 			nuDensMatVec(ix)%re(1,1) = fdm
 			if (flavorNumber.ne.2 .or. (.not. only_1a_1s)) then
 				nuDensMatVec(ix)%re(2,2) = fdm
@@ -150,7 +150,7 @@ module ndConfig
 					nuDensMatVec(ix)%re(4,4) = 0.d0
 			end if
 		end do
-		close(3154)
+!		close(3154)
 		
 		deallocate(diag_el)
 	end subroutine init_matrices

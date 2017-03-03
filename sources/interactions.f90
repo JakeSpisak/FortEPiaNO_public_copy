@@ -138,13 +138,13 @@ module ndInteractions
 		Ebarn_i = y
 	end function Ebarn_i
 	
-	function Ebar_i(s,x,y,z)!s: True for e+/e-, False for nu
+	function Ebar_i(s,x,y,z, dme2)!s: True for e+/e-, False for nu
 		real(dl) :: Ebar_i
-		real(dl), intent(in) :: x,y,z
+		real(dl), intent(in) :: x,y,z, dme2
 		logical, intent(in) :: s !True for e+/e-, False for nu
 		
 		if (s) then
-			Ebar_i = Ebare_i(x,y,z)
+			Ebar_i = Ebare_i_dme(x,y,z, dme2)
 		else
 			Ebar_i = Ebarn_i(x,y,z)
 		end if
@@ -457,34 +457,34 @@ module ndInteractions
 
 	end function D3_f
 	
-	function PI1_f (x, z, y1, y2, y3, y4, s1, s2, s3) !1: (y1,y3), 	2: (y1, y2)
+	function PI1_f (x, z, y1, y2, y3, y4, s1, s2, s3, dme2) !1: (y1,y3), 	2: (y1, y2)
 		real(dl), dimension(2) :: PI1_f
-		real(dl), intent(in) :: y1, y2, y3, y4, x, z
+		real(dl), intent(in) :: y1, y2, y3, y4, x, z, dme2
 		logical, intent(in) :: s1, s2, s3
 		real(dl) :: e1, d1
 		
-		e1 = Ebar_i(s1,x,y1,z)
+		e1 = Ebar_i(s1,x,y1,z, dme2)
 		d1 = D1_f(y1, y2, y3, y4)
 		
 		!pi_1(y1, y3)
-		PI1_f(1) = e1 * Ebar_i(s3,x,y3,z) * d1 &
+		PI1_f(1) = e1 * Ebar_i(s3,x,y3,z, dme2) * d1 &
 			+ D2_f(y1, y3, y2, y4)
 			
 		!pi_1(y1, y2)
-		PI1_f(2) = e1 * Ebar_i(s2,x,y2,z) * d1 &
+		PI1_f(2) = e1 * Ebar_i(s2,x,y2,z, dme2) * d1 &
 			- D2_f(y1, y2, y3, y4)
 	end function PI1_f
 	
-	function PI2_f (x, z, y1, y2, y3, y4, s1, s2, s3, s4) !1: (y1, y4),	2: (y1, y2), 3:	(y1, y3)
+	function PI2_f (x, z, y1, y2, y3, y4, s1, s2, s3, s4, dme2) !1: (y1, y4),	2: (y1, y2), 3:	(y1, y3)
 		real(dl), dimension(3) :: PI2_f
-		real(dl), intent(in) :: y1, y2, y3, y4, x, z
+		real(dl), intent(in) :: y1, y2, y3, y4, x, z, dme2
 		logical, intent(in) :: s1, s2, s3, s4
 		real(dl) :: e1, e2, e3, e4, t
 		
-		e1 = Ebar_i(s1,x,y1,z)
-		e2 = Ebar_i(s2,x,y2,z)
-		e3 = Ebar_i(s3,x,y3,z)
-		e4 = Ebar_i(s4,x,y4,z)
+		e1 = Ebar_i(s1,x,y1,z, dme2)
+		e2 = Ebar_i(s2,x,y2,z, dme2)
+		e3 = Ebar_i(s3,x,y3,z, dme2)
+		e4 = Ebar_i(s4,x,y4,z, dme2)
 		t = e1 * e2 * e3 * e4 * D1_f(y1, y2, y3, y4) + D3_f(y1, y2, y3, y4)
 		
 		!pi_2(y1, y4)
@@ -533,7 +533,7 @@ module ndInteractions
 					interp_nuDens%im(:,:) = ml%im(:,:) + yr * (mu%im(:,:) - ml%im(:,:))
 				end if
 			else
-				write(vals,"('y=',E14.7,'    ix=',I3)") y, ix
+				write(vals,"('y=',"//dblfmt//",'    ix=',I3)") y, ix
 				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
 			end if
 		end if
@@ -569,7 +569,7 @@ module ndInteractions
 					interp_nuDensIJ%im(i,j) = ml%im(i,j) + yr * (mu%im(i,j) - ml%im(i,j))
 				end if
 			else
-				write(vals,"('y=',E14.7,'    ix=',I3)") y, ix
+				write(vals,"('y=',"//dblfmt//",'    ix=',I3)") y, ix
 				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
 			end if
 		end if
@@ -602,8 +602,8 @@ module ndInteractions
 		else
 			n3 = interp_nuDens(y3)
 			
-			pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
-			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
+			pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, dme2)
+			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4, dme2)
 			
 			coll_nue_sc_int = &
 				y2/E2 * &
@@ -645,8 +645,8 @@ module ndInteractions
 		else
 			n2 = interp_nuDens(y2)
 			
-			pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3)
-			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4)
+			pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, dme2)
+			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4, dme2)
 			
 			coll_nue_ann_int = &
 				y3/E3 * &

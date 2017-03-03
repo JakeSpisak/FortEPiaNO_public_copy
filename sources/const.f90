@@ -58,6 +58,8 @@ module constants
 	real(dl), parameter :: i_HubbleParam = 70.
 	
 	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
+	
+	character(len=5), parameter :: dblfmt = "E15.7"
 end module constants
 
 module variables
