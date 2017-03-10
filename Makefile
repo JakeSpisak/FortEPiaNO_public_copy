@@ -1,49 +1,66 @@
 # FLAGS
+BUILD_DIR ?= build
+EXECNAME ?= nuDens.exe
+
 #ifort
 F90=ifort
-F90FLAGS=-O3 -L/usr/lib -Ibuild/ -module build/ -p -g -traceback -openmp-stubs -no-prec-div
-# -openmp
+F90FLAGS=-O3 -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/  -p -g -traceback -openmp-stubs -no-prec-div
+DEBUGFLAGS=-O0 -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -openmp -g -traceback -fpe0 -check all
+# -check all -check noarg_temp_created
+# -openmp 
 stdFlag=
 
 #gfortran
 #F90=gfortran
-#F90FLAGS=-O3 -L/usr/lib -Jbuild/ -Ibuild/ -g -traceback -fopenmp
+#F90FLAGS=-O3 -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -g -traceback -fopenmp
 #stdFlat= --std=legacy
 
-OBJ_FILES=build/const.o build/errors.o build/config.o build/IniFile.o \
-	build/utilities.o build/matrix_utils.o \
-	build/interactions.o build/cosmology.o build/equations.o build/functions.o \
-	build/odepack.o build/odepack-sub1.o build/odepack-sub2.o \
-	build/bspline_module.o build/bspline_oo_module.o build/bspline_sub_module.o
-#build/opkdmain.o build/opkda1.o build/opkda2.o
+OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o $(BUILD_DIR)/IniFile.o \
+	$(BUILD_DIR)/utilities.o $(BUILD_DIR)/matrix_utils.o \
+	$(BUILD_DIR)/interactions.o $(BUILD_DIR)/cosmology.o $(BUILD_DIR)/equations.o $(BUILD_DIR)/functions.o \
+	$(BUILD_DIR)/odepack.o $(BUILD_DIR)/odepack-sub1.o $(BUILD_DIR)/odepack-sub2.o \
+	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/bspline_oo_module.o $(BUILD_DIR)/bspline_sub_module.o
+#$(BUILD_DIR)/opkdmain.o $(BUILD_DIR)/opkda1.o $(BUILD_DIR)/opkda2.o
+
+ifeq ($(BUILD_DIR),builddeb)
+FFLAGS=$(DEBUGFLAGS)
+else
+FFLAGS=$(F90FLAGS)
+endif
 
 default: all
 
-build/%.o: sources/%.f90 Makefile
-	$(F90) $(F90FLAGS) -c sources/$*.f90 -o build/$*.o
+$(BUILD_DIR)/%.o: sources/%.f90 Makefile
+	$(F90) $(FFLAGS) -c sources/$*.f90 -o $(BUILD_DIR)/$*.o
 
-build/%.o: sources/%.f Makefile
-	$(F90) $(F90FLAGS) $(stdFlag) -c sources/$*.f -o build/$*.o
+$(BUILD_DIR)/%.o: sources/%.f Makefile
+	$(F90) $(FFLAGS) $(stdFlag) -c sources/$*.f -o $(BUILD_DIR)/$*.o
 
-build/bspline_module.o: build/bspline_oo_module.o build/bspline_sub_module.o
-build/bspline_oo_module.o: build/bspline_sub_module.o
-#build/opkdmain.o: build/opkda1.o build/opkda2.o
-build/odepack.o: build/odepack-sub1.o build/odepack-sub2.o
-build/IniFile.o: build/const.o
-build/matrix_utils.o: build/const.o build/errors.o
-build/config.o: build/const.o build/interactions.o build/IniFile.o build/matrix_utils.o build/errors.o
-build/interactions.o: build/const.o build/errors.o build/matrix_utils.o build/utilities.o build/bspline_module.o
-build/cosmology.o: build/const.o build/errors.o build/interactions.o build/utilities.o build/bspline_module.o
-build/equations.o: build/const.o build/errors.o build/cosmology.o build/interactions.o build/utilities.o
-build/functions.o: build/const.o build/errors.o build/cosmology.o build/interactions.o build/utilities.o build/equations.o
-#build/mc.o: build/const.o build/config.o
-#build/minimize.o: build/const.o build/config.o
-build/nuDens.o: $(OBJ_FILES)
+$(BUILD_DIR)/bspline_module.o: $(BUILD_DIR)/bspline_oo_module.o $(BUILD_DIR)/bspline_sub_module.o
+$(BUILD_DIR)/bspline_oo_module.o: $(BUILD_DIR)/bspline_sub_module.o
+#$(BUILD_DIR)/opkdmain.o: $(BUILD_DIR)/opkda1.o $(BUILD_DIR)/opkda2.o
+$(BUILD_DIR)/odepack.o: $(BUILD_DIR)/odepack-sub1.o $(BUILD_DIR)/odepack-sub2.o
+$(BUILD_DIR)/IniFile.o: $(BUILD_DIR)/const.o
+$(BUILD_DIR)/matrix_utils.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o
+$(BUILD_DIR)/config.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/IniFile.o $(BUILD_DIR)/matrix_utils.o $(BUILD_DIR)/errors.o
+$(BUILD_DIR)/interactions.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/matrix_utils.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/bspline_module.o
+$(BUILD_DIR)/cosmology.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/bspline_module.o
+$(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o
+$(BUILD_DIR)/functions.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/equations.o
+#$(BUILD_DIR)/mc.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/config.o
+#$(BUILD_DIR)/minimize.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/config.o
+$(BUILD_DIR)/nuDens.o: $(OBJ_FILES)
 
 all: nudens
 
-nudens: $(OBJ_FILES) build/nuDens.o Makefile
-	$(F90) -o bin/nuDens.exe $(OBJ_FILES) build/nuDens.o $(F90FLAGS)
+directories:
+	mkdir -p $(BUILD_DIR)
+
+nudens: directories $(OBJ_FILES) $(BUILD_DIR)/nuDens.o Makefile
+	$(F90) -o bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
+
+nudens_debug: directories $(OBJ_FILES) $(BUILD_DIR)/nuDens.o Makefile
+	$(F90) -o bin/nuDens_debug.exe $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
 
 clean: 
-	rm -f bin/* build/*o build/*mod
+	rm -f bin/* $(BUILD_DIR)/*o $(BUILD_DIR)/*mod

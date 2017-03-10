@@ -73,7 +73,7 @@ module variables
 	
 	!variables that will be read from config file
 	logical :: massOrdering, only_1a_1s
-	integer :: flavorNumber
+	integer :: flavorNumber, flavNumSqu
 	real(dl) :: m_lightest
 	real(dl) :: theta12, dm12
 	real(dl) :: theta13, theta23, dm23, deltaCP13
@@ -129,7 +129,10 @@ module variables
 		
 		if (.not. m%a) then
 			m%a=.true.
-			allocate(m%re(flavorNumber,flavorNumber), m%im(flavorNumber,flavorNumber))
+			if (.not.allocated(m%re)) &
+				allocate(m%re(flavorNumber,flavorNumber))
+			if (.not.allocated(m%im)) &
+				allocate(m%im(flavorNumber,flavorNumber))
 		end if
 	end subroutine allocateCmplxMat
 	

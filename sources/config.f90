@@ -205,6 +205,7 @@ module ndConfig
 			
 			only_1a_1s = read_ini_logical('only_1a_1s', .false.)
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
+			flavNumSqu = flavorNumber**2
 			call allocateStuff
 			
 			do ix=1, flavorNumber

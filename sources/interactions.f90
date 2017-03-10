@@ -539,41 +539,34 @@ module ndInteractions
 		end if
 	end function interp_nuDens
 	
-	function interp_nuDensIJ(y, i, j)
-		type(cmplxMatNN) :: interp_nuDensIJ, mu, ml
+	function interp_nuDensIJre(y, i, j)
+		real(dl) :: interp_nuDensIJre
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
 		real(dl) :: ixr, yr
 		character(len=100) :: vals
 		
-		call allocateCmplxMat(interp_nuDensIJ)
-		call allocateCmplxMat(mu)
-		call allocateCmplxMat(ml)
 		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
-			interp_nuDensIJ%re =0.d0
-			interp_nuDensIJ%im =0.d0
+			interp_nuDensIJre =0.d0
 		elseif (abs(y - nuDensMatVec(Ny)%y).lt.1d-5) then
-			interp_nuDensIJ = nuDensMatVec(Ny)
+			interp_nuDensIJre = nuDensMatVec(Ny)%re(i,j)
 		else
 			ixr=(Ny-1)*(log10(y)-logy_min)/(logy_max-logy_min)+1
 			ix=int(ixr)
 			if (ix .gt. 0 .and. ix .lt. Ny) then
 				if (abs(ixr-ix) .lt. 1d-6) then
-					interp_nuDensIJ = nuDensMatVec(ix)
+					interp_nuDensIJre = nuDensMatVec(ix)%re(i,j)
 				else
-					ml = nuDensMatVec(ix)
-					mu = nuDensMatVec(ix+1)
 					yr = (y - nuDensMatVec(ix)%y) / (nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)
-					interp_nuDensIJ%y = y
-					interp_nuDensIJ%re(i,j) = ml%re(i,j) + yr * (mu%re(i,j) - ml%re(i,j))
-					interp_nuDensIJ%im(i,j) = ml%im(i,j) + yr * (mu%im(i,j) - ml%im(i,j))
+					interp_nuDensIJre = nuDensMatVec(ix)%re(i,j) + &
+						yr * (nuDensMatVec(ix+1)%re(i,j) - nuDensMatVec(ix)%re(i,j))
 				end if
 			else
 				write(vals,"('y=',"//dblfmt//",'    ix=',I3)") y, ix
 				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
 			end if
 		end if
-	end function interp_nuDensIJ
+	end function interp_nuDensIJre
 	
 	function coll_nue_sc_int(ndim, ve, obj)
 		integer :: ndim
@@ -672,11 +665,11 @@ module ndInteractions
 		RETURN
 	END SUBROUTINE region
        
-	function collision_terms (x, z, y1)
+	function collision_terms (x, z, y1, n1)
 		type(cmplxMatNN) :: collision_terms
 		real(dl), intent(in) :: x,z, y1
 		type(cmplxMatNN) :: n1
-		type(coll_args) :: collArgs
+		type(coll_args),save :: collArgs
 		integer :: i,j, k
 		real(dl) :: rombint_obj
 		external rombint_obj
@@ -687,7 +680,6 @@ module ndInteractions
 		npts=5
 		n=2
 		
-		call allocateCmplxMat(n1)
 		call allocateCmplxMat(collision_terms)
 		call allocateCmplxMat(collArgs%na)
 		call allocateCmplxMat(collArgs%nb)
@@ -700,10 +692,7 @@ module ndInteractions
 		collArgs%z = z
 		collArgs%y1 = y1
 		collArgs%dme2 = dme2_electron(x, 0.d0, z)
-		do k=1, Ny
-			if (nuDensMatVec(k)%y .eq. y1) &
-				collArgs%na = nuDensMatVec(k)
-		end do
+		collArgs%na = n1
 		collision_terms%y = y1
 		collision_terms%x = x
 		collision_terms%z = z

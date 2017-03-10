@@ -89,13 +89,7 @@ module ndCosmology
 	function integr_rho_nu(vec,y)
 		real(dl) :: integr_rho_nu, y,a
 		type(nuDensArgs) :: vec
-		type(cmplxMatNN) :: mat
-		
-		call allocateCmplxMat(mat)
-		
-		mat = interp_nuDensIJ(y, vec%iFl, vec%iFl)
-		
-		integr_rho_nu = y*y*y*mat%re(vec%iFl, vec%iFl)
+		integr_rho_nu = y*y*y*interp_nuDensIJre(y, vec%iFl, vec%iFl)
 	end function integr_rho_nu
 	
 	function nuDensity(x,z, iFl)

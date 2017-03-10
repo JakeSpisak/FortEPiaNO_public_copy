@@ -301,11 +301,11 @@ module ndEquations
 	end function dz_o_dx
 	
 	function drhoy_dx_ij_rI (x,y,z, i, j, rI)
-		type(cmplxMatNN) :: matrix
+		type(cmplxMatNN),save :: matrix
 		real(dl) :: drhoy_dx_ij_rI
 		real(dl) :: x,y,z, overallNorm
 		integer :: i,j,k, rI
-		type(cmplxMatNN) :: n1, term1, comm
+		type(cmplxMatNN),save :: n1, term1, comm
 		
 		call allocateCmplxMat(n1)
 		call allocateCmplxMat(term1)
@@ -330,7 +330,7 @@ module ndEquations
 		matrix%im = overallNorm * comm%im 
 		
 		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
-			lastColl%mat = collision_terms(x, z, y)
+			lastColl%mat = collision_terms(x, z, y, n1)
 			lastColl%x = x
 			lastColl%y = y
 			lastColl%z = z
@@ -346,16 +346,16 @@ module ndEquations
 
 	end function drhoy_dx_ij_rI
 	
-	function drhoy_dx_fullMat (x,z,iy)
-		type(cmplxMatNN) :: drhoy_dx_fullMat
+	subroutine drhoy_dx_fullMat (matrix,x,z,iy)
+		type(cmplxMatNN),intent(out) :: matrix
 		real(dl) :: x,y,z, overallNorm
 		integer :: iy,k
-		type(cmplxMatNN) :: n1, term1, comm
+		type(cmplxMatNN), save :: n1, term1, comm
 		
 		call allocateCmplxMat(n1)
 		call allocateCmplxMat(term1)
 		call allocateCmplxMat(comm)
-		call allocateCmplxMat(drhoy_dx_fullMat)
+		call allocateCmplxMat(matrix)
 		
 		n1 = nuDensMatVec(iy)
 		y = nuDensMatVec(iy)%y
@@ -376,20 +376,20 @@ module ndEquations
 		comm%re = comm%re * x**2/m_e_cub
 		
 !		print *,'comm2',comm%re, comm%im
-		drhoy_dx_fullMat%re = overallNorm * comm%re
-		drhoy_dx_fullMat%im = overallNorm * comm%im 
+		matrix%re = overallNorm * comm%re
+		matrix%im = overallNorm * comm%im 
 		
 		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
-			lastColl%mat = collision_terms(x, z, y)
+			lastColl%mat = collision_terms(x, z, y, n1)
 			lastColl%x = x
 			lastColl%y = y
 			lastColl%z = z
 		end if
-		drhoy_dx_fullMat%re = drhoy_dx_fullMat%re + lastColl%mat%re * overallNorm
-		drhoy_dx_fullMat%im = drhoy_dx_fullMat%im + lastColl%mat%im * overallNorm
+		matrix%re = matrix%re + lastColl%mat%re * overallNorm
+		matrix%im = matrix%im + lastColl%mat%im * overallNorm
 
 !		print *,'fullMat',lastColl%mat%re,lastColl%mat%im
-	end function drhoy_dx_fullMat
+	end subroutine drhoy_dx_fullMat
 	
 	subroutine saveRelevantInfo(x, vec)
 		real(dl) :: x
@@ -501,7 +501,7 @@ module ndEquations
 		end if
 		
 		call saveRelevantInfo(xstart, nuDensVec)
-		do ix=ix_in, Nx
+		do ix=ix_in+1, Nx
 			xend   = x_arr(ix)
 			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")"), xstart, xend
 			call addToLog("[solver] Starting DLSODA..."//trim(tmpstring))
@@ -524,56 +524,61 @@ module ndEquations
 	subroutine derivatives(n, x, vars, ydot)
 		use omp_lib
 		
-		type(cmplxMatNN) :: mat
+		type(cmplxMatNN), save :: mat
 		integer :: n, i, j, k, m
 		real(dl) :: x, z
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
-		integer :: flsq
-		real(dl), dimension(:,:), allocatable :: tmpvec
+!		real(dl), dimension(:,:), allocatable, save :: tmpvec
+		real(dl), dimension(:), allocatable, save :: tmpv
 		character(len=15) :: tmpstr
 		
-		flsq=flavorNumber**2
-		allocate(tmpvec(Ny,flsq))
+		!$omp threadprivate(leptonDensities,lastColl)
+!		if (.not. allocated(tmpvec)) &
+!			allocate(tmpvec(Ny,flavNumSqu))
+		if (.not. allocated(tmpv)) &
+			allocate(tmpv(flavNumSqu))
 		write (tmpstr, "("//dblfmt//")") x
 		call addToLog("[eq] Calling derivatives...x="//trim(tmpstr))
 
 		call allocateCmplxMat(mat)
 		z = vars(n)
 		call vec_2_densMat(vars(1:n-1))
-		tmpvec=0
-		!$omp parallel &
+!		tmpvec=0
+		!$omp parallel do &
 		!$omp default(shared) &
-		!$omp private(mat,i,j)
+		!$omp private(i,j,k,mat)
 		do m=1, Ny
-!			print *,OMP_GET_THREAD_NUM(),"/",OMP_GET_NUM_THREADS()
 			k=1
-			mat = drhoy_dx_fullMat(x,z,m)
+			call drhoy_dx_fullMat(mat, x,z,m)
 			do i=1, flavorNumber
 				do j=i, flavorNumber
-					tmpvec(m,k) = mat%re(i,j)
+					tmpv(k) = mat%re(i,j)
 					k=k+1
 				end do
 				if (i.lt.flavorNumber) then
 					do j=i+1, flavorNumber
-						tmpvec(m,k) = mat%im(i,j)
+						tmpv(k) = mat%im(i,j)
 						k=k+1
 					end do
 				end if
 			end do
-		end do
-		!$omp end parallel
-		do m=1, Ny
-			do k=1,flsq
-				ydot(k+(m-1)*flsq)=tmpvec(m,k)
+			!$omp critical
+!			tmpvec(m,k) = tmpv(k)
+			do k=1,flavNumSqu
+!				ydot(k+(m-1)*flavNumSqu)=tmpvec(m,k)
+				ydot(k+(m-1)*flavNumSqu)=tmpv(k)
 			end do
+			!$omp end critical
 		end do
-		deallocate(tmpvec)
+		!$omp end parallel do
 		
+		call openFile(6587, "tmpfile.txt",.false.)
+        write(6587, '(*(E14.7))') x, ydot
+        close(6587)
+        
 		ydot(ntot) = dz_o_dx(x,z)
-		call sleep(1)
 		call densMat_2_vec(nuDensVec)
-		call deallocateCmplxMat(mat)
 	end subroutine derivatives
 	
 	subroutine jdum
