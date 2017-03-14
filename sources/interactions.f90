@@ -42,14 +42,7 @@ module ndInteractions
 		dme2_e_loaded = .true.
 		deallocate(dme_vec)
 		call addToLog("[interactions] ...done!")
-	end subroutine 
-	
-	function dme2_e_interp(x,z)
-		real(dl) :: dme2_e_interp
-		real(dl) :: x,z
-		
-		dme2_e_interp = 0.
-	end function dme2_e_interp
+	end subroutine dme2_e_load
 	
 	function E_k_m(k,m)
 		real(dl), intent(in) :: k,m
@@ -118,13 +111,6 @@ module ndInteractions
 		
 		call dmeCorr%evaluate(x,z,0,0,dme2_electronInterp,iflag)
 	end function dme2_electronInterp
-	
-	function Ebare_i(x,y,z)!for electrons
-		real(dl) :: Ebare_i
-		real(dl), intent(in) :: x,y,z
-		
-		Ebare_i = sqrt(x*x+y*y+dme2_electron(x,y,z))
-	end function Ebare_i
 	
 	function Ebare_i_dme(x,y,z,dme2)!for electrons
 		real(dl) :: Ebare_i_dme
@@ -288,13 +274,10 @@ module ndInteractions
 				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
 			- fermiDirac(e2,x,z)*(1-fermiDirac(e4,x,z)) * &
 				(term2a * GLR_vec(a,j,j) + term2b * GLR_vec(a,i,i))
-!		print *,rI,a,b,F_ab_sc!,term1a, term1b, term2a, term2b
-!		print *,GLR_vec(1,1,1),GLR_vec(2,1,1),GLR_vec(1,2,2),GLR_vec(2,2,2)
-!		print *,n1%re,n1%im
-!		print *,n3%re,n3%im
 	end function F_ab_sc
 	
 	function D1_f(y1, y2, y3, y4)
+		implicit none
 		real(dl) :: D1_f
 		real(dl), intent(in) :: y1, y2, y3, y4
 		
@@ -363,6 +346,7 @@ module ndInteractions
 	
 	function D3_f(y1, y2, y3, y4)
 	!from 1605.09383
+		implicit none
 		real(dl) :: D3_f
 		real(dl), intent(in) :: y1, y2, y3, y4
 		real(dl) :: &
@@ -424,15 +408,15 @@ module ndInteractions
 					ap1p2m3p4 + ap1m2p3p4 + ap1p2m3m4 &
 				) + &
 				am1p2p3p4**3 * (y34 + y2*p34 - y1*p234) + &
-				ap1m2m3p4**3 * (y1 + (p23-y4) - y23 + y4*p23) + &
+				ap1m2m3p4**3 * (y1*(p23-y4) - y23 + y4*p23) + &
 				ap1p2p3m4**3 * (y12 + y23 + y13 - y4*p123) + &
-				ap1m2p3m4**3 * (y2*(m34) + y34 + y1*(y24-y3)) + &
-				ap1p2m3p4**3 * (-y2*(m34) - y34 + y1*(y24-y3)) + &
+				ap1m2p3m4**3 * ( y2*(m34) + y34 + y1*(y2-m34)) + &
+				ap1p2m3p4**3 * (-y2*(m34) - y34 + y1*(y2-m34)) + &
 				ap1m2p3p4**3 * (y34 - y2*p34 + y1*(p34-y2)) + &
 				ap1p2m3m4**3 * (y2*p34 - y34 + y1*(p34-y2)) &
 			)/6.d0 + &
 			(	sign(p1p2m3m4,p1p2m3m4**2) * ( &
-					y1**3+y2**3+3*y1*(y2**2+y3**2+y4**2+6*(y34-p34*y2)) + &
+					y1**3+y2**3+3*y1*(y2**2+y3**2+y4**2+6*(y34-p34*y2)) - &
 					p34**3 + 3*(y2*(y3**2+y4**2+6*y34)-y2**2*p34+y1**2*(y2-p34))&
 				) + &
 				sign(p1p2m3p4,p1p2m3p4**2) * ( &
@@ -452,9 +436,9 @@ module ndInteractions
 					y1**3+y4**3-p23**3 &
 				) + &
 				sign(p1m2p3m4,p1m2p3m4**2) * ( &
-					3*(-(y3**2-6*y34+y4**2)*y4 - (p23-y3)*y1**2 + m34*y2**2 + &
-						(y2**2-6*(m34)*y2+y3**2+y4**2-6*y23)*y1) +&
-					y1**3-y2**3-(m34)**3 &
+					3*(-(y3**2-6*y34+y4**2)*y2 - (y2-m34)*y1**2 + m34*y2**2 + &
+						(y2**2-6*(m34)*y2+y3**2+y4**2-6*y34)*y1) +&
+					y1**3-y2**3+(m34)**3 &
 				) + &
 				sign(-m1p2p3p4,m1p2p3p4**2) * ( &
 					3*((y3**2+6*y34+y4**2)*y2 + (p234)*y1**2 + p34*y2**2 - &
