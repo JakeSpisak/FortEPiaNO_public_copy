@@ -92,7 +92,7 @@ module variables
 	end type cmplxMatNN
 	
 	type coll_args
-		type(cmplxMatNN) :: na, nb
+		type(cmplxMatNN) :: n
 		real(dl) :: y1, y2, y3, y4, x, z, dme2
 		logical :: s1, s2, s3, s4
 		integer :: ix1, ix2, a, b

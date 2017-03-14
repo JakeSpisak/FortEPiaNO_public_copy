@@ -62,7 +62,7 @@ module ndCosmology
 	subroutine loadElDensity
 		real(dl), dimension(:,:), allocatable :: ed_vec
 		integer :: ix, iz, iflag
-		real(dl) :: x,z
+		real(dl) :: x,z, t1,t2
 		
 		call addToLog("[cosmo] Initializing interpolation for electron density...")
 		allocate(ed_vec(interp_nx,interp_nz))
@@ -75,12 +75,14 @@ module ndCosmology
 		electronDensity => electronDensityInterp
 		
 		call random_seed()
-		call random_number(x)!=0.13151
-		call random_number(z)!=0.13151
+		call random_number(x)
+		call random_number(z)
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
 		write(*,"(' [cosmo] test electronDensityInterp in ',*(E12.5))") x,z
-		write(*,"(' [cosmo] comparison (true vs interp): ',*(E17.10))") electronDensityFull(x,z), electronDensity(x,z)
+		t1 = electronDensityFull(x,z)
+		t2 = electronDensity(x,z)
+		write(*,"(' [cosmo] comparison (true vs interp): ',*(E17.10))") t1,t2
 		
 		loadedEDens = .true.
 		call addToLog("[cosmo] ...done!")
