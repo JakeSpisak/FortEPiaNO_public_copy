@@ -1,5 +1,6 @@
 module ndErrors
 	use precision
+	use variables
 	implicit none
 	
 	integer :: totErrors
@@ -37,6 +38,14 @@ module ndErrors
 		write(*,*) message
 		write(lfu,*) message
 	end subroutine addToLog
+	
+	subroutine printVerbose(message,l)
+		character(len=*), intent(in) :: message
+		integer :: l
+		
+		if (l.le.verbose) &
+			write(*,*) message
+	end subroutine printVerbose
 	
 	subroutine error(message)
 		character(len=*), intent(in) :: message
