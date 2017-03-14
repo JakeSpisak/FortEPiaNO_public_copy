@@ -71,6 +71,9 @@ module variables
 	logical :: firstPoint = .false.
 	logical :: checkpoint = .false.
 	
+	logical :: coll_scatt_em, coll_scatt_ep, coll_annih_epem
+	logical :: dme2_temperature_corr
+	
 	!variables that will be read from config file
 	logical :: massOrdering, only_1a_1s
 	integer :: flavorNumber, flavNumSqu

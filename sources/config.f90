@@ -177,9 +177,9 @@ module ndConfig
 			verbose = read_ini_int('verbose',verbose)
 			checkpoint = read_ini_logical('checkpoint', .true.)
 			maxiter = read_ini_int('maxiter',100)
-			toler   = read_ini_real('tolerance', 1.d-3)
-			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-3)
-			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-3)
+			toler   = read_ini_real('tolerance', 1.d-5)
+			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-6)
+			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-6)
 			
 			Nx = read_ini_int('Nx',100)
 			Ny = read_ini_int('Ny',100)
@@ -248,6 +248,10 @@ module ndConfig
 			!read cosmo parameters
 			hubbleParam = read_ini_real('hubbleParam', i_HubbleParam)
 			photonTemperatureToday = read_ini_real('photonTemperatureToday', i_photonTempToday)
+			coll_scatt_em = read_ini_logical("coll_scatt_em",.true.)
+			coll_scatt_ep = read_ini_logical("coll_scatt_ep",.true.)
+			coll_annih_epem = read_ini_logical("coll_annih_epem",.true.)
+			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 			
 			!create other matrices
 			call init_matrices
