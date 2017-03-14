@@ -147,7 +147,7 @@ module ndInteractions
 		real(dl) :: term1a, term1b, term2a, term2b
 		
 		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
-			call criticalError("a and b must be either 1(=L) or 2(=R)")
+			call criticalError("[F_ab_ann] a and b must be either 1(=L) or 2(=R)")
 		
 		term1a=0.d0
 		term1b=0.d0
@@ -199,6 +199,8 @@ module ndInteractions
 					(n2%re(i,k))*(n1%im(k,j))&
 					)
 			end do
+		else
+			call criticalError("[F_ab_ann] invalid rI")
 		end if
 		F_ab_ann = fermiDirac(e3,x,z)*fermiDirac(e4,x,z) * &
 				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
@@ -215,7 +217,7 @@ module ndInteractions
 		real(dl) :: term1a, term1b, term2a, term2b
 		
 		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
-			call criticalError("a and b must be either 1(=L) or 2(=R)")
+			call criticalError("[F_ab_sc] a and b must be either 1(=L) or 2(=R)")
 		
 		term1a=0.d0
 		term1b=0.d0
@@ -268,13 +270,167 @@ module ndInteractions
 					)
 			end do
 		else
-			call criticalError("invalid rI in F_ab_sc")
+			call criticalError("[F_ab_sc] invalid rI")
 		end if
 		F_ab_sc = (1-fermiDirac(e2,x,z))*fermiDirac(e4,x,z) * &
 				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
 			- fermiDirac(e2,x,z)*(1-fermiDirac(e4,x,z)) * &
 				(term2a * GLR_vec(a,j,j) + term2b * GLR_vec(a,i,i))
 	end function F_ab_sc
+	
+	!same as F_ab_ann, but with full matrix products (useful for nonstandard gL, gR)
+	function F_ab_ann_mp (x,z, n1,n2,e3,e4, a,b, i, j, rI)!a, b must be either 1(=L) or 2(=R)
+		real(dl) :: F_ab_ann_mp
+		type(cmplxMatNN), intent(in) :: n1,n2
+		real(dl), dimension(:,:), allocatable, save :: t1,t2,t3,t4,p1,p2,idm1,idm2,su!
+		real(dl), intent(in) :: e3,e4, x,z
+		integer, intent(in) :: a,b, i, j, rI
+		integer :: k,f
+		
+		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
+			call criticalError("[F_ab_ann_mp] a and b must be either 1(=L) or 2(=R)")
+		
+		f=flavorNumber
+		if (.not.allocated(t1)) &
+			allocate(t1(f,f))
+		if (.not.allocated(t2)) &
+			allocate(t2(f,f))
+		if (.not.allocated(t3)) &
+			allocate(t3(f,f))
+		if (.not.allocated(t4)) &
+			allocate(t4(f,f))
+		if (.not.allocated(p1)) &
+			allocate(p1(f,f))
+		if (.not.allocated(p2)) &
+			allocate(p2(f,f))
+		if (.not.allocated(idm1)) &
+			allocate(idm1(f,f))
+		if (.not.allocated(idm2)) &
+			allocate(idm2(f,f))
+		if (.not.allocated(su)) &
+			allocate(su(f,f))
+			
+		su=0.d0
+		idm1=idMat-n1%re
+		idm2=idMat-n2%re
+		if (rI.eq.1) then !take real part
+			!t1 = Ga (1-rho2) Gb (1-rho1)
+			call quadrupleProdMat(GLR_vec(a,:,:), idm2 , GLR_vec(b,:,:), idm1 , p1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n2%im, GLR_vec(b,:,:), n1%im, p2)
+			t1 = p1 - p2
+			!t2 = (1-rho1) Gb (1-rho2) Ga
+			call quadrupleProdMat(idm1 , GLR_vec(b,:,:), idm2 , GLR_vec(a,:,:), p1)
+			call quadrupleProdMat(n1%im, GLR_vec(b,:,:), n2%im, GLR_vec(a,:,:), p2)
+			t2 = p1 - p2
+			!t3 = rho1 Gb rho2 Ga
+			call quadrupleProdMat(n1%re, GLR_vec(b,:,:), n2%re, GLR_vec(a,:,:), p1)
+			call quadrupleProdMat(n1%im, GLR_vec(b,:,:), n2%im, GLR_vec(a,:,:), p2)
+			t3 = p1 - p2
+			!t4 = Ga rho2 Gb rho1
+			call quadrupleProdMat(GLR_vec(a,:,:), n2%re, GLR_vec(b,:,:), n1%re, p1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n2%im, GLR_vec(b,:,:), n1%im, p2)
+			t4 = p1 - p2
+		else if (rI .eq.2) then!take imaginary part
+			!t1 = Ga (1-rho2) Gb (1-rho1)
+			call quadrupleProdMat(GLR_vec(a,:,:), idm2 , GLR_vec(b,:,:), n1%im, p1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n2%im, GLR_vec(b,:,:), idm1 , p2)
+			t1 = - p1 - p2
+			!t2 = (1-rho1) Gb (1-rho2) Ga
+			call quadrupleProdMat(idm1 , GLR_vec(b,:,:), n2%im, GLR_vec(a,:,:), p1)
+			call quadrupleProdMat(n1%im, GLR_vec(b,:,:), idm2 , GLR_vec(a,:,:), p2)
+			t2 = - p1 - p2
+			!t3 = rho1 Gb rho2 Ga
+			call quadrupleProdMat(n1%re, GLR_vec(b,:,:), n2%im, GLR_vec(a,:,:), p1)
+			call quadrupleProdMat(n1%im, GLR_vec(b,:,:), n2%re, GLR_vec(a,:,:), p2)
+			t3 = p1 + p2
+			!t4 = Ga rho2 Gb rho1
+			call quadrupleProdMat(GLR_vec(a,:,:), n2%re, GLR_vec(b,:,:), n1%im, p1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n2%im, GLR_vec(b,:,:), n1%re, p2)
+			t4 = p1 + p2
+		else
+			call criticalError("[F_ab_sc_mp] invalid rI")
+		end if
+		su =  fermiDirac(e3,x,z)*fermiDirac(e4,x,z) * (t1 + t2) &
+			- (1-fermiDirac(e3,x,z))*(1-fermiDirac(e4,x,z)) * (t3 + t4)
+		F_ab_ann_mp = su(i,j)
+	end function F_ab_ann_mp
+	
+	!same as F_ab_sc, but with full matrix products (useful for nonstandard gL, gR)
+	function F_ab_sc_mp (x,z, n1,e2,n3,e4, a,b, i, j, rI)!a, b must be either 1(=L) or 2(=R)
+		real(dl) :: F_ab_sc_mp
+		type(cmplxMatNN), intent(in) :: n1,n3
+		real(dl), dimension(:,:), allocatable, save :: t1,t2,t3,t4,p1,p2,idm1,idm3,su!
+		real(dl), intent(in) :: e2,e4, x,z
+		integer, intent(in) :: a,b, i, j, rI
+		integer :: k,f
+		
+		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
+			call criticalError("[F_ab_sc_mp] a and b must be either 1(=L) or 2(=R)")
+		
+		f=flavorNumber
+		if (.not.allocated(t1)) &
+			allocate(t1(f,f))
+		if (.not.allocated(t2)) &
+			allocate(t2(f,f))
+		if (.not.allocated(t3)) &
+			allocate(t3(f,f))
+		if (.not.allocated(t4)) &
+			allocate(t4(f,f))
+		if (.not.allocated(p1)) &
+			allocate(p1(f,f))
+		if (.not.allocated(p2)) &
+			allocate(p2(f,f))
+		if (.not.allocated(idm1)) &
+			allocate(idm1(f,f))
+		if (.not.allocated(idm3)) &
+			allocate(idm3(f,f))
+		if (.not.allocated(su)) &
+			allocate(su(f,f))
+			
+		su=0.d0
+		idm1=idMat-n1%re
+		idm3=idMat-n3%re
+		if (rI.eq.1) then !take real part
+			!t1 = Ga rho3 Gb (1-rho1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n3%re, GLR_vec(b,:,:), idm1 , p1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n3%im, GLR_vec(b,:,:), n1%im, p2)
+			t1 = p1 + p2
+			!t2 = (1-rho1) Gb rho3 Ga
+			call quadrupleProdMat(idm1 , GLR_vec(b,:,:), n3%re, GLR_vec(a,:,:), p1)
+			call quadrupleProdMat(n1%im, GLR_vec(b,:,:), n3%im, GLR_vec(a,:,:), p2)
+			t2 = p1 + p2
+			!t3 = rho1 Gb (1-rho3) Ga
+			call quadrupleProdMat(n1%re, GLR_vec(b,:,:), idm3 , GLR_vec(a,:,:), p1)
+			call quadrupleProdMat(n1%im, GLR_vec(b,:,:), n3%im, GLR_vec(a,:,:), p2)
+			t3 = p1 + p2
+			!t4 = Ga (1-rho3) Gb rho1
+			call quadrupleProdMat(GLR_vec(a,:,:), idm3 , GLR_vec(b,:,:), n1%re, p1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n3%im, GLR_vec(b,:,:), n1%im, p2)
+			t4 = p1 + p2
+		else if (rI .eq.2) then!take imaginary part
+			!t1 = Ga rho3 Gb (1-rho1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n3%re, GLR_vec(b,:,:), n1%im, p1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n3%im, GLR_vec(b,:,:), idm1 , p2)
+			t1 = - p1 + p2
+			!t2 = (1-rho1) Gb rho3 Ga
+			call quadrupleProdMat(idm1 , GLR_vec(b,:,:), n3%im, GLR_vec(a,:,:), p1)
+			call quadrupleProdMat(n1%im, GLR_vec(b,:,:), n3%re, GLR_vec(a,:,:), p2)
+			t2 = p1 - p2
+			!t3 = rho1 Gb (1-rho3) Ga
+			call quadrupleProdMat(n1%re, GLR_vec(b,:,:), n3%im, GLR_vec(a,:,:), p1)
+			call quadrupleProdMat(n1%im, GLR_vec(b,:,:), idm3 , GLR_vec(a,:,:), p2)
+			t3 = - p1 + p2
+			!t4 = Ga (1-rho3) Gb rho1
+			call quadrupleProdMat(GLR_vec(a,:,:), idm3 , GLR_vec(b,:,:), n1%im, p1)
+			call quadrupleProdMat(GLR_vec(a,:,:), n3%im, GLR_vec(b,:,:), n1%re, p2)
+			t4 = p1 - p2
+		else
+			call criticalError("[F_ab_sc_mp] invalid rI")
+		end if
+		su =  (1-fermiDirac(e2,x,z))*fermiDirac(e4,x,z) * (t1 + t2) &
+			- fermiDirac(e2,x,z)*(1-fermiDirac(e4,x,z)) * (t3 + t4)
+		F_ab_sc_mp = su(i,j)
+	end function F_ab_sc_mp
 	
 	function D1_f(y1, y2, y3, y4)
 		implicit none
@@ -640,10 +796,10 @@ module ndInteractions
 				y4/E4 * &
 				( &
 					pi2_vec(1) * F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
-					pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) + &
-					(obj%x*obj%x + dme2) * pi1_vec(1) * ( &
-						F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
-						F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, 1,2, obj%ix1,obj%ix2, obj%rI) ) &
+					pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) &!+ &
+!					(obj%x*obj%x + dme2) * pi1_vec(1) * ( &
+!						F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
+!						F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, 1,2, obj%ix1,obj%ix2, obj%rI) ) &
 				)
 		end if
 	end function coll_nue_ann_int
@@ -667,7 +823,7 @@ module ndInteractions
 		integer :: i,j, k
 		real(dl) :: rombint_obj
 		external rombint_obj
-		real(dl) :: ERRr, RES
+		real(dl) :: errr1,errr2, res1,res2
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
 
@@ -702,14 +858,14 @@ module ndInteractions
 					collArgs%rI = 1
 					ifail=0
 					itrans=0
-					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
-					collision_terms%re(i,j) = collision_terms%re(i,j) + res
+					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
 					
 					collArgs%rI = 2
 					ifail=0
 					itrans=0
-					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
-					collision_terms%im(i,j) = collision_terms%im(i,j) + res
+					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
 				end do
 			end do
 		end if
@@ -725,20 +881,22 @@ module ndInteractions
 					collArgs%rI = 1
 					ifail=0
 					itrans=0
-					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
-					collision_terms%re(i,j) = collision_terms%re(i,j) + res
+					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
 					
 					collArgs%rI = 2
 					ifail=0
 					itrans=0
-					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
-					collision_terms%im(i,j) = collision_terms%im(i,j) + res
+					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
 				end do
 			end do
 		end if
 		
 		!annihilation in e+e-
 		if (coll_annih_epem) then
+			collArgs%a = 1
+			collArgs%b = 2
 			collArgs%s2 = .false.
 			collArgs%s3 = .true.
 			do i=1, flavorNumber
@@ -748,17 +906,19 @@ module ndInteractions
 					collArgs%rI = 1
 					ifail=0
 					itrans=0
-					call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
-					collision_terms%re(i,j) = collision_terms%re(i,j) + res
+					call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
 					
 					collArgs%rI = 2
 					ifail=0
 					itrans=0
-					call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res,ERRr,ifail, collArgs)
-					collision_terms%im(i,j) = collision_terms%im(i,j) + res
+					call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+					print *,'r',i,j, res1,errr1,res2, errr2
 				end do
 			end do
 		end if
+!		call sleep(1)
 		
 		collision_terms%re(:,:) = collision_terms%re(:,:) * G_Fsq/(y1*y1*8.d0*PICub*x**4) * m_e_cub
 		collision_terms%im(:,:) = collision_terms%im(:,:) * G_Fsq/(y1*y1*8.d0*PICub*x**4) * m_e_cub
