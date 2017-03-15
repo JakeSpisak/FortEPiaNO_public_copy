@@ -433,15 +433,11 @@ SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
 !C        CALCULATE TRANSFORMED INTEGRAND
          PK = 1.0D0
          DPK = 1.0D0/PTS
-          !!$omp parallel &
-          !!$omp default(shared) &
-          !!$omp private(k1,wt,xx,x) &
-          !!$omp reduction(+:RES)
-!do k1=1,int(pts)                                        ! linea modificada por mi
+do k1=1,int(pts)                                        !SG-PF
    80    WT = DPK
          DO 120 J = 1, NDIM
-            XX = MOD(ALPHA(J)+VK(J)*PK*DPK,1.0D0)
-!            XX = MOD(ALPHA(J)+VK(J)*dble(k1)*DPK,1.0D0) !linea anterior modificada por mi: PK --> dble(k1)
+!            XX = MOD(ALPHA(J)+VK(J)*PK*DPK,1.0D0)
+            XX = MOD(ALPHA(J)+VK(J)*dble(k1)*DPK,1.0D0) !SG-PF
             CALL REGION(NDIM,X,J,C,D)
             GRAD = D - C
             WT = WT*GRAD
@@ -453,8 +449,7 @@ SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
   120    CONTINUE
          RES = F(NDIM,X,obj)*WT + RES
 !!!!         PK = AINT(PK+1.5D0)
-!enddo                                                   ! linea modificada por mi
-          !!$omp end parallel do
+enddo                                                   !SG-PF
 !!!!         IF (PK.LE.PTS) GO TO 80
          SUM1 = SUM1 + RES
          SUM2 = SUM2 + RES*RES

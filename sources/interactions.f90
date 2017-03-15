@@ -827,8 +827,8 @@ module ndInteractions
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
 
-		npts=6
-		nrand=5
+		npts=1
+		nrand=1
 		n=2
 		
 		call allocateCmplxMat(collision_terms)
@@ -914,11 +914,10 @@ module ndInteractions
 					itrans=0
 					call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
 					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
-					print *,'r',i,j, res1,errr1,res2, errr2
+!					print *,'r',i,j, res1,errr1,res2, errr2
 				end do
 			end do
 		end if
-!		call sleep(1)
 		
 		collision_terms%re(:,:) = collision_terms%re(:,:) * G_Fsq/(y1*y1*8.d0*PICub*x**4) * m_e_cub
 		collision_terms%im(:,:) = collision_terms%im(:,:) * G_Fsq/(y1*y1*8.d0*PICub*x**4) * m_e_cub
