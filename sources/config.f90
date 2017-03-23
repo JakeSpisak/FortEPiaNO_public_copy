@@ -251,6 +251,7 @@ module ndConfig
 			coll_scatt_em = read_ini_logical("coll_scatt_em",.true.)
 			coll_scatt_ep = read_ini_logical("coll_scatt_ep",.true.)
 			coll_annih_epem = read_ini_logical("coll_annih_epem",.true.)
+			collision_offdiag = read_ini_int("collision_offdiag",1)
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 			
 			!create other matrices
@@ -269,6 +270,7 @@ module ndConfig
 !			if (trim(tmparg)/="") outMinInfo=tmparg
 			tmparg=trim(read_ini_char('outputFolder'))
 			if (trim(tmparg)/="") outputFolder=tmparg
+			call addToLog("[config] Writing to: "//trim(outputFolder)//"/...")
 			call system('mkdir -p '//trim(outputFolder))
 		else
 			call criticalError("You are not passing a configuration file...are you sure?")

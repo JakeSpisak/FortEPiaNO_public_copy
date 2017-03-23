@@ -72,6 +72,7 @@ module variables
 	logical :: checkpoint = .false.
 	
 	logical :: coll_scatt_em, coll_scatt_ep, coll_annih_epem
+	integer :: collision_offdiag
 	logical :: dme2_temperature_corr
 	
 	!variables that will be read from config file
