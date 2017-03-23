@@ -180,22 +180,22 @@ module ndInteractions
 			do k=1, flavorNumber
 				!Ga (1-rho2) Gb (1-rho1)
 				term1a = term1a + GLR_vec(b,k,k) * ( &
-					(-n2%im(i,k))*(idMat(k,j)-n1%re(k,j)) - &
+					(-n2%im(i,k))*(idMat(k,j)-n1%re(k,j)) + &
 					(idMat(i,k)-n2%re(i,k))*(-n1%im(k,j))&
 					)
 				!(1-rho1) Gb (1-rho2) Ga
 				term1b = term1b + GLR_vec(b,k,k) * ( &
-					(-n1%im(i,k))*(idMat(k,j)-n2%re(k,j)) - &
+					(-n1%im(i,k))*(idMat(k,j)-n2%re(k,j)) + &
 					(idMat(i,k)-n1%re(i,k))*(-n2%im(k,j))&
 					)
 				!rho1 Gb rho2 Ga
 				term2a = term2a + GLR_vec(b,k,k) * ( &
-					(n1%im(i,k))*(n2%re(k,j)) - &
+					(n1%im(i,k))*(n2%re(k,j)) + &
 					(n1%re(i,k))*(n2%im(k,j))&
 					)
 				!Ga Rho2 Gb rho1
 				term2b = term2b + GLR_vec(b,k,k) * ( &
-					(n2%im(i,k))*(n1%re(k,j)) - &
+					(n2%im(i,k))*(n1%re(k,j)) + &
 					(n2%re(i,k))*(n1%im(k,j))&
 					)
 			end do
@@ -250,22 +250,22 @@ module ndInteractions
 			do k=1, flavorNumber
 				!Ga rho3 Gb (1-rho1)
 				term1a = term1a + GLR_vec(b,k,k) * ( &
-					(n3%im(i,k))*(idMat(k,j)-n1%re(k,j)) - &
+					(n3%im(i,k))*(idMat(k,j)-n1%re(k,j)) + &
 					(n3%re(i,k))*(-n1%im(k,j))&
 					)
 				!(1-rho1) Gb rho3 Ga
 				term1b = term1b + GLR_vec(b,k,k) * ( &
-					(-n1%im(i,k))*(n3%re(k,j)) - &
+					(-n1%im(i,k))*(n3%re(k,j)) + &
 					(idMat(i,k)-n1%re(i,k))*(n3%im(k,j))&
 					)
 				!rho1 Gb (1-rho3) Ga
 				term2a = term2a + GLR_vec(b,k,k) * ( &
-					(n1%im(i,k))*(idMat(k,j)-n3%re(k,j)) - &
+					(n1%im(i,k))*(idMat(k,j)-n3%re(k,j)) + &
 					(n1%re(i,k))*(-n3%im(k,j))&
 					)
 				!Ga (1-rho3) Gb rho1
 				term2b = term2b + GLR_vec(b,k,k) * ( &
-					(-n3%im(i,k))*(n1%re(k,j)) - &
+					(-n3%im(i,k))*(n1%re(k,j)) + &
 					(idMat(i,k)-n3%re(i,k))*(n1%im(k,j))&
 					)
 			end do
@@ -846,6 +846,8 @@ module ndInteractions
 		collision_terms%y = y1
 		collision_terms%x = x
 		collision_terms%z = z
+		collision_terms%re = 0.d0
+		collision_terms%im = 0.d0
 		
 		!scattering of neutrinos vs electrons:
 		if (coll_scatt_em) then
@@ -854,18 +856,22 @@ module ndInteractions
 			do i=1, flavorNumber
 				collArgs%ix1 = i
 				do j=1, flavorNumber
-					collArgs%ix2 = j
-					collArgs%rI = 1
-					ifail=0
-					itrans=0
-					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-					
-					collArgs%rI = 2
-					ifail=0
-					itrans=0
-					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+					if (i.eq.j .or. collision_offdiag.eq.1) then
+						collArgs%ix2 = j
+						collArgs%rI = 1
+						ifail=0
+						itrans=0
+						call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
+
+						collArgs%rI = 2
+						ifail=0
+						itrans=0
+						call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+						collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+					else if (i.ne.j .and. collision_offdiag.eq.2) then
+						print *,"Warning: should use damping factor...NYI"
+					end if
 				end do
 			end do
 		end if
@@ -877,18 +883,22 @@ module ndInteractions
 			do i=1, flavorNumber
 				collArgs%ix1 = i
 				do j=1, flavorNumber
-					collArgs%ix2 = j
-					collArgs%rI = 1
-					ifail=0
-					itrans=0
-					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-					
-					collArgs%rI = 2
-					ifail=0
-					itrans=0
-					call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+					if (i.eq.j .or. collision_offdiag.eq.1) then
+						collArgs%ix2 = j
+						collArgs%rI = 1
+						ifail=0
+						itrans=0
+						call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
+
+						collArgs%rI = 2
+						ifail=0
+						itrans=0
+						call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+						collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+					else if (i.ne.j .and. collision_offdiag.eq.2) then
+						print *,"Warning: should use damping factor...NYI"
+					end if
 				end do
 			end do
 		end if
@@ -902,19 +912,23 @@ module ndInteractions
 			do i=1, flavorNumber
 				collArgs%ix1 = i
 				do j=1, flavorNumber
-					collArgs%ix2 = j
-					collArgs%rI = 1
-					ifail=0
-					itrans=0
-					call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-					
-					collArgs%rI = 2
-					ifail=0
-					itrans=0
-					call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
-!					print *,'r',i,j, res1,errr1,res2, errr2
+					if (i.eq.j .or. collision_offdiag.eq.1) then
+						collArgs%ix2 = j
+						collArgs%rI = 1
+						ifail=0
+						itrans=0
+						call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
+
+						collArgs%rI = 2
+						ifail=0
+						itrans=0
+						call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+						collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+	!					print *,'r',i,j, res1,errr1,res2, errr2
+					else if (i.ne.j .and. collision_offdiag.eq.2) then
+						print *,"Warning: should use damping factor...NYI"
+					end if
 				end do
 			end do
 		end if

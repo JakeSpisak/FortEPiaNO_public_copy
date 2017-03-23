@@ -324,7 +324,7 @@ module ndEquations
 	
 	subroutine drhoy_dx_fullMat (matrix,x,z,iy)
 		type(cmplxMatNN),intent(out) :: matrix
-		real(dl) :: x,y,z, overallNorm
+		real(dl) :: x,y,z, overallNorm, a
 		integer :: iy,k
 		type(cmplxMatNN), save :: n1, term1, comm
 		
@@ -339,17 +339,17 @@ module ndEquations
 		overallNorm = planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
 		
 		leptonDensities=0.d0
-		leptonDensities(1,1) = leptDensFactor * y / x**6 * 2 * electronDensity(x,z)
+		leptonDensities(1,1) = leptDensFactor * y / x**6 * electronDensity(x,z)
 		term1%im = 0
 		term1%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
 !		print *,leptDensFactor, y , x**6 , electronDensity(x,z)
-!		print *,'comm',leptonDensities, nuMassesMat
+!		print *,'comm',leptonDensities, nuMassesMat/(2*y)
 !		print *,'a', term1%re, n1%re
 		
 		!switch imaginary and real parts because of the "-i" factor
 		call Commutator(term1%re, n1%re, comm%im)
 		call Commutator(term1%re, n1%im, comm%re)
-!		print *,'comm1',comm%im
+!		print *,'comm1',comm%re,comm%im
 		
 		matrix%im = - comm%im * x**2/m_e_cub
 		matrix%re = comm%re * x**2/m_e_cub
@@ -362,14 +362,14 @@ module ndEquations
 			lastColl%y = y
 			lastColl%z = z
 		end if
-!			print *,'coll',lastColl%mat%re
+			print *,'coll',lastColl%mat%re
 		matrix%re = matrix%re + lastColl%mat%re
 		matrix%im = matrix%im + lastColl%mat%im
 !			print *,'full',lastColl%mat%re
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
-!		print *,'fullMat',lastColl%mat%re,lastColl%mat%im
+		print *,x,planck_mass / (2*sqrt(PIx8D3))/m_e_cub,'fullMat',matrix%re!,matrix%im
 	end subroutine drhoy_dx_fullMat
 	
 	subroutine saveRelevantInfo(x, vec)
@@ -380,6 +380,7 @@ module ndEquations
 		integer, dimension(:), allocatable :: units
 		character(len=200) :: fname
 		
+		call vec_2_densMat(vec)
 		totFiles=flavorNumber**2+1
 		allocate(units(totFiles),tmpvec(Ny))
 		do i=1, totFiles
@@ -497,7 +498,6 @@ module ndEquations
 			end if
 			call writeCheckpoints(ntot, xend, nuDensVec)
 			
-			call vec_2_densMat(nuDensVec)
 			call saveRelevantInfo(xend, nuDensVec)
 			xstart=xend
 		end do
