@@ -57,10 +57,10 @@ def plot_z(fnames):
 		plt.show()
 	plt.close()
 
-outfolder="../outputNC/"
+outfolder="../output/NC/"
 plot_momentum(outfolder+"nuDens_diag1.dat", columns)
 plot_momentum(outfolder+"nuDens_diag2.dat", columns)
 #plot_momentum("output/nuDens_diag3.dat", columns)
-plot_z([outfolder+"z.dat","../outputNCE/z.dat"])
+plot_z([outfolder+"z.dat","../output/NCE/z.dat","../output1/z.dat"])
 
 pdf.close()

@@ -40,7 +40,7 @@ module ndCosmology
 		integr_rho_e = y*y*a*fermiDirac_massless(a,vec(2))
 	end function integr_rho_e
 	
-	function electronDensityFull(x,z)
+	function electronDensityFull(x,z)!electron + positron!
 		real(dl) :: electronDensityFull, x,z, rombint_obj
 		real(dl), dimension(2) :: vec
 		external rombint_obj
@@ -49,7 +49,7 @@ module ndCosmology
 		vec(2)=z
 	
 		electronDensityFull = rombint_obj(vec, integr_rho_e, 0.d0, 60.d0, 1d-3, maxiter)
-		electronDensityFull = electronDensityFull / PISQD2
+		electronDensityFull = electronDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
 	end function electronDensityFull
 	
 	function electronDensityInterp(x,z)
