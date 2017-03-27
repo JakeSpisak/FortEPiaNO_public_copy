@@ -137,6 +137,7 @@ module ndConfig
 		do ix=1, Ny
 			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
 			nuDensMatVec(ix)%y = y_arr(ix)
+			nuDensMatVec(ix)%logy = log10(y_arr(ix))
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdm = fermiDirac_massless(y_arr(ix),z_in)

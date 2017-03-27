@@ -362,14 +362,15 @@ module ndEquations
 			lastColl%y = y
 			lastColl%z = z
 		end if
-			print *,'coll',lastColl%mat%re
+!		print *,'coll',lastColl%mat%re
 		matrix%re = matrix%re + lastColl%mat%re
 		matrix%im = matrix%im + lastColl%mat%im
-!			print *,'full',lastColl%mat%re
+!		print *,'full',matrix%re
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
-		print *,x,planck_mass / (2*sqrt(PIx8D3))/m_e_cub,'fullMat',matrix%re!,matrix%im
+!		print *,'x,y:',x,y,m_e/x
+!		print *,'fullMat',matrix%re!,matrix%im
 	end subroutine drhoy_dx_fullMat
 	
 	subroutine saveRelevantInfo(x, vec)

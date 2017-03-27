@@ -97,7 +97,7 @@ module ndInteractions
 			vec(2) = z
 			vec(3) = y !not used
 			
-			tmp = rombint_obj(vec, dme2_e_i1, 0.d0, 60.d0, 1d-3, 200)
+			tmp = rombint_obj(vec, dme2_e_i1, fe_l, fe_u, 1d-3, 200)
 			dme2_electronFull = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
 		else
 			dme2_electronFull = 0.d0
@@ -480,10 +480,10 @@ module ndInteractions
 		Am1p2p3p4 = Abs(m1p2p3p4)
 		Ap1p2p3p4 = Abs(p1p2p3p4)
 
-		a = Sign(p1p2m3m4, (p1p2m3m4)**2) - Sign(p1p2p3m4, (p1p2p3m4)**2) - &
-			Sign(p1p2m3p4, (p1p2m3p4)**2) + Sign(p1p2p3p4, (p1p2p3p4)**2)
-		b = - Sign(m1p2p3p4, (m1p2p3p4)**2) + Sign(p1m2p3m4, (p1m2p3m4)**2) &
-			+ Sign(p1m2m3p4, (p1m2m3p4)**2) - Sign(p1m2p3p4, (p1m2p3p4)**2)
+		a =   Sign(p1p2m3m4**2, p1p2m3m4) - Sign(p1p2p3m4**2, p1p2p3m4) - &
+			  Sign(p1p2m3p4**2, p1p2m3p4) + Sign(p1p2p3p4**2, p1p2p3p4)
+		b = - Sign(m1p2p3p4**2,-m1p2p3p4) + Sign(p1m2p3m4**2, p1m2p3m4) &
+			+ Sign(p1m2m3p4**2, p1m2m3p4) - Sign(p1m2p3p4**2, p1m2p3p4)
 
 		D2_f = - ( &
 			Ap1p2m3m4**3 + Ap1m2p3m4**3 - &
@@ -571,32 +571,32 @@ module ndInteractions
 				ap1m2p3p4**3 * (y34 - y2*p34 + y1*(p34-y2)) + &
 				ap1p2m3m4**3 * (y2*p34 - y34 + y1*(p34-y2)) &
 			)/6.d0 + &
-			(	sign(p1p2m3m4,p1p2m3m4**2) * ( &
+			(	sign(p1p2m3m4**2, p1p2m3m4) * ( &
 					y1**3+y2**3+3*y1*(y2**2+y3**2+y4**2+6*(y34-p34*y2)) - &
 					p34**3 + 3*(y2*(y3**2+y4**2+6*y34)-y2**2*p34+y1**2*(y2-p34))&
 				) + &
-				sign(p1p2m3p4,p1p2m3p4**2) * ( &
+				sign(p1p2m3p4**2, p1p2m3p4) * ( &
 					- p1p2m3p4**3 + 12*(y12*m34+p12*y34) &
 				) + &
-				sign(p1m2p3p4,p1m2p3p4**2) * ( &
+				sign(p1m2p3p4**2, p1m2p3p4) * ( &
 					- p1m2p3p4**3 + 12*(y12*p34+(y2-y1)*y34) &
 				) + &
-				sign(p1p2p3m4,p1p2p3m4**2) * ( &
+				sign(p1p2p3m4**2, p1p2p3m4) * ( &
 					3*((y2**2+6*y23+y3**2)*y4 - (p23-y4)*y1**2 - p23*y4**2 - &
 						(y2**2+6*y23+y3**2+y4**2-6*p23*y4)*y1) +&
 					y4**3-y1**3-p23**3 &
 				) + &
-				sign(p1m2m3p4,p1m2m3p4**2) * ( &
+				sign(p1m2m3p4**2, p1m2m3p4) * ( &
 					3*((y2**2+6*y23+y3**2)*y4 - (p23-y4)*y1**2 - p23*y4**2 + &
 						(y2**2+6*y23+y3**2+y4**2-6*p23*y4)*y1) +&
 					y1**3+y4**3-p23**3 &
 				) + &
-				sign(p1m2p3m4,p1m2p3m4**2) * ( &
+				sign(p1m2p3m4**2, p1m2p3m4) * ( &
 					3*(-(y3**2-6*y34+y4**2)*y2 - (y2-m34)*y1**2 + m34*y2**2 + &
 						(y2**2-6*(m34)*y2+y3**2+y4**2-6*y34)*y1) +&
 					y1**3-y2**3+(m34)**3 &
 				) + &
-				sign(-m1p2p3p4,m1p2p3p4**2) * ( &
+				sign(m1p2p3p4**2,-m1p2p3p4) * ( &
 					3*((y3**2+6*y34+y4**2)*y2 + (p234)*y1**2 + p34*y2**2 - &
 						(y2**2+6*p34*y2+y3**2+y4**2+6*y34)*y1) +&
 					y2**3-y1**3+p34**3 &
@@ -655,7 +655,7 @@ module ndInteractions
 		type(cmplxMatNN) :: interp_nuDens, mu, ml
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
-		real(dl) :: ixr, yr
+		real(dl) :: ixr, yr, logy
 		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDens)
@@ -667,7 +667,8 @@ module ndInteractions
 		elseif (abs(y-nuDensMatVec(Ny)%y) .lt. 1.d-6) then
 			interp_nuDens = nuDensMatVec(Ny)
 		else
-			ixr=(Ny-1)*(log10(y)-logy_min)/(logy_max-logy_min)+1
+			logy=log10(y)
+			ixr=(Ny-1)*(logy-logy_min)/(logy_max-logy_min)+1
 			ix=int(ixr)
 			if (ix .gt. 0 .and. ix .lt. Ny) then
 				if (abs(ixr-ix) .lt. 1d-5) then
@@ -675,7 +676,7 @@ module ndInteractions
 				else
 					ml = nuDensMatVec(ix)
 					mu = nuDensMatVec(ix+1)
-					yr = (y - nuDensMatVec(ix)%y) / (nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)
+					yr = (logy - nuDensMatVec(ix)%logy) / (nuDensMatVec(ix+1)%logy - nuDensMatVec(ix)%logy)
 					interp_nuDens%y = y
 					interp_nuDens%re(:,:) = ml%re(:,:) + yr * (mu%re(:,:) - ml%re(:,:))
 					interp_nuDens%im(:,:) = ml%im(:,:) + yr * (mu%im(:,:) - ml%im(:,:))
@@ -691,7 +692,7 @@ module ndInteractions
 		real(dl) :: interp_nuDensIJre
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
-		real(dl) :: ixr, yr
+		real(dl) :: ixr, yr, logy
 		character(len=100) :: vals
 		
 		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
@@ -699,13 +700,14 @@ module ndInteractions
 		elseif (abs(y - nuDensMatVec(Ny)%y).lt.1d-5) then
 			interp_nuDensIJre = nuDensMatVec(Ny)%re(i,j)
 		else
+			logy=log10(y)
 			ixr=(Ny-1)*(log10(y)-logy_min)/(logy_max-logy_min)+1
 			ix=int(ixr)
 			if (ix .gt. 0 .and. ix .lt. Ny) then
 				if (abs(ixr-ix) .lt. 1d-6) then
 					interp_nuDensIJre = nuDensMatVec(ix)%re(i,j)
 				else
-					yr = (y - nuDensMatVec(ix)%y) / (nuDensMatVec(ix+1)%y - nuDensMatVec(ix)%y)
+					yr = (logy - nuDensMatVec(ix)%logy) / (nuDensMatVec(ix+1)%logy - nuDensMatVec(ix)%logy)
 					interp_nuDensIJre = nuDensMatVec(ix)%re(i,j) + &
 						yr * (nuDensMatVec(ix+1)%re(i,j) - nuDensMatVec(ix)%re(i,j))
 				end if
@@ -796,10 +798,10 @@ module ndInteractions
 				y4/E4 * &
 				( &
 					pi2_vec(1) * F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2, obj%rI) + &
-					pi2_vec(2) * F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) &!+ &
-!					(obj%x*obj%x + dme2) * pi1_vec(1) * ( &
-!						F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
-!						F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, 1,2, obj%ix1,obj%ix2, obj%rI) ) &
+					pi2_vec(3) * F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2, obj%rI) + &
+					(obj%x*obj%x + dme2) * pi1_vec(2) * ( &
+						F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, 2,1, obj%ix1,obj%ix2, obj%rI) + &
+						F_ab_ann(obj%x,obj%z,obj%n,n2,y3,y4, 1,2, obj%ix1,obj%ix2, obj%rI) ) &
 				)
 		end if
 	end function coll_nue_ann_int
@@ -925,7 +927,6 @@ module ndInteractions
 						itrans=0
 						call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
 						collision_terms%im(i,j) = collision_terms%im(i,j) + res2
-	!					print *,'r',i,j, res1,errr1,res2, errr2
 					else if (i.ne.j .and. collision_offdiag.eq.2) then
 						print *,"Warning: should use damping factor...NYI"
 					end if
@@ -933,8 +934,8 @@ module ndInteractions
 			end do
 		end if
 		
-		collision_terms%re(:,:) = collision_terms%re(:,:) * G_Fsq/(y1*y1*8.d0*PICub*x**4) * m_e_cub
-		collision_terms%im(:,:) = collision_terms%im(:,:) * G_Fsq/(y1*y1*8.d0*PICub*x**4) * m_e_cub
+		collision_terms%re(:,:) = collision_terms%re(:,:) * collTermFactor/(y1*y1*x**4)
+		collision_terms%im(:,:) = collision_terms%im(:,:) * collTermFactor/(y1*y1*x**4)
 		
 	end function collision_terms
 end module

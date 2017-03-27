@@ -48,7 +48,7 @@ module ndCosmology
 		vec(1)=x
 		vec(2)=z
 	
-		electronDensityFull = rombint_obj(vec, integr_rho_e, 0.d0, 60.d0, 1d-3, maxiter)
+		electronDensityFull = rombint_obj(vec, integr_rho_e, fe_l, fe_u, 1d-3, maxiter)
 		electronDensityFull = electronDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
 	end function electronDensityFull
 	
@@ -89,7 +89,7 @@ module ndCosmology
 	end subroutine loadElDensity
 	
 	function integr_rho_nu(vec,y)
-		real(dl) :: integr_rho_nu, y,a
+		real(dl) :: integr_rho_nu, y
 		type(nuDensArgs) :: vec
 		integr_rho_nu = y*y*y*interp_nuDensIJre(y, vec%iFl, vec%iFl)
 	end function integr_rho_nu
@@ -112,9 +112,9 @@ module ndCosmology
 		
 		allNuDensity = 0.d0
 		do ix=1, flavorNumber
-			allNuDensity = allNuDensity + nuDensity(x,z,ix)
+			allNuDensity = allNuDensity + nuDensity(x,z,ix)*nuFactor(ix)
 		end do
-		allNuDensity = allNuDensity / PISQD2
+		allNuDensity = allNuDensity
 	end function allNuDensity
 
 end module

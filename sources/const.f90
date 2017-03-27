@@ -58,6 +58,9 @@ module constants
 	real(dl), parameter :: i_HubbleParam = 70.
 	
 	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
+	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
+	
+	real(dl), parameter :: fe_l = 0.d0, fe_u = 100.d0
 	
 	character(len=5), parameter :: dblfmt = "E15.7"
 end module constants
@@ -88,7 +91,7 @@ module variables
 	!matrix
 	type cmplxMatNN
 		real(dl), dimension(:,:), allocatable :: re, im
-		real(dl) :: x, y, z
+		real(dl) :: x, y, z, logy
 		logical :: a=.false. !allocated?
 	end type cmplxMatNN
 	
