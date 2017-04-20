@@ -140,13 +140,13 @@ module ndConfig
 			nuDensMatVec(ix)%logy = log10(y_arr(ix))
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
-			fdm = fermiDirac_massless(y_arr(ix),z_in)
+!			fdm = fermiDirac_massless(y_arr(ix),z_in)
 !			write(3154,"(2"//dblfmt//")") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
-			nuDensMatVec(ix)%re(1,1) = fdm
+			nuDensMatVec(ix)%re(1,1) = 1.d0!fdm
 			if (flavorNumber.ne.2 .or. (.not. only_1a_1s)) then
-				nuDensMatVec(ix)%re(2,2) = fdm
+				nuDensMatVec(ix)%re(2,2) = 1.d0!fdm
 				if (flavorNumber.gt.2) &
-					nuDensMatVec(ix)%re(3,3) = fdm
+					nuDensMatVec(ix)%re(3,3) = 1.d0!fdm
 				if (flavorNumber.gt.3) &
 					nuDensMatVec(ix)%re(4,4) = 0.d0
 			end if

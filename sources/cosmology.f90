@@ -9,13 +9,8 @@ module ndCosmology
 	
 	logical :: loadedEDens = .false.
 	type(bspline_2d) :: elDens
-	
-	type nuDensArgs
-		real(dl) :: x,z
-		integer iFl
-	end type nuDensArgs
 
-	procedure (funcXY), pointer :: electronDensity => null ()
+!	procedure (funcXY), pointer :: electronDensity => null ()
 	
 	contains
 	
@@ -41,23 +36,22 @@ module ndCosmology
 	end function integr_rho_e
 	
 	function electronDensityFull(x,z)!electron + positron!
-		real(dl) :: electronDensityFull, x,z, rombint_obj
+		real(dl) :: electronDensityFull, x,z
 		real(dl), dimension(2) :: vec
-		external rombint_obj
 		
 		vec(1)=x
 		vec(2)=z
 	
-		electronDensityFull = rombint_obj(vec, integr_rho_e, fe_l, fe_u, 1d-3, maxiter)
+		electronDensityFull = rombint_vec(vec, integr_rho_e, fe_l, fe_u, 1d-3, maxiter)
 		electronDensityFull = electronDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
 	end function electronDensityFull
 	
-	function electronDensityInterp(x,z)
-		real(dl) :: electronDensityInterp, x,z
+	function electronDensity(x,z)
+		real(dl) :: electronDensity, x,z
 		integer :: iflag
 		
-		call elDens%evaluate(x,z,0,0,electronDensityInterp,iflag)
-	end function electronDensityInterp
+		call elDens%evaluate(x,z,0,0,electronDensity,iflag)
+	end function electronDensity
 
 	subroutine loadElDensity
 		real(dl), dimension(:,:), allocatable :: ed_vec
@@ -72,7 +66,7 @@ module ndCosmology
 			end do
 		end do
 		call elDens%initialize(interp_xvec,interp_zvec,ed_vec,4,4,iflag)
-		electronDensity => electronDensityInterp
+!		electronDensity => electronDensityInterp
 		
 		call random_seed()
 		call random_number(x)
@@ -91,19 +85,18 @@ module ndCosmology
 	function integr_rho_nu(vec,y)
 		real(dl) :: integr_rho_nu, y
 		type(nuDensArgs) :: vec
-		integr_rho_nu = y*y*y*interp_nuDensIJre(y, vec%iFl, vec%iFl)
+		integr_rho_nu = y*y*y*interp_nuDensIJre(y, vec%iFl, vec%iFl) * fermiDirac_massless(y,vec%z)
 	end function integr_rho_nu
 	
 	function nuDensity(x,z, iFl)
-		real(dl) :: nuDensity, x,z, rombint_obj
+		real(dl) :: nuDensity, x,z
 		type(nuDensArgs) :: vec
 		integer :: iFl
-		external rombint_obj
 		
 		vec%x=x
 		vec%z=z
 		vec%iFl=iFl
-		nuDensity = rombint_obj(vec, integr_rho_nu, y_min, y_max, 1d-3, maxiter) / PISQD2
+		nuDensity = rombint_nD(vec, integr_rho_nu, y_min, y_max, 1d-3, maxiter) / PISQD2
 	end function nuDensity
 	
 	function allNuDensity(x,z)

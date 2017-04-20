@@ -236,6 +236,7 @@ module ndMatrices
 		outMat=0.0d0
 		
 		!multiply
+		!$omp parallel do default(shared) private(i,j,k)
 		do i=1, size1(1)
 			do j=1, size2(2)
 				do k=1, size1(2)
@@ -243,6 +244,7 @@ module ndMatrices
 				end do
 			end do
 		end do
+		!$omp end parallel do
 	end subroutine multiplyMat
 
 	subroutine tripleProdMat(mat1, mat2, mat3, outMat)

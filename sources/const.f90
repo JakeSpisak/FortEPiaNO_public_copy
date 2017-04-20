@@ -95,6 +95,11 @@ module variables
 		logical :: a=.false. !allocated?
 	end type cmplxMatNN
 	
+	type nuDensArgs
+		real(dl) :: x,z
+		integer iFl
+	end type nuDensArgs
+	
 	type coll_args
 		type(cmplxMatNN) :: n
 		real(dl) :: y1, y2, y3, y4, x, z, dme2
@@ -102,6 +107,12 @@ module variables
 		integer :: ix1, ix2, a, b
 		integer :: rI !return real or imaginary part
 	end type coll_args
+	
+	type integrRhoNuPar
+		real(dl) :: x,z
+		integer :: flavor, ntot
+		real(dl), dimension(:), allocatable :: der, y2
+	end type integrRhoNuPar
 	
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
 	logical , dimension(:), allocatable :: sterile

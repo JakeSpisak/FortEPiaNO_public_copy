@@ -1,6 +1,7 @@
 module ndEquations
 	use precision
 	use variables
+	use utilities
 	use constants
 	use ndErrors
 	use ndinteractions
@@ -10,24 +11,18 @@ module ndEquations
 	type(bspline_1d) :: Jfunc_interp, JPrime_interp, Kfunc_interp, Kprime_interp, yfunc_interp
 	type(bspline_1d) :: g1func_interp, g2func_interp
 	
-	procedure (funcX), pointer :: J_func => null ()
-	procedure (funcX), pointer :: K_func => null ()
-	procedure (funcX), pointer :: Jprime => null ()
-	procedure (funcX), pointer :: Kprime => null ()
-	procedure (funcX), pointer :: Y_func => null ()
-	procedure (func2_X), pointer :: G12_func => null ()
+!	procedure (funcX), pointer :: J_func => null ()
+!	procedure (funcX), pointer :: K_func => null ()
+!	procedure (funcX), pointer :: Jprime => null ()
+!	procedure (funcX), pointer :: Kprime => null ()
+!	procedure (funcX), pointer :: Y_func => null ()
+!	procedure (func2_X), pointer :: G12_func => null ()
 	
 	type collTerm
 		type(cmplxMatNN) :: mat
 		real(dl) :: x,y,z
 	end type collTerm
 	type(collTerm) :: lastColl
-	
-	type integrRhoNuPar
-		real(dl) :: x,z
-		integer :: flavor, ntot
-		real(dl), dimension(:), allocatable :: der, y2
-	end type integrRhoNuPar
 	
 	real(dl), parameter :: upper = 1.d2
 	
@@ -86,10 +81,8 @@ module ndEquations
 	function J_funcFull(o)
 		real(dl) :: J_funcFull
 		real(dl), intent(in) :: o
-		real(dl) :: rombint_obj
-		external rombint_obj
 
-		J_funcFull = rombint_obj(o, J_int,0.d0,upper,toler,maxiter)/PISQ
+		J_funcFull = rombint_re(o, J_int,0.d0,upper,toler,maxiter)/PISQ
 	end function J_funcFull
 	
 	function Jprime_int(o, u)
@@ -107,10 +100,8 @@ module ndEquations
 	function JprimeFull(o)
 		real(dl) :: JprimeFull
 		real(dl), intent(in) :: o
-		real(dl) :: rombint_obj
-		external rombint_obj
 	
-		JprimeFull = rombint_obj(o, Jprime_int,0.d0,upper,toler,maxiter) * o / PISQ
+		JprimeFull = rombint_re(o, Jprime_int,0.d0,upper,toler,maxiter) * o / PISQ
 	end function JprimeFull
 	
 	function K_int(o, u)
@@ -124,10 +115,8 @@ module ndEquations
 	function K_funcFull(o)
 		real(dl) :: K_funcFull
 		real(dl), intent(in) :: o
-		real(dl) :: rombint_obj
-		external rombint_obj
 		
-		k_funcFull = rombint_obj(o, k_int,0.d0,upper,toler,maxiter)/PISQ
+		k_funcFull = rombint_re(o, k_int,0.d0,upper,toler,maxiter)/PISQ
 	end function K_funcFull
 	
 	function Kprime_int(o, u)
@@ -146,10 +135,8 @@ module ndEquations
 	function KprimeFull(o)
 		real(dl) :: KprimeFull
 		real(dl), intent(in) :: o
-		real(dl) :: rombint_obj
-		external rombint_obj
 	
-		KprimeFull = rombint_obj(o, Kprime_int,0.d0,upper,toler, maxiter) * o / PISQ
+		KprimeFull = rombint_re(o, Kprime_int,0.d0,upper,toler, maxiter) * o / PISQ
 	end function KprimeFull
 	
 	function Y_int(o, u)
@@ -163,10 +150,8 @@ module ndEquations
 	function Y_funcFull(o)
 		real(dl) :: Y_funcFull
 		real(dl), intent(in) :: o
-		real(dl) :: rombint_obj
-		external rombint_obj
 		
-		Y_funcFull = rombint_obj(o, Y_int,0.d0,upper,toler, maxiter)/PISQ
+		Y_funcFull = rombint_re(o, Y_int,0.d0,upper,toler, maxiter)/PISQ
 	end function Y_funcFull
 	
 	function G12_funcFull(o)
@@ -218,58 +203,58 @@ module ndEquations
 		call g1func_interp%initialize(interp_xozvec,g1,4,iflag)
 		call g2func_interp%initialize(interp_xozvec,g2,4,iflag)
 
-		J_func   => J_funcInterp
-		K_func   => K_funcInterp
-		Jprime   => JprimeInterp
-		Kprime   => KprimeInterp
-		Y_func   => Y_funcInterp
-		G12_func => G12_funcInterp
+!		J_func   => J_funcInterp
+!		K_func   => K_funcInterp
+!		Jprime   => JprimeInterp
+!		Kprime   => KprimeInterp
+!		Y_func   => Y_funcInterp
+!		G12_func => G12_funcInterp
 		deallocate(j, k, jp, kp, y, g1, g2)
 		call addToLog("[equations] ...done!")
 	end subroutine init_interp_jkyg12
 	
-	function J_funcInterp(o)
-		real(dl) :: J_funcInterp
+	function J_func(o)
+		real(dl) :: J_func
 		real(dl), intent(in) :: o
 		integer :: iflag
-		call Jfunc_interp%evaluate(o,0,J_funcInterp,iflag)
-	end function J_funcInterp
+		call Jfunc_interp%evaluate(o,0,J_func,iflag)
+	end function J_func
 	
-	function K_funcInterp(o)
-		real(dl) :: K_funcInterp
+	function K_func(o)
+		real(dl) :: K_func
 		real(dl), intent(in) :: o
 		integer :: iflag
-		call Kfunc_interp%evaluate(o,0,K_funcInterp,iflag)
-	end function K_funcInterp
+		call Kfunc_interp%evaluate(o,0,K_func,iflag)
+	end function K_func
 	
-	function jprimeInterp(o)
-		real(dl) :: jprimeInterp
+	function jprime(o)
+		real(dl) :: jprime
 		real(dl), intent(in) :: o
 		integer :: iflag
-		call JPrime_interp%evaluate(o,0,jprimeInterp,iflag)
-	end function jprimeInterp
+		call JPrime_interp%evaluate(o,0,jprime,iflag)
+	end function jprime
 	
-	function kprimeInterp(o)
-		real(dl) :: kprimeInterp
+	function kprime(o)
+		real(dl) :: kprime
 		real(dl), intent(in) :: o
 		integer :: iflag
-		call Kprime_interp%evaluate(o,0,kprimeInterp,iflag)
-	end function kprimeInterp
+		call Kprime_interp%evaluate(o,0,kprime,iflag)
+	end function kprime
 	
-	function Y_funcInterp(o)
-		real(dl) :: Y_funcInterp
+	function Y_func(o)
+		real(dl) :: Y_func
 		real(dl), intent(in) :: o
 		integer :: iflag
-		call yfunc_interp%evaluate(o,0,Y_funcInterp,iflag)
-	end function Y_funcInterp
+		call yfunc_interp%evaluate(o,0,Y_func,iflag)
+	end function Y_func
 	
-	function G12_funcInterp(o)
-		real(dl), dimension(2) :: G12_funcInterp
+	function G12_func(o)
+		real(dl), dimension(2) :: G12_func
 		real(dl), intent(in) :: o
 		integer :: iflag
-		call g1func_interp%evaluate(o,0,G12_funcInterp(1),iflag)
-		call g2func_interp%evaluate(o,0,G12_funcInterp(2),iflag)
-	end function G12_funcInterp
+		call g1func_interp%evaluate(o,0,G12_func(1),iflag)
+		call g2func_interp%evaluate(o,0,G12_func(2),iflag)
+	end function G12_func
 	
 	function integrate_dRhoNu(params, y)
 		real(dl) :: integrate_dRhoNu, y, dfnudx
@@ -280,7 +265,7 @@ module ndEquations
 	end function integrate_dRhoNu
 	
 	subroutine dz_o_dx(x,z, ydot, n)
-		real(dl) :: dzodx, rombint_obj
+		real(dl) :: dzodx
 		real(dl), intent(in) :: x,z
 		real(dl) :: x_o_z, jxoz, tmp
 		real(dl), dimension(2) :: g12
@@ -288,7 +273,6 @@ module ndEquations
 		real(dl), dimension(n) :: ydot
 		real(dl), dimension(:), allocatable :: dertemp
 		integer :: ix, n, m
-		external rombint_obj
 		
 		x_o_z = x/z
 		jxoz = J_func(x_o_z)
@@ -311,7 +295,7 @@ module ndEquations
 				params%der(m) = ydot((m-1)*flavNumSqu + ix)
 			end do
 			call spline(y_arr, params%der, Ny, 1.d30, 1.d30, params%y2) !x, y(x), N, ?, ?, derivatives)
-			tmp = tmp + rombint_obj(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)*nuFactor(ix)
+			tmp = tmp + rombint_dRN(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)*nuFactor(ix)
 		end do
 		
 		dzodx = (x_o_z * jxoz + g12(1) &
@@ -325,7 +309,7 @@ module ndEquations
 	subroutine drhoy_dx_fullMat (matrix,x,z,iy)
 		type(cmplxMatNN),intent(out) :: matrix
 		real(dl) :: x,y,z, overallNorm, a
-		integer :: iy,k
+		integer :: iy,k, ix
 		type(cmplxMatNN), save :: n1, term1, comm
 		
 		call allocateCmplxMat(n1)
@@ -335,6 +319,10 @@ module ndEquations
 		
 		n1 = nuDensMatVec(iy)
 		y = nuDensMatVec(iy)%y
+		do ix=1, flavorNumber
+			n1%re(ix,ix) = n1%re(ix,ix) * fermiDirac_massless(y,z)
+			n1%im(ix,ix) = n1%im(ix,ix) * fermiDirac_massless(y,z)
+		end do
 		
 		overallNorm = planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
 		
@@ -369,6 +357,10 @@ module ndEquations
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
+		do ix=1, flavorNumber
+			matrix%re(ix,ix) = matrix%re(ix,ix) / fermiDirac_massless(y,z)
+			matrix%im(ix,ix) = matrix%im(ix,ix) / fermiDirac_massless(y,z)
+		end do
 !		print *,'x,y:',x,y,m_e/x
 !		print *,'fullMat',matrix%re!,matrix%im
 	end subroutine drhoy_dx_fullMat
@@ -395,7 +387,8 @@ module ndEquations
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag',k,'.dat'
 			call openFile(units(k), trim(fname),firstWrite)
 			do iy=1, nY
-				tmpvec(iy)=nuDensMatVec(iy)%y**2*nuDensMatVec(iy)%re(k,k)
+				tmpvec(iy)=nuDensMatVec(iy)%y**2*nuDensMatVec(iy)%re(k,k) * &
+					fermiDirac_massless(nuDensMatVec(iy)%y, vec(ntot)) 
 			end do
 			write(units(k), '(*('//dblfmt//'))') x, tmpvec
 		end do
@@ -517,7 +510,7 @@ module ndEquations
 !		real(dl), dimension(:,:), allocatable, save :: tmpvec
 		real(dl), dimension(:), allocatable, save :: tmpv
 		character(len=100) :: tmpstr
-		!$omp threadprivate(leptonDensities,lastColl)
+!		!$omp threadprivate(leptonDensities,lastColl)
 		
 		deriv_counter = deriv_counter+1
 !		if (.not. allocated(tmpvec)) &
@@ -531,9 +524,9 @@ module ndEquations
 		z = vars(n)
 		call vec_2_densMat(vars(1:n-1))
 !		tmpvec=0
-		!$omp parallel do &
-		!$omp default(shared) &
-		!$omp private(i,j,k,mat,tmpv)
+!		!$omp parallel do &
+!		!$omp default(shared) &
+!		!$omp private(i,j,k,mat,tmpv)
 		do m=1, Ny
 			call drhoy_dx_fullMat(mat, x,z,m)
 			do i=1, flavorNumber
@@ -547,16 +540,16 @@ module ndEquations
 					k=k+2
 				end do
 			end do
-			!$omp critical
+!			!$omp critical
 !			tmpvec(m,k) = tmpv(k)
 			s=(m-1)*flavNumSqu
 			do k=1,flavNumSqu
 !				ydot(s+k)=tmpvec(m,k)
 				ydot(s+k)=tmpv(k)
 			end do
-			!$omp end critical
+!			!$omp end critical
 		end do
-		!$omp end parallel do
+!		!$omp end parallel do
 		
 !		call openFile(6587, "tmpfile.txt",.false.)
 !        write(6587, '(*(E14.7))') x, ydot

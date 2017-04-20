@@ -11,7 +11,7 @@ module ndInteractions
 	
 	logical :: dme2_e_loaded = .false.
 	type(bspline_2d) :: dmeCorr
-	procedure (funcXYZ), pointer :: dme2_electron => null ()
+!	procedure (funcXYZ), pointer :: dme2_electron => null ()
 	contains
 	
 	subroutine dme2_e_load()
@@ -27,7 +27,7 @@ module ndInteractions
 			end do
 		end do
 		call dmeCorr%initialize(interp_xvec,interp_zvec,dme_vec,4,4,iflag)
-		dme2_electron => dme2_electronInterp
+!		dme2_electron => dme2_electronInterp
 		
 		call random_seed()
 		call random_number(x)
@@ -87,30 +87,29 @@ module ndInteractions
 	end function dme2_e_i2
 	
 	function dme2_electronFull(x,y,z)
-		real(dl) :: dme2_electronFull, tmp, rombint_obj
+		real(dl) :: dme2_electronFull, tmp
 		real(dl), intent(in) :: x,y,z
 		real(dl), dimension(3) :: vec
-		external rombint_obj
 		
 		if (dme2_temperature_corr) then
 			vec(1) = x
 			vec(2) = z
 			vec(3) = y !not used
 			
-			tmp = rombint_obj(vec, dme2_e_i1, fe_l, fe_u, 1d-3, 200)
+			tmp = rombint_vec(vec, dme2_e_i1, fe_l, fe_u, 1d-3, maxiter)
 			dme2_electronFull = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
 		else
 			dme2_electronFull = 0.d0
 		end if
 	end function dme2_electronFull
 	
-	function dme2_electronInterp(x,y,z)
-		real(dl) :: dme2_electronInterp
+	function dme2_electron(x,y,z)
+		real(dl) :: dme2_electron
 		real(dl), intent(in) :: x,y,z
 		integer :: iflag
 		
-		call dmeCorr%evaluate(x,z,0,0,dme2_electronInterp,iflag)
-	end function dme2_electronInterp
+		call dmeCorr%evaluate(x,z,0,0,dme2_electron,iflag)
+	end function dme2_electron
 	
 	function Ebare_i_dme(x,y,z,dme2)!for electrons
 		real(dl) :: Ebare_i_dme
@@ -621,6 +620,7 @@ module ndInteractions
 		!pi_1(y1, y2)
 		PI1_f(2) = e1 * Ebar_i(s2,x,y2,z, dme2) * d1 &
 			- D2_f(y1, y2, y3, y4)
+			
 	end function PI1_f
 	
 	function PI2_f (x, z, y1, y2, y3, y4, s1, s2, s3, s4, dme2) !1: (y1, y4),	2: (y1, y2), 3:	(y1, y3)
@@ -649,6 +649,7 @@ module ndInteractions
 		PI2_f(3) = 2 * (t &
 			+ e1 * e3 * D2_f(y2, y4, y1, y3) &
 			+ e2 * e4 * D2_f(y1, y3, y2, y4) )
+		
 	end function PI2_f
 
 	function interp_nuDens(y)
@@ -719,7 +720,7 @@ module ndInteractions
 	end function interp_nuDensIJre
 	
 	function coll_nue_sc_int(ndim, ve, obj)
-		integer :: ndim
+		integer :: ndim, ix
 		type(coll_args) :: obj
 		real(dl), dimension(20) :: ve
 		real(dl) :: coll_nue_sc_int
@@ -746,6 +747,10 @@ module ndInteractions
 			coll_nue_sc_int = 0.0
 		else
 			n3 = interp_nuDens(y3)
+			do ix=1, flavorNumber
+				n3%re(ix,ix) = n3%re(ix,ix) * fermiDirac_massless(y3, obj%z)
+				n3%im(ix,ix) = n3%im(ix,ix) * fermiDirac_massless(y3, obj%z)
+			end do
 			
 			pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, dme2)
 			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4, dme2)
@@ -763,14 +768,14 @@ module ndInteractions
 		end if
 	end function coll_nue_sc_int
 	
-	function coll_nue_ann_int(n, ve, obj)
+	function coll_nue_ann_int(ndim, ve, obj)
+		integer :: ndim, ix
 		real(dl) :: coll_nue_ann_int
 		real(dl), dimension(2) :: pi1_vec
 		real(dl), dimension(3) :: pi2_vec
 		real(dl), intent(in), dimension(2) :: ve
 		type(cmplxMatNN) :: n2
 		real(dl) :: y2,y3,y4, E3, E4, dme2
-		integer :: n
 		type(coll_args) :: obj
 		
 		call allocateCmplxMat(n2)
@@ -789,6 +794,10 @@ module ndInteractions
 			coll_nue_ann_int = 0.0
 		else
 			n2 = interp_nuDens(y2)
+			do ix=1, flavorNumber
+				n2%re(ix,ix) = n2%re(ix,ix) * fermiDirac_massless(y2, obj%z)
+				n2%im(ix,ix) = n2%im(ix,ix) * fermiDirac_massless(y2, obj%z)
+			end do
 			
 			pi1_vec = PI1_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, dme2)
 			pi2_vec = PI2_f (obj%x, obj%z, obj%y1, y2, y3, y4, obj%s1, obj%s2, obj%s3, obj%s4, dme2)
@@ -820,14 +829,13 @@ module ndInteractions
 	function collision_terms (x, z, y1, n1)
 		type(cmplxMatNN) :: collision_terms
 		real(dl), intent(in) :: x,z, y1
-		type(cmplxMatNN) :: n1
+		type(cmplxMatNN) :: n1, tmp
 		type(coll_args),save :: collArgs
 		integer :: i,j, k
-		real(dl) :: rombint_obj
-		external rombint_obj
 		real(dl) :: errr1,errr2, res1,res2
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
+		real(dl) ::  VKa(3)
 
 		npts=1
 		nrand=1
@@ -836,6 +844,15 @@ module ndInteractions
 		call allocateCmplxMat(collision_terms)
 		call allocateCmplxMat(collArgs%n)
 		
+		collision_terms%y = y1
+		collision_terms%x = x
+		collision_terms%z = z
+		collision_terms%re = 0.d0
+		collision_terms%im = 0.d0
+		
+!		!$omp parallel &
+!		!$omp default(shared) &
+!		!$omp private(collArgs,tmp,ifail,itrans,i,j,res1,res2,errr1,errr2)
 		collArgs%s1 = .false.
 		collArgs%s2 = .true.
 		collArgs%s3 = .false.
@@ -845,12 +862,11 @@ module ndInteractions
 		collArgs%y1 = y1
 		collArgs%dme2 = dme2_electron(x, 0.d0, z)
 		collArgs%n = n1
-		collision_terms%y = y1
-		collision_terms%x = x
-		collision_terms%z = z
-		collision_terms%re = 0.d0
-		collision_terms%im = 0.d0
-		
+		call allocateCmplxMat(tmp)
+		tmp%re = 0.d0
+		tmp%im = 0.d0
+!		!$omp sections
+!		!$omp section
 		!scattering of neutrinos vs electrons:
 		if (coll_scatt_em) then
 			collArgs%a = 2
@@ -864,24 +880,28 @@ module ndInteractions
 						ifail=0
 						itrans=0
 						call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
+						tmp%re(i,j) = tmp%re(i,j) + res1
 
 						collArgs%rI = 2
 						ifail=0
 						itrans=0
 						call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-						collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+						tmp%im(i,j) = tmp%im(i,j) + res2
 					else if (i.ne.j .and. collision_offdiag.eq.2) then
 						print *,"Warning: should use damping factor...NYI"
 					end if
 				end do
 			end do
+			collision_terms%re(:,:) = collision_terms%re(:,:) + tmp%re(:,:)
+			collision_terms%im(:,:) = collision_terms%im(:,:) + tmp%im(:,:)
 		end if
 
+!		!$omp section
 !		!scattering of neutrinos vs positrons:
 		if (coll_scatt_ep) then
 			collArgs%a = 1
 			collArgs%b = 2
+!			!$omp do
 			do i=1, flavorNumber
 				collArgs%ix1 = i
 				do j=1, flavorNumber
@@ -891,26 +911,31 @@ module ndInteractions
 						ifail=0
 						itrans=0
 						call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
+						tmp%re(i,j) = tmp%re(i,j) + res1
 
 						collArgs%rI = 2
 						ifail=0
 						itrans=0
 						call D01GCF(n,coll_nue_sc_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-						collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+						tmp%im(i,j) = tmp%im(i,j) + res2
 					else if (i.ne.j .and. collision_offdiag.eq.2) then
 						print *,"Warning: should use damping factor...NYI"
 					end if
 				end do
 			end do
+			collision_terms%re(:,:) = collision_terms%re(:,:) + tmp%re(:,:)
+			collision_terms%im(:,:) = collision_terms%im(:,:) + tmp%im(:,:)
+!			!$omp end do
 		end if
 		
+!		!$omp section
 		!annihilation in e+e-
 		if (coll_annih_epem) then
 			collArgs%a = 1
 			collArgs%b = 2
 			collArgs%s2 = .false.
 			collArgs%s3 = .true.
+!			!$omp do
 			do i=1, flavorNumber
 				collArgs%ix1 = i
 				do j=1, flavorNumber
@@ -920,19 +945,24 @@ module ndInteractions
 						ifail=0
 						itrans=0
 						call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
+						tmp%re(i,j) = tmp%re(i,j) + res1
 
 						collArgs%rI = 2
 						ifail=0
 						itrans=0
 						call D01GCF(n,coll_nue_ann_int, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-						collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+						tmp%im(i,j) = tmp%im(i,j) + res2
 					else if (i.ne.j .and. collision_offdiag.eq.2) then
 						print *,"Warning: should use damping factor...NYI"
 					end if
 				end do
 			end do
+			collision_terms%re(:,:) = collision_terms%re(:,:) + tmp%re(:,:)
+			collision_terms%im(:,:) = collision_terms%im(:,:) + tmp%im(:,:)
+!			!$omp end do
 		end if
+!		!$omp end sections
+!		!$omp end parallel
 		
 		collision_terms%re(:,:) = collision_terms%re(:,:) * collTermFactor/(y1*y1*x**4)
 		collision_terms%im(:,:) = collision_terms%im(:,:) * collTermFactor/(y1*y1*x**4)

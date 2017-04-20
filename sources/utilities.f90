@@ -192,6 +192,7 @@ module utilities
 	end subroutine splint
 
 SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
+!use omp_lib!SG
 !C     MARK 10 RELEASE. NAG COPYRIGHT 1982.
 !C     MARK 11.5(F77) REVISED. (SEPT 1985.)
 !C
@@ -433,7 +434,15 @@ SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
 !C        CALCULATE TRANSFORMED INTEGRAND
          PK = 1.0D0
          DPK = 1.0D0/PTS
+ !SG170328
+   !$omp parallel do &
+   default(shared) &
+   private(wt,xx,c,d,grad,j,x) &
+   reduction(+:res)
 do k1=1,int(pts)                                        !SG-PF
+ !SG170328 if(omp_get_thread_num().eq.0) &
+ !SG170328		print *,OMP_GET_NUM_THREADS()
+! print *,omp_get_thread_num()
    80    WT = DPK
          DO 120 J = 1, NDIM
 !            XX = MOD(ALPHA(J)+VK(J)*PK*DPK,1.0D0)
@@ -450,6 +459,8 @@ do k1=1,int(pts)                                        !SG-PF
          RES = F(NDIM,X,obj)*WT + RES
 !!!!         PK = AINT(PK+1.5D0)
 enddo                                                   !SG-PF
+  !$omp end parallel do
+  !SG170328
 !!!!         IF (PK.LE.PTS) GO TO 80
          SUM1 = SUM1 + RES
          SUM2 = SUM2 + RES*RES
@@ -463,199 +474,274 @@ enddo                                                   !SG-PF
 !!!!  160 IFAIL = P01ABF(IFAIL,ICHECK,SRNAME,0,P01REC)
       RETURN
       END subroutine D01GCF
-end module utilities
-
-!taken from CAMB:
-!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-function rombint2(f,a,b,tol, maxit, minsteps)
-        use precision
-!  Rombint returns the integral from a to b of using Romberg integration.
-!  The method converges provided that f(x) is continuous in (a,b).
-!  f must be real(dl) and must be declared external in the calling
-!  routine.  tol indicates the desired relative accuracy in the integral.
-
-! Modified by AL to specify max iterations and minimum number of steps
-! (min steps useful to stop wrong results on periodic or sharp functions)
-        implicit none
-        integer, parameter :: MAXITER=20,MAXJ=5
-        dimension g(MAXJ+1)
-        real(dl) f
-        external f
-        real(dl) :: rombint2
-        real(dl), intent(in) :: a,b,tol
-        integer, intent(in):: maxit,minsteps
-     
-        integer :: nint, i, k, jmax, j
-        real(dl) :: h, gmax, error, g, g0, g1, fourj
       
-        h=0.5d0*(b-a)
-        gmax=h*(f(a)+f(b))
-        g(1)=gmax
-        nint=1
-        error=1.0d20
-        i=0
-        do
-          i=i+1
-          if (i > maxit.or.(i > 5.and.abs(error) < tol) .and. nint > minsteps) exit
-!  Calculate next trapezoidal rule approximation to integral.
-          g0=0._dl
-          do k=1,nint
-            g0=g0+f(a+(k+k-1)*h)
-          end do
-          g0=0.5d0*g(1)+h*g0
-          h=0.5d0*h
-          nint=nint+nint
-          jmax=min(i,MAXJ)
-          fourj=1._dl
-          do j=1,jmax
-!  Use Richardson extrapolation.
-            fourj=4._dl*fourj
-            g1=g0+(g0-g(j))/(fourj-1._dl)
-            g(j)=g0
-            g0=g1
-          end do  
-          if (abs(g0).gt.tol) then
-            error=1._dl-gmax/g0
-          else
-            error=gmax
-          end if
-          gmax=g0
-          g(jmax+1)=g0
-        end do
-  
-        rombint2=g0
-        if (i > maxit .and. abs(error) > tol)  then
-          write(*,*) 'Warning: Rombint2 failed to converge; '
-          write (*,*)'integral, error, tol:', rombint2,error, tol
-        end if
-        
-end function rombint2
+      
+	!taken from CAMB and adapted:
+	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+	function rombint_re(obj,f,a,b,tol, maxit)
+			use Precision
+	!  Rombint returns the integral from a to b of using Romberg integration.
+	!  The method converges provided that f(x) is continuous in (a,b).
+	!  f must be real(dl) and must be declared external in the calling
+	!  routine.  tol indicates the desired relative accuracy in the integral.
+	!
+			implicit none
+			integer, intent(in), optional :: maxit
+			integer :: MAXITER=20
+			integer, parameter :: MAXJ=5
+			dimension g(MAXJ+1)
+			real(dl) obj
+			real(dl) f
+			external f
+			real(dl) :: rombint_re
+			real(dl), intent(in) :: a,b,tol
+			integer :: nint, i, k, jmax, j
+			real(dl) :: h, gmax, error, g, g0, g1, fourj
+	!
 
-!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-function rombint(f,a,b,tol)
-        use Precision
-!  Rombint returns the integral from a to b of using Romberg integration.
-!  The method converges provided that f(x) is continuous in (a,b).
-!  f must be real(dl) and must be declared external in the calling
-!  routine.  tol indicates the desired relative accuracy in the integral.
-!
-        implicit none
-        integer, parameter :: MAXITER=20
-        integer, parameter :: MAXJ=5
-        dimension g(MAXJ+1)
-        real(dl) f
-        external f
-        real(dl) :: rombint
-        real(dl), intent(in) :: a,b,tol
-        integer :: nint, i, k, jmax, j
-        real(dl) :: h, gmax, error, g, g0, g1, fourj
-!
+			if (present(maxit)) then
+				MaxIter = maxit
+			end if
+			h=0.5d0*(b-a)
+			gmax=h*(f(obj,a)+f(obj,b))
+			g(1)=gmax
+			nint=1
+			error=1.0d20
+			i=0
+	10        i=i+1
+			  if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
+				go to 40
+	!  Calculate next trapezoidal rule approximation to integral.
+			  g0=0._dl
+				do 20 k=1,nint
+				g0=g0+f(obj,a+(k+k-1)*h)
+	20        continue
+			  g0=0.5d0*g(1)+h*g0
+			  h=0.5d0*h
+			  nint=nint+nint
+			  jmax=min(i,MAXJ)
+			  fourj=1._dl
+				do 30 j=1,jmax
+	!  Use Richardson extrapolation.
+				fourj=4._dl*fourj
+				g1=g0+(g0-g(j))/(fourj-1._dl)
+				g(j)=g0
+				g0=g1
+	30        continue
+			  if (abs(g0).gt.tol) then
+				error=1._dl-gmax/g0
+			  else
+				error=gmax
+			  end if
+			  gmax=g0
+			  g(jmax+1)=g0
+			go to 10
+	40      rombint_re=g0
+			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
+			  write(*,*) 'Warning: Rombint failed to converge; '
+			  write (*,*)'integral, error, tol:', rombint_re,error, tol
+			end if
+	end function rombint_re
 
-        h=0.5d0*(b-a)
-        gmax=h*(f(a)+f(b))
-        g(1)=gmax
-        nint=1
-        error=1.0d20
-        i=0
-10        i=i+1
-          if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
-            go to 40
-!  Calculate next trapezoidal rule approximation to integral.
-          g0=0._dl
-            do 20 k=1,nint
-            g0=g0+f(a+(k+k-1)*h)
-20        continue
-          g0=0.5d0*g(1)+h*g0
-          h=0.5d0*h
-          nint=nint+nint
-          jmax=min(i,MAXJ)
-          fourj=1._dl
-            do 30 j=1,jmax
-!  Use Richardson extrapolation.
-            fourj=4._dl*fourj
-            g1=g0+(g0-g(j))/(fourj-1._dl)
-            g(j)=g0
-            g0=g1
-30        continue
-          if (abs(g0).gt.tol) then
-            error=1._dl-gmax/g0
-          else
-            error=gmax
-          end if
-          gmax=g0
-          g(jmax+1)=g0
-        go to 10
-40      rombint=g0
-        if (i.gt.MAXITER.and.abs(error).gt.tol)  then
-          write(*,*) 'Warning: Rombint failed to converge; '
-          write (*,*)'integral, error, tol:', rombint,error, tol
-        end if
-        
-end function rombint
+	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+	function rombint_vec(obj,f,a,b,tol, maxit)
+			use Precision
+	!  Rombint returns the integral from a to b of using Romberg integration.
+	!  The method converges provided that f(x) is continuous in (a,b).
+	!  f must be real(dl) and must be declared external in the calling
+	!  routine.  tol indicates the desired relative accuracy in the integral.
+	!
+			implicit none
+			integer, intent(in), optional :: maxit
+			integer :: MAXITER=20
+			integer, parameter :: MAXJ=5
+			dimension g(MAXJ+1)
+			real(dl), dimension(:), intent(in) :: obj
+			real(dl) f
+			external f
+			real(dl) :: rombint_vec
+			real(dl), intent(in) :: a,b,tol
+			integer :: nint, i, k, jmax, j
+			real(dl) :: h, gmax, error, g, g0, g1, fourj
+	!
 
-!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-function rombint_obj(obj,f,a,b,tol, maxit)
-        use Precision
-!  Rombint returns the integral from a to b of using Romberg integration.
-!  The method converges provided that f(x) is continuous in (a,b).
-!  f must be real(dl) and must be declared external in the calling
-!  routine.  tol indicates the desired relative accuracy in the integral.
-!
-        implicit none
-        integer, intent(in), optional :: maxit
-        integer :: MAXITER=20
-        integer, parameter :: MAXJ=5
-        dimension g(MAXJ+1)
-        real obj !dummy
-        real(dl) f
-        external f
-        real(dl) :: rombint_obj
-        real(dl), intent(in) :: a,b,tol
-        integer :: nint, i, k, jmax, j
-        real(dl) :: h, gmax, error, g, g0, g1, fourj
-!
+			if (present(maxit)) then
+				MaxIter = maxit
+			end if
+			h=0.5d0*(b-a)
+			gmax=h*(f(obj,a)+f(obj,b))
+			g(1)=gmax
+			nint=1
+			error=1.0d20
+			i=0
+	10        i=i+1
+			  if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
+				go to 40
+	!  Calculate next trapezoidal rule approximation to integral.
+			  g0=0._dl
+				do 20 k=1,nint
+				g0=g0+f(obj,a+(k+k-1)*h)
+	20        continue
+			  g0=0.5d0*g(1)+h*g0
+			  h=0.5d0*h
+			  nint=nint+nint
+			  jmax=min(i,MAXJ)
+			  fourj=1._dl
+				do 30 j=1,jmax
+	!  Use Richardson extrapolation.
+				fourj=4._dl*fourj
+				g1=g0+(g0-g(j))/(fourj-1._dl)
+				g(j)=g0
+				g0=g1
+	30        continue
+			  if (abs(g0).gt.tol) then
+				error=1._dl-gmax/g0
+			  else
+				error=gmax
+			  end if
+			  gmax=g0
+			  g(jmax+1)=g0
+			go to 10
+	40      rombint_vec=g0
+			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
+			  write(*,*) 'Warning: Rombint failed to converge; '
+			  write (*,*)'integral, error, tol:', rombint_vec,error, tol
+			end if
+			
+	end function rombint_vec
 
-        if (present(maxit)) then
-            MaxIter = maxit
-        end if
-        h=0.5d0*(b-a)
-        gmax=h*(f(obj,a)+f(obj,b))
-        g(1)=gmax
-        nint=1
-        error=1.0d20
-        i=0
-10        i=i+1
-          if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
-            go to 40
-!  Calculate next trapezoidal rule approximation to integral.
-          g0=0._dl
-            do 20 k=1,nint
-            g0=g0+f(obj,a+(k+k-1)*h)
-20        continue
-          g0=0.5d0*g(1)+h*g0
-          h=0.5d0*h
-          nint=nint+nint
-          jmax=min(i,MAXJ)
-          fourj=1._dl
-            do 30 j=1,jmax
-!  Use Richardson extrapolation.
-            fourj=4._dl*fourj
-            g1=g0+(g0-g(j))/(fourj-1._dl)
-            g(j)=g0
-            g0=g1
-30        continue
-          if (abs(g0).gt.tol) then
-            error=1._dl-gmax/g0
-          else
-            error=gmax
-          end if
-          gmax=g0
-          g(jmax+1)=g0
-        go to 10
-40      rombint_obj=g0
-        if (i.gt.MAXITER.and.abs(error).gt.tol)  then
-          write(*,*) 'Warning: Rombint failed to converge; '
-          write (*,*)'integral, error, tol:', rombint_obj,error, tol
-        end if
-        
-end function rombint_obj
+	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+	function rombint_nD(obj,f,a,b,tol, maxit)
+			use Precision
+	!  Rombint returns the integral from a to b of using Romberg integration.
+	!  The method converges provided that f(x) is continuous in (a,b).
+	!  f must be real(dl) and must be declared external in the calling
+	!  routine.  tol indicates the desired relative accuracy in the integral.
+	!
+			implicit none
+			integer, intent(in), optional :: maxit
+			integer :: MAXITER=20
+			integer, parameter :: MAXJ=5
+			dimension g(MAXJ+1)
+			type(nuDensArgs) :: obj
+			real(dl) f
+			external f
+			real(dl) :: rombint_nD
+			real(dl), intent(in) :: a,b,tol
+			integer :: nint, i, k, jmax, j
+			real(dl) :: h, gmax, error, g, g0, g1, fourj
+	!
+
+			if (present(maxit)) then
+				MaxIter = maxit
+			end if
+			h=0.5d0*(b-a)
+			gmax=h*(f(obj,a)+f(obj,b))
+			g(1)=gmax
+			nint=1
+			error=1.0d20
+			i=0
+	10        i=i+1
+			  if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
+				go to 40
+	!  Calculate next trapezoidal rule approximation to integral.
+			  g0=0._dl
+				do 20 k=1,nint
+				g0=g0+f(obj,a+(k+k-1)*h)
+	20        continue
+			  g0=0.5d0*g(1)+h*g0
+			  h=0.5d0*h
+			  nint=nint+nint
+			  jmax=min(i,MAXJ)
+			  fourj=1._dl
+				do 30 j=1,jmax
+	!  Use Richardson extrapolation.
+				fourj=4._dl*fourj
+				g1=g0+(g0-g(j))/(fourj-1._dl)
+				g(j)=g0
+				g0=g1
+	30        continue
+			  if (abs(g0).gt.tol) then
+				error=1._dl-gmax/g0
+			  else
+				error=gmax
+			  end if
+			  gmax=g0
+			  g(jmax+1)=g0
+			go to 10
+	40      rombint_nD=g0
+			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
+			  write(*,*) 'Warning: Rombint failed to converge; '
+			  write (*,*)'integral, error, tol:', rombint_nD,error, tol
+			end if
+			
+	end function rombint_nD
+
+	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+	function rombint_dRN(obj,f,a,b,tol, maxit)
+			use Precision
+	!  Rombint returns the integral from a to b of using Romberg integration.
+	!  The method converges provided that f(x) is continuous in (a,b).
+	!  f must be real(dl) and must be declared external in the calling
+	!  routine.  tol indicates the desired relative accuracy in the integral.
+	!
+			implicit none
+			integer, intent(in), optional :: maxit
+			integer :: MAXITER=20
+			integer, parameter :: MAXJ=5
+			dimension g(MAXJ+1)
+			type(integrRhoNuPar) :: obj
+			real(dl) f
+			external f
+			real(dl) :: rombint_dRN
+			real(dl), intent(in) :: a,b,tol
+			integer :: nint, i, k, jmax, j
+			real(dl) :: h, gmax, error, g, g0, g1, fourj
+	!
+
+			if (present(maxit)) then
+				MaxIter = maxit
+			end if
+			h=0.5d0*(b-a)
+			gmax=h*(f(obj,a)+f(obj,b))
+			g(1)=gmax
+			nint=1
+			error=1.0d20
+			i=0
+	10        i=i+1
+			  if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
+				go to 40
+	!  Calculate next trapezoidal rule approximation to integral.
+			  g0=0._dl
+				do 20 k=1,nint
+				g0=g0+f(obj,a+(k+k-1)*h)
+	20        continue
+			  g0=0.5d0*g(1)+h*g0
+			  h=0.5d0*h
+			  nint=nint+nint
+			  jmax=min(i,MAXJ)
+			  fourj=1._dl
+				do 30 j=1,jmax
+	!  Use Richardson extrapolation.
+				fourj=4._dl*fourj
+				g1=g0+(g0-g(j))/(fourj-1._dl)
+				g(j)=g0
+				g0=g1
+	30        continue
+			  if (abs(g0).gt.tol) then
+				error=1._dl-gmax/g0
+			  else
+				error=gmax
+			  end if
+			  gmax=g0
+			  g(jmax+1)=g0
+			go to 10
+	40      rombint_dRN=g0
+			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
+			  write(*,*) 'Warning: Rombint failed to converge; '
+			  write (*,*)'integral, error, tol:', rombint_dRN,error, tol
+			end if
+			
+	end function rombint_dRN
+
+end module utilities
