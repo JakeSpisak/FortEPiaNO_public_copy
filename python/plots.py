@@ -51,6 +51,7 @@ def plot_z(fnames):
 			x.append(line[0]) 
 			y.append(line[1])
 		plt.plot(x,y,label=fname)
+		print fname, y[-1]
 	plt.legend(loc='lower right')
 	pdf.savefig()#time.strftime("%y%m%d_%H%M%S")+
 	if not noShow:
