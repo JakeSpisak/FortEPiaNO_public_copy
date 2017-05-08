@@ -307,7 +307,7 @@ module ndEquations
 		
 		write(*,"(*(E15.7))"), x_o_z * jxoz, g12(1), -1.d0/(2 * z**3 *PISQ)* tmp, &
 			x_o_z**2*jxoz ,Y_func(x_o_z) , PISQ/7.5d0 ,g12(2)
-!		call sleep(1)
+		call sleep(1)
 		dzodx = (x_o_z * jxoz + g12(1) &
 			- 1.d0/(2 * z**3 *PISQ)* tmp) &
 			/ (x_o_z**2*jxoz +Y_func(x_o_z) + PISQ/7.5d0 +g12(2))
@@ -372,8 +372,8 @@ module ndEquations
 			matrix%re(ix,ix) = matrix%re(ix,ix) / fermiDirac_massless(y,z)
 			matrix%im(ix,ix) = matrix%im(ix,ix) / fermiDirac_massless(y,z)
 		end do
-		print *,'x,y:',x,y,z
-		print *,'fullMat',matrix%re!,matrix%im
+!		print *,'x,y:',x,y,z
+!		print *,'fullMat',matrix%re!,matrix%im
 !		call sleep(2)
 	end subroutine drhoy_dx_fullMat
 	
