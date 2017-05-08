@@ -170,6 +170,7 @@ module ndEquations
 			jo=j_func(o)
 			kp=kprime(o)
 			jp=jprime(o)
+			write(*,multidblfmt) o,ko,jo,kp,jp
 			tmp = (kp/6.d0 - ko*kp + jp/6.d0 +jp*ko + jo*kp)
 			
 			G12_funcFull(1) = PIx2*alpha_fine *(&
