@@ -40,13 +40,15 @@ module ndEquations
 				vec(k+i-1) = nuDensMatVec(m)%re(i,i)
 			end do
 			k=k+flavorNumber
-			do i=1, flavorNumber-1
-				do j=i+1, flavorNumber
-					vec(k) = nuDensMatVec(m)%re(i,j)
-					vec(k+1) = nuDensMatVec(m)%im(i,j)
-					k=k+2
+			if (collision_offdiag.ne.3) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						vec(k) = nuDensMatVec(m)%re(i,j)
+						vec(k+1) = nuDensMatVec(m)%im(i,j)
+						k=k+2
+					end do
 				end do
-			end do
+			end if
 		end do
 	end subroutine densMat_2_vec
 
@@ -60,13 +62,17 @@ module ndEquations
 				nuDensMatVec(m)%re(i,i) = vec(k+i-1)
 			end do
 			k=k+flavorNumber
-			do i=1, flavorNumber-1
-				do j=i+1, flavorNumber
-					nuDensMatVec(m)%re(i,j) = vec(k)
-					nuDensMatVec(m)%im(i,j) = vec(k+1)
-					k=k+2
+			if (collision_offdiag.ne.3) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						nuDensMatVec(m)%re(i,j) = vec(k)
+						nuDensMatVec(m)%im(i,j) = vec(k+1)
+						nuDensMatVec(m)%re(j,i) = vec(k)
+						nuDensMatVec(m)%im(j,i) = -vec(k+1)
+						k=k+2
+					end do
 				end do
-			end do
+			end if
 		end do
 	end subroutine vec_2_densMat
 	
@@ -285,19 +291,23 @@ module ndEquations
 			allocate(params%der(Ny))
 		if (.not. allocated(params%y2)) &
 			allocate(params%y2(Ny))
-		params%der=ydot 
+!		params%der=ydot 
 		tmp=0.d0
 		
 		do ix=1, flavorNumber
 			params%flavor = ix
 			params%der = 0.d0
 			do m=1, Ny
-				params%der(m) = ydot((m-1)*flavNumSqu + ix)
+!			print *,(m-1)*flavNumSqu + ix,m,ydot((m-1)*flavNumSqu + ix)
+				params%der(m) = ydot((m-1)*flavNumSqu + ix) * fermiDirac_massless(y_arr(m), z)
 			end do
 			call spline(y_arr, params%der, Ny, 1.d30, 1.d30, params%y2) !x, y(x), N, ?, ?, derivatives)
 			tmp = tmp + rombint_dRN(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)*nuFactor(ix)
 		end do
 		
+		write(*,"(*(E15.7))"), x_o_z * jxoz, g12(1), -1.d0/(2 * z**3 *PISQ)* tmp, &
+			x_o_z**2*jxoz ,Y_func(x_o_z) , PISQ/7.5d0 ,g12(2)
+!		call sleep(1)
 		dzodx = (x_o_z * jxoz + g12(1) &
 			- 1.d0/(2 * z**3 *PISQ)* tmp) &
 			/ (x_o_z**2*jxoz +Y_func(x_o_z) + PISQ/7.5d0 +g12(2))
@@ -319,6 +329,7 @@ module ndEquations
 		
 		n1 = nuDensMatVec(iy)
 		y = nuDensMatVec(iy)%y
+!		print *,'a', n1%re!, n1%re
 		do ix=1, flavorNumber
 			n1%re(ix,ix) = n1%re(ix,ix) * fermiDirac_massless(y,z)
 			n1%im(ix,ix) = n1%im(ix,ix) * fermiDirac_massless(y,z)
@@ -332,7 +343,7 @@ module ndEquations
 		term1%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
 !		print *,leptDensFactor, y , x**6 , electronDensity(x,z)
 !		print *,'comm',leptonDensities, nuMassesMat/(2*y)
-!		print *,'a', term1%re, n1%re
+!		print *,'b', n1%re!, term1%re
 		
 		!switch imaginary and real parts because of the "-i" factor
 		call Commutator(term1%re, n1%re, comm%im)
@@ -361,8 +372,9 @@ module ndEquations
 			matrix%re(ix,ix) = matrix%re(ix,ix) / fermiDirac_massless(y,z)
 			matrix%im(ix,ix) = matrix%im(ix,ix) / fermiDirac_massless(y,z)
 		end do
-!		print *,'x,y:',x,y,m_e/x
-!		print *,'fullMat',matrix%re!,matrix%im
+		print *,'x,y:',x,y,z
+		print *,'fullMat',matrix%re!,matrix%im
+!		call sleep(2)
 	end subroutine drhoy_dx_fullMat
 	
 	subroutine saveRelevantInfo(x, vec)
@@ -374,7 +386,7 @@ module ndEquations
 		character(len=200) :: fname
 		
 		call vec_2_densMat(vec)
-		totFiles=flavorNumber**2+1
+		totFiles=flavNumSqu+1
 		allocate(units(totFiles),tmpvec(Ny))
 		do i=1, totFiles
 			units(i) = 8972 + i
@@ -387,32 +399,34 @@ module ndEquations
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag',k,'.dat'
 			call openFile(units(k), trim(fname),firstWrite)
 			do iy=1, nY
-				tmpvec(iy)=nuDensMatVec(iy)%y**2*nuDensMatVec(iy)%re(k,k) * &
-					fermiDirac_massless(nuDensMatVec(iy)%y, vec(ntot)) 
+				tmpvec(iy)=nuDensMatVec(iy)%y**2*nuDensMatVec(iy)%re(k,k)! * &
+!					fermiDirac_massless(nuDensMatVec(iy)%y, vec(ntot)) 
 			end do
 			write(units(k), '(*('//dblfmt//'))') x, tmpvec
 		end do
-		do i=1, flavorNumber-1
-			do j=i+1,flavorNumber
-				write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_re.dat'
-				call openFile(units(k), trim(fname),firstWrite)
-				tmpvec=0
-				do iy=1, nY
-					tmpvec(iy)=nuDensMatVec(iy)%re(i,j)
+		if (collision_offdiag.ne.3) then
+			do i=1, flavorNumber-1
+				do j=i+1,flavorNumber
+					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_re.dat'
+					call openFile(units(k), trim(fname),firstWrite)
+					tmpvec=0
+					do iy=1, nY
+						tmpvec(iy)=nuDensMatVec(iy)%re(i,j)
+					end do
+					write(units(k), '(*('//dblfmt//'))') x, tmpvec
+					k=k+1
+					
+					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_im.dat'
+					call openFile(units(k), trim(fname),firstWrite)
+					tmpvec=0
+					do iy=1, nY
+						tmpvec(iy)=nuDensMatVec(iy)%im(i,j)
+					end do
+					write(units(k), '(*('//dblfmt//'))') x, tmpvec
+					k=k+1
 				end do
-				write(units(k), '(*('//dblfmt//'))') x, tmpvec
-				k=k+1
-				
-				write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_im.dat'
-				call openFile(units(k), trim(fname),firstWrite)
-				tmpvec=0
-				do iy=1, nY
-					tmpvec(iy)=nuDensMatVec(iy)%im(i,j)
-				end do
-				write(units(k), '(*('//dblfmt//'))') x, tmpvec
-				k=k+1
 			end do
-		end do
+		end if
 		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
 		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)
 		
@@ -533,13 +547,15 @@ module ndEquations
 				tmpv(i) = mat%re(i,i)
 			end do
 			k=flavorNumber+1
-			do i=1, flavorNumber-1
-				do j=i+1, flavorNumber
-					tmpv(k) = mat%re(i,j)
-					tmpv(k+1) = mat%im(i,j)
-					k=k+2
+			if (collision_offdiag.ne.3) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						tmpv(k) = mat%re(i,j)
+						tmpv(k+1) = mat%im(i,j)
+						k=k+2
+					end do
 				end do
-			end do
+			end if
 !			!$omp critical
 !			tmpvec(m,k) = tmpv(k)
 			s=(m-1)*flavNumSqu

@@ -50,17 +50,17 @@ def plot_z(fnames):
 		for line in pts:
 			x.append(line[0]) 
 			y.append(line[1])
-		plt.plot(x,y,label="z")
-	#plt.legend(loc='upper right')
+		plt.plot(x,y,label=fname)
+	plt.legend(loc='lower right')
 	pdf.savefig()#time.strftime("%y%m%d_%H%M%S")+
 	if not noShow:
 		plt.show()
 	plt.close()
 
 outfolder="../output/NC/"
-plot_momentum(outfolder+"nuDens_diag1.dat", columns)
-plot_momentum(outfolder+"nuDens_diag2.dat", columns)
+#plot_momentum(outfolder+"nuDens_diag1.dat", columns)
+#plot_momentum(outfolder+"nuDens_diag2.dat", columns)
 #plot_momentum("output/nuDens_diag3.dat", columns)
-plot_z([outfolder+"z.dat","../output/NCE/z.dat","../output1/z.dat"])
+plot_z([outfolder+"z.dat","../output/NCE/z.dat","../output3/z.dat"])
 
 pdf.close()

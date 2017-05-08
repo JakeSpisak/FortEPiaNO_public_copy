@@ -36,22 +36,22 @@ module ndConfig
 		
 		if (nf .eq. 2) then
 			mv(1) = m_lightest
-			mv(2) = sqrt(m_lightest*m_lightest + dm12)
+			mv(2) = m_lightest*m_lightest + dm12
 		end if
 		
 		if (nf .gt. 2) then
 			if (massOrdering) then
 				mv(1) = m_lightest
-				mv(2) = sqrt(m_lightest*m_lightest + dm12)
-				mv(3) = sqrt(mv(2)*mv(2) + dm23)
+				mv(2) = m_lightest*m_lightest + dm12
+				mv(3) = mv(2)*mv(2) + dm23
 			else
 				mv(3) = m_lightest
-				mv(2) = sqrt(m_lightest*m_lightest + dm23)
-				mv(1) = sqrt(mv(2)*mv(2) - dm12)
+				mv(2) = m_lightest*m_lightest + dm23
+				mv(1) = mv(2)*mv(2) - dm12
 			end if
 		end if
 		if (nf.gt.3) then
-			mv(4) = sqrt(mv(1)*mv(1) + dm14)
+			mv(4) = mv(1)*mv(1) + dm14
 		end if
 		
 		call createDiagMat(m1, nf, mv)
@@ -131,7 +131,7 @@ module ndConfig
 		
 		!nu density matrix
 		allocate(nuDensMatVec(Ny))
-		ntot = Ny*(flavorNumber**2) + 1 !independent elements in nuDensity(y) + z
+		ntot = Ny*(flavNumSqu) + 1 !independent elements in nuDensity(y) + z
 		allocate(nuDensVec(ntot))
 !		open(unit=3154, file='test_fd.dat') !save the initial Fermi-Dirac distribution for nu
 		do ix=1, Ny
@@ -204,9 +204,24 @@ module ndConfig
 			m_lightest   = read_ini_real('m_lightest', 0.0d0)
 			massOrdering = read_ini_logical('massOrdering', .true.)
 			
+			!read cosmo parameters
+			hubbleParam = read_ini_real('hubbleParam', i_HubbleParam)
+			photonTemperatureToday = read_ini_real('photonTemperatureToday', i_photonTempToday)
+			
+			!settings for collisional
+			coll_scatt_em = read_ini_logical("coll_scatt_em",.true.)
+			coll_scatt_ep = read_ini_logical("coll_scatt_ep",.true.)
+			coll_annih_epem = read_ini_logical("coll_annih_epem",.true.)
+			collision_offdiag = read_ini_int("collision_offdiag",1)
+			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
+			
 			only_1a_1s = read_ini_logical('only_1a_1s', .false.)
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
-			flavNumSqu = flavorNumber**2
+			if (collision_offdiag.ne.3) then
+				flavNumSqu = flavorNumber**2
+			else
+				flavNumSqu = flavorNumber
+			end if
 			call allocateStuff
 			
 			do ix=1, flavorNumber
@@ -245,15 +260,6 @@ module ndConfig
 			
 			call setMixingMatrix()
 			call setMassMatrix()
-			
-			!read cosmo parameters
-			hubbleParam = read_ini_real('hubbleParam', i_HubbleParam)
-			photonTemperatureToday = read_ini_real('photonTemperatureToday', i_photonTempToday)
-			coll_scatt_em = read_ini_logical("coll_scatt_em",.true.)
-			coll_scatt_ep = read_ini_logical("coll_scatt_ep",.true.)
-			coll_annih_epem = read_ini_logical("coll_annih_epem",.true.)
-			collision_offdiag = read_ini_int("collision_offdiag",1)
-			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 			
 			!create other matrices
 			call init_matrices
