@@ -166,11 +166,10 @@ module ndEquations
 		real(dl) :: ko, jo, kp, jp, tmp
 		
 		if (dme2_temperature_corr) then
-			ko=k_func(o)
-			jo=j_func(o)
-			kp=kprime(o)
-			jp=jprime(o)
-			write(*,multidblfmt) o,ko,jo,kp,jp
+			ko=k_funcFull(o)
+			jo=j_funcFull(o)
+			kp=kprimeFull(o)
+			jp=jprimeFull(o)
 			tmp = (kp/6.d0 - ko*kp + jp/6.d0 +jp*ko + jo*kp)
 			
 			G12_funcFull(1) = PIx2*alpha_fine *(&
@@ -306,9 +305,9 @@ module ndEquations
 			tmp = tmp + rombint_dRN(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)*nuFactor(ix)
 		end do
 		
-		write(*,"(*(E15.7))"), x_o_z * jxoz, g12(1), -1.d0/(2 * z**3 *PISQ)* tmp, &
-			x_o_z**2*jxoz ,Y_func(x_o_z) , PISQ/7.5d0 ,g12(2)
-		call sleep(1)
+!		write(*,multidblfmt), x_o_z * jxoz, g12(1), -1.d0/(2 * z**3 *PISQ)* tmp, &
+!			x_o_z**2*jxoz ,Y_func(x_o_z) , PISQ/7.5d0 ,g12(2)
+!		call sleep(1)
 		dzodx = (x_o_z * jxoz + g12(1) &
 			- 1.d0/(2 * z**3 *PISQ)* tmp) &
 			/ (x_o_z**2*jxoz +Y_func(x_o_z) + PISQ/7.5d0 +g12(2))
