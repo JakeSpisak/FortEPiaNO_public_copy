@@ -135,7 +135,7 @@ module variables
 	real(dl) :: toler, dlsoda_atol, dlsoda_rtol
 
 	!used for 2d interpolation:
-	integer, parameter :: interp_nx = 100, interp_nz = 50
+	integer, parameter :: interp_nx = 200, interp_nz = 100
 	real(dl), parameter :: interp_zmin = 1.0d0, interp_zmax = 1.5d0
 	real(dl), dimension(:), allocatable :: interp_xvec
 	real(dl), dimension(:), allocatable :: interp_zvec

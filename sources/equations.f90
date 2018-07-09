@@ -7,16 +7,8 @@ module ndEquations
 	use ndinteractions
 	use ndcosmology
 	implicit none
-	
-	type(bspline_1d) :: Jfunc_interp, JPrime_interp, Kfunc_interp, Kprime_interp, yfunc_interp
-	type(bspline_1d) :: g1func_interp, g2func_interp
-	
-!	procedure (funcX), pointer :: J_func => null ()
-!	procedure (funcX), pointer :: K_func => null ()
-!	procedure (funcX), pointer :: Jprime => null ()
-!	procedure (funcX), pointer :: Kprime => null ()
-!	procedure (funcX), pointer :: Y_func => null ()
-!	procedure (func2_X), pointer :: G12_func => null ()
+
+	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
 	
 	type collTerm
 		type(cmplxMatNN) :: mat
@@ -184,83 +176,37 @@ module ndEquations
 	end function G12_funcFull
 	
 	subroutine init_interp_jkyg12
-		real(dl), dimension(:),allocatable :: j, k, jp, kp, y, g1, g2
+		real(dl) :: j, y
+		real(dl), dimension(:),allocatable :: num, den, A, B
 		real(dl), dimension(2) :: g12
 		integer::ix, nx, iflag
 		
-		call addToLog("[equations] Initializing interpolation for J, J', K, K', Y, G_1, G_2...")
+		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx...")
 		nx=interp_nx
-		allocate(j(nx),jp(nx),k(nx),kp(nx),y(nx),g1(nx),g2(nx))
+		allocate(num(nx),den(nx), A(nx),B(nx))
 		do ix=1, nx
-			j(ix)  = J_funcFull(interp_xozvec(ix))
-			jp(ix) = JprimeFull(interp_xozvec(ix))
-			k(ix)  = K_funcFull(interp_xozvec(ix))
-			kp(ix) = KprimeFull(interp_xozvec(ix))
-			y(ix)  = Y_funcFull(interp_xozvec(ix))
+			j      = J_funcFull(interp_xozvec(ix))
+			y      = Y_funcFull(interp_xozvec(ix))
 			g12    = G12_funcFull(interp_xozvec(ix))
-			g1(ix) = g12(1)
-			g2(ix) = g12(2)
+			num(ix)= interp_xozvec(ix) * j + g12(1)
+			den(ix)= interp_xozvec(ix)**2 * j + y + PISQ/7.5d0 + g12(2)
+			A(ix) = num(ix) / den(ix)
+			B(ix) = 1./(2.d0*PISQ*den(ix))
 		end do
-		call  Jfunc_interp%initialize(interp_xozvec, j,4,iflag)
-		call JPrime_interp%initialize(interp_xozvec,jp,4,iflag)
-		call  Kfunc_interp%initialize(interp_xozvec, k,4,iflag)
-		call Kprime_interp%initialize(interp_xozvec,kp,4,iflag)
-		call  yfunc_interp%initialize(interp_xozvec, y,4,iflag)
-		call g1func_interp%initialize(interp_xozvec,g1,4,iflag)
-		call g2func_interp%initialize(interp_xozvec,g2,4,iflag)
+		call dzodx_A_interp%initialize(interp_xozvec,A,4,iflag)
+		call dzodx_B_interp%initialize(interp_xozvec,B,4,iflag)
 
-!		J_func   => J_funcInterp
-!		K_func   => K_funcInterp
-!		Jprime   => JprimeInterp
-!		Kprime   => KprimeInterp
-!		Y_func   => Y_funcInterp
-!		G12_func => G12_funcInterp
-		deallocate(j, k, jp, kp, y, g1, g2)
+		deallocate(num, den, A, B)
 		call addToLog("[equations] ...done!")
 	end subroutine init_interp_jkyg12
 	
-	function J_func(o)
-		real(dl) :: J_func
+	function dzodxcoef_interp_func(o)
+		real(dl), dimension(2) :: dzodxcoef_interp_func
 		real(dl), intent(in) :: o
 		integer :: iflag
-		call Jfunc_interp%evaluate(o,0,J_func,iflag)
-	end function J_func
-	
-	function K_func(o)
-		real(dl) :: K_func
-		real(dl), intent(in) :: o
-		integer :: iflag
-		call Kfunc_interp%evaluate(o,0,K_func,iflag)
-	end function K_func
-	
-	function jprime(o)
-		real(dl) :: jprime
-		real(dl), intent(in) :: o
-		integer :: iflag
-		call JPrime_interp%evaluate(o,0,jprime,iflag)
-	end function jprime
-	
-	function kprime(o)
-		real(dl) :: kprime
-		real(dl), intent(in) :: o
-		integer :: iflag
-		call Kprime_interp%evaluate(o,0,kprime,iflag)
-	end function kprime
-	
-	function Y_func(o)
-		real(dl) :: Y_func
-		real(dl), intent(in) :: o
-		integer :: iflag
-		call yfunc_interp%evaluate(o,0,Y_func,iflag)
-	end function Y_func
-	
-	function G12_func(o)
-		real(dl), dimension(2) :: G12_func
-		real(dl), intent(in) :: o
-		integer :: iflag
-		call g1func_interp%evaluate(o,0,G12_func(1),iflag)
-		call g2func_interp%evaluate(o,0,G12_func(2),iflag)
-	end function G12_func
+		call dzodx_A_interp%evaluate(o,0,dzodxcoef_interp_func(1),iflag)
+		call dzodx_B_interp%evaluate(o,0,dzodxcoef_interp_func(2),iflag)
+	end function dzodxcoef_interp_func
 	
 	function integrate_dRhoNu(params, y)
 		real(dl) :: integrate_dRhoNu, y, dfnudx
@@ -270,19 +216,16 @@ module ndEquations
 		integrate_dRhoNu = y**3 * dfnudx
 	end function integrate_dRhoNu
 	
-	subroutine dz_o_dx(x,z, ydot, n)
+	subroutine dz_o_dx(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		real(dl) :: dzodx
 		real(dl), intent(in) :: x,z
-		real(dl) :: x_o_z, jxoz, tmp
-		real(dl), dimension(2) :: g12
+		real(dl) :: tmp
+		real(dl), dimension(2) :: coeffs
 		type(integrRhoNuPar) :: params
 		real(dl), dimension(n) :: ydot
-		real(dl), dimension(:), allocatable :: dertemp
 		integer :: ix, n, m
 		
-		x_o_z = x/z
-		jxoz = J_func(x_o_z)
-		g12 = G12_func(x_o_z)
+		coeffs = dzodxcoef_interp_func(x/z)
 		
 		params%x=x
 		params%z=z
@@ -291,7 +234,6 @@ module ndEquations
 			allocate(params%der(Ny))
 		if (.not. allocated(params%y2)) &
 			allocate(params%y2(Ny))
-!		params%der=ydot 
 		tmp=0.d0
 		
 		do ix=1, flavorNumber
@@ -305,12 +247,7 @@ module ndEquations
 			tmp = tmp + rombint_dRN(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)*nuFactor(ix)
 		end do
 		
-!		write(*,multidblfmt), x_o_z * jxoz, g12(1), -1.d0/(2 * z**3 *PISQ)* tmp, &
-!			x_o_z**2*jxoz ,Y_func(x_o_z) , PISQ/7.5d0 ,g12(2)
-!		call sleep(1)
-		dzodx = (x_o_z * jxoz + g12(1) &
-			- 1.d0/(2 * z**3 *PISQ)* tmp) &
-			/ (x_o_z**2*jxoz +Y_func(x_o_z) + PISQ/7.5d0 +g12(2))
+		dzodx = coeffs(1) - coeffs(2)/ z**3 * tmp
 
 		ydot(n)=dzodx
 		
