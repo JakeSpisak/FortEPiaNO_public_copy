@@ -5,13 +5,12 @@ module ndCosmology
 	use ndErrors
 	use ndInteractions
 	use bspline_module
+	use linear_interpolation_module
 	implicit none
-	
-	logical :: loadedEDens = .false.
-	type(bspline_2d) :: elDens
 
-!	procedure (funcXY), pointer :: electronDensity => null ()
-	
+	type(linear_interp_2d) :: elDens
+!	type(bspline_2d) :: elDens
+
 	contains
 	
 	function radDensity(x,y,z)
@@ -50,13 +49,15 @@ module ndCosmology
 		real(dl) :: electronDensity, x,z
 		integer :: iflag
 		
-		call elDens%evaluate(x,z,0,0,electronDensity,iflag)
+		call elDens%evaluate(x,z,electronDensity)!linear
+!		call elDens%evaluate(x,z,0,0,electronDensity,iflag)!bspline
 	end function electronDensity
 
 	subroutine loadElDensity
 		real(dl), dimension(:,:), allocatable :: ed_vec
 		integer :: ix, iz, iflag
 		real(dl) :: x,z, t1,t2
+		real(8) :: timer1
 		
 		call addToLog("[cosmo] Initializing interpolation for electron density...")
 		allocate(ed_vec(interp_nx,interp_nz))
@@ -65,9 +66,9 @@ module ndCosmology
 				ed_vec(ix,iz) = electronDensityFull(interp_xvec(ix),interp_zvec(iz))
 			end do
 		end do
-		call elDens%initialize(interp_xvec,interp_zvec,ed_vec,4,4,iflag)
-!		electronDensity => electronDensityInterp
-		
+		call elDens%initialize(interp_xvec,interp_zvec,ed_vec,iflag)!linear
+!		call elDens%initialize(interp_xvec,interp_zvec,ed_vec,4,4,iflag)!bspline
+
 		call random_seed()
 		call random_number(x)
 		call random_number(z)
@@ -77,8 +78,33 @@ module ndCosmology
 		t1 = electronDensityFull(x,z)
 		t2 = electronDensity(x,z)
 		write(*,"(' [cosmo] comparison (true vs interp): ',*(E17.10))") t1,t2
-		
-		loadedEDens = .true.
+
+		if (timing_tests) then
+			call tic(timer1)
+			write (*,*) "[interactions] now doing some timing..."
+			call tic(timer1)
+			do ix=1, 1000000
+				call random_number(x)
+				call random_number(z)
+				x=(x_fin-x_in)*x + x_in
+				z=0.4d0*z + z_in
+				t1 = electronDensity(x,z)
+			end do
+			call toc(timer1, "<interpolated>")
+
+			call tic(timer1)
+			do ix=1, 1000000
+				call random_number(x)
+				call random_number(z)
+				x=(x_fin-x_in)*x + x_in
+				z=0.4d0*z + z_in
+				t1 = electronDensityFull(x,z)
+			end do
+			call toc(timer1, "<full>")
+
+			call sleep(2)
+		end if
+
 		call addToLog("[cosmo] ...done!")
 	end subroutine loadElDensity
 	

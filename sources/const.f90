@@ -70,6 +70,7 @@ module variables
 	use precision
 	implicit none
 	
+	logical :: timing_tests = .true.
 	character(len=300) :: outputFolder
 	logical :: firstWrite = .true.
 	logical :: firstPoint = .false.
@@ -104,7 +105,6 @@ module variables
 	type coll_args
 		type(cmplxMatNN) :: n
 		real(dl) :: y1, y2, y3, y4, x, z, dme2
-		logical :: s1, s2, s3, s4
 		integer :: ix1, ix2, a, b
 		integer :: rI !return real or imaginary part
 	end type coll_args
@@ -135,7 +135,7 @@ module variables
 	real(dl) :: toler, dlsoda_atol, dlsoda_rtol
 
 	!used for 2d interpolation:
-	integer, parameter :: interp_nx = 200, interp_nz = 100
+	integer, parameter :: interp_nx = 200, interp_nz = 100, interp_ny = 40
 	real(dl), parameter :: interp_zmin = 1.0d0, interp_zmax = 1.5d0
 	real(dl), dimension(:), allocatable :: interp_xvec
 	real(dl), dimension(:), allocatable :: interp_zvec

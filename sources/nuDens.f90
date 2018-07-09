@@ -7,17 +7,9 @@ program nuDens
 	implicit none
 
 	call initConfig
-	
-!	J_func   => J_funcFull 
-!	K_func   => K_funcFull 
-!	Jprime   => JprimeFull 
-!	Kprime   => KprimeFull 
-!	Y_func   => Y_funcFull 
-!	G12_func => G12_funcFull
-!	electronDensity => electronDensityFull
-!	dme2_electron => dme2_electronFull
-	
+
 	call init_interp_jkyg12
+	call init_interp_d123
 	call loadElDensity
 	call dme2_e_load
 

@@ -6,6 +6,8 @@ module ndEquations
 	use ndErrors
 	use ndinteractions
 	use ndcosmology
+	use bspline_module
+	use linear_interpolation_module
 	implicit none
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
@@ -461,7 +463,16 @@ module ndEquations
 !		real(dl), dimension(:,:), allocatable, save :: tmpvec
 		real(dl), dimension(:), allocatable, save :: tmpv
 		character(len=100) :: tmpstr
+		logical :: file_exist
+		integer :: stat
 !		!$omp threadprivate(leptonDensities,lastColl)
+
+		inquire(file="terminate", exist=file_exist)
+		if (file_exist) then
+			open(unit=1234, iostat=stat, file="terminate", status='old')
+			if (stat == 0) close(1234, status='delete')
+			call criticalError("Termination request received")
+		end if
 		
 		deriv_counter = deriv_counter+1
 !		if (.not. allocated(tmpvec)) &

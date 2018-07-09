@@ -39,7 +39,22 @@ module utilities
 	end interface
 	
 	contains
-	
+
+	subroutine tic(t1)
+		implicit none
+		real(8), intent(out) :: t1
+		call cpu_time(t1)
+	end subroutine tic
+
+	subroutine toc(t1, string)
+		implicit none
+		real(8), intent(in) :: t1
+		character(len=*), intent(in) :: string
+		real(8) :: t2
+		call cpu_time(t2)
+		write (*,*) string, " Time Taken -->", real(t2-t1)
+	end subroutine toc
+
 	function linspace(minv, maxv, numb)
 		real(dl), intent(in) :: minv, maxv
 		integer,  intent(in) :: numb
