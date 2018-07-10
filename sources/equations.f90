@@ -243,7 +243,7 @@ module ndEquations
 			params%der = 0.d0
 			do m=1, Ny
 !			print *,(m-1)*flavNumSqu + ix,m,ydot((m-1)*flavNumSqu + ix)
-				params%der(m) = ydot((m-1)*flavNumSqu + ix) * fermiDirac_massless(y_arr(m), z)
+				params%der(m) = ydot((m-1)*flavNumSqu + ix) * fermiDirac(y_arr(m) / z)
 			end do
 			call spline(y_arr, params%der, Ny, 1.d30, 1.d30, params%y2) !x, y(x), N, ?, ?, derivatives)
 			tmp = tmp + rombint_dRN(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)*nuFactor(ix)
@@ -270,8 +270,8 @@ module ndEquations
 		y = nuDensMatVec(iy)%y
 !		print *,'a', n1%re!, n1%re
 		do ix=1, flavorNumber
-			n1%re(ix,ix) = n1%re(ix,ix) * fermiDirac_massless(y,z)
-			n1%im(ix,ix) = n1%im(ix,ix) * fermiDirac_massless(y,z)
+			n1%re(ix,ix) = n1%re(ix,ix) * fermiDirac(y / z)
+			n1%im(ix,ix) = n1%im(ix,ix) * fermiDirac(y / z)
 		end do
 		
 		overallNorm = planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
@@ -308,8 +308,8 @@ module ndEquations
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
 		do ix=1, flavorNumber
-			matrix%re(ix,ix) = matrix%re(ix,ix) / fermiDirac_massless(y,z)
-			matrix%im(ix,ix) = matrix%im(ix,ix) / fermiDirac_massless(y,z)
+			matrix%re(ix,ix) = matrix%re(ix,ix) / fermiDirac(y / z)
+			matrix%im(ix,ix) = matrix%im(ix,ix) / fermiDirac(y / z)
 		end do
 !		print *,'x,y:',x,y,z
 !		print *,'fullMat',matrix%re!,matrix%im
@@ -339,7 +339,7 @@ module ndEquations
 			call openFile(units(k), trim(fname),firstWrite)
 			do iy=1, nY
 				tmpvec(iy)=nuDensMatVec(iy)%y**2*nuDensMatVec(iy)%re(k,k)! * &
-!					fermiDirac_massless(nuDensMatVec(iy)%y, vec(ntot)) 
+!					fermiDirac(nuDensMatVec(iy)%y / vec(ntot))
 			end do
 			write(units(k), '(*('//dblfmt//'))') x, tmpvec
 		end do

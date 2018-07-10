@@ -4,7 +4,7 @@ EXECNAME ?= nuDens.exe
 
 #ifort
 F90=ifort
-  F90FLAGS=-O3 -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -no-prec-div
+  F90FLAGS=-O3 -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -parallel -par-report1 -no-prec-div
 DEBUGFLAGS=-O0 -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp-stubs -fpe0 -check all
 # -check all -check noarg_temp_created
 # -stand f03  -check all -warn all -fstack-protector -assume protect_parens -implicitnone

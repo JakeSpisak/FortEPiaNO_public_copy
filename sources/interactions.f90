@@ -75,46 +75,40 @@ module ndInteractions
 		call addToLog("[interactions] ...done!")
 	end subroutine dme2_e_load
 	
-	function E_k_m(k,m)
+	elemental function E_k_m(k,m)
 		real(dl), intent(in) :: k,m
 		real(dl) :: E_k_m
 		E_k_m = sqrt(k*k+m*m)
 	end function E_k_m
 	
-	function fermiDirac(k,m,T)!it's equivalent to fermiDirac(y,x,z)
-		real(dl) :: fermiDirac, tmp
-		real(dl), intent(in) :: k,m,T
-		
-		tmp = exp(E_k_m(k,m)/T) + 1.d0
-		fermiDirac = 1.d0/tmp
+	elemental function fermiDirac(x)
+		real(dl) :: fermiDirac
+		real(dl), intent(in) :: x
+
+		fermiDirac = 1.d0/(exp(x) + 1.d0)
 	end function fermiDirac
-	
-	function fermiDirac_massless(k,T)!it's equivalent to fermiDirac(y,z)
-		real(dl) :: fermiDirac_massless, tmp
-		real(dl), intent(in) :: k,T
-		
-		fermiDirac_massless = 1.d0/(exp(k/T) + 1.d0)
-	end function fermiDirac_massless
 	
 	function dme2_e_i1(vec, k)
 		real(dl) :: dme2_e_i1
 		real(dl), intent(in) :: k
 		real(dl), dimension(3) :: vec
-		real(dl) :: m,T,p
+		real(dl) :: m,T,p, Ekm
 		m=vec(1)
 		T=vec(2)
-		dme2_e_i1 = k*k/E_k_m(k,m)*fermiDirac(k,m,T)
+		Ekm = E_k_m(k,m)
+		dme2_e_i1 = k*k/Ekm * fermiDirac(Ekm/T)
 	end function dme2_e_i1
 	
 	function dme2_e_i2(vec, k) !not used
 		real(dl) :: dme2_e_i2
 		real(dl), intent(in) :: k
 		real(dl), dimension(3) :: vec
-		real(dl) :: m,T,p
+		real(dl) :: m,T,p, Ekm
 		m=vec(1)
 		T=vec(2)
 		p=vec(3)
-		dme2_e_i2 = k/E_k_m(k,m)*fermiDirac(k,m,T)*log(abs((p+k)/(p-k)))
+		Ekm = E_k_m(k,m)
+		dme2_e_i2 = k/Ekm * fermiDirac(Ekm/T)*log(abs((p+k)/(p-k)))
 	end function dme2_e_i2
 	
 	function dme2_electronFull(x,y,z)
@@ -168,7 +162,7 @@ module ndInteractions
 		real(dl), intent(in) :: e3,e4, x,z
 		integer, intent(in) :: a,b, i, j, rI
 		integer :: k
-		real(dl) :: term1a, term1b, term2a, term2b
+		real(dl) :: term1a, term1b, term2a, term2b, f3, f4
 		
 		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 			call criticalError("[F_ab_ann] a and b must be either 1(=L) or 2(=R)")
@@ -226,9 +220,11 @@ module ndInteractions
 		else
 			call criticalError("[F_ab_ann] invalid rI")
 		end if
-		F_ab_ann = fermiDirac(e3,x,z)*fermiDirac(e4,x,z) * &
+		f3 = fermiDirac(E_k_m(e3, x) / z)
+		f4 = fermiDirac(E_k_m(e4, x) / z)
+		F_ab_ann = f3 * f4 * &
 				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
-			- (1-fermiDirac(e3,x,z))*(1-fermiDirac(e4,x,z)) * &
+			- (1.d0 - f3) * (1.d0 - f4) * &
 				(term2a * GLR_vec(a,j,j) + term2b * GLR_vec(a,i,i))
 	end function F_ab_ann
 	
@@ -238,7 +234,7 @@ module ndInteractions
 		real(dl), intent(in) :: e2,e4, x,z
 		integer, intent(in) :: a,b, i, j, rI
 		integer :: k
-		real(dl) :: term1a, term1b, term2a, term2b
+		real(dl) :: term1a, term1b, term2a, term2b, f2, f4
 		
 		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 			call criticalError("[F_ab_sc] a and b must be either 1(=L) or 2(=R)")
@@ -296,9 +292,11 @@ module ndInteractions
 		else
 			call criticalError("[F_ab_sc] invalid rI")
 		end if
-		F_ab_sc = (1-fermiDirac(e2,x,z))*fermiDirac(e4,x,z) * &
+		f2 = fermiDirac(E_k_m(e2, x) / z)
+		f4 = fermiDirac(E_k_m(e4, x) / z)
+		F_ab_sc = (1.d0 - f2) * f4 * &
 				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
-			- fermiDirac(e2,x,z)*(1-fermiDirac(e4,x,z)) * &
+			- f2 * (1.d0 - f4) * &
 				(term2a * GLR_vec(a,j,j) + term2b * GLR_vec(a,i,i))
 	end function F_ab_sc
 	
@@ -310,6 +308,7 @@ module ndInteractions
 		real(dl), intent(in) :: e3,e4, x,z
 		integer, intent(in) :: a,b, i, j, rI
 		integer :: k,f
+		real(dl) :: f3, f4
 		
 		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 			call criticalError("[F_ab_ann_mp] a and b must be either 1(=L) or 2(=R)")
@@ -374,8 +373,10 @@ module ndInteractions
 		else
 			call criticalError("[F_ab_ann_mp] invalid rI")
 		end if
-		su =  fermiDirac(e3,x,z)*fermiDirac(e4,x,z) * (t1 + t2) &
-			- (1-fermiDirac(e3,x,z))*(1-fermiDirac(e4,x,z)) * (t3 + t4)
+		f3 = fermiDirac(E_k_m(e3, x) / z)
+		f4 = fermiDirac(E_k_m(e4, x) / z)
+		su =  f3 * f4 * (t1 + t2) &
+			- (1.d0 - f3) * (1.d0 - f4) * (t3 + t4)
 		F_ab_ann_mp = su(i,j)
 	end function F_ab_ann_mp
 	
@@ -387,6 +388,7 @@ module ndInteractions
 		real(dl), intent(in) :: e2,e4, x,z
 		integer, intent(in) :: a,b, i, j, rI
 		integer :: k,f
+		real(dl) :: f2, f4
 		
 		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 			call criticalError("[F_ab_sc_mp] a and b must be either 1(=L) or 2(=R)")
@@ -451,8 +453,10 @@ module ndInteractions
 		else
 			call criticalError("[F_ab_sc_mp] invalid rI")
 		end if
-		su =  (1-fermiDirac(e2,x,z))*fermiDirac(e4,x,z) * (t1 + t2) &
-			- fermiDirac(e2,x,z)*(1-fermiDirac(e4,x,z)) * (t3 + t4)
+		f2 = fermiDirac(E_k_m(e2, x) / z)
+		f4 = fermiDirac(E_k_m(e4, x) / z)
+		su =  (1.d0 - f2) * f4 * (t1 + t2) &
+			- f2 * (1.d0 - f4) * (t3 + t4)
 		F_ab_sc_mp = su(i,j)
 	end function F_ab_sc_mp
 
@@ -941,8 +945,8 @@ module ndInteractions
 		else
 			n3 = interp_nuDens(y3)
 			do ix=1, flavorNumber
-				n3%re(ix,ix) = n3%re(ix,ix) * fermiDirac_massless(y3, obj%z)
-				n3%im(ix,ix) = n3%im(ix,ix) * fermiDirac_massless(y3, obj%z)
+				n3%re(ix,ix) = n3%re(ix,ix) * fermiDirac(y3 / obj%z)
+				n3%im(ix,ix) = n3%im(ix,ix) * fermiDirac(y3 / obj%z)
 			end do
 
 			pi2_vec = PI2_ne_f (obj%x, obj%y1, y2, y3, y4, dme2)
@@ -986,8 +990,8 @@ module ndInteractions
 		else
 			n2 = interp_nuDens(y2)
 			do ix=1, flavorNumber
-				n2%re(ix,ix) = n2%re(ix,ix) * fermiDirac_massless(y2, obj%z)
-				n2%im(ix,ix) = n2%im(ix,ix) * fermiDirac_massless(y2, obj%z)
+				n2%re(ix,ix) = n2%re(ix,ix) * fermiDirac(y2 / obj%z)
+				n2%im(ix,ix) = n2%im(ix,ix) * fermiDirac(y2 / obj%z)
 			end do
 
 			pi2_vec = PI2_nn_f (obj%x, obj%y1, y2, y3, y4, dme2)

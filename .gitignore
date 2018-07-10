@@ -10,3 +10,4 @@
 *.dat
 *.txt
 plots/
+*.ipynb*

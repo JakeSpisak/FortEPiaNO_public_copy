@@ -31,7 +31,7 @@ module ndCosmology
 		real(dl) :: integr_rho_e, y,a
 		real(dl), dimension(2) :: vec
 		a = E_k_m(y,vec(1))
-		integr_rho_e = y*y*a*fermiDirac_massless(a,vec(2))
+		integr_rho_e = y*y*a*fermiDirac(a/vec(2))
 	end function integr_rho_e
 	
 	function electronDensityFull(x,z)!electron + positron!
@@ -111,7 +111,7 @@ module ndCosmology
 	function integr_rho_nu(vec,y)
 		real(dl) :: integr_rho_nu, y
 		type(nuDensArgs) :: vec
-		integr_rho_nu = y*y*y*interp_nuDensIJre(y, vec%iFl, vec%iFl) * fermiDirac_massless(y,vec%z)
+		integr_rho_nu = y*y*y*interp_nuDensIJre(y, vec%iFl, vec%iFl) * fermiDirac(y/vec%z)
 	end function integr_rho_nu
 	
 	function nuDensity(x,z, iFl)
