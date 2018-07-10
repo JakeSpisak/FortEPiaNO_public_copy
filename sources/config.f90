@@ -35,28 +35,29 @@ module ndConfig
 		allocate(mv(nf), m1(nf,nf))
 		
 		if (nf .eq. 2) then
-			mv(1) = m_lightest
-			mv(2) = m_lightest*m_lightest + dm12
+			mv(1) = m_lightest*m_lightest
+			mv(2) = mv(2) + dm12
 		end if
 		
 		if (nf .gt. 2) then
 			if (massOrdering) then
-				mv(1) = m_lightest
-				mv(2) = m_lightest*m_lightest + dm12
-				mv(3) = mv(2)*mv(2) + dm23
+				mv(1) = m_lightest*m_lightest
+				mv(2) = mv(1) + dm12
+				mv(3) = mv(2) + dm23
 			else
-				mv(3) = m_lightest
-				mv(2) = m_lightest*m_lightest + dm23
-				mv(1) = mv(2)*mv(2) - dm12
+				mv(3) = m_lightest*m_lightest
+				mv(2) = mv(3) + dm23
+				mv(1) = mv(2) - dm12
 			end if
 		end if
 		if (nf.gt.3) then
-			mv(4) = mv(1)*mv(1) + dm14
+			mv(4) = mv(1) + dm14
 		end if
 		
 		call createDiagMat(m1, nf, mv)
 		call tripleProdMat(mixMat, m1, mixMatInv, nuMassesMat)
 		call printMat(nuMassesMat)
+		deallocate(mv,m1)
 	end subroutine setMassMatrix
 	
 	subroutine setMixingMatrix()
@@ -96,6 +97,7 @@ module ndConfig
 		
 		mixMat=m3
 		call inverseMat(mixMat, mixMatInv)
+		deallocate(m1,m2,m3,m4)
 	end subroutine setMixingMatrix
 	
 	subroutine init_matrices
@@ -126,7 +128,6 @@ module ndConfig
 		leptonDensities = 0.d0
 
 		!identity (Matrix complex)
-		allocate(idMat(flavorNumber,flavorNumber))
 		call createIdentityMat(idMat, flavorNumber)
 		
 		!nu density matrix
@@ -250,12 +251,12 @@ module ndConfig
 			if (flavorNumber .gt. 3) then
 				theta14      = read_ini_real('theta14', zero)
 				theta24      = read_ini_real('theta24', zero)
-				theta24      = read_ini_real('theta34', zero)
+				theta34      = read_ini_real('theta34', zero)
 				dm14         = read_ini_real('dm14', zero)
 			end if
-			if (flavorNumber .gt. 4) then
+			if (flavorNumber .gt. maxflavorNumber) then
 				call error("[config] WARNING: only up to 4 neutrino flavors are supported. Using N=4")
-				flavorNumber = 4
+				flavorNumber = maxflavorNumber
 			end if
 			
 			call setMixingMatrix()

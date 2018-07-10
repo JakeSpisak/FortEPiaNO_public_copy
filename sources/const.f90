@@ -45,6 +45,7 @@ module constants
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 	
+	integer,  parameter :: maxflavorNumber = 4
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2016: C. Patrignani et al.(Particle Data Group), Chin. Phys. C, 40, 100001 (2016).
 	real(dl), parameter :: i_theta12 = 0.5840
@@ -70,7 +71,7 @@ module variables
 	use precision
 	implicit none
 	
-	logical :: timing_tests = .true.
+	logical :: timing_tests = .false.
 	character(len=300) :: outputFolder
 	logical :: firstWrite = .true.
 	logical :: firstPoint = .false.
@@ -158,7 +159,7 @@ module variables
 	subroutine deallocateCmplxMat(m)
 		type(cmplxMatNN) :: m
 		
-		if (.not. m%a) then
+		if (m%a) then
 			m%a=.false.
 			deallocate(m%re, m%im)
 		end if
