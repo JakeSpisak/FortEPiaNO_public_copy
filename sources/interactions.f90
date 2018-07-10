@@ -6,12 +6,11 @@ module ndInteractions
 	use ndErrors
 	use ndMatrices
 !	use ndconfig
-	use bspline_module
 	use linear_interpolation_module
+!	use bspline_module
 	implicit none
 	
-	logical :: dme2_e_loaded = .false.
-
+	type(linear_interp_1d) :: FD_interp
 	type(linear_interp_2d) :: dmeCorr
 !	type(bspline_2d) :: dmeCorr
 	
@@ -19,7 +18,7 @@ module ndInteractions
 
 	contains
 	
-	subroutine dme2_e_load()
+	subroutine init_interp_dme2_e
 		real(dl), dimension(:,:), allocatable :: dme_vec
 		integer :: ix, iz, iflag
 		real(dl) :: x,z,t1,t2
@@ -58,8 +57,6 @@ module ndInteractions
 				t1 = dme2_electronFull(x,0.d0,z)
 			end do
 			call toc(timer1, "<full>")
-
-			call sleep(2)
 		end if
 		call random_number(x)
 		call random_number(z)
@@ -69,11 +66,10 @@ module ndInteractions
 		t1 = dme2_electronFull(x,0.d0,z)
 		t2 = dme2_electron(x,0.d0,z)
 		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
-		
-		dme2_e_loaded = .true.
+
 		deallocate(dme_vec)
 		call addToLog("[interactions] ...done!")
-	end subroutine dme2_e_load
+	end subroutine init_interp_dme2_e
 	
 	elemental function E_k_m(k,m)
 		real(dl), intent(in) :: k,m
@@ -81,17 +77,77 @@ module ndInteractions
 		E_k_m = sqrt(k*k+m*m)
 	end function E_k_m
 	
+	elemental function fermiDirac_full(x)
+		real(dl) :: fermiDirac_full
+		real(dl), intent(in) :: x
+
+		fermiDirac_full = 1.d0/(exp(x) + 1.d0)
+	end function fermiDirac_full
+
 	elemental function fermiDirac(x)
 		real(dl) :: fermiDirac
 		real(dl), intent(in) :: x
 
-		fermiDirac = 1.d0/(exp(x) + 1.d0)
+		fermiDirac = fermiDirac_full(x)
 	end function fermiDirac
-	
-	function dme2_e_i1(vec, k)
+
+	function fermiDirac_i(x)
+		real(dl) :: fermiDirac_i
+		real(dl), intent(in) :: x
+
+		call FD_interp%evaluate(x,fermiDirac_i)
+	end function fermiDirac_i
+
+	subroutine init_interp_FD
+		real(dl), dimension(:), allocatable :: fd_vec, fd_x
+		integer :: ix, iflag, interp_nfd
+		real(dl) :: x, t1,t2
+		real(8) :: timer1
+
+		call addToLog("[interactions] Initializing interpolation for FermiDirac...")
+		interp_nfd=100
+		allocate(fd_x(interp_nfd), fd_vec(interp_nfd))
+		fd_x=logspace(-3.d0, 2.d0, interp_nfd)
+		do ix=1, interp_nfd
+			fd_vec(ix) = fermiDirac_full(fd_x(ix))
+		end do
+		call FD_interp%initialize(fd_x,fd_vec,iflag)
+
+		call random_seed()
+		call random_number(x)
+		x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
+		write(*,"(' [interactions] test fermiDirac in ',*(E12.5))") x
+		t1 = fermiDirac_full(x)
+		t2 = fermiDirac_i(x)
+		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
+
+		if (timing_tests) then
+			call tic(timer1)
+			write (*,*) "[interactions] now doing some timing..."
+			call tic(timer1)
+			do ix=1, 1000000
+				call random_number(x)
+				x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
+				t1 = fermiDirac_i(x)
+			end do
+			call toc(timer1, "<interpolated>")
+
+			call tic(timer1)
+			do ix=1, 1000000
+				call random_number(x)
+				x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
+				t1 = fermiDirac_full(x)
+			end do
+			call toc(timer1, "<full>")
+		end if
+
+		call addToLog("[interactions] ...done!")
+	end subroutine init_interp_FD
+
+	pure function dme2_e_i1(vec, k)
 		real(dl) :: dme2_e_i1
 		real(dl), intent(in) :: k
-		real(dl), dimension(3) :: vec
+		real(dl), dimension(3), intent(in) :: vec
 		real(dl) :: m,T,p, Ekm
 		m=vec(1)
 		T=vec(2)
@@ -99,10 +155,10 @@ module ndInteractions
 		dme2_e_i1 = k*k/Ekm * fermiDirac(Ekm/T)
 	end function dme2_e_i1
 	
-	function dme2_e_i2(vec, k) !not used
+	pure function dme2_e_i2(vec, k) !not used
 		real(dl) :: dme2_e_i2
 		real(dl), intent(in) :: k
-		real(dl), dimension(3) :: vec
+		real(dl), dimension(3), intent(in) :: vec
 		real(dl) :: m,T,p, Ekm
 		m=vec(1)
 		T=vec(2)
@@ -137,14 +193,14 @@ module ndInteractions
 !		call dmeCorr%evaluate(x,z,0,0,dme2_electron,iflag)!bspline
 	end function dme2_electron
 	
-	function Ebare_i_dme(x,y,dme2)!for electrons
+	elemental function Ebare_i_dme(x,y,dme2)!for electrons
 		real(dl) :: Ebare_i_dme
 		real(dl), intent(in) :: x,y,dme2
 		
 		Ebare_i_dme = sqrt(x*x+y*y+dme2)
 	end function Ebare_i_dme
 	
-	function Ebar_i(s,x,y,dme2)!s: True for e+/e-, False for nu
+	elemental function Ebar_i(s,x,y,dme2)!s: True for e+/e-, False for nu
 		real(dl) :: Ebar_i
 		real(dl), intent(in) :: x,y,dme2
 		logical, intent(in) :: s !True for e+/e-, False for nu
@@ -156,40 +212,41 @@ module ndInteractions
 		end if
 	end function Ebar_i
 	
-	function F_ab_ann(x,z, n1,n2,e3,e4, a,b, i, j, rI)!a, b must be either 1(=L) or 2(=R)
+	pure function F_ab_ann(x,z, n1,n2,e3,e4, a,b, i, j, rI)!a, b must be either 1(=L) or 2(=R)
 		real(dl) :: F_ab_ann
 		type(cmplxMatNN), intent(in) :: n1,n2
 		real(dl), intent(in) :: e3,e4, x,z
 		integer, intent(in) :: a,b, i, j, rI
 		integer :: k
-		real(dl) :: term1a, term1b, term2a, term2b, f3, f4
+		real(dl) :: f3, f4
+		real(dl) :: t1a, t1b, t2a, t2b
 		
-		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
-			call criticalError("[F_ab_ann] a and b must be either 1(=L) or 2(=R)")
-		
-		term1a=0.d0
-		term1b=0.d0
-		term2a=0.d0
-		term2b=0.d0
+!		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
+!			call criticalError("[F_ab_ann] a and b must be either 1(=L) or 2(=R)")
+
+		t1a=0.d0
+		t1b=0.d0
+		t2a=0.d0
+		t2b=0.d0
 		if (rI.eq.1) then !take real part
 			do k=1, flavorNumber
 				!Ga (1-rho2) Gb (1-rho1)
-				term1a = term1a + GLR_vec(b,k,k) * ( &
+				t1a = t1a+GLR_vec(b,k,k) * ( &
 					(idMat(i,k)-n2%re(i,k))*(idMat(k,j)-n1%re(k,j)) - &
 					(-n2%im(i,k))*(-n1%im(k,j))&	!idMat ha im=0
 					)
 				!(1-rho1) Gb (1-rho2) Ga
-				term1b = term1b + GLR_vec(b,k,k) * ( &
+				t1b = t1b+GLR_vec(b,k,k) * ( &
 					(idMat(i,k)-n1%re(i,k))*(idMat(k,j)-n2%re(k,j)) - &
 					(-n1%im(i,k))*(-n2%im(k,j))&
 					)
 				!rho1 Gb rho2 Ga
-				term2a = term2a + GLR_vec(b,k,k) * ( &
+				t2a = t2a+GLR_vec(b,k,k) * ( &
 					(n1%re(i,k))*(n2%re(k,j)) - &
 					(n1%im(i,k))*(n2%im(k,j))&
 					)
 				!Ga Rho2 Gb rho1
-				term2b = term2b + GLR_vec(b,k,k) * ( &
+				t2b = t2b+GLR_vec(b,k,k) * ( &
 					(n2%re(i,k))*(n1%re(k,j)) - &
 					(n2%im(i,k))*(n1%im(k,j))&
 					)
@@ -197,71 +254,72 @@ module ndInteractions
 		else if (rI .eq.2) then!take imaginary part
 			do k=1, flavorNumber
 				!Ga (1-rho2) Gb (1-rho1)
-				term1a = term1a + GLR_vec(b,k,k) * ( &
+				t1a = t1a+GLR_vec(b,k,k) * ( &
 					(-n2%im(i,k))*(idMat(k,j)-n1%re(k,j)) + &
 					(idMat(i,k)-n2%re(i,k))*(-n1%im(k,j))&
 					)
 				!(1-rho1) Gb (1-rho2) Ga
-				term1b = term1b + GLR_vec(b,k,k) * ( &
+				t1b = t1b+GLR_vec(b,k,k) * ( &
 					(-n1%im(i,k))*(idMat(k,j)-n2%re(k,j)) + &
 					(idMat(i,k)-n1%re(i,k))*(-n2%im(k,j))&
 					)
 				!rho1 Gb rho2 Ga
-				term2a = term2a + GLR_vec(b,k,k) * ( &
+				t2a = t2a+GLR_vec(b,k,k) * ( &
 					(n1%im(i,k))*(n2%re(k,j)) + &
 					(n1%re(i,k))*(n2%im(k,j))&
 					)
 				!Ga Rho2 Gb rho1
-				term2b = term2b + GLR_vec(b,k,k) * ( &
+				t2b = t2b+GLR_vec(b,k,k) * ( &
 					(n2%im(i,k))*(n1%re(k,j)) + &
 					(n2%re(i,k))*(n1%im(k,j))&
 					)
 			end do
-		else
-			call criticalError("[F_ab_ann] invalid rI")
+!		else
+!			call criticalError("[F_ab_ann] invalid rI")
 		end if
 		f3 = fermiDirac(E_k_m(e3, x) / z)
 		f4 = fermiDirac(E_k_m(e4, x) / z)
 		F_ab_ann = f3 * f4 * &
-				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
+				(t1a * GLR_vec(a,i,i) + t1b * GLR_vec(a,j,j))&
 			- (1.d0 - f3) * (1.d0 - f4) * &
-				(term2a * GLR_vec(a,j,j) + term2b * GLR_vec(a,i,i))
+				(t2a * GLR_vec(a,j,j) + t2b * GLR_vec(a,i,i))
 	end function F_ab_ann
 	
-	function F_ab_sc (x,z, n1,e2,n3,e4, a,b, i, j, rI)!a, b must be either 1(=L) or 2(=R)
+	pure function F_ab_sc (x,z, n1,e2,n3,e4, a,b, i, j, rI)!a, b must be either 1(=L) or 2(=R)
 		real(dl) :: F_ab_sc
 		type(cmplxMatNN), intent(in) :: n1,n3
 		real(dl), intent(in) :: e2,e4, x,z
 		integer, intent(in) :: a,b, i, j, rI
 		integer :: k
-		real(dl) :: term1a, term1b, term2a, term2b, f2, f4
+		real(dl) :: f2, f4
+		real(dl) :: t1a, t1b, t2a, t2b
 		
-		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
-			call criticalError("[F_ab_sc] a and b must be either 1(=L) or 2(=R)")
+!		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
+!			call criticalError("[F_ab_sc] a and b must be either 1(=L) or 2(=R)")
 		
-		term1a=0.d0
-		term1b=0.d0
-		term2a=0.d0
-		term2b=0.d0
+		t1a=0.d0
+		t1b=0.d0
+		t2a=0.d0
+		t2b=0.d0
 		if (rI.eq.1) then !take real part
 			do k=1, flavorNumber
 				!Ga rho3 Gb (1-rho1)
-				term1a = term1a + GLR_vec(b,k,k) * ( &
+				t1a = t1a+GLR_vec(b,k,k) * ( &
 					(n3%re(i,k))*(idMat(k,j)-n1%re(k,j)) - &
 					(n3%im(i,k))*(-n1%im(k,j))&	!idMat ha im=0
 					)
 				!(1-rho1) Gb rho3 Ga
-				term1b = term1b + GLR_vec(b,k,k) * ( &
+				t1b = t1b+GLR_vec(b,k,k) * ( &
 					(idMat(i,k)-n1%re(i,k))*(n3%re(k,j)) - &
 					(-n1%im(i,k))*(n3%im(k,j))&
 					)
 				!rho1 Gb (1-rho3) Ga
-				term2a = term2a + GLR_vec(b,k,k) * ( &
+				t2a = t2a+GLR_vec(b,k,k) * ( &
 					(n1%re(i,k))*(idMat(k,j)-n3%re(k,j)) - &
 					(n1%im(i,k))*(-n3%im(k,j))&
 					)
 				!Ga (1-rho3) Gb rho1
-				term2b = term2b + GLR_vec(b,k,k) * ( &
+				t2b = t2b+GLR_vec(b,k,k) * ( &
 					(idMat(i,k)-n3%re(i,k))*(n1%re(k,j)) - &
 					(-n3%im(i,k))*(n1%im(k,j))&
 					)
@@ -269,35 +327,35 @@ module ndInteractions
 		else if (rI .eq.2) then!take imaginary part
 			do k=1, flavorNumber
 				!Ga rho3 Gb (1-rho1)
-				term1a = term1a + GLR_vec(b,k,k) * ( &
+				t1a = t1a+GLR_vec(b,k,k) * ( &
 					(n3%im(i,k))*(idMat(k,j)-n1%re(k,j)) + &
 					(n3%re(i,k))*(-n1%im(k,j))&
 					)
 				!(1-rho1) Gb rho3 Ga
-				term1b = term1b + GLR_vec(b,k,k) * ( &
+				t1b = t1b+GLR_vec(b,k,k) * ( &
 					(-n1%im(i,k))*(n3%re(k,j)) + &
 					(idMat(i,k)-n1%re(i,k))*(n3%im(k,j))&
 					)
 				!rho1 Gb (1-rho3) Ga
-				term2a = term2a + GLR_vec(b,k,k) * ( &
+				t2a = t2a+GLR_vec(b,k,k) * ( &
 					(n1%im(i,k))*(idMat(k,j)-n3%re(k,j)) + &
 					(n1%re(i,k))*(-n3%im(k,j))&
 					)
 				!Ga (1-rho3) Gb rho1
-				term2b = term2b + GLR_vec(b,k,k) * ( &
+				t2b = t2b+GLR_vec(b,k,k) * ( &
 					(-n3%im(i,k))*(n1%re(k,j)) + &
 					(idMat(i,k)-n3%re(i,k))*(n1%im(k,j))&
 					)
 			end do
-		else
-			call criticalError("[F_ab_sc] invalid rI")
+!		else
+!			call criticalError("[F_ab_sc] invalid rI")
 		end if
 		f2 = fermiDirac(E_k_m(e2, x) / z)
 		f4 = fermiDirac(E_k_m(e4, x) / z)
 		F_ab_sc = (1.d0 - f2) * f4 * &
-				(term1a * GLR_vec(a,i,i) + term1b * GLR_vec(a,j,j))&
+				((t1a) * GLR_vec(a,i,i) + (t1b) * GLR_vec(a,j,j))&
 			- f2 * (1.d0 - f4) * &
-				(term2a * GLR_vec(a,j,j) + term2b * GLR_vec(a,i,i))
+				((t2a) * GLR_vec(a,j,j) + (t2b) * GLR_vec(a,i,i))
 	end function F_ab_sc
 	
 	!same as F_ab_ann, but with full matrix products (useful for nonstandard gL, gR)
@@ -555,14 +613,12 @@ module ndInteractions
 				d3a = PI1_13_full(y1,y2,y3,y4)
 			end do
 			call toc(timer1, "<full>")
-
-			call sleep(2)
 		end if
 
 		call addToLog("[interactions] ...done!")
 	end subroutine init_interp_d123
 
-	function D1_full(y1, y2, y3, y4)
+	elemental function D1_full(y1, y2, y3, y4)
 		implicit none
 		real(dl) :: D1_full
 		real(dl), intent(in) :: y1, y2, y3, y4
@@ -588,7 +644,7 @@ module ndInteractions
 		call D2_interp%evaluate(y1,y2,y3,y4, D2_f)
 	end function D2_f
 	
-	function D2_full(y1, y2, y3, y4)
+	elemental function D2_full(y1, y2, y3, y4)
 		implicit none
 		real(dl) :: D2_full
 		real(dl), intent(in) :: y1, y2, y3, y4
@@ -650,7 +706,7 @@ module ndInteractions
 		call D3_interp%evaluate(y1,y2,y3,y4, D3_f)
 	end function D3_f
 	
-	function D3_full(y1, y2, y3, y4)
+	elemental function D3_full(y1, y2, y3, y4)
 	!from 1605.09383
 		implicit none
 		real(dl) :: D3_full
@@ -775,7 +831,7 @@ module ndInteractions
 		call PI1_13_interp%evaluate(y1,y2,y3,y4, PI1_13_i)
 	end function PI1_13_i
 
-	function PI1_12_full (y1, y2, y3, y4) !1: (y1,y3), 	2: (y1, y2)
+	elemental function PI1_12_full (y1, y2, y3, y4) !1: (y1,y3), 	2: (y1, y2)
 		real(dl) :: PI1_12_full
 		real(dl), intent(in) :: y1, y2, y3, y4
 
@@ -783,7 +839,7 @@ module ndInteractions
 		PI1_12_full = y1 * y2 * D1_full(y1, y2, y3, y4) - D2_full(y1, y2, y3, y4)
 	end function PI1_12_full
 
-	function PI1_13_full (y1, y2, y3, y4) !1: (y1,y3)
+	elemental function PI1_13_full (y1, y2, y3, y4) !1: (y1,y3)
 		real(dl) :: PI1_13_full
 		real(dl), intent(in) :: y1, y2, y3, y4
 
@@ -791,7 +847,7 @@ module ndInteractions
 		PI1_13_full = y1 * y3 * D1_full(y1, y2, y3, y4) + D2_full(y1, y3, y2, y4)
 	end function PI1_13_full
 
-	function PI1_full (y1, y2, y3, y4) !1: (y1,y3), 	2: (y1, y2)
+	pure function PI1_full (y1, y2, y3, y4) !1: (y1,y3), 	2: (y1, y2)
 		real(dl), dimension(2) :: PI1_full
 		real(dl), intent(in) :: y1, y2, y3, y4
 		real(dl) :: d1
@@ -805,7 +861,7 @@ module ndInteractions
 		PI1_full(2) = y1 * y2 * d1 - D2_full(y1, y2, y3, y4)
 	end function PI1_full
 	
-	function PI2_nn_f (x, y1, y2, y3, y4, dme2) !1: (y1, y4),	2: (y1, y3)
+	pure function PI2_nn_f (x, y1, y2, y3, y4, dme2) !1: (y1, y4),	2: (y1, y3)
 		real(dl), dimension(2) :: PI2_nn_f
 		real(dl), intent(in) :: y1, y2, y3, y4, x, dme2
 		real(dl) :: e1, e2, e3, e4, t
@@ -827,7 +883,7 @@ module ndInteractions
 			+ e2 * e4 * D2_full(y1, y3, y2, y4) )
 	end function PI2_nn_f
 	
-	function PI2_ne_f (x, y1, y2, y3, y4, dme2) !1: (y1, y4),	2: (y1, y2)
+	pure function PI2_ne_f (x, y1, y2, y3, y4, dme2) !1: (y1, y4),	2: (y1, y2)
 		real(dl), dimension(2) :: PI2_ne_f
 		real(dl), intent(in) :: y1, y2, y3, y4, x, dme2
 		real(dl) :: e1, e2, e3, e4, t
@@ -851,15 +907,13 @@ module ndInteractions
 	end function PI2_ne_f
 
 	function interp_nuDens(y)
-		type(cmplxMatNN) :: interp_nuDens, mu, ml
+		type(cmplxMatNN) :: interp_nuDens
 		real(dl), intent(in) :: y
 		integer :: ix,i,j,k
 		real(dl) :: ixr, yr, logy
 		character(len=100) :: vals
 		
 		call allocateCmplxMat(interp_nuDens)
-		call allocateCmplxMat(mu)
-		call allocateCmplxMat(ml)
 		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
 			interp_nuDens%re =0.d0
 			interp_nuDens%im =0.d0
@@ -873,12 +927,10 @@ module ndInteractions
 				if (abs(ixr-ix) .lt. 1d-5) then
 					interp_nuDens = nuDensMatVec(ix)
 				else
-					ml = nuDensMatVec(ix)
-					mu = nuDensMatVec(ix+1)
 					yr = (logy - nuDensMatVec(ix)%logy) / (nuDensMatVec(ix+1)%logy - nuDensMatVec(ix)%logy)
 					interp_nuDens%y = y
-					interp_nuDens%re(:,:) = ml%re(:,:) + yr * (mu%re(:,:) - ml%re(:,:))
-					interp_nuDens%im(:,:) = ml%im(:,:) + yr * (mu%im(:,:) - ml%im(:,:))
+					interp_nuDens%re(:,:) = (1.d0 - yr) * nuDensMatVec(ix)%re(:,:) + yr * nuDensMatVec(ix+1)%re(:,:)
+					interp_nuDens%im(:,:) = (1.d0 - yr) * nuDensMatVec(ix)%im(:,:) + yr * nuDensMatVec(ix+1)%im(:,:)
 				end if
 			else
 				write(vals,"('y=',"//dblfmt//",'    ix=',I3)") y, ix
@@ -900,9 +952,9 @@ module ndInteractions
 			interp_nuDensIJre = nuDensMatVec(Ny)%re(i,j)
 		else
 			logy=log10(y)
-			ixr=(Ny-1)*(log10(y)-logy_min)/(logy_max-logy_min)+1
+			ixr=(Ny-1)*(logy-logy_min)/(logy_max-logy_min)+1
 			ix=int(ixr)
-			if (ix .gt. 0 .and. ix .lt. Ny) then
+!			if (ix .gt. 0 .and. ix .lt. Ny) then
 !				if (abs(ixr-ix) .lt. 1d-6) then
 !					interp_nuDensIJre = nuDensMatVec(ix)%re(i,j)
 !				else
@@ -910,24 +962,28 @@ module ndInteractions
 					interp_nuDensIJre = nuDensMatVec(ix)%re(i,j) + &
 						yr * (nuDensMatVec(ix+1)%re(i,j) - nuDensMatVec(ix)%re(i,j))
 !				end if
-			else
-				write(vals,"('y=',"//dblfmt//",'    ix=',I3)") y, ix
-				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
-			end if
+!			else
+!				write(vals,"('y=',"//dblfmt//",'    ix=',I3)") y, ix
+!				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
+!			end if
 		end if
+!      dataIndex = floor((xVal(inputIndex)-minXData)/xRange);
+
+!      weight = (xVal - xData(dataIndex))/(xData(dataIndex+1)-xData(dataIndex));
+!      yVal(inputIndex) = (1.0-weight)*yData(dataIndex) + ...
+!                         weight*yData(dataIndex+1);
 	end function interp_nuDensIJre
 	
 	function coll_nue_sc_int(ndim, ve, obj)
-		integer :: ndim, ix
-		type(coll_args) :: obj
+		integer, intent(in) :: ndim
+		integer :: ix
+		type(coll_args), intent(in) :: obj
 		real(dl), dimension(20) :: ve
 		real(dl) :: coll_nue_sc_int
 		real(dl), dimension(2) :: pi2_vec
 		type(cmplxMatNN) :: n3
 		real(dl) :: y2,y3,y4, E2, E4, dme2
 		logical :: condition
-		
-		call allocateCmplxMat(n3)
 		
 		y2 = ve(1)
 		y4 = ve(2)
@@ -973,8 +1029,6 @@ module ndInteractions
 		real(dl) :: y2,y3,y4, E3, E4, dme2
 		type(coll_args) :: obj
 		
-		call allocateCmplxMat(n2)
-		
 		y3=ve(1)
 		y4=ve(2)
 		dme2 = obj%dme2
@@ -1009,7 +1063,7 @@ module ndInteractions
 		end if
 	end function coll_nue_ann_int
 	
-	SUBROUTINE region(ndim,x,j,c,d)
+	pure SUBROUTINE region(ndim,x,j,c,d)
 		use precision
 		IMPLICIT NONE
 		REAL (dl), INTENT (OUT) :: c, d
