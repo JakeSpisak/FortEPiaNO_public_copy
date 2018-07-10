@@ -255,8 +255,8 @@ module ndEquations
 	end subroutine dz_o_dx
 	
 	subroutine drhoy_dx_fullMat (matrix,x,z,iy)
-		type(cmplxMatNN),intent(out) :: matrix
-		real(dl) :: x,y,z, overallNorm, a
+		type(cmplxMatNN), intent(out) :: matrix
+		real(dl) :: x,y,z, overallNorm, a, fd, cf
 		integer :: iy,k, ix
 		type(cmplxMatNN), save :: n1, term1, comm
 		
@@ -267,9 +267,10 @@ module ndEquations
 		
 		n1 = nuDensMatVec(iy)
 		y = nuDensMatVec(iy)%y
+		fd = fermiDirac(y / z)
 		do ix=1, flavorNumber
-			n1%re(ix,ix) = n1%re(ix,ix) * fermiDirac(y / z)
-			n1%im(ix,ix) = n1%im(ix,ix) * fermiDirac(y / z)
+			n1%re(ix,ix) = n1%re(ix,ix) * fd
+			n1%im(ix,ix) = n1%im(ix,ix) * fd
 		end do
 		
 		overallNorm = planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
@@ -283,8 +284,9 @@ module ndEquations
 		call Commutator(term1%re, n1%re, comm%im)
 		call Commutator(term1%re, n1%im, comm%re)
 		
-		matrix%im = - comm%im * x**2/m_e_cub
-		matrix%re = comm%re * x**2/m_e_cub
+		cf = x**2/m_e_cub
+		matrix%im = - comm%im * cf
+		matrix%re = comm%re * cf
 		
 		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
 			lastColl%mat = collision_terms(x, z, y, n1)
@@ -298,8 +300,8 @@ module ndEquations
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
 		do ix=1, flavorNumber
-			matrix%re(ix,ix) = matrix%re(ix,ix) / fermiDirac(y / z)
-			matrix%im(ix,ix) = matrix%im(ix,ix) / fermiDirac(y / z)
+			matrix%re(ix,ix) = matrix%re(ix,ix) / fd
+			matrix%im(ix,ix) = matrix%im(ix,ix) / fd
 		end do
 	end subroutine drhoy_dx_fullMat
 	
