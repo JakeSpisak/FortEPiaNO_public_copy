@@ -8,10 +8,11 @@ program nuDens
 
 	call initConfig
 
+!	call init_interp_FD		!interpolation slower than function!
+!	call init_interp_d123	!interpolation slower than function!
 	call init_interp_jkyg12
-	call init_interp_d123
-	call loadElDensity
-	call dme2_e_load
+	call init_interp_ElDensity
+	call init_interp_dme2_e
 
 	call solver
 	
