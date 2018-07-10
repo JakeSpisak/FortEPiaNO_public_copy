@@ -267,7 +267,6 @@ module ndMatrices
 		character(len=20) :: frmt
 		
 		write (frmt,"('(',I4,'(E14.6))')") n
-		print *,frmt
 		write(*,trim(frmt)) vec(:)
 	end subroutine printVec
 end module ndMatrices

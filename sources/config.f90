@@ -56,6 +56,9 @@ module ndConfig
 		
 		call createDiagMat(m1, nf, mv)
 		call tripleProdMat(mixMat, m1, mixMatInv, nuMassesMat)
+		write(*,*) "masses:"
+		call printVec(mv, maxFlavorNumber)
+		write(*,*) "matrix:"
 		call printMat(nuMassesMat)
 		deallocate(mv,m1)
 	end subroutine setMassMatrix

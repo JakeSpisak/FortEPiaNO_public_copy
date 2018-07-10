@@ -55,7 +55,7 @@ module utilities
 		write (*,*) string, " Time Taken -->", real(t2-t1)
 	end subroutine toc
 
-	function linspace(minv, maxv, numb)
+	pure function linspace(minv, maxv, numb)
 		real(dl), intent(in) :: minv, maxv
 		integer,  intent(in) :: numb
 		real(dl), dimension(numb) :: linspace
@@ -64,13 +64,13 @@ module utilities
 		integer :: i
 		
 		dx = (maxv-minv) / (numb-1)
-		do i=1, numb
+		do concurrent (I = 1:numb)
 			linspace(i) = (i-1)*dx +minv
 		end do
 		return
 	end function linspace
 	
-	function logspace(minv, maxv, numb)
+	pure function logspace(minv, maxv, numb)
 		real(dl), intent(in) :: minv, maxv
 		integer,  intent(in) :: numb
 		real(dl), dimension(numb) :: logspace
@@ -79,7 +79,7 @@ module utilities
 		integer :: i
 		
 		dx = (maxv-minv) / (numb-1)
-		do i=1, numb
+		do concurrent (I = 1:numb)
 			logspace(i) = 10.d0**((i-1)*dx +minv)
 		end do
 		return
@@ -200,7 +200,7 @@ module utilities
 		   endif
 		end do   
 		h=xa(khi)-xa(klo)
-		if (h.eq.0.) call criticalError('bad xa input in sbl_splint')
+		if (h.eq.0.) call criticalError('bad xa input in splint')
 		a=(xa(khi)-x)/h
 		b=(x-xa(klo))/h
 		y=a*ya(klo)+b*ya(khi)+((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.
@@ -493,29 +493,38 @@ enddo                                                   !SG-PF
       
 	!taken from CAMB and adapted:
 	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-	function rombint_re(obj,f,a,b,tol, maxit)
-			use Precision
+	pure function rombint_re(obj,f,a,b,tol, maxit)
+		use Precision
 	!  Rombint returns the integral from a to b of using Romberg integration.
 	!  The method converges provided that f(x) is continuous in (a,b).
 	!  f must be real(dl) and must be declared external in the calling
 	!  routine.  tol indicates the desired relative accuracy in the integral.
 	!
-			implicit none
-			integer, intent(in), optional :: maxit
-			integer :: MAXITER=20
-			integer, parameter :: MAXJ=5
-			dimension g(MAXJ+1)
-			real(dl) obj
-			real(dl) f
-			external f
-			real(dl) :: rombint_re
-			real(dl), intent(in) :: a,b,tol
-			integer :: nint, i, k, jmax, j
-			real(dl) :: h, gmax, error, g, g0, g1, fourj
+		implicit none
+
+		interface
+			pure real(KIND(1.d0)) function f(a, b)
+				real(KIND(1.d0)), intent(in) :: a, b
+			end function
+		end interface
+
+		integer, intent(in), optional :: maxit
+		integer :: MAXITER
+		integer, parameter :: MAXJ=5
+		dimension g(MAXJ+1)
+		real(dl), intent(in) :: obj
+!		real(dl), intent(in) :: f
+!		external f
+		real(dl) :: rombint_re
+		real(dl), intent(in) :: a,b,tol
+		integer :: nint, i, k, jmax, j
+		real(dl) :: h, gmax, error, g, g0, g1, fourj
 	!
 
 			if (present(maxit)) then
 				MaxIter = maxit
+			else
+				MAXITER=20
 			end if
 			h=0.5d0*(b-a)
 			gmax=h*(f(obj,a)+f(obj,b))
@@ -552,10 +561,10 @@ enddo                                                   !SG-PF
 			  g(jmax+1)=g0
 			go to 10
 	40      rombint_re=g0
-			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
-			  write(*,*) 'Warning: Rombint failed to converge; '
-			  write (*,*)'integral, error, tol:', rombint_re,error, tol
-			end if
+!			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
+!			  write(*,*) 'Warning: Rombint failed to converge; '
+!			  write (*,*)'integral, error, tol:', rombint_re,error, tol
+!			end if
 	end function rombint_re
 
 	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -635,20 +644,22 @@ enddo                                                   !SG-PF
 	!
 			implicit none
 			integer, intent(in), optional :: maxit
-			integer :: MAXITER=20
+			integer :: MAXITER
 			integer, parameter :: MAXJ=5
 			dimension g(MAXJ+1)
-			type(nuDensArgs) :: obj
+			real(dl), intent(in) :: a,b,tol
+			type(nuDensArgs), intent(in) :: obj
 			real(dl) f
 			external f
 			real(dl) :: rombint_nD
-			real(dl), intent(in) :: a,b,tol
 			integer :: nint, i, k, jmax, j
 			real(dl) :: h, gmax, error, g, g0, g1, fourj
 	!
 
 			if (present(maxit)) then
 				MaxIter = maxit
+			else
+				MaxIter = 20
 			end if
 			h=0.5d0*(b-a)
 			gmax=h*(f(obj,a)+f(obj,b))
