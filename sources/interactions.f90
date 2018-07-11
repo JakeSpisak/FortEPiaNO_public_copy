@@ -10,7 +10,7 @@ module ndInteractions
 !	use bspline_module
 	implicit none
 	
-	type(linear_interp_1d) :: FD_interp
+	type(spline_class) :: FD_interp
 	type(linear_interp_2d) :: dmeCorr
 !	type(bspline_2d) :: dmeCorr
 	
@@ -89,13 +89,14 @@ module ndInteractions
 		real(dl), intent(in) :: x
 
 		fermiDirac = fermiDirac_full(x)
+!		fermiDirac = fermiDirac_i(x)
 	end function fermiDirac
 
-	function fermiDirac_i(x)
+	pure function fermiDirac_i(x)
 		real(dl) :: fermiDirac_i
 		real(dl), intent(in) :: x
 
-		call FD_interp%evaluate(x,fermiDirac_i)
+		fermiDirac_i = FD_interp%evaluate(x)
 	end function fermiDirac_i
 
 	subroutine init_interp_FD
@@ -111,7 +112,7 @@ module ndInteractions
 		do ix=1, interp_nfd
 			fd_vec(ix) = fermiDirac_full(fd_x(ix))
 		end do
-		call FD_interp%initialize(fd_x,fd_vec,iflag)
+		call FD_interp%initialize(interp_nfd, fd_x, fd_vec)
 
 		call random_seed()
 		call random_number(x)
@@ -996,7 +997,7 @@ module ndInteractions
 			end do
 
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
-			
+
 			coll_nue_sc_int = &
 				y2/E2 * &
 				y4/E4 * &
@@ -1072,7 +1073,7 @@ module ndInteractions
 		type(cmplxMatNN) :: n1, tmp
 		type(coll_args), save :: collArgs
 		integer :: i,j, k
-		real(dl) :: errr1,errr2, res1,res2
+		real(dl) :: errr1,errr2, res1,res2, cf
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
 		real(dl) ::  VKa(3)
@@ -1198,8 +1199,9 @@ module ndInteractions
 !		!$omp end sections
 !		!$omp end parallel
 		
-		collision_terms%re(:,:) = collision_terms%re(:,:) * collTermFactor/(y1*y1*x**4)
-		collision_terms%im(:,:) = collision_terms%im(:,:) * collTermFactor/(y1*y1*x**4)
+		cf = (y1*y1*x**4)
+		collision_terms%re(:,:) = collision_terms%re(:,:) * collTermFactor / cf
+		collision_terms%im(:,:) = collision_terms%im(:,:) * collTermFactor / cf
 		
 	end function collision_terms
 end module

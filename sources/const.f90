@@ -114,12 +114,6 @@ module variables
 		integer :: rI !return real or imaginary part
 	end type coll_args
 	
-	type integrRhoNuPar
-		real(dl) :: x,z
-		integer :: flavor, ntot
-		real(dl), dimension(:), allocatable :: der, y2
-	end type integrRhoNuPar
-	
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
 	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities

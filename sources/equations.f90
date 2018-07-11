@@ -8,6 +8,7 @@ module ndEquations
 	use ndcosmology
 	use bspline_module
 	use linear_interpolation_module
+	use sg_interpolate
 	implicit none
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
@@ -210,58 +211,51 @@ module ndEquations
 		call dzodx_B_interp%evaluate(o,0,dzodxcoef_interp_func(2),iflag)
 	end function dzodxcoef_interp_func
 	
-	function integrate_dRhoNu(params, y)
-		real(dl) :: integrate_dRhoNu, y, dfnudx
-		type(integrRhoNuPar) :: params
+	pure function integrate_dRhoNu(params, y)
+		real(dl) :: integrate_dRhoNu
+		real(dl), intent(in) :: y
+		type(spline_class), intent(in) :: params
 	
-        call splint(y_arr, params%der, params%y2, params%ntot, y, dfnudx) !x, y(x), derivatives, N, xout, yout)
-		integrate_dRhoNu = y**3 * dfnudx
+		integrate_dRhoNu = params%evaluate(y)
 	end function integrate_dRhoNu
 	
 	subroutine dz_o_dx(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
-		real(dl) :: dzodx
 		real(dl), intent(in) :: x,z
-		real(dl) :: tmp
+		integer, intent(in) :: n
+		real(dl), dimension(n), intent(inout) :: ydot
+		real(dl) :: dzodx, tmp
 		real(dl), dimension(2) :: coeffs
-		type(integrRhoNuPar) :: params
-		real(dl), dimension(n) :: ydot
-		integer :: ix, n, m
-		
+		type(spline_class) :: params
+		real(dl), dimension(:), allocatable :: der
+		integer :: ix, m
+
 		coeffs = dzodxcoef_interp_func(x/z)
-		
-		params%x=x
-		params%z=z
-		params%ntot=Ny
-		if (.not. allocated(params%der)) &
-			allocate(params%der(Ny))
-		if (.not. allocated(params%y2)) &
-			allocate(params%y2(Ny))
-		tmp=0.d0
-		
-		do ix=1, flavorNumber
-			params%flavor = ix
-			params%der = 0.d0
-			do m=1, Ny
-				params%der(m) = ydot((m-1)*flavNumSqu + ix) * fermiDirac(y_arr(m) / z)
+
+		allocate(der(Ny))
+
+		der = 0.d0
+		do m=1, Ny
+			do ix=1, flavorNumber
+				der(m) = der(m) + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 			end do
-			call spline(y_arr, params%der, Ny, 1.d30, 1.d30, params%y2) !x, y(x), N, ?, ?, derivatives)
-			tmp = tmp + rombint_dRN(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)*nuFactor(ix)
+			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m) / z)
 		end do
-		
+		call params%initialize(Ny, y_arr, der)
+		tmp = rombint_spli(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)
+
 		dzodx = coeffs(1) - coeffs(2)/ z**3 * tmp
 
 		ydot(n)=dzodx
-		
+
 	end subroutine dz_o_dx
 	
 	subroutine drhoy_dx_fullMat (matrix,x,z,iy)
 		type(cmplxMatNN), intent(out) :: matrix
 		real(dl) :: x,y,z, overallNorm, a, fd, cf
 		integer :: iy,k, ix
-		type(cmplxMatNN), save :: n1, term1, comm
+		type(cmplxMatNN), save :: n1, comm
 		
 		call allocateCmplxMat(n1)
-		call allocateCmplxMat(term1)
 		call allocateCmplxMat(comm)
 		call allocateCmplxMat(matrix)
 		
@@ -277,13 +271,14 @@ module ndEquations
 		
 		leptonDensities=0.d0
 		leptonDensities(1,1) = leptDensFactor * y / x**6 * electronDensity(x,z)
-		term1%im = 0
-		term1%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
+		matrix%im = 0
+		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
 		
 		!switch imaginary and real parts because of the "-i" factor
-		call Commutator(term1%re, n1%re, comm%im)
-		call Commutator(term1%re, n1%im, comm%re)
+		call Commutator(matrix%re, n1%re, comm%im)
+		call Commutator(matrix%re, n1%im, comm%re)
 		
+		!matrix is now redefined
 		cf = x**2/m_e_cub
 		matrix%im = - comm%im * cf
 		matrix%re = comm%re * cf
