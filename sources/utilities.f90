@@ -1,11 +1,108 @@
+module sg_interpolate
+	use precision
+
+	implicit none
+
+	type spline_class
+		integer :: n
+		real(dl), dimension(:), allocatable :: xa, ya, y2a
+		contains
+		procedure :: initialize => spline_initialize
+		procedure :: evaluate => spline_interp
+	end type spline_class
+
+	contains
+
+	pure subroutine spline_initialize(obj, n, xa, ya)
+		class(spline_class), intent(inout) :: obj
+		integer, intent(in) :: n
+		real(dl), dimension(n), intent(in) :: xa, ya
+		obj%n = n
+		allocate(obj%xa(n), obj%ya(n), obj%y2a(n))
+		obj%xa = xa
+		obj%ya = ya
+		call spline(obj%xa, obj%ya, obj%n, 1.d30, 1.d30, obj%y2a) !x, y(x), N, ?, ?, derivatives)
+	end subroutine spline_initialize
+
+	pure function spline_interp(obj, x)
+		class(spline_class), intent(in) :: obj
+		real(dl), intent(in) :: x
+		real(dl) :: spline_interp
+		call splint(obj%xa, obj%ya, obj%y2a, obj%n, x, spline_interp) !x, y(x), derivatives, N, xout, yout)
+	end function spline_interp
+
+	pure subroutine spline(x,y,n,yp1,ypn,y2)
+		use precision
+		implicit none
+		integer, intent(in) :: n
+		real(dl), intent(in) :: x(n), y(n), yp1,ypn
+		real(dl), intent(out) :: y2(n)
+		integer :: i,k
+		integer, parameter :: NMAX=500
+		real(dl) :: p,qn,sig,un,u(NMAX)
+
+		if (yp1.gt..99e30) then
+		   y2(1)=0.
+		   u(1)=0.
+		else
+		   y2(1)=-0.5
+		   u(1)=(3./(x(2)-x(1)))*((y(2)-y(1))/(x(2)-x(1))-yp1)
+		endif
+		do i=2,n-1
+		   sig=(x(i)-x(i-1))/(x(i+1)-x(i-1))
+		   p=sig*y2(i-1)+2.
+		   y2(i)=(sig-1.)/p
+		   u(i)=(6.*((y(i+1)-y(i))/(x(i+1)-x(i))-(y(i)-y(i-1))/(x(i)-x(i-1)))/(x(i+1)-x(i-1))-sig*u(i-1))/p
+		 end do
+		if (ypn.gt..99e30) then
+		  qn=0.
+		  un=0.
+		else
+		  qn=0.5
+		  un=(3./(x(n)-x(n-1)))*(ypn-(y(n)-y(n-1))/(x(n)-x(n-1)))
+		endif
+		y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+1.)
+		do k=n-1,1,-1
+		  y2(k)=y2(k)*y2(k+1)+u(k)
+		end do
+	end subroutine spline
+
+	pure subroutine splint(xa,ya,y2a,n,x,y)
+		use precision
+		implicit none
+		integer, intent(in) :: n
+		real(dl), intent(in) :: x, xa(n),y2a(n),ya(n)
+		real(dl), intent(out) :: y
+		integer :: k,khi,klo
+		real(dl) :: a,b,h
+
+		klo=1
+		khi=n
+		do while (khi-klo.gt.1)
+		   k=(khi+klo)/2
+		   if(xa(k).gt.x)then
+			  khi=k
+		   else
+			  klo=k
+		   endif
+		end do
+		h=xa(khi)-xa(klo)
+!		if (h.eq.0.) call criticalError('bad xa input in splint')
+		a=(xa(khi)-x)/h
+		b=(x-xa(klo))/h
+		y=a*ya(klo)+b*ya(khi)+((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.
+	end subroutine splint
+end module sg_interpolate
+
 module utilities
 	use precision
 	use ndErrors
 	use variables
+	use sg_interpolate
 	
     integer, parameter :: GI = DL
     integer, parameter :: sp_acc = DL
-    
+
 	abstract interface
 	  function funcX (x)
 		use precision
@@ -147,64 +244,6 @@ module utilities
 		
 		call addToLog("[ckpt] ...done!")
 	end subroutine readCheckpoints
-	
-	subroutine spline(x,y,n,yp1,ypn,y2)
-		use precision
-		implicit none
-		integer :: n,i,k
-		real(dl) :: yp1,ypn,x(n),y(n),y2(n)
-		integer, parameter :: NMAX=500
-		real(dl) :: p,qn,sig,un,u(NMAX)
-
-		if (yp1.gt..99e30) then
-		   y2(1)=0.
-		   u(1)=0.
-		else
-		   y2(1)=-0.5
-		   u(1)=(3./(x(2)-x(1)))*((y(2)-y(1))/(x(2)-x(1))-yp1)
-		endif
-		do i=2,n-1
-		   sig=(x(i)-x(i-1))/(x(i+1)-x(i-1))
-		   p=sig*y2(i-1)+2.
-		   y2(i)=(sig-1.)/p
-		   u(i)=(6.*((y(i+1)-y(i))/(x(i+1)-x(i))-(y(i)-y(i-1))/(x(i)-x(i-1)))/(x(i+1)-x(i-1))-sig*u(i-1))/p
-		 end do
-		if (ypn.gt..99e30) then
-		  qn=0.
-		  un=0.
-		else
-		  qn=0.5
-		  un=(3./(x(n)-x(n-1)))*(ypn-(y(n)-y(n-1))/(x(n)-x(n-1)))
-		endif
-		y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+1.)
-		do k=n-1,1,-1
-		  y2(k)=y2(k)*y2(k+1)+u(k)
-		end do
-	end subroutine spline
-
-	subroutine splint(xa,ya,y2a,n,x,y)
-		use precision
-		use ndErrors
-		implicit none
-		integer :: n,k,khi,klo
-		real(dl) :: x,y,xa(n),y2a(n),ya(n),a,b,h
-
-		klo=1
-		khi=n
-		do while (khi-klo.gt.1) 
-		   k=(khi+klo)/2
-		   if(xa(k).gt.x)then
-			  khi=k
-		   else
-			  klo=k
-		   endif
-		end do   
-		h=xa(khi)-xa(klo)
-		if (h.eq.0.) call criticalError('bad xa input in splint')
-		a=(xa(khi)-x)/h
-		b=(x-xa(klo))/h
-		y=a*ya(klo)+b*ya(khi)+((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.
-	end subroutine splint
 
 SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
 !use omp_lib!SG
@@ -704,29 +743,38 @@ enddo                                                   !SG-PF
 	end function rombint_nD
 
 	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-	function rombint_dRN(obj,f,a,b,tol, maxit)
+	pure function rombint_spli(obj,f,a,b,tol, maxit)
 			use Precision
 	!  Rombint returns the integral from a to b of using Romberg integration.
 	!  The method converges provided that f(x) is continuous in (a,b).
 	!  f must be real(dl) and must be declared external in the calling
 	!  routine.  tol indicates the desired relative accuracy in the integral.
 	!
-			implicit none
-			integer, intent(in), optional :: maxit
-			integer :: MAXITER=20
-			integer, parameter :: MAXJ=5
-			dimension g(MAXJ+1)
-			type(integrRhoNuPar) :: obj
-			real(dl) f
-			external f
-			real(dl) :: rombint_dRN
-			real(dl), intent(in) :: a,b,tol
-			integer :: nint, i, k, jmax, j
-			real(dl) :: h, gmax, error, g, g0, g1, fourj
-	!
+		implicit none
+
+		interface
+			pure real(dl) function f(a, b)
+				use precision
+				use sg_interpolate
+				type(spline_class), intent(in) :: a
+				real(KIND(1.d0)), intent(in) :: b
+			end function
+		end interface
+
+		integer, intent(in), optional :: maxit
+		type(spline_class), intent(in) :: obj
+		real(dl), intent(in) :: a,b,tol
+		real(dl) :: rombint_spli
+		integer :: MAXITER
+		integer, parameter :: MAXJ=5
+		dimension g(MAXJ+1)
+		integer :: nint, i, k, jmax, j
+		real(dl) :: h, gmax, error, g, g0, g1, fourj
 
 			if (present(maxit)) then
 				MaxIter = maxit
+			else
+				MAXITER=20
 			end if
 			h=0.5d0*(b-a)
 			gmax=h*(f(obj,a)+f(obj,b))
@@ -762,12 +810,11 @@ enddo                                                   !SG-PF
 			  gmax=g0
 			  g(jmax+1)=g0
 			go to 10
-	40      rombint_dRN=g0
-			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
-			  write(*,*) 'Warning: Rombint failed to converge; '
-			  write (*,*)'integral, error, tol:', rombint_dRN,error, tol
-			end if
-			
-	end function rombint_dRN
+	40      rombint_spli=g0
+!			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
+!			  write(*,*) 'Warning: Rombint failed to converge; '
+!			  write (*,*)'integral, error, tol:', rombint_spli,error, tol
+!			end if
+	end function rombint_spli
 
 end module utilities
