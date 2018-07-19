@@ -111,7 +111,6 @@ module variables
 		type(cmplxMatNN) :: n
 		real(dl) :: y1, y2, y3, y4, x, z, dme2
 		integer :: ix1, ix2, a, b
-		integer :: rI !return real or imaginary part
 	end type coll_args
 	
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
