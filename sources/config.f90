@@ -213,9 +213,6 @@ module ndConfig
 			photonTemperatureToday = read_ini_real('photonTemperatureToday', i_photonTempToday)
 			
 			!settings for collisional
-			coll_scatt_em = read_ini_logical("coll_scatt_em",.true.)
-			coll_scatt_ep = read_ini_logical("coll_scatt_ep",.true.)
-			coll_annih_epem = read_ini_logical("coll_annih_epem",.true.)
 			collision_offdiag = read_ini_int("collision_offdiag",1)
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 			

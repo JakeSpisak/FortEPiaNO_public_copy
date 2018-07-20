@@ -1121,185 +1121,173 @@ module ndInteractions
 		
 	end function PI2_ne_f
 	
-	function coll_nue_sc_int_re(ndim, ve, obj)
+	function coll_nue_int_re(ndim, ve, obj)
 		integer, intent(in) :: ndim
 		real(dl), dimension(2), intent(in) :: ve
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_sc_int_re
+		real(dl) :: coll_nue_int_re
 		integer :: ix
 		real(dl), dimension(2) :: pi2_vec
-		type(cmplxMatNN) :: n3
-		real(dl) :: y2,y3,y4, E2, E4, dme2, fd
+		type(cmplxMatNN) :: nX
+		real(dl) :: yA, y2,y3,y4, E2, E3, E4, dme2, fd
 
-		y2 = ve(1)
+		coll_nue_int_re = 0.d0
+
+		yA = ve(1)
 		y4 = ve(2)
-		dme2 = obj%dme2
-		E2 = Ebare_i_dme(obj%x,y2, dme2)
 		E4 = Ebare_i_dme(obj%x,y4, dme2)
+		dme2 = obj%dme2
+
+		!scattering, summing positron and electrons
+		y2 = yA
+		E2 = Ebare_i_dme(obj%x,y2, dme2)
 		y3 = obj%y1 + E2 - E4
 		if (y3.lt.0.d0 &
 			.or. obj%y1.gt.y2+y3+y4 &
 			.or. y2.gt.obj%y1+y3+y4 &
 			.or. y3.gt.obj%y1+y2+y4 &
 			.or. y4.gt.obj%y1+y2+y3) then
-			coll_nue_sc_int_re = 0.0
+			coll_nue_int_re = coll_nue_int_re + 0.d0
 		else
-			n3 = interp_nuDens(y3)
+			nX = interp_nuDens(y3)
 			fd = fermiDirac(y3 / obj%z)
 			do ix=1, flavorNumber
-				n3%re(ix,ix) = n3%re(ix,ix) * fd
-				n3%im(ix,ix) = n3%im(ix,ix) * fd
+				nX%re(ix,ix) = nX%re(ix,ix) * fd
+				nX%im(ix,ix) = nX%im(ix,ix) * fd
 			end do
 
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
 
-			coll_nue_sc_int_re = &
+			coll_nue_int_re = coll_nue_int_re + &
 				y2/E2 * &
 				y4/E4 * &
 				( &
-					pi2_vec(1) * F_ab_sc_re(obj%x,obj%z,obj%n,y2,n3,y4, obj%a,obj%a, obj%ix1,obj%ix2) + & !F_sc^LL or F_sc^RR
-					pi2_vec(2) * F_ab_sc_re(obj%x,obj%z,obj%n,y2,n3,y4, obj%b,obj%b, obj%ix1,obj%ix2) - & !F_sc^RR or F_sc^LL
-					(obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_sc_re(obj%x,obj%z,obj%n,y2,n3,y4, 2,1, obj%ix1,obj%ix2) + &!F_sc^RL and F_sc^LR
-						F_ab_sc_re(obj%x,obj%z,obj%n,y2,n3,y4, 1,2, obj%ix1,obj%ix2) ) &
+					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
+						F_ab_sc_re(obj%x,obj%z,obj%n,y2,nX,y4, 1, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_re(obj%x,obj%z,obj%n,y2,nX,y4, 2, 2, obj%ix1,obj%ix2) &
+					) - &
+					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
+						F_ab_sc_re(obj%x,obj%z,obj%n,y2,nX,y4, 2, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_re(obj%x,obj%z,obj%n,y2,nX,y4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
-	end function coll_nue_sc_int_re
 
-	function coll_nue_sc_int_im(ndim, ve, obj)
+		!annihilation
+		y3 = yA
+		E3 = Ebare_i_dme(obj%x,y3, dme2)
+		y2 = E3 + E4 - obj%y1
+		if (y2.lt.0.d0 &
+			.or. obj%y1.gt.y3+y2+y4 &
+			.or. y2.gt.obj%y1+y3+y4 &
+			.or. y3.gt.obj%y1+y2+y4 &
+			.or. y4.gt.obj%y1+y2+y3) then
+			coll_nue_int_re = coll_nue_int_re + 0.0
+		else
+			nX = interp_nuDens(y2)
+			fd = fermiDirac(y2 / obj%z)
+			do ix=1, flavorNumber
+				nX%re(ix,ix) = nX%re(ix,ix) * fd
+				nX%im(ix,ix) = nX%im(ix,ix) * fd
+			end do
+
+			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
+
+			coll_nue_int_re = coll_nue_int_re + &
+				y3/E3 * &
+				y4/E4 * &
+				( &
+					pi2_vec(1) * F_ab_ann_re(obj%x,obj%z,obj%n,nX,y3,y4, 1, 1, obj%ix1,obj%ix2) + &
+					pi2_vec(2) * F_ab_ann_re(obj%x,obj%z,obj%n,nX,y3,y4, 2, 2, obj%ix1,obj%ix2) + &
+					(obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
+						F_ab_ann_re(obj%x,obj%z,obj%n,nX,y3,y4, 2, 1, obj%ix1,obj%ix2) + &
+						F_ab_ann_re(obj%x,obj%z,obj%n,nX,y3,y4, 1, 2, obj%ix1,obj%ix2) ) &
+				)
+		end if
+	end function coll_nue_int_re
+
+	function coll_nue_int_im(ndim, ve, obj)
 		integer, intent(in) :: ndim
 		real(dl), dimension(2), intent(in) :: ve
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_sc_int_im
+		real(dl) :: coll_nue_int_im
 		integer :: ix
 		real(dl), dimension(2) :: pi2_vec
-		type(cmplxMatNN) :: n3
-		real(dl) :: y2,y3,y4, E2, E4, dme2, fd
+		type(cmplxMatNN) :: nX
+		real(dl) :: yA, y2,y3,y4, E2, E3, E4, dme2, fd
 
-		y2 = ve(1)
+		coll_nue_int_im = 0.0
+
+		yA = ve(1)
 		y4 = ve(2)
 		dme2 = obj%dme2
-		E2 = Ebare_i_dme(obj%x,y2, dme2)
 		E4 = Ebare_i_dme(obj%x,y4, dme2)
+
+		!scattering, summing positrons and electrons
+		y2 = yA
+		E2 = Ebare_i_dme(obj%x,y2, dme2)
 		y3 = obj%y1 + E2 - E4
 		if (y3.lt.0.d0 &
 			.or. obj%y1.gt.y2+y3+y4 &
 			.or. y2.gt.obj%y1+y3+y4 &
 			.or. y3.gt.obj%y1+y2+y4 &
 			.or. y4.gt.obj%y1+y2+y3) then
-			coll_nue_sc_int_im = 0.0
+			coll_nue_int_im = coll_nue_int_im + 0.d0
 		else
-			n3 = interp_nuDens(y3)
+			nX = interp_nuDens(y3)
 			fd = fermiDirac(y3 / obj%z)
 			do ix=1, flavorNumber
-				n3%re(ix,ix) = n3%re(ix,ix) * fd
-				n3%im(ix,ix) = n3%im(ix,ix) * fd
+				nX%re(ix,ix) = nX%re(ix,ix) * fd
+				nX%im(ix,ix) = nX%im(ix,ix) * fd
 			end do
 
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
 
-			coll_nue_sc_int_im = &
+			coll_nue_int_im = coll_nue_int_im + &
 				y2/E2 * &
 				y4/E4 * &
 				( &
-					pi2_vec(1) * F_ab_sc_im(obj%x,obj%z,obj%n,y2,n3,y4, obj%a,obj%a, obj%ix1,obj%ix2) + & !F_sc^LL or F_sc^RR
-					pi2_vec(2) * F_ab_sc_im(obj%x,obj%z,obj%n,y2,n3,y4, obj%b,obj%b, obj%ix1,obj%ix2) - & !F_sc^RR or F_sc^LL
-					(obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_sc_im(obj%x,obj%z,obj%n,y2,n3,y4, 2,1, obj%ix1,obj%ix2) + &!F_sc^RL and F_sc^LR
-						F_ab_sc_im(obj%x,obj%z,obj%n,y2,n3,y4, 1,2, obj%ix1,obj%ix2) ) &
+					( pi2_vec(1) * pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
+						F_ab_sc_im(obj%x,obj%z,obj%n,y2,nX,y4, 1, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_im(obj%x,obj%z,obj%n,y2,nX,y4, 2, 2, obj%ix1,obj%ix2) &
+					) - &
+					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( &!F_sc^RL and F_sc^LR
+						F_ab_sc_im(obj%x,obj%z,obj%n,y2,nX,y4, 2,1, obj%ix1,obj%ix2) + &
+						F_ab_sc_im(obj%x,obj%z,obj%n,y2,nX,y4, 1,2, obj%ix1,obj%ix2) ) &
 				)
 		end if
-	end function coll_nue_sc_int_im
 
-	function coll_nue_ann_int_re(ndim, ve, obj)
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_ann_int_re
-		integer :: ix
-		real(dl), dimension(2) :: pi2_vec
-		type(cmplxMatNN) :: n2
-		real(dl) :: y2,y3,y4, E3, E4, dme2, fd
-
-		y3=ve(1)
-		y4=ve(2)
-		dme2 = obj%dme2
+		!annihilation
+		y3=yA
 		E3 = Ebare_i_dme(obj%x,y3, dme2)
-		E4 = Ebare_i_dme(obj%x,y4, dme2)
 		y2 = E3 + E4 - obj%y1
 		if (y2.lt.0.d0 &
 			.or. obj%y1.gt.y3+y2+y4 &
 			.or. y2.gt.obj%y1+y3+y4 &
 			.or. y3.gt.obj%y1+y2+y4 &
 			.or. y4.gt.obj%y1+y2+y3) then
-			coll_nue_ann_int_re = 0.0
+			coll_nue_int_im = coll_nue_int_im + 0.d0
 		else
-			n2 = interp_nuDens(y2)
+			nX = interp_nuDens(y2)
 			fd = fermiDirac(y2 / obj%z)
 			do ix=1, flavorNumber
-				n2%re(ix,ix) = n2%re(ix,ix) * fd
-				n2%im(ix,ix) = n2%im(ix,ix) * fd
+				nX%re(ix,ix) = nX%re(ix,ix) * fd
+				nX%im(ix,ix) = nX%im(ix,ix) * fd
 			end do
 
 			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
 
-			coll_nue_ann_int_re = &
+			coll_nue_int_im = coll_nue_int_im + &
 				y3/E3 * &
 				y4/E4 * &
 				( &
-					pi2_vec(1) * F_ab_ann_re(obj%x,obj%z,obj%n,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2) + &
-					pi2_vec(2) * F_ab_ann_re(obj%x,obj%z,obj%n,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2) + &
+					pi2_vec(1) * F_ab_ann_im(obj%x,obj%z,obj%n,nX,y3,y4, 1, 1, obj%ix1,obj%ix2) + &
+					pi2_vec(2) * F_ab_ann_im(obj%x,obj%z,obj%n,nX,y3,y4, 2, 2, obj%ix1,obj%ix2) + &
 					(obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_ann_re(obj%x,obj%z,obj%n,n2,y3,y4, 2,1, obj%ix1,obj%ix2) + &
-						F_ab_ann_re(obj%x,obj%z,obj%n,n2,y3,y4, 1,2, obj%ix1,obj%ix2) ) &
+						F_ab_ann_im(obj%x,obj%z,obj%n,nX,y3,y4, 2, 1, obj%ix1,obj%ix2) + &
+						F_ab_ann_im(obj%x,obj%z,obj%n,nX,y3,y4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
-	end function coll_nue_ann_int_re
-
-	function coll_nue_ann_int_im(ndim, ve, obj)
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_ann_int_im
-		integer :: ix
-		real(dl), dimension(2) :: pi2_vec
-		type(cmplxMatNN) :: n2
-		real(dl) :: y2,y3,y4, E3, E4, dme2, fd
-
-		y3=ve(1)
-		y4=ve(2)
-		dme2 = obj%dme2
-		E3 = Ebare_i_dme(obj%x,y3, dme2)
-		E4 = Ebare_i_dme(obj%x,y4, dme2)
-		y2 = E3 + E4 - obj%y1
-		if (y2.lt.0.d0 &
-			.or. obj%y1.gt.y3+y2+y4 &
-			.or. y2.gt.obj%y1+y3+y4 &
-			.or. y3.gt.obj%y1+y2+y4 &
-			.or. y4.gt.obj%y1+y2+y3) then
-			coll_nue_ann_int_im = 0.0
-		else
-			n2 = interp_nuDens(y2)
-			fd = fermiDirac(y2 / obj%z)
-			do ix=1, flavorNumber
-				n2%re(ix,ix) = n2%re(ix,ix) * fd
-				n2%im(ix,ix) = n2%im(ix,ix) * fd
-			end do
-
-			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
-
-			coll_nue_ann_int_im = &
-				y3/E3 * &
-				y4/E4 * &
-				( &
-					pi2_vec(1) * F_ab_ann_im(obj%x,obj%z,obj%n,n2,y3,y4, obj%a,obj%a, obj%ix1,obj%ix2) + &
-					pi2_vec(2) * F_ab_ann_im(obj%x,obj%z,obj%n,n2,y3,y4, obj%b,obj%b, obj%ix1,obj%ix2) + &
-					(obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_ann_im(obj%x,obj%z,obj%n,n2,y3,y4, 2,1, obj%ix1,obj%ix2) + &
-						F_ab_ann_im(obj%x,obj%z,obj%n,n2,y3,y4, 1,2, obj%ix1,obj%ix2) ) &
-				)
-		end if
-	end function coll_nue_ann_int_im
+	end function coll_nue_int_im
 
 	pure SUBROUTINE region(ndim,x,j,c,d)
 		use precision
@@ -1342,123 +1330,38 @@ module ndInteractions
 		collArgs%dme2 = dme2_electron(x, 0.d0, z)
 		collArgs%n = n1
 
-		!scattering of neutrinos vs electrons:
-		if (coll_scatt_em) then
-			collArgs%a = 2
-			collArgs%b = 1
-			do i=1, flavorNumber
-				collArgs%ix1 = i
-				do j=i, flavorNumber
+		do i=1, flavorNumber
+			collArgs%ix1 = i
+			collArgs%ix2 = i
+			ifail=0
+			itrans=0
+			call D01GCF(n,coll_nue_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+			collision_terms%re(i,i) = collision_terms%re(i,i) + res1
+			if (collision_offdiag.eq.1) then
+				do j=i+1, flavorNumber
 					collArgs%ix2 = j
-					if (i.eq.j) then
-						ifail=0
-						itrans=0
-						call D01GCF(n,coll_nue_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-					else
-						if (collision_offdiag.eq.1) then
-							ifail=0
-							itrans=0
-							call D01GCF(n,coll_nue_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-							collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-							collision_terms%re(j,i) = collision_terms%re(j,i) + res1
+					ifail=0
+					itrans=0
+					call D01GCF(n,coll_nue_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
 
-							ifail=0
-							itrans=0
-							call D01GCF(n,coll_nue_sc_int_im, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-							collision_terms%im(i,j) = collision_terms%im(i,j) + res2
-							collision_terms%im(j,i) = collision_terms%im(j,i) - res2
-						else if (collision_offdiag.eq.2) then
-							print *,"Warning: should use damping factor...NYI"
-!						else if (collision_offdiag.gt.2) then !no need to execute this!
-!							collision_terms%re(i,j) = collision_terms%re(i,j) + 0.d0
-!							collision_terms%re(j,i) = collision_terms%re(j,i) + 0.d0
-!							collision_terms%im(i,j) = collision_terms%im(i,j) + 0.d0
-!							collision_terms%im(j,i) = collision_terms%im(j,i) + 0.d0
-						end if
-					end if
+					ifail=0
+					itrans=0
+					call D01GCF(n,coll_nue_int_im, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
 				end do
+			else if (collision_offdiag.eq.2) then
+				print *,"Warning: should use damping factor...NYI"
+!			else if (collision_offdiag.gt.2) then !no need to execute this!
+!				collision_terms%re(i,j) = collision_terms%re(i,j) + 0.d0
+!				collision_terms%im(i,j) = collision_terms%im(i,j) + 0.d0
+			end if
+			do j=i+1, flavorNumber
+				collision_terms%re(j,i) = collision_terms%re(i,j)
+				collision_terms%im(j,i) = - collision_terms%im(i,j)
 			end do
-		end if
+		end do
 
-!		!scattering of neutrinos vs positrons:
-		if (coll_scatt_ep) then
-			collArgs%a = 1
-			collArgs%b = 2
-			do i=1, flavorNumber
-				collArgs%ix1 = i
-				do j=i, flavorNumber
-					collArgs%ix2 = j
-					if (i.eq.j) then
-						ifail=0
-						itrans=0
-						call D01GCF(n,coll_nue_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-					else
-						if (collision_offdiag.eq.1) then
-							ifail=0
-							itrans=0
-							call D01GCF(n,coll_nue_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-							collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-							collision_terms%re(j,i) = collision_terms%re(j,i) + res1
-
-							ifail=0
-							itrans=0
-							call D01GCF(n,coll_nue_sc_int_im, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-							collision_terms%im(i,j) = collision_terms%im(i,j) + res2
-							collision_terms%im(j,i) = collision_terms%im(j,i) - res2
-						else if (i.ne.j .and. collision_offdiag.eq.2) then
-							print *,"Warning: should use damping factor...NYI"
-!						else if (collision_offdiag.gt.2) then !no need to execute this!
-!							collision_terms%re(i,j) = collision_terms%re(i,j) + 0.d0
-!							collision_terms%re(j,i) = collision_terms%re(j,i) + 0.d0
-!							collision_terms%im(i,j) = collision_terms%im(i,j) + 0.d0
-!							collision_terms%im(j,i) = collision_terms%im(j,i) + 0.d0
-						end if
-					end if
-				end do
-			end do
-		end if
-
-		!annihilation in e+e-
-		if (coll_annih_epem) then
-			collArgs%a = 1
-			collArgs%b = 2
-			do i=1, flavorNumber
-				collArgs%ix1 = i
-				do j=i, flavorNumber
-					collArgs%ix2 = j
-					if (i.eq.j) then
-						ifail=0
-						itrans=0
-						call D01GCF(n,coll_nue_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-					else
-						if (collision_offdiag.eq.1) then
-							ifail=0
-							itrans=0
-							call D01GCF(n,coll_nue_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-							collision_terms%re(i,j) = collision_terms%re(i,j) + res1
-							collision_terms%re(j,i) = collision_terms%re(j,i) + res1
-
-							ifail=0
-							itrans=0
-							call D01GCF(n,coll_nue_ann_int_im, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-							collision_terms%im(i,j) = collision_terms%im(i,j) + res2
-							collision_terms%im(j,i) = collision_terms%im(j,i) - res2
-						else if (i.ne.j .and. collision_offdiag.eq.2) then
-							print *,"Warning: should use damping factor...NYI"
-!						else if (collision_offdiag.gt.2) then !no need to execute this!
-!							collision_terms%re(i,j) = collision_terms%re(i,j) + 0.d0
-!							collision_terms%re(j,i) = collision_terms%re(j,i) + 0.d0
-!							collision_terms%im(i,j) = collision_terms%im(i,j) + 0.d0
-!							collision_terms%im(j,i) = collision_terms%im(j,i) + 0.d0
-						end if
-					end if
-				end do
-			end do
-		end if
-		
 		cf = (y1*y1*x**4)
 		collision_terms%re(:,:) = collision_terms%re(:,:) * collTermFactor / cf
 		collision_terms%im(:,:) = collision_terms%im(:,:) * collTermFactor / cf

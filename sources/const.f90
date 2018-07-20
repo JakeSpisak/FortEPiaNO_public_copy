@@ -81,7 +81,6 @@ module variables
 	logical :: firstPoint = .false.
 	logical :: checkpoint = .false.
 	
-	logical :: coll_scatt_em, coll_scatt_ep, coll_annih_epem
 	integer :: collision_offdiag
 	logical :: dme2_temperature_corr
 	
@@ -110,7 +109,7 @@ module variables
 	type coll_args
 		type(cmplxMatNN) :: n
 		real(dl) :: y1, y2, y3, y4, x, z, dme2
-		integer :: ix1, ix2, a, b
+		integer :: ix1, ix2
 	end type coll_args
 	
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
