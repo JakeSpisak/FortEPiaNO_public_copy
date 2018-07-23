@@ -11,3 +11,6 @@
 *.txt
 plots/
 *.ipynb*
+output*
+gmon.out
+*callgrind*
