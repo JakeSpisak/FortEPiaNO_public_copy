@@ -9,7 +9,12 @@ module ndInteractions
 	use linear_interpolation_module
 !	use bspline_module
 	implicit none
-	
+
+	type interpNuDens_obj
+		type(spline_class), dimension(:,:), allocatable :: re, im
+	end type interpNuDens_obj
+	type(interpNuDens_obj) :: interpNuDens
+
 	type(spline_class) :: FD_interp
 	type(linear_interp_2d) :: dmeCorr
 !	type(bspline_2d) :: dmeCorr
@@ -18,73 +23,47 @@ module ndInteractions
 
 	contains
 
-	function interp_nuDens(y)
-		type(cmplxMatNN) :: interp_nuDens
-		real(dl), intent(in) :: y
-		integer :: ix,i,j,k
-		real(dl) :: ixr, yr, logy
-		character(len=100) :: vals
+	subroutine allocate_interpNuDens
+		real(dl), dimension(:), allocatable :: ndmv_re, ndmv_im
+		integer :: i, j, iy
+		allocate(interpNuDens%re(flavorNumber, flavorNumber), &
+			interpNuDens%im(flavorNumber, flavorNumber))
+		allocate(ndmv_re(Ny), ndmv_im(Ny))
+		do i=1, flavorNumber
+			do iy=1, Ny
+				ndmv_re(iy) = nuDensMatVec(iy)%re(i, i)
+			end do
+			call interpNuDens%re(i, i)%initialize(Ny, logy_arr, ndmv_re)
+			do j=i+1, flavorNumber
+				do iy=1, Ny
+					ndmv_re(iy) = nuDensMatVec(iy)%re(i, j)
+					ndmv_im(iy) = nuDensMatVec(iy)%im(i, j)
+				end do
+				call interpNuDens%re(i, j)%initialize(Ny, logy_arr, ndmv_re)
+				call interpNuDens%im(i, j)%initialize(Ny, logy_arr, ndmv_im)
+			end do
+		end do
+	end subroutine allocate_interpNuDens
 
-		call allocateCmplxMat(interp_nuDens)
-		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
-			interp_nuDens%re =0.d0
-			interp_nuDens%im =0.d0
-		elseif (abs(y-nuDensMatVec(Ny)%y) .lt. 1.d-6) then
-			interp_nuDens = nuDensMatVec(Ny)
-		else
-			logy=log10(y)
-			ixr=(Ny-1)*(logy-logy_min)/(logy_max-logy_min)+1
-			ix=int(ixr)
-			if (ix .gt. 0 .and. ix .lt. Ny) then
-				if (abs(ixr-ix) .lt. 1d-5) then
-					interp_nuDens = nuDensMatVec(ix)
-				else
-					yr = (logy - nuDensMatVec(ix)%logy) / (nuDensMatVec(ix+1)%logy - nuDensMatVec(ix)%logy)
-					interp_nuDens%y = y
-					interp_nuDens%re(:,:) = (1.d0 - yr) * nuDensMatVec(ix)%re(:,:) + yr * nuDensMatVec(ix+1)%re(:,:)
-					interp_nuDens%im(:,:) = (1.d0 - yr) * nuDensMatVec(ix)%im(:,:) + yr * nuDensMatVec(ix+1)%im(:,:)
-				end if
-			else
-				write(vals,"('y=',"//dblfmt//",'    ix=',I3)") y, ix
-				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
-			end if
-		end if
-	end function interp_nuDens
-
-	function interp_nuDensIJre(y, i, j)
-		real(dl) :: interp_nuDensIJre
-		real(dl), intent(in) :: y
-		integer :: ix,i,j,k
-		real(dl) :: ixr, yr, logy
-		character(len=100) :: vals
-
-		if (y.gt.nuDensMatVec(Ny)%y .or. y .lt. nuDensMatVec(1)%y) then
-			interp_nuDensIJre =0.d0
-		elseif (abs(y - nuDensMatVec(Ny)%y).lt.1d-5) then
-			interp_nuDensIJre = nuDensMatVec(Ny)%re(i,j)
-		else
-			logy=log10(y)
-			ixr=(Ny-1)*(logy-logy_min)/(logy_max-logy_min)+1
-			ix=int(ixr)
-!			if (ix .gt. 0 .and. ix .lt. Ny) then
-!				if (abs(ixr-ix) .lt. 1d-6) then
-!					interp_nuDensIJre = nuDensMatVec(ix)%re(i,j)
-!				else
-					yr = (logy - nuDensMatVec(ix)%logy) / (nuDensMatVec(ix+1)%logy - nuDensMatVec(ix)%logy)
-					interp_nuDensIJre = nuDensMatVec(ix)%re(i,j) + &
-						yr * (nuDensMatVec(ix+1)%re(i,j) - nuDensMatVec(ix)%re(i,j))
-!				end if
-!			else
-!				write(vals,"('y=',"//dblfmt//",'    ix=',I3)") y, ix
-!				call Error("k out of range or errors occurred in interpolation"//NEW_LINE('A')//vals)
-!			end if
-		end if
-!      dataIndex = floor((xVal(inputIndex)-minXData)/xRange);
-
-!      weight = (xVal - xData(dataIndex))/(xData(dataIndex+1)-xData(dataIndex));
-!      yVal(inputIndex) = (1.0-weight)*yData(dataIndex) + ...
-!                         weight*yData(dataIndex+1);
-	end function interp_nuDensIJre
+	subroutine init_interpNuDens
+		real(dl), dimension(:), allocatable :: ndmv_re, ndmv_im
+		integer :: i, j, iy
+		allocate(ndmv_re(Ny), ndmv_im(Ny))
+		do i=1, flavorNumber
+			do iy=1, Ny
+				ndmv_re(iy) = nuDensMatVec(iy)%re(i, i)
+			end do
+			call interpNuDens%re(i, i)%replace(Ny, logy_arr, ndmv_re)
+			do j=i+1, flavorNumber
+				do iy=1, Ny
+					ndmv_re(iy) = nuDensMatVec(iy)%re(i, j)
+					ndmv_im(iy) = nuDensMatVec(iy)%im(i, j)
+				end do
+				call interpNuDens%re(i, j)%replace(Ny, logy_arr, ndmv_re)
+				call interpNuDens%im(i, j)%replace(Ny, logy_arr, ndmv_im)
+			end do
+		end do
+	end subroutine init_interpNuDens
 
 	subroutine init_interp_dme2_e
 		real(dl), dimension(:,:), allocatable :: dme_vec
@@ -1126,12 +1105,13 @@ module ndInteractions
 		real(dl), dimension(2), intent(in) :: ve
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_int_re
-		integer :: ix
+		integer :: ix, iy
 		real(dl), dimension(2) :: pi2_vec
 		type(cmplxMatNN) :: nX
-		real(dl) :: yA, y2,y3,y4, E2, E3, E4, dme2, fd
+		real(dl) :: yA, y2,y3,y4, E2, E3, E4, dme2, fd, logy3, logy2
 
 		coll_nue_int_re = 0.d0
+		call allocateCmplxMat(nX)
 
 		yA = ve(1)
 		y4 = ve(2)
@@ -1149,11 +1129,17 @@ module ndInteractions
 			.or. y4.gt.obj%y1+y2+y3) then
 			coll_nue_int_re = coll_nue_int_re + 0.d0
 		else
-			nX = interp_nuDens(y3)
 			fd = fermiDirac(y3 / obj%z)
+			logy3 = log10(y3)
 			do ix=1, flavorNumber
-				nX%re(ix,ix) = nX%re(ix,ix) * fd
-				nX%im(ix,ix) = nX%im(ix,ix) * fd
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3) * fd
+				nX%im(ix,ix) = 0.d0
+				do iy=ix+1, flavorNumber
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy3)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy3)
+					nX%re(iy,ix) = nX%re(ix,iy)
+					nX%im(iy,ix) = -nX%im(ix,iy)
+				end do
 			end do
 
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
@@ -1183,11 +1169,17 @@ module ndInteractions
 			.or. y4.gt.obj%y1+y2+y3) then
 			coll_nue_int_re = coll_nue_int_re + 0.0
 		else
-			nX = interp_nuDens(y2)
 			fd = fermiDirac(y2 / obj%z)
+			logy2 = log10(y2)
 			do ix=1, flavorNumber
-				nX%re(ix,ix) = nX%re(ix,ix) * fd
-				nX%im(ix,ix) = nX%im(ix,ix) * fd
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy2) * fd
+				nX%im(ix,ix) = 0.d0
+				do iy=ix+1, flavorNumber
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy2)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy2)
+					nX%re(iy,ix) = nX%re(ix,iy)
+					nX%im(iy,ix) = -nX%im(ix,iy)
+				end do
 			end do
 
 			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
@@ -1210,12 +1202,13 @@ module ndInteractions
 		real(dl), dimension(2), intent(in) :: ve
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_int_im
-		integer :: ix
+		integer :: ix, iy
 		real(dl), dimension(2) :: pi2_vec
 		type(cmplxMatNN) :: nX
-		real(dl) :: yA, y2,y3,y4, E2, E3, E4, dme2, fd
+		real(dl) :: yA, y2,y3,y4, E2, E3, E4, dme2, fd, logy2, logy3
 
 		coll_nue_int_im = 0.0
+		call allocateCmplxMat(nX)
 
 		yA = ve(1)
 		y4 = ve(2)
@@ -1233,11 +1226,17 @@ module ndInteractions
 			.or. y4.gt.obj%y1+y2+y3) then
 			coll_nue_int_im = coll_nue_int_im + 0.d0
 		else
-			nX = interp_nuDens(y3)
 			fd = fermiDirac(y3 / obj%z)
+			logy3 = log10(y3)
 			do ix=1, flavorNumber
-				nX%re(ix,ix) = nX%re(ix,ix) * fd
-				nX%im(ix,ix) = nX%im(ix,ix) * fd
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3) * fd
+				nX%im(ix,ix) = 0.d0
+				do iy=ix+1, flavorNumber
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy3)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy3)
+					nX%re(iy,ix) = nX%re(ix,iy)
+					nX%im(iy,ix) = -nX%im(ix,iy)
+				end do
 			end do
 
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
@@ -1267,11 +1266,17 @@ module ndInteractions
 			.or. y4.gt.obj%y1+y2+y3) then
 			coll_nue_int_im = coll_nue_int_im + 0.d0
 		else
-			nX = interp_nuDens(y2)
 			fd = fermiDirac(y2 / obj%z)
+			logy2 = log10(y2)
 			do ix=1, flavorNumber
-				nX%re(ix,ix) = nX%re(ix,ix) * fd
-				nX%im(ix,ix) = nX%im(ix,ix) * fd
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy2) * fd
+				nX%im(ix,ix) = 0.d0
+				do iy=ix+1, flavorNumber
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy2)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy2)
+					nX%re(iy,ix) = nX%re(ix,iy)
+					nX%im(iy,ix) = -nX%im(ix,iy)
+				end do
 			end do
 
 			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)

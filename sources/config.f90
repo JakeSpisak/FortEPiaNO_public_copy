@@ -188,7 +188,7 @@ module ndConfig
 			
 			Nx = read_ini_int('Nx',100)
 			Ny = read_ini_int('Ny',100)
-			allocate(x_arr(Nx), y_arr(Ny))
+			allocate(x_arr(Nx), y_arr(Ny), logy_arr(Ny))
 			
 			x_in    = read_ini_real('x_in', 0.01d0)
 			x_fin   = read_ini_real('x_fin', 40.d0)
@@ -201,6 +201,7 @@ module ndConfig
 			logy_min = log10(y_min)
 			logy_max = log10(y_max)
 			y_arr = logspace(logy_min, logy_max, Ny)
+			logy_arr = log10(y_arr)
 
 			z_in    = read_ini_real('z_in', 1.00003d0)
 			

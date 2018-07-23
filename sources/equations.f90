@@ -466,6 +466,7 @@ module ndEquations
 		call printVerbose(trim(tmpstr),2)
 
 		call allocateCmplxMat(mat)
+		call init_interpNuDens
 		z = vars(n)
 		call vec_2_densMat(vars(1:n-1))
 		do m=1, Ny

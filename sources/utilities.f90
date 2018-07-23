@@ -8,7 +8,9 @@ module sg_interpolate
 		real(dl), dimension(:), allocatable :: xa, ya, y2a
 		contains
 		procedure :: initialize => spline_initialize
+		procedure :: replace => spline_replace
 		procedure :: evaluate => spline_interp
+		procedure :: unset => spline_unset
 	end type spline_class
 
 	contains
@@ -23,6 +25,21 @@ module sg_interpolate
 		obj%ya = ya
 		call spline(obj%xa, obj%ya, obj%n, 1.d30, 1.d30, obj%y2a) !x, y(x), N, ?, ?, derivatives)
 	end subroutine spline_initialize
+
+	pure subroutine spline_replace(obj, n, xa, ya)
+		class(spline_class), intent(inout) :: obj
+		integer, intent(in) :: n
+		real(dl), dimension(n), intent(in) :: xa, ya
+		obj%n = n
+		obj%xa = xa
+		obj%ya = ya
+		call spline(obj%xa, obj%ya, obj%n, 1.d30, 1.d30, obj%y2a) !x, y(x), N, ?, ?, derivatives)
+	end subroutine spline_replace
+
+	pure subroutine spline_unset(obj)
+		class(spline_class), intent(inout) :: obj
+		deallocate(obj%xa, obj%ya, obj%y2a)
+	end subroutine spline_unset
 
 	pure function spline_interp(obj, x)
 		class(spline_class), intent(in) :: obj
