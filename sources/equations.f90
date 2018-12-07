@@ -271,7 +271,7 @@ module ndEquations
 		
 		leptonDensities=0.d0
 		leptonDensities(1,1) = leptDensFactor * y / x**6 * electronDensity(x,z)
-		matrix%im = 0
+!		matrix%im = 0.d0
 		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
 		
 		!switch imaginary and real parts because of the "-i" factor
@@ -433,16 +433,46 @@ module ndEquations
 		write(tmpstring,"('x_end =',"//dblfmt//",' - z_end =',"//dblfmt//")"), xend, nuDensVec(ntot)
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
+
+	subroutine derivative (x, z, m, mat, n, ydot)
+		real(dl), intent(in) :: x, z
+		integer, intent(in) :: m, n
+		real(dl), dimension(n), intent(out) :: ydot
+		integer :: i, j, k, s
+		real(dl), dimension(:), allocatable :: tmpv
+		type(cmplxMatNN) :: mat
 	
+		allocate(tmpv(flavNumSqu))
+		call drhoy_dx_fullMat(mat, x,z,m)
+		tmpv=0.d0
+		do i=1, flavorNumber
+			tmpv(i) = mat%re(i,i)
+		end do
+		k=flavorNumber+1
+		if (collision_offdiag.ne.3) then
+			do i=1, flavorNumber-1
+				do j=i+1, flavorNumber
+					tmpv(k) = mat%re(i,j)
+					tmpv(k+1) = mat%im(i,j)
+					k=k+2
+				end do
+			end do
+		end if
+		s=(m-1)*flavNumSqu
+		do i=1,flavNumSqu
+			ydot(s+i)=tmpv(i)
+		end do
+	end subroutine derivative
+
 	subroutine derivatives(n, x, vars, ydot)
 		use omp_lib
 		
-		type(cmplxMatNN), save :: mat
+		type(cmplxMatNN) :: mat
 		integer :: n, i, j, k, m, s
 		real(dl) :: x, z
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
-		real(dl), dimension(:), allocatable, save :: tmpv
+!		real(dl), dimension(:), allocatable, save :: tmpv
 		character(len=100) :: tmpstr
 		logical :: file_exist
 		integer :: stat
@@ -460,8 +490,6 @@ module ndEquations
 		if (deriv_counter.eq.1000) call toc(timer1, "1000 derivatives")
 #endif
 		deriv_counter = deriv_counter+1
-		if (.not. allocated(tmpv)) &
-			allocate(tmpv(flavNumSqu))
 		write (tmpstr, "('[eq] Calling derivatives (',"//dblfmt//",' x=',"//dblfmt//",')')") deriv_counter,x
 		call printVerbose(trim(tmpstr),2)
 
@@ -470,25 +498,7 @@ module ndEquations
 		z = vars(n)
 		call vec_2_densMat(vars(1:n-1))
 		do m=1, Ny
-			call drhoy_dx_fullMat(mat, x,z,m)
-			tmpv=0.d0
-			do i=1, flavorNumber
-				tmpv(i) = mat%re(i,i)
-			end do
-			k=flavorNumber+1
-			if (collision_offdiag.ne.3) then
-				do i=1, flavorNumber-1
-					do j=i+1, flavorNumber
-						tmpv(k) = mat%re(i,j)
-						tmpv(k+1) = mat%im(i,j)
-						k=k+2
-					end do
-				end do
-			end if
-			s=(m-1)*flavNumSqu
-			do k=1,flavNumSqu
-				ydot(s+k)=tmpv(k)
-			end do
+			call derivative(x, z, m, mat, n, ydot)
 		end do
 		
 		call dz_o_dx(x,z, ydot, ntot)

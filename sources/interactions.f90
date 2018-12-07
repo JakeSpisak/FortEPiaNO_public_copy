@@ -33,14 +33,23 @@ module ndInteractions
 			do iy=1, Ny
 				ndmv_re(iy) = nuDensMatVec(iy)%re(i, i)
 			end do
+#ifdef LOGY
 			call interpNuDens%re(i, i)%initialize(Ny, logy_arr, ndmv_re)
+#else
+			call interpNuDens%re(i, i)%initialize(Ny, y_arr, ndmv_re)
+#endif
 			do j=i+1, flavorNumber
 				do iy=1, Ny
 					ndmv_re(iy) = nuDensMatVec(iy)%re(i, j)
 					ndmv_im(iy) = nuDensMatVec(iy)%im(i, j)
 				end do
+#ifdef LOGY
 				call interpNuDens%re(i, j)%initialize(Ny, logy_arr, ndmv_re)
 				call interpNuDens%im(i, j)%initialize(Ny, logy_arr, ndmv_im)
+#else
+				call interpNuDens%re(i, j)%initialize(Ny, y_arr, ndmv_re)
+				call interpNuDens%im(i, j)%initialize(Ny, y_arr, ndmv_im)
+#endif
 			end do
 		end do
 	end subroutine allocate_interpNuDens
@@ -53,14 +62,23 @@ module ndInteractions
 			do iy=1, Ny
 				ndmv_re(iy) = nuDensMatVec(iy)%re(i, i)
 			end do
+#ifdef LOGY
 			call interpNuDens%re(i, i)%replace(Ny, logy_arr, ndmv_re)
+#else
+			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
+#endif
 			do j=i+1, flavorNumber
 				do iy=1, Ny
 					ndmv_re(iy) = nuDensMatVec(iy)%re(i, j)
 					ndmv_im(iy) = nuDensMatVec(iy)%im(i, j)
 				end do
+#ifdef LOGY
 				call interpNuDens%re(i, j)%replace(Ny, logy_arr, ndmv_re)
 				call interpNuDens%im(i, j)%replace(Ny, logy_arr, ndmv_im)
+#else
+				call interpNuDens%re(i, j)%replace(Ny, y_arr, ndmv_re)
+				call interpNuDens%im(i, j)%replace(Ny, y_arr, ndmv_im)
+#endif
 			end do
 		end do
 	end subroutine init_interpNuDens
@@ -671,15 +689,16 @@ module ndInteractions
 				y2=(y_max-y_min)*y2 + y_min
 				y3=(y_max-y_min)*y3 + y_min
 				y4=(y_max-y_min)*y4 + y_min
+!				d1a = d1_cases(y1,y2,y3,y4)
 				d1a = d2_cases(y1,y2,y3,y4)
 				d1b = d3_cases(y1,y2,y3,y4)
 !				d2a = PI1_12_i(y1,y2,y3,y4)
 !				d3a = PI1_13_i(y1,y2,y3,y4)
 			end do
-			call toc(timer1, "<interpolated>")
+			call toc(timer1, "<cases>")
 
 			call tic(timer1)
-			do ix1=1, 10000000
+			do ix1=1, 100000000
 				call random_number(y1)
 				call random_number(y2)
 				call random_number(y3)
@@ -688,12 +707,49 @@ module ndInteractions
 				y2=(y_max-y_min)*y2 + y_min
 				y3=(y_max-y_min)*y3 + y_min
 				y4=(y_max-y_min)*y4 + y_min
+!				d1a = d1_cases(y1,y2,y3,y4)
+				d1a = d2_cases(y1,y2,y3,y4)
+				d1b = d3_cases(y1,y2,y3,y4)
+!				d2a = PI1_12_i(y1,y2,y3,y4)
+!				d3a = PI1_13_i(y1,y2,y3,y4)
+			end do
+			call toc(timer1, "<cases>")
+
+			call tic(timer1)
+			do ix1=1, 100000000
+				call random_number(y1)
+				call random_number(y2)
+				call random_number(y3)
+				call random_number(y4)
+				y1=(y_max-y_min)*y1 + y_min
+				y2=(y_max-y_min)*y2 + y_min
+				y3=(y_max-y_min)*y3 + y_min
+				y4=(y_max-y_min)*y4 + y_min
+				d1a = d1_full(y1,y2,y3,y4)
 				d1a = d2_full(y1,y2,y3,y4)
 				d1b = d3_full(y1,y2,y3,y4)
 !				d2a = PI1_12_full(y1,y2,y3,y4)
 !				d3a = PI1_13_full(y1,y2,y3,y4)
 			end do
 			call toc(timer1, "<full>")
+
+			call tic(timer1)
+			do ix1=1, 100000000
+				call random_number(y1)
+				call random_number(y2)
+				call random_number(y3)
+				call random_number(y4)
+				y1=(y_max-y_min)*y1 + y_min
+				y2=(y_max-y_min)*y2 + y_min
+				y3=(y_max-y_min)*y3 + y_min
+				y4=(y_max-y_min)*y4 + y_min
+				d1a = d1_pablo(y1,y2,y3,y4)
+				d1a = d2_pablo(y1,y2,y3,y4)
+				d1b = d3_pablo(y1,y2,y3,y4)
+!				d2a = PI1_12_full(y1,y2,y3,y4)
+!				d3a = PI1_13_full(y1,y2,y3,y4)
+			end do
+			call toc(timer1, "<pablo>")
 		end if
 
 		call addToLog("[interactions] ...done!")
@@ -715,6 +771,16 @@ module ndInteractions
 			abs( y1-y2+y3-y4) - &
 			abs( y1+y2+y3+y4)
 	end function D1_full
+
+	elemental function D1_pablo(y1, y2, y3, y4)
+		implicit none
+		real(dl) :: D1_pablo
+		real(dl), intent(in) :: y1, y2, y3, y4
+          real(dl) a12,a34
+          a12=y1+y2
+          a34=y3+y4
+          D1_pablo=a12+a34-dabs(a12-a34)-dabs(y1-y2+y3-y4)-dabs(y1-y2-y3+y4)
+	end function D1_pablo
 
 	function D2_f(y1, y2, y3, y4)
 		implicit none
@@ -834,6 +900,38 @@ module ndInteractions
 		end if
 
 	end function D2_cases
+
+    elemental real(dl) function D2_pablo(y1,y2,y3,y4)
+          implicit none
+          real(dl),intent(in)::y1,y2,y3,y4
+          real(dl) a12,a13,a14,a34,a123,a124,a134,a234,a1234,s12,s13,s14
+          real(dl) a12_2,sum1,sum2
+
+          a12_2=y1+y2
+          a34=y3+y4
+          
+          a123=a12_2+y3-y4
+          a124=a12_2-y3+y4
+          a134=y1-y2+a34
+          a234=-y1+y2+a34
+          a1234=a12_2+a34
+          a12=a12_2-a34
+          a13=y1-y2+y3-y4
+          a14=y1-y2-y3+y4
+          s12=a12*a12*dsign(1.d0,a12)
+          s13=a13*a13*dsign(1.d0,a13)
+          s14=a14*a14*dsign(1.d0,a14)
+
+          sum1=-a123*a123 + a1234*a1234 - a124*a124 + s12
+          sum2=- a134*a134 + a234*a234 + s13 + s14
+
+          D2_pablo=(a123**3 - a1234**3 + a124**3 + a134**3 + a234**3 + &
+           3.d0*(sum1 + sum2)*y1 + &
+           3.d0*(sum1 - sum2)*y2 - dabs(a12)**3 - dabs(a13)**3 - &
+           dabs(a14)**3 + 6.d0*y1*y2*(a12_2 - 3.d0*a34 - dabs(a12) + &
+           dabs(a13) + dabs(a14)))/6.d0
+
+        end function D2_pablo
 
 	function D3_f(y1, y2, y3, y4)
 		implicit none
@@ -1008,6 +1106,71 @@ module ndInteractions
 		end if
 
 	end function D3_cases
+
+    elemental real(dl) function D3_pablo(y1,y2,y3,y4)
+          implicit none
+          real(dl),intent(in)::y1,y2,y3,y4
+          real(dl) a12,a13,a14,a123,a124,a134,a234,a1234,P1234,s12,s13,s14
+          real(dl) absa12,absa13,absa14,absa12e3,absa13e3,absa14e3
+          real(dl) ampp,appm,apmp,a123e2,a124e2,a134e2,a234e2,a1234e2
+          real(dl) a123e3,a124e3,a134e3,a234e3,a1234e3
+          real(dl) a123e5,a124e5,a134e5,a234e5,a1234e5
+
+          a12=y1+y2-y3-y4
+          a13=y1-y2+y3-y4
+          a14=y1-y2-y3+y4
+          a123=y1+y2+y3-y4
+          a124=y1+y2-y3+y4
+          a134=y1-y2+y3+y4
+          a234=-y1+y2+y3+y4
+          a1234=y1+y2+y3+y4
+          s12=a12**2*dsign(1.0d0,a12)
+          s13=a13**2*dsign(1.0d0,a13)
+          s14=a14**2*dsign(1.0d0,a14)
+          P1234=-120.d0*y1*y2*y3*y4
+
+          absa12=dabs(a12)
+          absa13=dabs(a13)
+          absa14=dabs(a14)
+          absa12e3=absa12**3
+          absa13e3=absa13**3
+          absa14e3=absa14**3
+          ampp=-absa12e3 + absa13e3 + absa14e3
+          appm=absa12e3 + absa13e3 - absa14e3
+          apmp=absa12e3 - absa13e3 + absa14e3
+          a123e2=a123*a123
+          a124e2=a124*a124
+          a134e2=a134*a134
+          a234e2=a234*a234
+          a1234e2=a1234*a1234
+          a123e3=a123e2*a123
+          a124e3=a124e2*a124
+          a134e3=a134e2*a134
+          a234e3=a234e2*a234
+          a1234e3=a1234e2*a1234
+
+          a123e5=a123e3*a123e2
+          a124e5=a124e3*a124e2
+          a134e5=a134e3*a134e2
+          a234e5=a234e3*a234e2
+          a1234e5=a1234e3*a1234e2
+
+          D3_pablo= (4.d0*(a1234e5 - a123e5 - a124e5 - a134e5 - a234e5) - &
+           absa12**5 - absa13**5 - absa14**5 + &
+           (a123 + a1234 + a124 + a134 + a234 + absa12 + absa13 + absa14)*P1234 + &
+           5.d0*(a12**3*s12+a13**3*s13 +a14**3*s14) + &
+           20.d0*((-a1234e3 + a123e3 + a124e3 - a134e3 - a234e3 + ampp)*y1*y2 + &
+            (-a1234e3 + a123e3 - a124e3 + a134e3 - a234e3 + apmp)*y1*y3 + &
+            (-a1234e3 + a123e3 - a124e3 - a134e3 + a234e3 + appm)*y2*y3 + &
+            (-a1234e3 - a123e3 + a124e3 + a134e3 - a234e3 + appm)*y1*y4 + &
+            (-a1234e3 - a123e3 + a124e3 - a134e3 + a234e3 + apmp)*y2*y4 + &
+            (-a1234e3 - a123e3 - a124e3 + a134e3 + a234e3 + ampp)*y3*y4) + &
+           60.d0*((a1234e2 + a123e2 - a124e2 + a134e2 + a234e2 - s12 + s13 - s14)*y1*y2*y4 + &
+            (a1234e2 - a123e2 + a124e2 + a134e2 + a234e2 - s12 - s13 + s14)*y1*y2*y3 + &
+            (a1234e2 + a123e2 + a124e2 - a134e2 + a234e2 + s12 - s13 - s14)*y1*y3*y4 + &
+            (a1234e2 + a123e2 + a124e2 + a134e2 - a234e2 + s12 + s13 + s14)*y2*y3*y4))/120.d0
+
+        end function D3_pablo
 
 	function PI1_12_i(y1, y2, y3, y4)
 		implicit none
@@ -1356,6 +1519,17 @@ module ndInteractions
 					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
 				end do
 			else if (collision_offdiag.eq.2) then
+				!damping terms from Dolgov:2002ab, eq A.11
+				do j=i+1, flavorNumber
+					collArgs%ix2 = j
+					collision_terms%im(i,j) = 0.d0
+					collision_terms%re(i,j) = 0.d0
+					if (i .eq. 1 .and. (j.eq.2 .or. j.eq.3)) then
+						collision_terms%re(i,j) = dampTermFactor * Damp_ex * y1*y1*y1 * n1%re(i,j)
+					elseif (i .eq. 2 .and. j.eq.3) then
+						collision_terms%re(i,j) = dampTermFactor * Damp_mt * y1*y1*y1 * n1%re(i,j)
+					end if
+				end do
 				print *,"Warning: should use damping factor...NYI"
 !			else if (collision_offdiag.gt.2) then !no need to execute this!
 !				collision_terms%re(i,j) = collision_terms%re(i,j) + 0.d0

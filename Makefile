@@ -1,12 +1,15 @@
 # FLAGS
 BUILD_DIR ?= build
 EXECNAME ?= nuDens.exe
+# use e.g. with USER_DEFINED=-DTESTSPEED=1 and EXECNAME=nuDens_speed.exe
 USER_DEFINED ?= 
+LOGY ?= 
+#LOGY ?= -Dlogy=1
 
 #ifort
 F90=ifort
-  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -parallel -par-report1 -no-prec-div $(USER_DEFINED)
-DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all $(USER_DEFINED)
+  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -parallel -par-report1 -no-prec-div $(USER_DEFINED) $(LOGY)
+DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all $(USER_DEFINED) $(LOGY)
 # -check all -check noarg_temp_created
 # -stand f03  -check all -warn all -fstack-protector -assume protect_parens -implicitnone
 # -openmp 
@@ -35,12 +38,6 @@ endif
 
 default: all
 
-$(BUILD_DIR)/%.o: sources/%.f90 Makefile
-	$(F90) $(FFLAGS) -c sources/$*.f90 -o $(BUILD_DIR)/$*.o
-
-$(BUILD_DIR)/%.o: sources/%.f Makefile
-	$(F90) $(FFLAGS) $(stdFlag) -c sources/$*.f -o $(BUILD_DIR)/$*.o
-
 $(BUILD_DIR)/bspline_module.o: $(BUILD_DIR)/bspline_oo_module.o $(BUILD_DIR)/bspline_sub_module.o
 $(BUILD_DIR)/bspline_oo_module.o: $(BUILD_DIR)/bspline_sub_module.o
 #$(BUILD_DIR)/opkdmain.o: $(BUILD_DIR)/opkda1.o $(BUILD_DIR)/opkda2.o
@@ -63,11 +60,22 @@ all: nudens
 directories:
 	mkdir -p $(BUILD_DIR)
 
-nudens: directories $(OBJ_FILES) $(BUILD_DIR)/nuDens.o Makefile
+objects: $(OBJ_FILES) $(BUILD_DIR)/nuDens.o
+
+nudens: directories objects Makefile
 	$(F90) -o bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
 
-nudens_debug: directories $(OBJ_FILES) $(BUILD_DIR)/nuDens.o Makefile
+nudens_debug: directories objects Makefile
 	$(F90) -o bin/nuDens_debug.exe $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
+
+tests: directories objects Makefile $(BUILD_DIR)/tests.o
+	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/tests.o $(FFLAGS)
 
 clean: 
 	rm -f bin/* $(BUILD_DIR)/*o $(BUILD_DIR)/*mod
+
+$(BUILD_DIR)/%.o: sources/%.f90 Makefile
+	$(F90) $(FFLAGS) -c sources/$*.f90 -o $(BUILD_DIR)/$*.o
+
+$(BUILD_DIR)/%.o: sources/%.f Makefile
+	$(F90) $(FFLAGS) $(stdFlag) -c sources/$*.f -o $(BUILD_DIR)/$*.o

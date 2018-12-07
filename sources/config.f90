@@ -198,10 +198,16 @@ module ndConfig
 
 			y_min   = read_ini_real('y_min', 0.0d0)
 			y_max   = read_ini_real('y_max', 20.0d0)
+
+#ifdef LOGY
 			logy_min = log10(y_min)
 			logy_max = log10(y_max)
 			y_arr = logspace(logy_min, logy_max, Ny)
 			logy_arr = log10(y_arr)
+#else
+			y_arr = linspace(y_min, y_max, Ny)
+			logy_arr = log10(y_arr)
+#endif
 
 			z_in    = read_ini_real('z_in', 1.00003d0)
 			

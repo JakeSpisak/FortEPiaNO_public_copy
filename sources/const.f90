@@ -27,7 +27,9 @@ module constants
 	real(dl), parameter :: PICub = PI*PI*PI
 	real(dl), parameter :: e_neper = 2.718281828459045235d0
 	real(dl), parameter :: gamma_par = 0.577215664901532861d0
-	
+	real(dl), parameter :: zeta3  = 1.2020569031595942853997_dl
+	real(dl), parameter :: zeta5  = 1.0369277551433699263313_dl
+	real(dl), parameter :: zeta7  = 1.0083492773819228268397_dl
 	real(dl), parameter :: Gev2eV = 1.d9, Mev2eV = 1.d6, kev2eV = 1.d3
 	
 	real(dl), parameter :: zero = 0.0d0
@@ -58,8 +60,13 @@ module constants
 	real(dl), parameter :: i_photonTempToday = 2.7255
 	real(dl), parameter :: i_HubbleParam = 70.
 	
+	real(dl), parameter :: ymed = 3.15137
 	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
+
+	real(dl), parameter :: Damp_ex = 4.d0*sin2thW*sin2thW + 12.d0
+    real(dl), parameter :: Damp_mt = 8.d0*sin2thW*sin2thW - 4.d0*sin2thW + 4.d0
+	real(dl), parameter :: dampTermFactor = 8.d0 * zeta3 * ymed / (3.d0 * m_e_cub)
 	
 	real(dl), parameter :: fe_l = 0.d0, fe_u = 100.d0
 	

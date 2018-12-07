@@ -10,1318 +10,214 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       145,          7]
-NotebookDataLength[     47901,       1345]
-NotebookOptionsPosition[     47347,       1321]
-NotebookOutlinePosition[     47684,       1336]
-CellTagsIndexPosition[     47641,       1333]
+NotebookDataLength[      8262,        247]
+NotebookOptionsPosition[      7414,        216]
+NotebookOutlinePosition[      7827,        232]
+CellTagsIndexPosition[      7784,        229]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
-
-Cell[CellGroupData[{
 Cell[BoxData[
  RowBox[{
-  RowBox[{"(*", "D1", "*)"}], 
-  RowBox[{"Integrate", "[", 
+  RowBox[{"(*", "D1", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"D1", "[", 
+    RowBox[{"y1_", ",", "y2_", ",", "y3_", ",", "y4_"}], "]"}], ":=", 
    RowBox[{
-    RowBox[{
-     RowBox[{"Sin", "[", 
-      RowBox[{"l", " ", "y1"}], "]"}], 
-     RowBox[{"Sin", "[", 
-      RowBox[{"l", " ", "y2"}], "]"}], 
-     RowBox[{"Sin", "[", 
-      RowBox[{"l", " ", "y3"}], "]"}], " ", 
+    RowBox[{"16.", "/", "Pi"}], " ", 
+    RowBox[{"Integrate", "[", 
      RowBox[{
-      RowBox[{"Sin", "[", 
-       RowBox[{"l", " ", "y4"}], "]"}], "/", 
-      RowBox[{"l", "^", "2"}]}]}], ",", 
-    RowBox[{"{", 
-     RowBox[{"l", ",", "0", ",", "Infinity"}], "}"}], ",", 
-    RowBox[{"Assumptions", "\[Rule]", " ", 
-     RowBox[{
-      RowBox[{"y1", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y2", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y3", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y4", "\[Element]", "Reals"}]}]}]}], "]"}]}]], "Input",
+      RowBox[{
+       RowBox[{"Sin", "[", 
+        RowBox[{"l", " ", "y1"}], "]"}], 
+       RowBox[{"Sin", "[", 
+        RowBox[{"l", " ", "y2"}], "]"}], 
+       RowBox[{"Sin", "[", 
+        RowBox[{"l", " ", "y3"}], "]"}], " ", 
+       RowBox[{
+        RowBox[{"Sin", "[", 
+         RowBox[{"l", " ", "y4"}], "]"}], "/", 
+        RowBox[{"l", "^", "2"}]}]}], ",", 
+      RowBox[{"{", 
+       RowBox[{"l", ",", "0", ",", "Infinity"}], "}"}], ",", 
+      RowBox[{"Assumptions", "\[Rule]", " ", 
+       RowBox[{
+        RowBox[{"y1", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y2", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y3", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y4", "\[Element]", "Reals"}]}]}]}], "]"}]}]}]}]], "Input",
  CellChangeTimes->{{3.696055717873766*^9, 3.696055767726866*^9}, {
   3.696055828462449*^9, 3.6960558370528927`*^9}, {3.6960558844054956`*^9, 
-  3.696055885661242*^9}}],
+  3.696055885661242*^9}, {3.7531891725363894`*^9, 3.753189185381535*^9}, {
+  3.753189292649777*^9, 3.7531892999300833`*^9}}],
 
 Cell[BoxData[
  RowBox[{
-  FractionBox["1", "16"], " ", "\[Pi]", " ", 
-  RowBox[{"(", 
-   RowBox[{
-    RowBox[{"-", 
-     RowBox[{"Abs", "[", 
-      RowBox[{"y1", "+", "y2", "-", "y3", "-", "y4"}], "]"}]}], "-", 
-    RowBox[{"Abs", "[", 
-     RowBox[{"y1", "-", "y2", "+", "y3", "-", "y4"}], "]"}], "+", 
-    RowBox[{"Abs", "[", 
-     RowBox[{"y1", "+", "y2", "+", "y3", "-", "y4"}], "]"}], "-", 
-    RowBox[{"Abs", "[", 
-     RowBox[{"y1", "-", "y2", "-", "y3", "+", "y4"}], "]"}], "+", 
-    RowBox[{"Abs", "[", 
-     RowBox[{"y1", "+", "y2", "-", "y3", "+", "y4"}], "]"}], "+", 
-    RowBox[{"Abs", "[", 
-     RowBox[{"y1", "-", "y2", "+", "y3", "+", "y4"}], "]"}], "+", 
-    RowBox[{"Abs", "[", 
-     RowBox[{
-      RowBox[{"-", "y1"}], "+", "y2", "+", "y3", "+", "y4"}], "]"}], "-", 
-    RowBox[{"Abs", "[", 
-     RowBox[{"y1", "+", "y2", "+", "y3", "+", "y4"}], "]"}]}], 
-   ")"}]}]], "Output",
- CellChangeTimes->{3.696055776274417*^9, 3.696055841345841*^9}]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", "D2", "*)"}], 
-  RowBox[{"Integrate", "[", 
-   RowBox[{
-    RowBox[{
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"l", " ", "y1", " ", 
-        RowBox[{"Cos", "[", 
-         RowBox[{"l", " ", "y1"}], "]"}]}], "-", 
-       RowBox[{"Sin", "[", 
-        RowBox[{"l", " ", "y1"}], "]"}]}], ")"}], 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"l", " ", "y2", " ", 
-        RowBox[{"Cos", "[", 
-         RowBox[{"l", " ", "y2"}], "]"}]}], "-", 
-       RowBox[{"Sin", "[", 
-        RowBox[{"l", " ", "y2"}], "]"}]}], ")"}], 
-     RowBox[{"Sin", "[", 
-      RowBox[{"l", " ", "y3"}], "]"}], " ", 
-     RowBox[{
-      RowBox[{"Sin", "[", 
-       RowBox[{"l", " ", "y4"}], "]"}], "/", 
-      RowBox[{"l", "^", "4"}]}]}], ",", 
-    RowBox[{"{", 
-     RowBox[{"l", ",", "0", ",", "Infinity"}], "}"}], ",", 
-    RowBox[{"Assumptions", "\[Rule]", " ", 
-     RowBox[{
-      RowBox[{"y1", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y2", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y3", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y4", "\[Element]", "Reals"}]}]}]}], "]"}]}]], "Input",
- CellChangeTimes->{{3.696056217379623*^9, 3.696056262234651*^9}}],
-
-Cell[BoxData[
- RowBox[{
-  FractionBox["1", "96"], " ", "\[Pi]", " ", 
-  RowBox[{"(", 
-   RowBox[{
-    SuperscriptBox[
-     RowBox[{"Abs", "[", 
-      RowBox[{"y1", "+", "y2", "-", "y3", "-", "y4"}], "]"}], "3"], "+", 
-    SuperscriptBox[
-     RowBox[{"Abs", "[", 
-      RowBox[{"y1", "-", "y2", "+", "y3", "-", "y4"}], "]"}], "3"], "-", 
-    SuperscriptBox[
-     RowBox[{"Abs", "[", 
-      RowBox[{"y1", "+", "y2", "+", "y3", "-", "y4"}], "]"}], "3"], "+", 
-    SuperscriptBox[
-     RowBox[{"Abs", "[", 
-      RowBox[{"y1", "-", "y2", "-", "y3", "+", "y4"}], "]"}], "3"], "-", 
-    SuperscriptBox[
-     RowBox[{"Abs", "[", 
-      RowBox[{"y1", "+", "y2", "-", "y3", "+", "y4"}], "]"}], "3"], "-", 
-    SuperscriptBox[
-     RowBox[{"Abs", "[", 
-      RowBox[{"y1", "-", "y2", "+", "y3", "+", "y4"}], "]"}], "3"], "-", 
-    SuperscriptBox[
-     RowBox[{"Abs", "[", 
-      RowBox[{
-       RowBox[{"-", "y1"}], "+", "y2", "+", "y3", "+", "y4"}], "]"}], "3"], 
-    "+", 
-    SuperscriptBox[
-     RowBox[{"Abs", "[", 
-      RowBox[{"y1", "+", "y2", "+", "y3", "+", "y4"}], "]"}], "3"], "+", 
-    RowBox[{"6", " ", "y1", " ", "y2", " ", 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"Abs", "[", 
-        RowBox[{"y1", "+", "y2", "-", "y3", "-", "y4"}], "]"}], "-", 
-       RowBox[{"Abs", "[", 
-        RowBox[{"y1", "-", "y2", "+", "y3", "-", "y4"}], "]"}], "-", 
-       RowBox[{"Abs", "[", 
-        RowBox[{"y1", "+", "y2", "+", "y3", "-", "y4"}], "]"}], "-", 
-       RowBox[{"Abs", "[", 
-        RowBox[{"y1", "-", "y2", "-", "y3", "+", "y4"}], "]"}], "-", 
-       RowBox[{"Abs", "[", 
-        RowBox[{"y1", "+", "y2", "-", "y3", "+", "y4"}], "]"}], "+", 
-       RowBox[{"Abs", "[", 
-        RowBox[{"y1", "-", "y2", "+", "y3", "+", "y4"}], "]"}], "+", 
-       RowBox[{"Abs", "[", 
-        RowBox[{
-         RowBox[{"-", "y1"}], "+", "y2", "+", "y3", "+", "y4"}], "]"}], "+", 
-       RowBox[{"Abs", "[", 
-        RowBox[{"y1", "+", "y2", "+", "y3", "+", "y4"}], "]"}]}], ")"}]}], 
-    "-", 
-    RowBox[{"3", " ", "y1", " ", 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{
-        RowBox[{"-", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{
-            RowBox[{"-", "y1"}], "+", "y2", "+", "y3", "+", "y4"}], ")"}], 
-          "2"]}], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "-", "y2", "-", "y3", "-", "y4"}], "]"}]}], "+", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "+", "y2", "-", "y3", "-", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "+", "y2", "-", "y3", "-", "y4"}], "]"}]}], "+", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "-", "y2", "+", "y3", "-", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "-", "y2", "+", "y3", "-", "y4"}], "]"}]}], "-", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "+", "y2", "+", "y3", "-", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "+", "y2", "+", "y3", "-", "y4"}], "]"}]}], "+", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "-", "y2", "-", "y3", "+", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "-", "y2", "-", "y3", "+", "y4"}], "]"}]}], "-", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "+", "y2", "-", "y3", "+", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "+", "y2", "-", "y3", "+", "y4"}], "]"}]}], "-", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "-", "y2", "+", "y3", "+", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "-", "y2", "+", "y3", "+", "y4"}], "]"}]}], "+", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "+", "y2", "+", "y3", "+", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "+", "y2", "+", "y3", "+", "y4"}], "]"}]}]}], ")"}]}], 
-    "-", 
-    RowBox[{"3", " ", "y2", " ", 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{"-", "y1"}], "+", "y2", "+", "y3", "+", "y4"}], ")"}], 
-         "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "-", "y2", "-", "y3", "-", "y4"}], "]"}]}], "+", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "+", "y2", "-", "y3", "-", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "+", "y2", "-", "y3", "-", "y4"}], "]"}]}], "-", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "-", "y2", "+", "y3", "-", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "-", "y2", "+", "y3", "-", "y4"}], "]"}]}], "-", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "+", "y2", "+", "y3", "-", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "+", "y2", "+", "y3", "-", "y4"}], "]"}]}], "-", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "-", "y2", "-", "y3", "+", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "-", "y2", "-", "y3", "+", "y4"}], "]"}]}], "-", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "+", "y2", "-", "y3", "+", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "+", "y2", "-", "y3", "+", "y4"}], "]"}]}], "+", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "-", "y2", "+", "y3", "+", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "-", "y2", "+", "y3", "+", "y4"}], "]"}]}], "+", 
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"y1", "+", "y2", "+", "y3", "+", "y4"}], ")"}], "2"], " ", 
-        RowBox[{"Sign", "[", 
-         RowBox[{"y1", "+", "y2", "+", "y3", "+", "y4"}], "]"}]}]}], 
-      ")"}]}]}], ")"}]}]], "Output",
- CellChangeTimes->{3.696056296047659*^9}]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{"(*", "D3", "*)"}], 
-  RowBox[{"Integrate", "[", 
-   RowBox[{
-    RowBox[{
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"l", " ", "y1", " ", 
-        RowBox[{"Cos", "[", 
-         RowBox[{"l", " ", "y1"}], "]"}]}], "-", 
-       RowBox[{"Sin", "[", 
-        RowBox[{"l", " ", "y1"}], "]"}]}], ")"}], 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"l", " ", "y2", " ", 
-        RowBox[{"Cos", "[", 
-         RowBox[{"l", " ", "y2"}], "]"}]}], "-", 
-       RowBox[{"Sin", "[", 
-        RowBox[{"l", " ", "y2"}], "]"}]}], ")"}], 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"l", " ", "y3", " ", 
-        RowBox[{"Cos", "[", 
-         RowBox[{"l", " ", "y3"}], "]"}]}], "-", 
-       RowBox[{"Sin", "[", 
-        RowBox[{"l", " ", "y3"}], "]"}]}], ")"}], 
-     RowBox[{
-      RowBox[{"(", 
-       RowBox[{
-        RowBox[{"l", " ", "y4", " ", 
-         RowBox[{"Cos", "[", 
-          RowBox[{"l", " ", "y4"}], "]"}]}], "-", 
-        RowBox[{"Sin", "[", 
-         RowBox[{"l", " ", "y4"}], "]"}]}], ")"}], "/", 
-      RowBox[{"l", "^", "6"}]}]}], ",", 
-    RowBox[{"{", 
-     RowBox[{"l", ",", "0", ",", "Infinity"}], "}"}], ",", 
-    RowBox[{"Assumptions", "\[Rule]", " ", 
-     RowBox[{
-      RowBox[{"y1", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y2", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y3", "\[Element]", "Reals"}], "&&", 
-      RowBox[{"y4", "\[Element]", "Reals"}]}]}]}], "]"}]}]], "Input",
- CellChangeTimes->{{3.6960558765621233`*^9, 3.696055959444264*^9}}],
-
-Cell[BoxData[
- RowBox[{"If", "[", 
+  RowBox[{"(*", "D2", "*)"}], "\[IndentingNewLine]", 
   RowBox[{
+   RowBox[{"D2", "[", 
+    RowBox[{"y1_", ",", "y2_", ",", "y3_", ",", "y4_"}], "]"}], ":=", 
    RowBox[{
     RowBox[{
-     SuperscriptBox[
-      RowBox[{"(", 
-       RowBox[{"y1", "-", "y3"}], ")"}], "2"], ">", "0"}], "&&", 
-    RowBox[{
-     SuperscriptBox[
-      RowBox[{"(", 
-       RowBox[{"y1", "+", "y3"}], ")"}], "2"], ">", "0"}], "&&", 
-    RowBox[{
-     SuperscriptBox[
-      RowBox[{"(", 
-       RowBox[{"y3", "-", "y4"}], ")"}], "2"], ">", "0"}], "&&", 
-    RowBox[{
-     SuperscriptBox[
-      RowBox[{"(", 
-       RowBox[{"y3", "+", "y4"}], ")"}], "2"], ">", "0"}], "&&", 
-    RowBox[{
-     FractionBox[
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y1", "-", "y4"}], ")"}], "2"], 
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y2", "-", "y3"}], ")"}], "2"]], "<", "1"}], "&&", 
-    RowBox[{
-     FractionBox[
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y3", "-", "y4"}], ")"}], "2"], 
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y1", "-", "y2"}], ")"}], "2"]], "<", "1"}], "&&", 
-    RowBox[{
-     FractionBox[
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y3", "-", "y4"}], ")"}], "2"], 
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y1", "+", "y2"}], ")"}], "2"]], "<", "1"}], "&&", 
-    RowBox[{
-     FractionBox[
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y3", "+", "y4"}], ")"}], "2"], 
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y1", "-", "y2"}], ")"}], "2"]], "<", "1"}], "&&", 
-    RowBox[{
-     FractionBox[
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y3", "+", "y4"}], ")"}], "2"], 
-      SuperscriptBox[
-       RowBox[{"(", 
-        RowBox[{"y1", "+", "y2"}], ")"}], "2"]], "<", "1"}]}], ",", 
-   RowBox[{
-    FractionBox["1", "24"], " ", "\[Pi]", " ", 
-    RowBox[{"(", 
+     RowBox[{"-", "16."}], "/", "Pi"}], " ", 
+    RowBox[{"Integrate", "[", 
      RowBox[{
-      RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-       RowBox[{"(", 
-        RowBox[{
-         RowBox[{"Abs", "[", 
-          RowBox[{"y1", "-", "y2"}], "]"}], "+", 
-         RowBox[{"Abs", "[", 
-          RowBox[{"y1", "+", "y2"}], "]"}]}], ")"}]}], "-", 
-      FractionBox[
-       RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y1", "+", "y2"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y1", "-", "y2"}], "]"}], "3"]}], "+", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y1", "-", "y2"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y1", "+", "y2"}], "]"}], "3"]}]}], ")"}]}], 
-       SuperscriptBox[
-        RowBox[{"(", 
-         RowBox[{
-          SuperscriptBox["y1", "2"], "-", 
-          SuperscriptBox["y2", "2"]}], ")"}], "2"]], "-", 
       RowBox[{
        RowBox[{"(", 
-        RowBox[{"y1", " ", "y3", " ", "y4", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "+", "y2"}], ")"}], "3"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "-", 
-              RowBox[{"6", " ", "y1", " ", "y2"}], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y2", "2"]}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "-", "y2"}], "]"}], "3"]}], "-", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "-", "y2"}], ")"}], "3"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              RowBox[{"6", " ", "y1", " ", "y2"}], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y2", "2"]}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "+", "y2"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
+        RowBox[{
+         RowBox[{"l", " ", "y1", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{"l", " ", "y1"}], "]"}]}], "-", 
+         RowBox[{"Sin", "[", 
+          RowBox[{"l", " ", "y1"}], "]"}]}], ")"}], 
        RowBox[{"(", 
         RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "-", "y2"}], ")"}], "3"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "+", "y2"}], ")"}], "3"]}], ")"}]}], "+", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"y2", " ", "y3", " ", "y4", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "+", "y2"}], ")"}], "3"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "-", 
-              RowBox[{"6", " ", "y1", " ", "y2"}], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y2", "2"]}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "-", "y2"}], "]"}], "3"]}], "+", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "-", "y2"}], ")"}], "3"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              RowBox[{"6", " ", "y1", " ", "y2"}], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y2", "2"]}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "+", "y2"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
-       RowBox[{"(", 
-        RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "-", "y2"}], ")"}], "3"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "+", "y2"}], ")"}], "3"]}], ")"}]}], "+", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"y3", " ", "y4", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "+", "y2"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              SuperscriptBox["y1", "2"], "-", 
-              RowBox[{"2", " ", "y1", " ", "y2"}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"3", " ", 
-               RowBox[{"(", 
-                RowBox[{
-                 SuperscriptBox["y3", "2"], "+", 
-                 SuperscriptBox["y4", "2"]}], ")"}]}]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "-", "y2"}], "]"}], "3"]}], "-", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "-", "y2"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              SuperscriptBox["y1", "2"], "+", 
-              RowBox[{"2", " ", "y1", " ", "y2"}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"3", " ", 
-               RowBox[{"(", 
-                RowBox[{
-                 SuperscriptBox["y3", "2"], "+", 
-                 SuperscriptBox["y4", "2"]}], ")"}]}]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "+", "y2"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
-       RowBox[{"(", 
-        RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "-", "y2"}], ")"}], "2"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "+", "y2"}], ")"}], "2"]}], ")"}]}], "+", 
-      RowBox[{"y3", " ", "y4", " ", 
-       RowBox[{"(", 
-        RowBox[{
-         FractionBox[
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "-", 
-             RowBox[{"2", " ", "y1", " ", "y2"}], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y1", "-", "y2"}], "]"}], "5"]}], 
-          SuperscriptBox[
-           RowBox[{"(", 
-            RowBox[{"y1", "-", "y2"}], ")"}], "4"]], "-", 
-         FractionBox[
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             RowBox[{"2", " ", "y1", " ", "y2"}], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y1", "+", "y2"}], "]"}], "5"]}], 
-          SuperscriptBox[
-           RowBox[{"(", 
-            RowBox[{"y1", "+", "y2"}], ")"}], "4"]]}], ")"}]}], "+", 
-      RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-       RowBox[{"(", 
-        RowBox[{
-         RowBox[{"Abs", "[", 
-          RowBox[{"y2", "-", "y3"}], "]"}], "+", 
-         RowBox[{"Abs", "[", 
-          RowBox[{"y2", "+", "y3"}], "]"}]}], ")"}]}], "-", 
-      FractionBox[
-       RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "+", "y3"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "-", "y3"}], "]"}], "3"]}], "+", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "-", "y3"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "+", "y3"}], "]"}], "3"]}]}], ")"}]}], 
-       SuperscriptBox[
-        RowBox[{"(", 
-         RowBox[{
-          SuperscriptBox["y2", "2"], "-", 
-          SuperscriptBox["y3", "2"]}], ")"}], "2"]], "-", 
-      RowBox[{
-       FractionBox["1", 
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{
-           SuperscriptBox["y2", "2"], "-", 
-           SuperscriptBox["y3", "2"]}], ")"}], "2"]], 
-       RowBox[{"y1", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "+", "y3"}], ")"}], "2"], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "-", 
-             RowBox[{"2", " ", "y2", " ", "y3"}], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             RowBox[{"3", " ", 
-              SuperscriptBox["y4", "2"]}]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "-", "y3"}], "]"}], "3"]}], "-", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "-", "y3"}], ")"}], "2"], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             RowBox[{"2", " ", "y2", " ", "y3"}], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             RowBox[{"3", " ", 
-              SuperscriptBox["y4", "2"]}]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "+", "y3"}], "]"}], "3"]}]}], ")"}]}]}], "+", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"y1", " ", "y4", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y2", "+", "y3"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              SuperscriptBox["y2", "2"], "-", 
-              RowBox[{"2", " ", "y2", " ", "y3"}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y4", "2"]}]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y2", "-", "y3"}], "]"}], "3"]}], "-", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y2", "-", "y3"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"2", " ", "y2", " ", "y3"}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y4", "2"]}]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y2", "+", "y3"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
-       RowBox[{"(", 
-        RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y2", "-", "y3"}], ")"}], "2"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y2", "+", "y3"}], ")"}], "2"]}], ")"}]}], "+", 
-      RowBox[{
-       FractionBox["1", 
-        RowBox[{
-         SuperscriptBox["y2", "2"], "-", 
-         SuperscriptBox["y4", "2"]}]], 
-       RowBox[{"3", " ", "y1", " ", "y3", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{"y2", "+", "y4"}], ")"}], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             SuperscriptBox["y3", "2"], "-", 
-             RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           RowBox[{"Abs", "[", 
-            RowBox[{"y2", "-", "y4"}], "]"}]}], "+", 
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{"y2", "-", "y4"}], ")"}], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           RowBox[{"Abs", "[", 
-            RowBox[{"y2", "+", "y4"}], "]"}]}]}], ")"}]}]}], "-", 
-      FractionBox[
-       RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "+", "y4"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "-", "y4"}], "]"}], "3"]}], "+", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "-", "y4"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "+", "y4"}], "]"}], "3"]}]}], ")"}]}], 
-       SuperscriptBox[
-        RowBox[{"(", 
-         RowBox[{
-          SuperscriptBox["y2", "2"], "-", 
-          SuperscriptBox["y4", "2"]}], ")"}], "2"]], "-", 
-      RowBox[{
-       FractionBox["1", 
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{
-           SuperscriptBox["y2", "2"], "-", 
-           SuperscriptBox["y4", "2"]}], ")"}], "2"]], 
-       RowBox[{"y1", " ", "y3", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "+", "y4"}], ")"}], "2"], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             RowBox[{"3", " ", 
-              SuperscriptBox["y3", "2"]}], "-", 
-             RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "-", "y4"}], "]"}], "3"]}], "-", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "-", "y4"}], ")"}], "2"], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             RowBox[{"3", " ", 
-              SuperscriptBox["y3", "2"]}], "+", 
-             RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "+", "y4"}], "]"}], "3"]}]}], ")"}]}]}], "+", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"y1", " ", "y3", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y2", "+", "y4"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y3", "2"]}], "-", 
-              RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y2", "-", "y4"}], "]"}], "3"]}], "-", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y2", "-", "y4"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y3", "2"]}], "+", 
-              RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y2", "+", "y4"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
-       RowBox[{"(", 
-        RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y2", "-", "y4"}], ")"}], "2"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y2", "+", "y4"}], ")"}], "2"]}], ")"}]}]}], ")"}]}], ",", 
-   
+         RowBox[{"l", " ", "y2", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{"l", " ", "y2"}], "]"}]}], "-", 
+         RowBox[{"Sin", "[", 
+          RowBox[{"l", " ", "y2"}], "]"}]}], ")"}], 
+       RowBox[{"Sin", "[", 
+        RowBox[{"l", " ", "y3"}], "]"}], " ", 
+       RowBox[{
+        RowBox[{"Sin", "[", 
+         RowBox[{"l", " ", "y4"}], "]"}], "/", 
+        RowBox[{"l", "^", "4"}]}]}], ",", 
+      RowBox[{"{", 
+       RowBox[{"l", ",", "0", ",", "Infinity"}], "}"}], ",", 
+      RowBox[{"Assumptions", "\[Rule]", " ", 
+       RowBox[{
+        RowBox[{"y1", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y2", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y3", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y4", "\[Element]", "Reals"}]}]}]}], "]"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.696056217379623*^9, 3.696056262234651*^9}, {
+  3.753189197045535*^9, 3.753189200716179*^9}, {3.753189310300305*^9, 
+  3.753189315696814*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", "D3", "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"D3", "[", 
+    RowBox[{"y1_", ",", "y2_", ",", "y3_", ",", "y4_"}], "]"}], ":=", 
    RowBox[{
-    FractionBox["1", "24"], " ", "\[Pi]", " ", 
-    RowBox[{"(", 
+    RowBox[{"16.", "/", "Pi"}], " ", 
+    RowBox[{"Integrate", "[", 
      RowBox[{
-      RowBox[{"12", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-       RowBox[{"(", 
-        RowBox[{
-         RowBox[{"Abs", "[", 
-          RowBox[{"y1", "-", "y2"}], "]"}], "+", 
-         RowBox[{"Abs", "[", 
-          RowBox[{"y1", "+", "y2"}], "]"}]}], ")"}]}], "-", 
-      FractionBox[
-       RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y1", "+", "y2"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y1", "-", "y2"}], "]"}], "3"]}], "+", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y1", "-", "y2"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y1", "+", "y2"}], "]"}], "3"]}]}], ")"}]}], 
-       SuperscriptBox[
-        RowBox[{"(", 
-         RowBox[{
-          SuperscriptBox["y1", "2"], "-", 
-          SuperscriptBox["y2", "2"]}], ")"}], "2"]], "-", 
       RowBox[{
        RowBox[{"(", 
-        RowBox[{"y1", " ", "y3", " ", "y4", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "+", "y2"}], ")"}], "3"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "-", 
-              RowBox[{"6", " ", "y1", " ", "y2"}], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y2", "2"]}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "-", "y2"}], "]"}], "3"]}], "-", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "-", "y2"}], ")"}], "3"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              RowBox[{"6", " ", "y1", " ", "y2"}], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y2", "2"]}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "+", "y2"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
+        RowBox[{
+         RowBox[{"l", " ", "y1", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{"l", " ", "y1"}], "]"}]}], "-", 
+         RowBox[{"Sin", "[", 
+          RowBox[{"l", " ", "y1"}], "]"}]}], ")"}], 
        RowBox[{"(", 
         RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "-", "y2"}], ")"}], "3"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "+", "y2"}], ")"}], "3"]}], ")"}]}], "+", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"y2", " ", "y3", " ", "y4", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "+", "y2"}], ")"}], "3"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "-", 
-              RowBox[{"6", " ", "y1", " ", "y2"}], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y2", "2"]}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "-", "y2"}], "]"}], "3"]}], "+", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "-", "y2"}], ")"}], "3"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              RowBox[{"6", " ", "y1", " ", "y2"}], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y2", "2"]}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "+", "y2"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
+         RowBox[{"l", " ", "y2", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{"l", " ", "y2"}], "]"}]}], "-", 
+         RowBox[{"Sin", "[", 
+          RowBox[{"l", " ", "y2"}], "]"}]}], ")"}], 
        RowBox[{"(", 
         RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "-", "y2"}], ")"}], "3"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "+", "y2"}], ")"}], "3"]}], ")"}]}], "+", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"y3", " ", "y4", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "+", "y2"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              SuperscriptBox["y1", "2"], "-", 
-              RowBox[{"2", " ", "y1", " ", "y2"}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"3", " ", 
-               RowBox[{"(", 
-                RowBox[{
-                 SuperscriptBox["y3", "2"], "+", 
-                 SuperscriptBox["y4", "2"]}], ")"}]}]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "-", "y2"}], "]"}], "3"]}], "-", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y1", "-", "y2"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              SuperscriptBox["y1", "2"], "+", 
-              RowBox[{"2", " ", "y1", " ", "y2"}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"3", " ", 
-               RowBox[{"(", 
-                RowBox[{
-                 SuperscriptBox["y3", "2"], "+", 
-                 SuperscriptBox["y4", "2"]}], ")"}]}]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y1", "+", "y2"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
-       RowBox[{"(", 
-        RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "-", "y2"}], ")"}], "2"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y1", "+", "y2"}], ")"}], "2"]}], ")"}]}], "+", 
-      RowBox[{"y3", " ", "y4", " ", 
-       RowBox[{"(", 
-        RowBox[{
-         FractionBox[
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "-", 
-             RowBox[{"2", " ", "y1", " ", "y2"}], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y1", "-", "y2"}], "]"}], "5"]}], 
-          SuperscriptBox[
-           RowBox[{"(", 
-            RowBox[{"y1", "-", "y2"}], ")"}], "4"]], "-", 
-         FractionBox[
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             RowBox[{"2", " ", "y1", " ", "y2"}], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y1", "+", "y2"}], "]"}], "5"]}], 
-          SuperscriptBox[
-           RowBox[{"(", 
-            RowBox[{"y1", "+", "y2"}], ")"}], "4"]]}], ")"}]}], "+", 
-      RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-       RowBox[{"(", 
-        RowBox[{
-         RowBox[{"Abs", "[", 
-          RowBox[{"y2", "-", "y3"}], "]"}], "+", 
-         RowBox[{"Abs", "[", 
-          RowBox[{"y2", "+", "y3"}], "]"}]}], ")"}]}], "-", 
-      FractionBox[
-       RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
+         RowBox[{"l", " ", "y3", " ", 
+          RowBox[{"Cos", "[", 
+           RowBox[{"l", " ", "y3"}], "]"}]}], "-", 
+         RowBox[{"Sin", "[", 
+          RowBox[{"l", " ", "y3"}], "]"}]}], ")"}], 
+       RowBox[{
         RowBox[{"(", 
          RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "+", "y3"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "-", "y3"}], "]"}], "3"]}], "+", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "-", "y3"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "+", "y3"}], "]"}], "3"]}]}], ")"}]}], 
-       SuperscriptBox[
-        RowBox[{"(", 
-         RowBox[{
-          SuperscriptBox["y2", "2"], "-", 
-          SuperscriptBox["y3", "2"]}], ")"}], "2"]], "-", 
-      RowBox[{
-       FractionBox["1", 
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{
-           SuperscriptBox["y2", "2"], "-", 
-           SuperscriptBox["y3", "2"]}], ")"}], "2"]], 
-       RowBox[{"y1", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "+", "y3"}], ")"}], "2"], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "-", 
-             RowBox[{"2", " ", "y2", " ", "y3"}], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             RowBox[{"3", " ", 
-              SuperscriptBox["y4", "2"]}]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "-", "y3"}], "]"}], "3"]}], "-", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "-", "y3"}], ")"}], "2"], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             RowBox[{"2", " ", "y2", " ", "y3"}], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             RowBox[{"3", " ", 
-              SuperscriptBox["y4", "2"]}]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "+", "y3"}], "]"}], "3"]}]}], ")"}]}]}], "+", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"y1", " ", "y4", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y2", "+", "y3"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              SuperscriptBox["y2", "2"], "-", 
-              RowBox[{"2", " ", "y2", " ", "y3"}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y4", "2"]}]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y2", "-", "y3"}], "]"}], "3"]}], "-", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y2", "-", "y3"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"2", " ", "y2", " ", "y3"}], "+", 
-              SuperscriptBox["y3", "2"], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y4", "2"]}]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y2", "+", "y3"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
-       RowBox[{"(", 
-        RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y2", "-", "y3"}], ")"}], "2"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y2", "+", "y3"}], ")"}], "2"]}], ")"}]}], "-", 
-      RowBox[{"3", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-       RowBox[{"(", 
-        RowBox[{
-         RowBox[{"Abs", "[", 
-          RowBox[{"y1", "-", "y2"}], "]"}], "+", 
-         RowBox[{"2", " ", 
-          RowBox[{"Abs", "[", 
-           RowBox[{"y1", "+", "y2"}], "]"}]}], "+", 
-         RowBox[{"Abs", "[", 
-          RowBox[{"y3", "-", "y4"}], "]"}]}], ")"}]}], "+", 
-      RowBox[{
-       FractionBox["1", 
-        RowBox[{
-         SuperscriptBox["y2", "2"], "-", 
-         SuperscriptBox["y4", "2"]}]], 
-       RowBox[{"3", " ", "y1", " ", "y3", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{"y2", "+", "y4"}], ")"}], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             SuperscriptBox["y3", "2"], "-", 
-             RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           RowBox[{"Abs", "[", 
-            RowBox[{"y2", "-", "y4"}], "]"}]}], "+", 
-          RowBox[{
-           RowBox[{"(", 
-            RowBox[{"y2", "-", "y4"}], ")"}], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             SuperscriptBox["y3", "2"], "+", 
-             RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           RowBox[{"Abs", "[", 
-            RowBox[{"y2", "+", "y4"}], "]"}]}]}], ")"}]}]}], "-", 
-      FractionBox[
-       RowBox[{"6", " ", "y1", " ", "y2", " ", "y3", " ", "y4", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "+", "y4"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "-", "y4"}], "]"}], "3"]}], "+", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "-", "y4"}], ")"}], "2"], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "+", "y4"}], "]"}], "3"]}]}], ")"}]}], 
-       SuperscriptBox[
-        RowBox[{"(", 
-         RowBox[{
-          SuperscriptBox["y2", "2"], "-", 
-          SuperscriptBox["y4", "2"]}], ")"}], "2"]], "-", 
-      RowBox[{
-       FractionBox["1", 
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{
-           SuperscriptBox["y2", "2"], "-", 
-           SuperscriptBox["y4", "2"]}], ")"}], "2"]], 
-       RowBox[{"y1", " ", "y3", " ", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "+", "y4"}], ")"}], "2"], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             RowBox[{"3", " ", 
-              SuperscriptBox["y3", "2"]}], "-", 
-             RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "-", "y4"}], "]"}], "3"]}], "-", 
-          RowBox[{
-           SuperscriptBox[
-            RowBox[{"(", 
-             RowBox[{"y2", "-", "y4"}], ")"}], "2"], " ", 
-           RowBox[{"(", 
-            RowBox[{
-             SuperscriptBox["y1", "2"], "+", 
-             SuperscriptBox["y2", "2"], "+", 
-             RowBox[{"3", " ", 
-              SuperscriptBox["y3", "2"]}], "+", 
-             RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-             SuperscriptBox["y4", "2"]}], ")"}], " ", 
-           SuperscriptBox[
-            RowBox[{"Abs", "[", 
-             RowBox[{"y2", "+", "y4"}], "]"}], "3"]}]}], ")"}]}]}], "+", 
-      RowBox[{
-       RowBox[{"(", 
-        RowBox[{"y1", " ", "y3", " ", 
-         RowBox[{"(", 
-          RowBox[{
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y2", "+", "y4"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y3", "2"]}], "-", 
-              RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y2", "-", "y4"}], "]"}], "3"]}], "-", 
-           RowBox[{
-            SuperscriptBox[
-             RowBox[{"(", 
-              RowBox[{"y2", "-", "y4"}], ")"}], "2"], " ", 
-            RowBox[{"(", 
-             RowBox[{
-              RowBox[{"3", " ", 
-               SuperscriptBox["y1", "2"]}], "+", 
-              SuperscriptBox["y2", "2"], "+", 
-              RowBox[{"3", " ", 
-               SuperscriptBox["y3", "2"]}], "+", 
-              RowBox[{"2", " ", "y2", " ", "y4"}], "+", 
-              SuperscriptBox["y4", "2"]}], ")"}], " ", 
-            SuperscriptBox[
-             RowBox[{"Abs", "[", 
-              RowBox[{"y2", "+", "y4"}], "]"}], "3"]}]}], ")"}]}], ")"}], "/", 
-       RowBox[{"(", 
-        RowBox[{
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y2", "-", "y4"}], ")"}], "2"], " ", 
-         SuperscriptBox[
-          RowBox[{"(", 
-           RowBox[{"y2", "+", "y4"}], ")"}], "2"]}], ")"}]}]}], ")"}]}]}], 
-  "]"}]], "Output",
- CellChangeTimes->{3.696056268228983*^9, 3.696066435861516*^9, 
-  3.699635186534823*^9}]
+          RowBox[{"l", " ", "y4", " ", 
+           RowBox[{"Cos", "[", 
+            RowBox[{"l", " ", "y4"}], "]"}]}], "-", 
+          RowBox[{"Sin", "[", 
+           RowBox[{"l", " ", "y4"}], "]"}]}], ")"}], "/", 
+        RowBox[{"l", "^", "6"}]}]}], ",", 
+      RowBox[{"{", 
+       RowBox[{"l", ",", "0", ",", "Infinity"}], "}"}], ",", 
+      RowBox[{"Assumptions", "\[Rule]", " ", 
+       RowBox[{
+        RowBox[{"y1", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y2", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y3", "\[Element]", "Reals"}], "&&", 
+        RowBox[{"y4", "\[Element]", "Reals"}]}]}]}], "]"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.6960558765621233`*^9, 3.696055959444264*^9}, {
+   3.753189205502523*^9, 3.753189215262505*^9}, 3.753189313176408*^9}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"D1", "[", 
+  RowBox[{"0.1", ",", "0.2", ",", "0.3", ",", "0.4"}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"D1", "[", 
+  RowBox[{"0.4", ",", "0.2", ",", "0.3", ",", "0.1"}], "]"}]}], "Input",
+ CellChangeTimes->{{3.7531892178117933`*^9, 3.753189226051165*^9}, {
+  3.7531894553472347`*^9, 3.7531894590455923`*^9}}],
+
+Cell[BoxData["0.40000000000000013`"], "Output",
+ CellChangeTimes->{
+  3.753189230882083*^9, 3.7531893387456293`*^9, {3.753189460369796*^9, 
+   3.753189460778117*^9}}],
+
+Cell[BoxData["0.40000000000000013`"], "Output",
+ CellChangeTimes->{
+  3.753189230882083*^9, 3.7531893387456293`*^9, {3.753189460369796*^9, 
+   3.753189460982607*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"D2", "[", 
+  RowBox[{"0.1", ",", "0.2", ",", "0.3", ",", "0.4"}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"D2", "[", 
+  RowBox[{"0.4", ",", "0.2", ",", "0.3", ",", "0.1"}], "]"}]}], "Input",
+ CellChangeTimes->{
+  3.7531892649772043`*^9, {3.753189437688546*^9, 3.7531894471895113`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"-", "0.0013333333333334094`"}]], "Output",
+ CellChangeTimes->{{3.7531894446380568`*^9, 3.7531894508231573`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"-", "0.02133333333333351`"}]], "Output",
+ CellChangeTimes->{{3.7531894446380568`*^9, 3.753189460117432*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"D3", "[", 
+  RowBox[{"0.1", ",", "0.2", ",", "0.3", ",", "0.4"}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"D3", "[", 
+  RowBox[{"0.4", ",", "0.2", ",", "0.3", ",", "0.1"}], "]"}]}], "Input",
+ CellChangeTimes->{{3.753189268065201*^9, 3.7531892686679153`*^9}, {
+  3.7531894685722733`*^9, 3.753189473017745*^9}}],
+
+Cell[BoxData[
+ RowBox[{"0.00019199999999997653`", "\[VeryThinSpace]", "+", 
+  RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]], "Output",
+ CellChangeTimes->{3.753189329698619*^9, 3.753189366773589*^9, 
+  3.753189478859065*^9}],
+
+Cell[BoxData[
+ RowBox[{"0.00019199999999997653`", "\[VeryThinSpace]", "+", 
+  RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]], "Output",
+ CellChangeTimes->{3.753189329698619*^9, 3.753189366773589*^9, 
+  3.753189483674432*^9}]
 }, Open  ]]
 },
-WindowSize->{640, 623},
-WindowMargins->{{146, Automatic}, {Automatic, 6}},
-FrontEndVersion->"7.0 for Linux x86 (64-bit) (November 11, 2008)",
+WindowSize->{1127, 848},
+WindowMargins->{{142, Automatic}, {Automatic, 0}},
+PrivateNotebookOptions->{"VersionedStylesheet"->{"Default.nb"[8.] -> False}},
+FrontEndVersion->"10.0 for Linux x86 (64-bit) (June 27, 2014)",
 StyleDefinitions->"Default.nb"
 ]
 (* End of Notebook Content *)
@@ -1335,17 +231,23 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
+Cell[545, 20, 1292, 32, 99, "Input"],
+Cell[1840, 54, 1556, 42, 99, "Input"],
+Cell[3399, 98, 1857, 50, 99, "Input"],
 Cell[CellGroupData[{
-Cell[567, 22, 969, 26, 77, "Input"],
-Cell[1539, 50, 961, 24, 108, "Output"]
+Cell[5281, 152, 339, 7, 55, "Input"],
+Cell[5623, 161, 166, 3, 32, "Output"],
+Cell[5792, 166, 166, 3, 32, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[2537, 79, 1193, 34, 99, "Input"],
-Cell[3733, 115, 6224, 161, 550, "Output"]
+Cell[5995, 174, 313, 7, 55, "Input"],
+Cell[6311, 183, 136, 2, 32, "Output"],
+Cell[6450, 187, 132, 2, 32, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[9994, 281, 1521, 44, 121, "Input"],
-Cell[11518, 327, 35813, 991, 2042, "Output"]
+Cell[6619, 194, 337, 7, 55, "Input"],
+Cell[6959, 203, 218, 4, 32, "Output"],
+Cell[7180, 209, 218, 4, 65, "Output"]
 }, Open  ]]
 }
 ]
