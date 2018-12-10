@@ -1232,12 +1232,12 @@ module ndInteractions
 		t = e1 * e2 * e3 * e4 * D1_full(y1, y2, y3, y4) + D3_full(y1, y2, y3, y4)
 
 		!pi_2(y1, y4)
-		PI2_nn_f(1) = 2 * (t &
+		PI2_nn_f(1) = 2.d0 * (t &
 			+ e2 * e3 * D2_full(y1, y4, y2, y3) &
 			+ e1 * e4 * D2_full(y2, y3, y1, y4) )
 
 		!pi_2(y1, y3)
-		PI2_nn_f(2) = 2 * (t &
+		PI2_nn_f(2) = 2.d0 * (t &
 			+ e1 * e3 * D2_full(y2, y4, y1, y3) &
 			+ e2 * e4 * D2_full(y1, y3, y2, y4) )
 	end function PI2_nn_f
@@ -1252,12 +1252,12 @@ module ndInteractions
 		t = e1 * e2 * e3 * e4 * D1_full(y1, y2, y3, y4) + D3_full(y1, y2, y3, y4)
 		
 		!pi_2(y1, y4)
-		PI2_ne_f(1) = 2 * (t &
+		PI2_ne_f(1) = 2.d0 * (t &
 			+ e2 * e3 * D2_full(y1, y4, y2, y3) &
 			+ e1 * e4 * D2_full(y2, y3, y1, y4) )
 		
 		!pi_2(y1, y2)
-		PI2_ne_f(2) = 2 * (t &
+		PI2_ne_f(2) = 2.d0 * (t &
 			- e1 * e2 * D2_full(y3, y4, y1, y2) &
 			- e3 * e4 * D2_full(y1, y2, y3, y4) )
 		
