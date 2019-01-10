@@ -179,9 +179,9 @@ module ndConfig
 			call addToLog("[config] reading additional configuration from "//mainPath//trim(args(1)))
 			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
 			
-			verbose = read_ini_int('verbose',verbose)
+			verbose = read_ini_int('verbose', verbose)
 			checkpoint = read_ini_logical('checkpoint', .true.)
-			maxiter = read_ini_int('maxiter',100)
+			maxiter = read_ini_int('maxiter', 100)
 			toler   = read_ini_real('tolerance', 1.d-5)
 			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-6)
 			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-6)
@@ -196,7 +196,7 @@ module ndConfig
 			logx_fin = log10(x_fin)
 			x_arr = logspace(logx_in, logx_fin, Nx)
 
-			y_min   = read_ini_real('y_min', 0.0d0)
+			y_min   = read_ini_real('y_min', 0.01d0)
 			y_max   = read_ini_real('y_max', 20.0d0)
 
 #ifdef LOGY
