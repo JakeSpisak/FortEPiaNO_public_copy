@@ -77,12 +77,8 @@ end module constants
 module variables
 	use precision
 	implicit none
-	
-#ifdef TESTSPEED
-	logical :: timing_tests = .true.
-#else
+
 	logical :: timing_tests = .false.
-#endif
 	character(len=300) :: outputFolder
 	logical :: firstWrite = .true.
 	logical :: firstPoint = .false.

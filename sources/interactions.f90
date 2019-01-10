@@ -191,7 +191,15 @@ module ndInteractions
 			call tic(timer1)
 			write (*,*) "[interactions] now doing some timing..."
 			call tic(timer1)
-			do ix=1, 1000000
+			do ix=1, 100000000
+				call random_number(x)
+				x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
+				t1 = fermiDirac_i(x)
+			end do
+			call toc(timer1, "<reset>")
+
+			call tic(timer1)
+			do ix=1, 100000000
 				call random_number(x)
 				x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
 				t1 = fermiDirac_i(x)
@@ -199,7 +207,7 @@ module ndInteractions
 			call toc(timer1, "<interpolated>")
 
 			call tic(timer1)
-			do ix=1, 1000000
+			do ix=1, 100000000
 				call random_number(x)
 				x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
 				t1 = fermiDirac_full(x)
@@ -695,7 +703,7 @@ module ndInteractions
 !				d2a = PI1_12_i(y1,y2,y3,y4)
 !				d3a = PI1_13_i(y1,y2,y3,y4)
 			end do
-			call toc(timer1, "<cases>")
+			call toc(timer1, "<reset>")
 
 			call tic(timer1)
 			do ix1=1, 100000000
