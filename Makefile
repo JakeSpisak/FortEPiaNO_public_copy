@@ -54,6 +54,7 @@ $(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR
 #$(BUILD_DIR)/mc.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/config.o
 #$(BUILD_DIR)/minimize.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/config.o
 $(BUILD_DIR)/nuDens.o: $(OBJ_FILES)
+$(BUILD_DIR)/tests.o: $(OBJ_FILES)
 
 all: nudens
 

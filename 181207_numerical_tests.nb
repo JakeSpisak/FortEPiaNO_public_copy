@@ -2063,7 +2063,7 @@ Cell[BoxData[
  CellChangeTimes->{3.756185829757222*^9, 3.756186089696225*^9, 
   3.7561888966927853`*^9, 3.756205142043291*^9}]
 }, Open  ]]
-}, Open  ]],
+}, Closed]],
 
 Cell[CellGroupData[{
 
@@ -2237,9 +2237,9 @@ Cell[71411, 1946, 1540, 35, 77, "Output"],
 Cell[72954, 1983, 1549, 39, 77, "Output"],
 Cell[74506, 2024, 1549, 39, 77, "Output"]
 }, Open  ]]
-}, Open  ]],
+}, Closed]],
 Cell[CellGroupData[{
-Cell[76104, 2069, 114, 1, 45, "Subsection"],
+Cell[76104, 2069, 114, 1, 37, "Subsection"],
 Cell[76221, 2072, 301, 7, 77, "Input"],
 Cell[CellGroupData[{
 Cell[76547, 2083, 505, 16, 32, "Input"],
