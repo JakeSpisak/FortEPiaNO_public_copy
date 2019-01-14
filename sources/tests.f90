@@ -39,6 +39,7 @@ program tests
 	write(*,*) ""
 	write(*,"(a)") "Initializations"
 	call do_tests_initialization
+	call init_interp_jkyg12
 	call init_interp_ElDensity
 
 	write(*,*) ""
@@ -66,6 +67,7 @@ program tests
 		maxiter = 100
 		toler   = 1.d-5
 		toler_jkyg = 1.d-7
+		toler_ed = 1.d-4
 		dlsoda_atol = 1.d-6
 		dlsoda_rtol = 1.d-6
 		Nx = 100
@@ -145,11 +147,17 @@ program tests
 		end do
 
 		write(*,*) ""
-		write(*,"(a)") "Cosmology (22 tests)"
+		write(*,"(a)") "Cosmology (28 tests)"
 		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06283d0, 1d-4)
 		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.49493d0, 1d-4)
+		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377723d0, 1d-4)
+		call assert_double_rel("elDensF test 4", electronDensityFull(2.d1, 1.2d0), 0.0000421964d0, 1d-4)
+		call assert_double_rel("elDensF test 5", electronDensityFull(3.d1, 1.2d0), 2.61468d-8, 5d-3)
 		call assert_double_rel("elDens test 1", electronDensity(1.d0, 1.d0), 1.06283d0, 1d-4)
 		call assert_double_rel("elDens test 2", electronDensity(0.076d0, 1.32d0), 3.49493d0, 1d-4)
+		call assert_double_rel("elDens test 3", electronDensity(1.d1, 1.2d0), 0.0377723d0, 1d-2)
+		call assert_double_rel("elDens test 4", electronDensity(2.d1, 1.2d0), 0.0000421964d0, 2d-2)
+		call assert_double_rel("elDens test 5", electronDensity(3.d1, 1.2d0), 2.61468d-8, 5d-2)
 		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
 		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
 
@@ -184,9 +192,8 @@ program tests
 
 	subroutine do_tests_JKYG
 		real(dl), dimension(2) :: res
-		call init_interp_jkyg12
 		write(*,*) ""
-		write(*,"(a)") "JKYG (X tests)"
+		write(*,"(a)") "JKYG (27 tests)"
 		call assert_double_rel("J test 1", J_funcFull(0.01d0), 0.1666641d0, 1d-6)
 		call assert_double_rel("J test 2", J_funcFull(1.d0), 0.1437972d0, 1d-6)
 		call assert_double_rel("J test 3", J_funcFull(5.d0), 0.01339351d0, 1d-6)

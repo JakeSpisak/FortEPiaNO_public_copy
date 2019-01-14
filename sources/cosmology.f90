@@ -45,7 +45,7 @@ module ndCosmology
 		vec(1)=x
 		vec(2)=z
 
-		electronDensityFull = rombint_vec(vec, integr_rho_e, fe_l, fe_u, 1d-3, maxiter)
+		electronDensityFull = rombint_vec(vec, integr_rho_e, fe_l, fe_u, toler_ed, maxiter)
 		electronDensityFull = electronDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
 	end function electronDensityFull
 	
@@ -161,7 +161,7 @@ module ndCosmology
 		call random_seed()
 		call random_number(x)
 		call tic(timer1)
-		do ix=1, 100000
+		do ix=1, 1000000
 			call random_number(x)
 			x=10.d0**(x/6.d0)
 			t1 = nuDensity(x, 1)
