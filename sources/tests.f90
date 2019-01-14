@@ -46,6 +46,7 @@ program tests
 	write(*,"(a)") "Starting tests"
 	call do_tests_cosmology
 	call do_tests_JKYG
+	call do_tests_dzodx
 	call do_tests_Di
 	call do_tests_Pi_ij
 	call do_f_ann_sc_re_tests_eq
@@ -105,11 +106,7 @@ program tests
 		dme2_temperature_corr = .true.
 		only_1a_1s = .false.
 		flavorNumber = 3
-		if (collision_offdiag.ne.3) then
-			flavNumSqu = flavorNumber**2
-		else
-			flavNumSqu = flavorNumber
-		end if
+		flavNumSqu = flavorNumber**2
 		call allocateStuff
 		do ix=1, flavorNumber
 			nuFactor(ix) = 1.d0
@@ -230,6 +227,34 @@ program tests
 		call assert_double_rel("A test 3", res(1), 0.034036d0, 1d-5)
 		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
 	end subroutine do_tests_JKYG
+
+	subroutine do_tests_dzodx
+		integer, parameter :: n=901
+		real(dl), dimension(n) :: ydot
+		integer :: m
+
+		ydot = 0.d0
+		do m=1, Ny
+			ydot((m-1)*flavNumSqu + 1) = cos(0.02d0*y_arr(m))
+			ydot((m-1)*flavNumSqu + 2) = y_arr(m)/20.d0
+			ydot((m-1)*flavNumSqu + 3) = 1.d0
+		end do
+		write(*,*) ""
+		write(*,"(a)") "dz/dx functions (X tests)"
+		call dz_o_dx(0.01d0, 1.d0, ydot, n)
+		call assert_double("dz_o_dx test 1", ydot(n), -0.17511d0, 1d-5)
+		call dz_o_dx(1.d0/1.1d0, 1.1d0, ydot, n)
+		call assert_double("dz_o_dx test 2", ydot(n), -0.159145d0, 5d-3)
+		call dz_o_dx(6.d0, 1.2d0, ydot, n)
+		call assert_double("dz_o_dx test 3", ydot(n), -0.359906d0, 1d-5)
+
+		call dz_o_dx_lin(0.01d0, 1.d0, ydot, n)
+		call assert_double("dz_o_dx_lin test 1", ydot(n), -0.17511d0, 1d-5)
+		call dz_o_dx_lin(1.d0/1.1d0, 1.1d0, ydot, n)
+		call assert_double("dz_o_dx_lin test 2", ydot(n), -0.159145d0, 5d-3)
+		call dz_o_dx_lin(6.d0, 1.2d0, ydot, n)
+		call assert_double("dz_o_dx_lin test 3", ydot(n), -0.359906d0, 1d-5)
+	end subroutine do_tests_dzodx
 
 	subroutine do_tests_Di
 		write(*,*) ""
@@ -948,6 +973,7 @@ program tests
 
 	subroutine do_timing_tests
 		timing_tests = .true.
+		call test_dzodx_speed
 		call test_nuDens_speed
 		call init_interp_ElDensity
 		call init_interp_dme2_e

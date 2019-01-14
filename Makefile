@@ -4,7 +4,7 @@ EXECNAME ?= nuDens.exe
 # use e.g. with USER_DEFINED=-DTESTSPEED=1 and EXECNAME=nuDens_speed.exe
 USER_DEFINED ?= 
 LOGY ?= 
-#LOGY ?= -Dlogy=1
+#LOGY ?= -DLOGY=1
 
 #ifort
 F90=ifort

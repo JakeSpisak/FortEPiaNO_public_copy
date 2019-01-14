@@ -248,7 +248,86 @@ module ndEquations
 		ydot(n)=dzodx
 
 	end subroutine dz_o_dx
-	
+
+	subroutine dz_o_dx_lin(x,z, ydot, n)
+		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
+		!integral without need of interpolation, just use linear approx in y bins
+		real(dl), intent(in) :: x,z
+		integer, intent(in) :: n
+		real(dl), dimension(n), intent(inout) :: ydot
+		real(dl) :: tmp
+		real(dl), dimension(2) :: coeffs
+		integer :: ix, m
+
+		do m=1, Ny
+			tmp = 0.d0
+			do ix=1, flavorNumber
+				tmp = tmp + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
+			end do
+			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m) / z)
+		end do
+		tmp = 0.d0
+		do m=1, Ny-1
+			tmp = tmp + dy_arr(m) * (fy_arr(m+1) + fy_arr(m))
+		end do
+		coeffs = dzodxcoef_interp_func(x/z)
+		ydot(n) = coeffs(1) - coeffs(2)/ z**3 * tmp * 0.5d0
+	end subroutine dz_o_dx_lin
+
+	subroutine test_dzodx_speed
+		real(dl), dimension(:), allocatable :: fd_vec, fd_x
+		integer :: ix, iflag, interp_nfd
+		real(dl) :: x,z
+		real(8) :: timer1
+		integer, parameter :: n=901
+		real(dl), dimension(n) :: ydot
+		integer :: m
+
+		ydot = 0.d0
+		do m=1, Ny
+			ydot((m-1)*flavNumSqu + 1) = cos(0.02d0*y_arr(m))
+			ydot((m-1)*flavNumSqu + 2) = y_arr(m)/20.d0
+			ydot((m-1)*flavNumSqu + 3) = 1.d0
+		end do
+
+		call addToLog("[equations] Testing dz_o_dx speed...")
+		call random_seed()
+		call random_number(x)
+		call random_number(z)
+		call tic(timer1)
+		do ix=1, 1000000
+			call random_number(x)
+			call random_number(z)
+			x=(x_fin-x_in)*x + x_in
+			z=0.4d0*z + z_in
+			call dz_o_dx(x, z, ydot, n)
+			call dz_o_dx_lin(x, z, ydot, n)
+		end do
+		call toc(timer1, "<reset>")
+
+		call tic(timer1)
+		do ix=1, 1000000
+			call random_number(x)
+			call random_number(z)
+			x=(x_fin-x_in)*x + x_in
+			z=0.4d0*z + z_in
+			call dz_o_dx(x, z, ydot, n)
+		end do
+		call toc(timer1, "<rombint>")
+
+		call tic(timer1)
+		do ix=1, 1000000
+			call random_number(x)
+			call random_number(z)
+			x=(x_fin-x_in)*x + x_in
+			z=0.4d0*z + z_in
+			call dz_o_dx_lin(x, z, ydot, n)
+		end do
+		call toc(timer1, "<linearized>")
+
+		call addToLog("[equations] ...done!")
+	end subroutine test_dzodx_speed
+
 	subroutine drhoy_dx_fullMat (matrix,x,z,iy)
 		type(cmplxMatNN), intent(out) :: matrix
 		real(dl) :: x,y,z, overallNorm, a, fd, cf
