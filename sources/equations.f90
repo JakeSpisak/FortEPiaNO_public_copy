@@ -83,7 +83,7 @@ module ndEquations
 		real(dl) :: J_funcFull
 		real(dl), intent(in) :: o
 
-		J_funcFull = rombint_re(o, J_int,0.d0,upper,toler,maxiter)/PISQ
+		J_funcFull = rombint_re(o, J_int,0.d0,upper,toler_jkyg,maxiter)/PISQ
 	end function J_funcFull
 	
 	elemental function Jprime_int(o, u)
@@ -102,7 +102,7 @@ module ndEquations
 		real(dl) :: JprimeFull
 		real(dl), intent(in) :: o
 	
-		JprimeFull = rombint_re(o, Jprime_int,0.d0,upper,toler,maxiter) * o / PISQ
+		JprimeFull = rombint_re(o, Jprime_int,0.d0,upper,toler_jkyg,maxiter) * o / PISQ
 	end function JprimeFull
 	
 	elemental function K_int(o, u)
@@ -117,7 +117,7 @@ module ndEquations
 		real(dl) :: K_funcFull
 		real(dl), intent(in) :: o
 		
-		k_funcFull = rombint_re(o, k_int,0.d0,upper,toler,maxiter)/PISQ
+		k_funcFull = rombint_re(o, k_int,0.d0,upper,toler_jkyg,maxiter)/PISQ
 	end function K_funcFull
 	
 	elemental function Kprime_int(o, u)
@@ -129,7 +129,7 @@ module ndEquations
 		sqrtuuoo = sqrt(uuoo)
 		expsqrtuuoo = exp(sqrtuuoo)
 		
-		Kprime_int = - u*u / (uuoo*sqrtuuoo*(expsqrtuuoo+1)**2) * &
+		Kprime_int = u*u / (uuoo*sqrtuuoo*(expsqrtuuoo+1)**2) * &
 			(1.d0 + expsqrtuuoo*(sqrtuuoo+1.d0))
 	end function Kprime_int
 	
@@ -137,7 +137,7 @@ module ndEquations
 		real(dl) :: KprimeFull
 		real(dl), intent(in) :: o
 	
-		KprimeFull = rombint_re(o, Kprime_int,0.d0,upper,toler, maxiter) * o / PISQ
+		KprimeFull = - rombint_re(o, Kprime_int,0.d0,upper,toler_jkyg, maxiter) * o / PISQ
 	end function KprimeFull
 	
 	elemental function Y_int(o, u)
@@ -152,7 +152,7 @@ module ndEquations
 		real(dl) :: Y_funcFull
 		real(dl), intent(in) :: o
 		
-		Y_funcFull = rombint_re(o, Y_int,0.d0,upper,toler, maxiter)/PISQ
+		Y_funcFull = rombint_re(o, Y_int,0.d0,upper,toler_jkyg, maxiter)/PISQ
 	end function Y_funcFull
 	
 	pure function G12_funcFull(o)
@@ -168,7 +168,7 @@ module ndEquations
 			tmp = (kp/6.d0 - ko*kp + jp/6.d0 +jp*ko + jo*kp)
 			
 			G12_funcFull(1) = PIx2*alpha_fine *(&
-				(ko/3.d0 + 2*ko*ko - jo/6.d0 -ko*jo)/o + &
+				(ko/3.d0 + 2.d0*ko*ko - jo/6.d0 -ko*jo)/o + &
 				tmp )
 			G12_funcFull(2) = PIx2*alpha_fine*( &
 				o * tmp &
@@ -267,7 +267,7 @@ module ndEquations
 			n1%im(ix,ix) = n1%im(ix,ix) * fd
 		end do
 		
-		overallNorm = planck_mass / (sqrt(radDensity(x,y,z)*PIx8D3))
+		overallNorm = planck_mass / (sqrt(radDensity(x,z)*PIx8D3))
 		
 		leptonDensities=0.d0
 		leptonDensities(1,1) = leptDensFactor * y / x**6 * electronDensity(x,z)

@@ -183,12 +183,14 @@ module ndConfig
 			checkpoint = read_ini_logical('checkpoint', .true.)
 			maxiter = read_ini_int('maxiter', 100)
 			toler   = read_ini_real('tolerance', 1.d-5)
+			toler_jkyg = read_ini_real('tolerance_jkyg', 1.d-7)
 			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-6)
 			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-6)
 			
 			Nx = read_ini_int('Nx',100)
 			Ny = read_ini_int('Ny',100)
 			allocate(x_arr(Nx), y_arr(Ny), logy_arr(Ny))
+			allocate(dy_arr(Ny), fy_arr(Ny))
 			
 			x_in    = read_ini_real('x_in', 0.01d0)
 			x_fin   = read_ini_real('x_fin', 40.d0)
@@ -208,6 +210,10 @@ module ndConfig
 			y_arr = linspace(y_min, y_max, Ny)
 			logy_arr = log10(y_arr)
 #endif
+			do ix=1, Ny-1
+				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
+			end do
+			dy_arr(Ny) = 0.d0
 
 			z_in    = read_ini_real('z_in', 1.00003d0)
 			

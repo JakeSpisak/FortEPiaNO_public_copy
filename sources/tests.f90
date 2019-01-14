@@ -13,6 +13,21 @@ subroutine assert_double(testname, num1, num2, tol)
 	end if
 end subroutine assert_double
 
+subroutine assert_double_rel(testname, num1, num2, tol)
+	use precision
+	implicit none
+	character(len=*) :: testname
+	real(dl) :: num1, num2, tol
+
+	if (abs((num1 - num2)/num1) .lt. tol) then
+		write(*, fmt="(a)", advance="no") "."
+	else
+		print *, testname, " failed"
+		write (*,"(*(E15.7))") num1, num2, (num1 - num2)/num1, tol
+		call exit()
+	end if
+end subroutine assert_double_rel
+
 program tests
 	use precision
 	use ndConfig
@@ -24,9 +39,12 @@ program tests
 	write(*,*) ""
 	write(*,"(a)") "Initializations"
 	call do_tests_initialization
+	call init_interp_ElDensity
 
 	write(*,*) ""
 	write(*,"(a)") "Starting tests"
+	call do_tests_cosmology
+	call do_tests_JKYG
 	call do_tests_Di
 	call do_tests_Pi_ij
 	call do_f_ann_sc_re_tests_eq
@@ -47,11 +65,13 @@ program tests
 		checkpoint = .true.
 		maxiter = 100
 		toler   = 1.d-5
+		toler_jkyg = 1.d-7
 		dlsoda_atol = 1.d-6
 		dlsoda_rtol = 1.d-6
 		Nx = 100
 		Ny = 100
 		allocate(x_arr(Nx), y_arr(Ny), logy_arr(Ny))
+		allocate(dy_arr(Ny), fy_arr(Ny))
 		x_in    = 0.01d0
 		x_fin   = 40.d0
 		logx_in  = log10(x_in)
@@ -68,6 +88,10 @@ program tests
 		y_arr = linspace(y_min, y_max, Ny)
 		logy_arr = log10(y_arr)
 #endif
+		do ix=1, Ny-1
+			dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
+		end do
+		dy_arr(Ny) = 0.d0
 		z_in = 1.00003d0
 		m_lightest   = 0.0d0
 		massOrdering = .true.
@@ -105,6 +129,100 @@ program tests
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nx)
 	end subroutine do_tests_initialization
+
+	subroutine do_tests_cosmology
+		real(dl), dimension(:), allocatable :: ndmv_re
+		integer :: i, iy
+
+		allocate(interpNuDens%re(flavorNumber, flavorNumber))
+		allocate(ndmv_re(Ny))
+		do i=1, flavorNumber
+			do iy=1, Ny
+				ndmv_re(iy) = 1.d0*i
+				nuDensMatVec(iy)%re(i, i) = 1.d0*i
+			end do
+			call interpNuDens%re(i, i)%initialize(Ny, y_arr, ndmv_re)
+		end do
+
+		write(*,*) ""
+		write(*,"(a)") "Cosmology (22 tests)"
+		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06283d0, 1d-4)
+		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.49493d0, 1d-4)
+		call assert_double_rel("elDens test 1", electronDensity(1.d0, 1.d0), 1.06283d0, 1d-4)
+		call assert_double_rel("elDens test 2", electronDensity(0.076d0, 1.32d0), 3.49493d0, 1d-4)
+		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
+		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
+
+		call assert_double_rel("nuDens test 1", nuDensity(1.d0, 1), 1.15145d0, 1d-3)
+		call assert_double_rel("nuDens test 2", nuDensity(1.076d0, 1), 1.54346d0, 1d-3)
+		call assert_double_rel("nuDens test 3", nuDensity(1.32d0, 1), 3.49577d0, 1d-3)
+		call assert_double_rel("nuDens test 4", nuDensity(1.37d0, 2), 2.d0*4.05629d0, 3d-3)
+		call assert_double_rel("nuDens test 5", nuDensity(1.003d0, 3), 3.d0*1.16533d0, 1d-3)
+
+		call assert_double_rel("nuDensLin test 1", nuDensityLin(1.d0, 1), 1.15145d0, 1d-3)
+		call assert_double_rel("nuDensLin test 2", nuDensityLin(1.076d0, 1), 1.54346d0, 1d-3)
+		call assert_double_rel("nuDensLin test 3", nuDensityLin(1.32d0, 1), 3.49577d0, 1d-3)
+		call assert_double_rel("nuDensLin test 4", nuDensityLin(1.37d0, 2), 2.d0*4.05629d0, 3d-3)
+		call assert_double_rel("nuDensLin test 5", nuDensityLin(1.003d0, 3), 3.d0*1.16533d0, 1d-3)
+
+		call assert_double_rel("allNuDensLin test 1", allNuDensity(1.d0), 6*1.15145d0, 1d-3)
+		call assert_double_rel("allNuDensLin test 2", allNuDensity(1.076d0), 6*1.54346d0, 1d-3)
+		call assert_double_rel("allNuDensLin test 3", allNuDensity(1.32d0), 6*3.49577d0, 1d-3)
+
+		do i=1, flavorNumber
+			call interpNuDens%re(i, i)%unset()
+			do iy=1, Ny
+				ndmv_re(iy) = 1.d0
+				nuDensMatVec(iy)%re(i, i) = 1.d0
+			end do
+			call interpNuDens%re(i, i)%initialize(Ny, y_arr, ndmv_re)
+		end do
+		call assert_double("radDens test 1", radDensity(0.7d0, 1.04d0), 6.11141d0, 1d-3)
+		call assert_double("radDens test 2", radDensity(1.d0, 1.04d0), 6.06205d0, 1d-3)
+		call assert_double("radDens test 3", radDensity(1.d0, 1.24d0), 12.309d0, 3d-3)
+	end subroutine do_tests_cosmology
+
+	subroutine do_tests_JKYG
+		real(dl), dimension(2) :: res
+		call init_interp_jkyg12
+		write(*,*) ""
+		write(*,"(a)") "JKYG (X tests)"
+		call assert_double_rel("J test 1", J_funcFull(0.01d0), 0.1666641d0, 1d-6)
+		call assert_double_rel("J test 2", J_funcFull(1.d0), 0.1437972d0, 1d-6)
+		call assert_double_rel("J test 3", J_funcFull(5.d0), 0.01339351d0, 1d-6)
+		call assert_double_rel("J' test 1", JprimeFull(0.01d0), -0.0005065951d0, 1d-6)
+		call assert_double_rel("J' test 2", JprimeFull(1.d0), -0.04125339d0, 1d-6)
+		call assert_double_rel("J' test 3", JprimeFull(5.d0), -0.01015141d0, 1d-6)
+		call assert_double_rel("K test 1", K_funcFull(0.01d0), 0.083319d0, 1d-6)
+		call assert_double_rel("K test 2", K_funcFull(1.d0), 0.0550046d0, 1d-6)
+		call assert_double_rel("K test 3", K_funcFull(5.d0), 0.00204432d0, 1d-6)
+		call assert_double_rel("K' test 1", KprimeFull(0.01d0), -0.00262052d0, 1d-6)
+		call assert_double_rel("K' test 2", KprimeFull(1.d0), -0.03378793d0, 1d-6)
+		call assert_double_rel("K' test 3", KprimeFull(5.d0), -0.001860974d0, 1d-6)
+		call assert_double_rel("Y test 1", Y_funcFull(0.01d0), 2.302883d0, 1d-6)
+		call assert_double_rel("Y test 2", Y_funcFull(1.d0), 2.070647d0, 1d-6)
+		call assert_double_rel("Y test 3", Y_funcFull(5.d0), 0.3145333d0, 1d-6)
+
+		res = G12_funcFull(0.01d0)
+		call assert_double_rel("G1 test 1", res(1), -0.0000658825d0, 3d-5)
+		call assert_double_rel("G2 test 1", res(2), -0.0095518d0, 3d-5)
+		res = G12_funcFull(1.d0)
+		call assert_double_rel("G1 test 2", res(1), -0.00115846d0, 1d-5)
+		call assert_double_rel("G2 test 2", res(2), -0.00806502d0, 1d-5)
+		res = G12_funcFull(5.d0)
+		call assert_double_rel("G1 test 3", res(1), -0.000108111d0, 1d-5)
+		call assert_double_rel("G2 test 3", res(2), -0.000945107d0, 1d-5)
+
+		res = dzodxcoef_interp_func(0.01d0)
+		call assert_double_rel("A test 1", res(1), 0.00044351d0, 1d-5)
+		call assert_double_rel("B test 1", res(2), 0.0140361d0, 1d-5)
+		res = dzodxcoef_interp_func(1.d0)
+		call assert_double_rel("A test 2", res(1), 0.0404956d0, 1d-5)
+		call assert_double_rel("B test 2", res(2), 0.0143827d0, 1d-5)
+		res = dzodxcoef_interp_func(5.d0)
+		call assert_double_rel("A test 3", res(1), 0.034036d0, 1d-5)
+		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
+	end subroutine do_tests_JKYG
 
 	subroutine do_tests_Di
 		write(*,*) ""
@@ -823,9 +941,11 @@ program tests
 
 	subroutine do_timing_tests
 		timing_tests = .true.
+		call test_nuDens_speed
 		call init_interp_ElDensity
 		call init_interp_dme2_e
 		call init_interp_FD
 		call init_interp_d123
 	end subroutine do_timing_tests
+
 end program tests

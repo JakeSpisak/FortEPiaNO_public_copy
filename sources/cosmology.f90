@@ -13,13 +13,13 @@ module ndCosmology
 
 	contains
 	
-	function radDensity(x,y,z)
+	function radDensity(x,z)
 		real(dl) :: radDensity
-		real(dl), intent(in) :: x,y,z
+		real(dl), intent(in) :: x,z
 		
 		radDensity = photonDensity(z) + &
 			electronDensity(x,z) + &
-			allNuDensity(x,z)
+			allNuDensity(z)
 	end function
 	
 	elemental function photonDensity(z)
@@ -118,26 +118,85 @@ module ndCosmology
 		integr_rho_nu = y*y*y * interpNuDens%re(vec%iFl, vec%iFl)%evaluate(log10(y)) * fermiDirac(y/vec%z)
 	end function integr_rho_nu
 	
-	function nuDensity(x,z, iFl)
+	function nuDensity(z, iFl)
 		real(dl) :: nuDensity
-		real(dl), intent(in) :: x,z
+		real(dl), intent(in) :: z
 		integer, intent(in) :: iFl
 		type(nuDensArgs) :: vec
 		
-		vec%x=x
+		vec%x=0.d0
 		vec%z=z
 		vec%iFl=iFl
 		nuDensity = rombint_nD(vec, integr_rho_nu, y_min, y_max, 1d-3, maxiter) / PISQD2
 	end function nuDensity
-	
-	function allNuDensity(x,z)
+
+	function nuDensityLin(z, iFl)
+		real(dl) :: nuDensityLin, y
+		real(dl), intent(in) :: z
+		integer, intent(in) :: iFl
+		integer :: ix
+		type(nuDensArgs) :: vec
+
+		vec%x=0.d0
+		vec%z=z
+		vec%iFl=iFl
+		do ix=1, Ny
+			y = y_arr(ix)
+			fy_arr(ix) = y*y*y * nuDensMatVec(ix)%re(iFl, iFl) * fermiDirac(y/z)
+		end do
+		nuDensityLin = 0.d0
+		do ix=1, Ny-1
+			nuDensityLin = nuDensityLin + dy_arr(ix) * (fy_arr(ix+1) + fy_arr(ix))
+		end do
+		nuDensityLin = nuDensityLin * 0.5d0 / PISQD2
+	end function nuDensityLin
+
+	subroutine test_nuDens_speed
+		real(dl), dimension(:), allocatable :: fd_vec, fd_x
+		integer :: ix, iflag, interp_nfd
+		real(dl) :: x, t1,t2
+		real(8) :: timer1
+
+		call addToLog("[cosmology] Testing nuDensity speed...")
+		call random_seed()
+		call random_number(x)
+		call tic(timer1)
+		do ix=1, 100000
+			call random_number(x)
+			x=10.d0**(x/6.d0)
+			t1 = nuDensity(x, 1)
+			t1 = nuDensityLin(x, 1)
+		end do
+		call toc(timer1, "<reset>")
+
+		call tic(timer1)
+		do ix=1, 1000000
+			call random_number(x)
+			x=10.d0**(x/6.d0)
+			t1 = nuDensity(x, 1)
+		end do
+		call toc(timer1, "<rombint>")
+
+		call tic(timer1)
+		do ix=1, 1000000
+			call random_number(x)
+			x=10.d0**(x/6.d0)
+			t1 = nuDensityLin(x, 1)
+		end do
+		call toc(timer1, "<linearized>")
+
+		call addToLog("[cosmology] ...done!")
+	end subroutine test_nuDens_speed
+
+	function allNuDensity(z)
 		real(dl) :: allNuDensity
-		real(dl), intent(in) :: x,z
+		real(dl), intent(in) :: z
 		integer :: ix
 		
 		allNuDensity = 0.d0
 		do ix=1, flavorNumber
-			allNuDensity = allNuDensity + nuDensity(x,z,ix)*nuFactor(ix)
+			! allNuDensity = allNuDensity + nuDensity(z,ix)*nuFactor(ix)
+			allNuDensity = allNuDensity + nuDensityLin(z,ix)*nuFactor(ix)
 		end do
 		allNuDensity = allNuDensity
 	end function allNuDensity

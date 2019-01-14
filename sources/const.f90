@@ -97,7 +97,8 @@ module variables
 	
 	real(dl) :: photonTemperatureToday, hubbleParam
 
-	!matrix
+	!complex matrix, it will host the neutrino density matrix.
+	!Intended to have the relative shape correction with respect to the FD in the diagonal
 	type cmplxMatNN
 		real(dl), dimension(:,:), allocatable :: re, im
 		real(dl) :: x, y, z, logy
@@ -131,8 +132,9 @@ module variables
 	integer :: Nx, Ny
 	real(dl) :: x_in, x_fin, y_min, y_max, z_in, logx_in, logx_fin, logy_min, logy_max
 	real(dl), dimension(:), allocatable :: x_arr, y_arr, logy_arr
+	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter
-	real(dl) :: toler, dlsoda_atol, dlsoda_rtol
+	real(dl) :: toler, toler_jkyg, dlsoda_atol, dlsoda_rtol
 
 	!used for 2d interpolation:
 	integer, parameter :: interp_nx = 200, interp_nz = 100, interp_ny = 40

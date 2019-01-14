@@ -188,7 +188,6 @@ module ndInteractions
 		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
 
 		if (timing_tests) then
-			call tic(timer1)
 			write (*,*) "[interactions] now doing some timing..."
 			call tic(timer1)
 			do ix=1, 100000000
