@@ -253,7 +253,7 @@ module ndInteractions
 			vec(2) = z
 			vec(3) = y !not used
 			
-			tmp = rombint_vec(vec, dme2_e_i1, fe_l, fe_u, 1d-3, maxiter)
+			tmp = rombint_vec(vec, dme2_e_i1, fe_l, fe_u, toler_dme2, maxiter)
 			dme2_electronFull = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
 		else
 			dme2_electronFull = 0.d0
@@ -1027,7 +1027,7 @@ module ndInteractions
 		call PI1_13_interp%evaluate(y1,y2,y3,y4, PI1_13_i)
 	end function PI1_13_i
 
-	elemental function PI1_12_full (y1, y2, y3, y4) !1: (y1,y3), 	2: (y1, y2)
+	elemental function PI1_12_full (y1, y2, y3, y4) !(y1, y2)
 		real(dl) :: PI1_12_full
 		real(dl), intent(in) :: y1, y2, y3, y4
 
@@ -1035,7 +1035,7 @@ module ndInteractions
 		PI1_12_full = y1 * y2 * D1_full(y1, y2, y3, y4) - D2_full(y1, y2, y3, y4)
 	end function PI1_12_full
 
-	elemental function PI1_13_full (y1, y2, y3, y4) !1: (y1,y3)
+	elemental function PI1_13_full (y1, y2, y3, y4) !(y1,y3)
 		real(dl) :: PI1_13_full
 		real(dl), intent(in) :: y1, y2, y3, y4
 

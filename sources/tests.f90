@@ -41,12 +41,14 @@ program tests
 	call do_tests_initialization
 	call init_interp_jkyg12
 	call init_interp_ElDensity
+	call init_interp_dme2_e
 
 	write(*,*) ""
 	write(*,"(a)") "Starting tests"
 	call do_tests_cosmology
 	call do_tests_JKYG
 	call do_tests_dzodx
+	call do_tests_dme2
 	call do_tests_Di
 	call do_tests_Pi_ij
 	call do_f_ann_sc_re_tests_eq
@@ -67,6 +69,7 @@ program tests
 		checkpoint = .true.
 		maxiter = 100
 		toler   = 1.d-5
+		toler_dme2 = 1.d-5
 		toler_jkyg = 1.d-7
 		toler_ed = 1.d-4
 		dlsoda_atol = 1.d-6
@@ -255,6 +258,25 @@ program tests
 		call dz_o_dx_lin(6.d0, 1.2d0, ydot, n)
 		call assert_double("dz_o_dx_lin test 3", ydot(n), -0.359906d0, 1d-5)
 	end subroutine do_tests_dzodx
+
+	subroutine do_tests_dme2
+		write(*,*) ""
+		write(*,"(a)") "dme2 (14 tests)"
+		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
+		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
+		call assert_double("dme2F test 3", dme2_electronFull(0.5d0, 0.d0, 1.1d0), 0.0283696d0, 1d-5)
+		call assert_double("dme2F test 4", dme2_electronFull(1.23d0, 0.d0, 1.198d0), 0.0321547d0, 1d-5)
+		call assert_double("dme2F test 5", dme2_electronFull(7.6d0, 0.d0, 1.3d0), 0.0260756d0, 1d-5)
+		call assert_double("dme2F test 6", dme2_electronFull(35.d0, 0.d0, 1.39d0), 0.0295293d0, 1d-5)
+		call assert_double("dme2 test 1", dme2_electron(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
+		call assert_double("dme2 test 2", dme2_electron(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
+		call assert_double("dme2 test 3", dme2_electron(0.5d0, 0.d0, 1.1d0), 0.0283696d0, 1d-5)
+		call assert_double("dme2 test 4", dme2_electron(1.23d0, 0.d0, 1.198d0), 0.0321547d0, 1d-5)
+		call assert_double("dme2 test 5", dme2_electron(7.6d0, 0.d0, 1.3d0), 0.0260756d0, 1d-5)
+		call assert_double("dme2 test 6", dme2_electron(35.d0, 0.d0, 1.39d0), 0.0295293d0, 1d-5)
+		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), 1.3d0, 1d-7)
+		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), 8.944272d0, 1d-7)
+	end subroutine do_tests_dme2
 
 	subroutine do_tests_Di
 		write(*,*) ""

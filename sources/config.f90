@@ -182,9 +182,10 @@ module ndConfig
 			verbose = read_ini_int('verbose', verbose)
 			checkpoint = read_ini_logical('checkpoint', .true.)
 			maxiter = read_ini_int('maxiter', 100)
-			toler   = read_ini_real('tolerance', 1.d-5)
+			toler = read_ini_real('tolerance', 1.d-5)
+			toler_dme2 = read_ini_real('tolerance_dme2', 1.d-5)
+			toler_ed = read_ini_real('tolerance_ed', 1.d-4)
 			toler_jkyg = read_ini_real('tolerance_jkyg', 1.d-7)
-			toler_ed = read_ini_real('toler_ed', 1.d-4)
 			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-6)
 			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-6)
 			

@@ -514,6 +514,7 @@ module ndEquations
 	end subroutine solver
 
 	subroutine derivative (x, z, m, mat, n, ydot)
+!		compute rho derivatives for a given momentum y_arr(m), save to ydot
 		real(dl), intent(in) :: x, z
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
@@ -544,6 +545,8 @@ module ndEquations
 	end subroutine derivative
 
 	subroutine derivatives(n, x, vars, ydot)
+!		compute all the rho derivatives (drho/dx for all y, dz/dx)
+!		needs allocation and interpolation of density matrix
 		use omp_lib
 		
 		type(cmplxMatNN) :: mat
@@ -586,6 +589,6 @@ module ndEquations
 	end subroutine derivatives
 	
 	subroutine jdum
-
+		!necessary but not needed
 	end subroutine jdum
 end module ndEquations

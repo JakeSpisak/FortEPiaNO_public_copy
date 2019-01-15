@@ -134,7 +134,7 @@ module variables
 	real(dl), dimension(:), allocatable :: x_arr, y_arr, logy_arr
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter
-	real(dl) :: toler, toler_ed, toler_jkyg, dlsoda_atol, dlsoda_rtol
+	real(dl) :: toler, toler_dme2, toler_ed, toler_jkyg, dlsoda_atol, dlsoda_rtol
 
 	!used for 2d interpolation:
 	integer, parameter :: interp_nx = 300, interp_nz = 100, interp_ny = 40
