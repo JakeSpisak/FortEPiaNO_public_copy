@@ -1098,79 +1098,34 @@ module ndInteractions
 		
 	end function PI2_ne_f
 	
-	function coll_nue_int_re(ndim, ve, obj)
+	function coll_nue_4_ann_int_re(ndim, ve, obj)
+		!annihilation
 		integer, intent(in) :: ndim
 		real(dl), dimension(2), intent(in) :: ve
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_int_re
+		real(dl) :: coll_nue_4_ann_int_re
 		integer :: ix, iy
 		real(dl), dimension(2) :: pi2_vec
 		type(cmplxMatNN) :: nX
-		real(dl) :: yA, y2,y3,y4, f2,f3,f4, E2, E3, E4, dme2, fd, logy3, logy2
+		real(dl) :: y2,y3,y4, f3,f4, E3, E4, dme2, fd, logy2
 
-		coll_nue_int_re = 0.d0
+		coll_nue_4_ann_int_re = 0.d0
 		call allocateCmplxMat(nX)
 
-		yA = ve(1)
+		dme2 = obj%dme2
+		y3 = ve(1)
+		E3 = Ebare_i_dme(obj%x,y3, dme2)
+		f3 = fermiDirac(E_k_m(y3, obj%x) / obj%z)
 		y4 = ve(2)
 		E4 = Ebare_i_dme(obj%x,y4, dme2)
-		dme2 = obj%dme2
-
-		!scattering, summing positron and electrons
-		y2 = yA
-		E2 = Ebare_i_dme(obj%x,y2, dme2)
-		y3 = obj%y1 + E2 - E4
-		f2 = fermiDirac(E_k_m(y2, obj%x) / obj%z)
 		f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
-		if (y3.lt.0.d0 &
-			.or. obj%y1.gt.y2+y3+y4 &
-			.or. y2.gt.obj%y1+y3+y4 &
-			.or. y3.gt.obj%y1+y2+y4 &
-			.or. y4.gt.obj%y1+y2+y3) then
-			coll_nue_int_re = coll_nue_int_re + 0.d0
-		else
-			fd = fermiDirac(y3 / obj%z)
-			logy3 = log10(y3)
-			do ix=1, flavorNumber
-				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3) * fd
-				nX%im(ix,ix) = 0.d0
-				do iy=ix+1, flavorNumber
-					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy3)
-					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy3)
-					nX%re(iy,ix) = nX%re(ix,iy)
-					nX%im(iy,ix) = -nX%im(ix,iy)
-				end do
-			end do
 
-			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
-
-			coll_nue_int_re = coll_nue_int_re + &
-				y2/E2 * &
-				y4/E4 * &
-				( &
-					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
-						F_ab_sc_re(obj%n,f2,nX,f4, 1, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_re(obj%n,f2,nX,f4, 2, 2, obj%ix1,obj%ix2) &
-					) - &
-					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
-						F_ab_sc_re(obj%n,f2,nX,f4, 2, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_re(obj%n,f2,nX,f4, 1, 2, obj%ix1,obj%ix2) ) &
-				)
-		end if
-
-		!annihilation
-		y3 = yA
-		E3 = Ebare_i_dme(obj%x,y3, dme2)
 		y2 = E3 + E4 - obj%y1
-		f3 = fermiDirac(E_k_m(y3, obj%x) / obj%z)
-		f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
-		if (y2.lt.0.d0 &
-			.or. obj%y1.gt.y3+y2+y4 &
-			.or. y2.gt.obj%y1+y3+y4 &
-			.or. y3.gt.obj%y1+y2+y4 &
-			.or. y4.gt.obj%y1+y2+y3) then
-			coll_nue_int_re = coll_nue_int_re + 0.0
-		else
+		if (.not. (y2.lt.0.d0 &
+				.or. obj%y1.gt.y3+y2+y4 &
+				.or. y2.gt.obj%y1+y3+y4 &
+				.or. y3.gt.obj%y1+y2+y4 &
+				.or. y4.gt.obj%y1+y2+y3)) then
 			fd = fermiDirac(y2 / obj%z)
 			logy2 = log10(y2)
 			do ix=1, flavorNumber
@@ -1183,10 +1138,8 @@ module ndInteractions
 					nX%im(iy,ix) = -nX%im(ix,iy)
 				end do
 			end do
-
 			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
-
-			coll_nue_int_re = coll_nue_int_re + &
+			coll_nue_4_ann_int_re = coll_nue_4_ann_int_re + &
 				y3/E3 * &
 				y4/E4 * &
 				( &
@@ -1197,7 +1150,205 @@ module ndInteractions
 						F_ab_ann_re(obj%n,nX,f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
-	end function coll_nue_int_re
+	end function coll_nue_4_ann_int_re
+
+	function coll_nue_4_sc_int_re(ndim, ve, obj)
+		!scattering, summing positron and electrons
+		integer, intent(in) :: ndim
+		real(dl), dimension(2), intent(in) :: ve
+		type(coll_args), intent(in) :: obj
+		real(dl) :: coll_nue_4_sc_int_re
+		integer :: ix, iy
+		real(dl), dimension(2) :: pi2_vec
+		type(cmplxMatNN) :: nX
+		real(dl) :: y2,y3,y4, f2,f4, E2, E4, dme2, fd, logy3
+
+		coll_nue_4_sc_int_re = 0.d0
+		call allocateCmplxMat(nX)
+
+		dme2 = obj%dme2
+		y2 = ve(1)
+		E2 = Ebare_i_dme(obj%x,y2, dme2)
+		f2 = fermiDirac(E_k_m(y2, obj%x) / obj%z)
+		y4 = ve(2)
+		E4 = Ebare_i_dme(obj%x,y4, dme2)
+		f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
+
+		y3 = obj%y1 + E2 - E4
+		if (.not. (y3.lt.0.d0 &
+				.or. obj%y1.gt.y2+y3+y4 &
+				.or. y2.gt.obj%y1+y3+y4 &
+				.or. y3.gt.obj%y1+y2+y4 &
+				.or. y4.gt.obj%y1+y2+y3)) then
+			fd = fermiDirac(y3 / obj%z)
+			logy3 = log10(y3)
+			do ix=1, flavorNumber
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3) * fd
+				nX%im(ix,ix) = 0.d0
+				do iy=ix+1, flavorNumber
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy3)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy3)
+					nX%re(iy,ix) = nX%re(ix,iy)
+					nX%im(iy,ix) = -nX%im(ix,iy)
+				end do
+			end do
+			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
+			coll_nue_4_sc_int_re = coll_nue_4_sc_int_re + &
+				y2/E2 * &
+				y4/E4 * &
+				( &
+					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
+						F_ab_sc_re(obj%n,f2,nX,f4, 1, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_re(obj%n,f2,nX,f4, 2, 2, obj%ix1,obj%ix2) &
+					) - &
+					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
+						F_ab_sc_re(obj%n,f2,nX,f4, 2, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_re(obj%n,f2,nX,f4, 1, 2, obj%ix1,obj%ix2) ) &
+				)
+		end if
+	end function coll_nue_4_sc_int_re
+
+	function coll_nue_4_int_re(ndim, ve, obj)
+		integer, intent(in) :: ndim
+		real(dl), dimension(2), intent(in) :: ve
+		type(coll_args), intent(in) :: obj
+		real(dl) :: coll_nue_4_int_re
+		coll_nue_4_int_re = &
+			coll_nue_4_sc_int_re(ndim, ve, obj) &
+			+ coll_nue_4_ann_int_re(ndim, ve, obj)
+	end function coll_nue_4_int_re
+
+	function coll_nue_3_ann_int_re(ndim, ve, obj)
+		!annihilation
+		integer, intent(in) :: ndim
+		real(dl), dimension(2), intent(in) :: ve
+		type(coll_args), intent(in) :: obj
+		real(dl) :: coll_nue_3_ann_int_re
+		integer :: ix, iy
+		real(dl), dimension(2) :: pi2_vec
+		type(cmplxMatNN) :: nX
+		real(dl) :: y2,y3,y4, f3,f4, E3, E4, dme2, fd, logy2, t1, t2
+
+		coll_nue_3_ann_int_re = 0.d0
+		call allocateCmplxMat(nX)
+
+		dme2 = obj%dme2
+		y2 = ve(1)
+		fd = fermiDirac(y2 / obj%z)
+		logy2 = log10(y2)
+		do ix=1, flavorNumber
+			nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy2) * fd
+			nX%im(ix,ix) = 0.d0
+			do iy=ix+1, flavorNumber
+				nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy2)
+				nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy2)
+				nX%re(iy,ix) = nX%re(ix,iy)
+				nX%im(iy,ix) = -nX%im(ix,iy)
+			end do
+		end do
+		y4 = ve(2)
+		E4 = Ebare_i_dme(obj%x,y4, dme2)
+		f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
+
+		E3 = obj%y1 + y2 - E4
+		t1 = E3*E3
+		t2 = obj%x*obj%x + dme2
+		if (t1<t2) then
+			y3 = -1.d0
+		else
+			y3 = sqrt(t1 - t2)
+		endif
+		if (.not.(y2.lt.0.d0 &
+				.or. obj%y1.gt.y3+y2+y4 &
+				.or. y2.gt.obj%y1+y3+y4 &
+				.or. y3.gt.obj%y1+y2+y4 &
+				.or. y4.gt.obj%y1+y2+y3)) then
+			f3 = fermiDirac(E_k_m(y3, obj%x) / obj%z)
+			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
+			coll_nue_3_ann_int_re = coll_nue_3_ann_int_re + &
+				y3/E3 * &
+				y4/E4 * &
+				( &
+					pi2_vec(1) * F_ab_ann_re(obj%n,nX,f3,f4, 1, 1, obj%ix1,obj%ix2) + &
+					pi2_vec(2) * F_ab_ann_re(obj%n,nX,f3,f4, 2, 2, obj%ix1,obj%ix2) + &
+					(obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
+						F_ab_ann_re(obj%n,nX,f3,f4, 2, 1, obj%ix1,obj%ix2) + &
+						F_ab_ann_re(obj%n,nX,f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
+				)
+		end if
+	end function coll_nue_3_ann_int_re
+
+	function coll_nue_3_sc_int_re(ndim, ve, obj)
+		!scattering, summing positron and electrons
+		integer, intent(in) :: ndim
+		real(dl), dimension(2), intent(in) :: ve
+		type(coll_args), intent(in) :: obj
+		real(dl) :: coll_nue_3_sc_int_re
+		integer :: ix, iy
+		real(dl), dimension(2) :: pi2_vec
+		type(cmplxMatNN) :: nX
+		real(dl) :: y2,y3,y4, f2,f4, E2, E4, dme2, fd, logy3, t1, t2
+
+		coll_nue_3_sc_int_re = 0.d0
+		call allocateCmplxMat(nX)
+
+		dme2 = obj%dme2
+		y2 = ve(1)
+		E2 = Ebare_i_dme(obj%x,y2, dme2)
+		f2 = fermiDirac(E_k_m(y2, obj%x) / obj%z)
+		y3 = ve(2)
+		fd = fermiDirac(y3 / obj%z)
+		logy3 = log10(y3)
+		do ix=1, flavorNumber
+			nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3) * fd
+			nX%im(ix,ix) = 0.d0
+			do iy=ix+1, flavorNumber
+				nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy3)
+				nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy3)
+				nX%re(iy,ix) = nX%re(ix,iy)
+				nX%im(iy,ix) = -nX%im(ix,iy)
+			end do
+		end do
+
+		E4 = obj%y1 + E2 - y3
+		t1 = E4*E4
+		t2 = obj%x*obj%x + dme2
+		if (t1<t2) then
+			y4 = -1.d0
+		else
+			y4 = sqrt(t1 - t2)
+		endif
+		if (.not.(y4.lt.0.d0 &
+				.or. obj%y1.gt.y2+y3+y4 &
+				.or. y2.gt.obj%y1+y3+y4 &
+				.or. y3.gt.obj%y1+y2+y4 &
+				.or. y4.gt.obj%y1+y2+y3)) then
+			f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
+			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
+			coll_nue_3_sc_int_re = coll_nue_3_sc_int_re + &
+				y2/E2 * &
+				y4/E4 * &
+				( &
+					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
+						F_ab_sc_re(obj%n,f2,nX,f4, 1, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_re(obj%n,f2,nX,f4, 2, 2, obj%ix1,obj%ix2) &
+					) - &
+					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
+						F_ab_sc_re(obj%n,f2,nX,f4, 2, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_re(obj%n,f2,nX,f4, 1, 2, obj%ix1,obj%ix2) ) &
+				)
+		end if
+	end function coll_nue_3_sc_int_re
+
+	function coll_nue_3_int_re(ndim, ve, obj)
+		integer, intent(in) :: ndim
+		real(dl), dimension(2), intent(in) :: ve
+		type(coll_args), intent(in) :: obj
+		real(dl) :: coll_nue_3_int_re
+		coll_nue_3_int_re = &
+			coll_nue_3_sc_int_re(ndim, ve, obj) &
+				+ coll_nue_3_ann_int_re(ndim, ve, obj)
+	end function coll_nue_3_int_re
 
 	function coll_nue_int_im(ndim, ve, obj)
 		integer, intent(in) :: ndim
@@ -1319,8 +1470,7 @@ module ndInteractions
 		integer :: i,j, k
 		real(dl) :: errr1,errr2, res1,res2, cf
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
-		real(dl) ::  VK(2)
-		real(dl) ::  VKa(3)
+		real(dl) ::  vk(2)
 
 		npts=1
 		nrand=1
@@ -1346,14 +1496,14 @@ module ndInteractions
 			collArgs%ix2 = i
 			ifail=0
 			itrans=0
-			call D01GCF(n,coll_nue_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+			call D01GCF(n,coll_nue_4_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 			collision_terms%re(i,i) = collision_terms%re(i,i) + res1
 			if (collision_offdiag.eq.1) then
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
 					ifail=0
 					itrans=0
-					call D01GCF(n,coll_nue_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+					call D01GCF(n,coll_nue_4_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
 
 					ifail=0
