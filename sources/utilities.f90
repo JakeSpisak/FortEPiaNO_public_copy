@@ -834,4 +834,38 @@ enddo                                                   !SG-PF
 !			end if
 	end function rombint_spli
 
+	!approximate 1D/2D integrals using a linear interpolation inside bins
+	!and perform analytical integration of the line/plane.
+	!save both interpolation and some numerical integration time
+	function integral_linearized_1d(N, dx, f)
+		real(dl), dimension(:), allocatable, intent(in) :: dx, f
+		integer, intent(in) :: N
+		real(dl) :: integral_linearized_1d
+		integer :: ix
+
+		integral_linearized_1d = 0.d0
+		do ix=1, N-1
+			integral_linearized_1d = integral_linearized_1d + dx(ix) * (f(ix) + f(ix+1))
+		end do
+		integral_linearized_1d = integral_linearized_1d * 0.5d0
+	end function integral_linearized_1d
+
+	function integral_linearized_2d(N1, N2, dx, dy, f)
+		real(dl), dimension(:), allocatable, intent(in) :: dx, dy
+		real(dl), dimension(:,:), allocatable, intent(in) :: f
+		integer, intent(in) :: N1, N2
+		real(dl) :: integral_linearized_2d
+		integer :: ix, iy
+
+		integral_linearized_2d = 0.d0
+		do ix=1, N1-1
+			do iy=1, N2-1
+				integral_linearized_2d = integral_linearized_2d &
+					+ dx(ix) * dy(iy) * (&
+						f(ix, iy) + f(ix+1, iy) + f(ix, iy+1) + f(ix+1, iy+1)&
+					)
+			end do
+		end do
+		integral_linearized_2d = integral_linearized_2d * 0.25d0
+	end function integral_linearized_2d
 end module utilities

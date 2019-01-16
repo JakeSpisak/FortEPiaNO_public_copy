@@ -266,12 +266,9 @@ module ndEquations
 			end do
 			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m) / z)
 		end do
-		tmp = 0.d0
-		do m=1, Ny-1
-			tmp = tmp + dy_arr(m) * (fy_arr(m+1) + fy_arr(m))
-		end do
+		tmp = integral_linearized_1d(Ny, dy_arr, fy_arr)
 		coeffs = dzodxcoef_interp_func(x/z)
-		ydot(n) = coeffs(1) - coeffs(2)/ z**3 * tmp * 0.5d0
+		ydot(n) = coeffs(1) - coeffs(2)/ z**3 * tmp
 	end subroutine dz_o_dx_lin
 
 	subroutine test_dzodx_speed

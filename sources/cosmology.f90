@@ -144,11 +144,7 @@ module ndCosmology
 			y = y_arr(ix)
 			fy_arr(ix) = y*y*y * nuDensMatVec(ix)%re(iFl, iFl) * fermiDirac(y/z)
 		end do
-		nuDensityLin = 0.d0
-		do ix=1, Ny-1
-			nuDensityLin = nuDensityLin + dy_arr(ix) * (fy_arr(ix+1) + fy_arr(ix))
-		end do
-		nuDensityLin = nuDensityLin * 0.5d0 / PISQD2
+		nuDensityLin = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQD2
 	end function nuDensityLin
 
 	subroutine test_nuDens_speed
