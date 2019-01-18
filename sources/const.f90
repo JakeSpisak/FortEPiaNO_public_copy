@@ -67,6 +67,8 @@ module constants
 	real(dl), parameter :: Damp_ex = 4.d0*sin2thW*sin2thW + 12.d0
     real(dl), parameter :: Damp_mt = 8.d0*sin2thW*sin2thW - 4.d0*sin2thW + 4.d0
 	real(dl), parameter :: dampTermFactor = 8.d0 * zeta3 * ymed / (3.d0 * m_e_cub)
+
+	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
 	
 	real(dl), parameter :: fe_l = 0.d0, fe_u = 100.d0
 	

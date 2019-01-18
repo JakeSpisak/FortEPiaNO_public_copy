@@ -588,4 +588,20 @@ module ndEquations
 	subroutine jdum
 		!necessary but not needed
 	end subroutine jdum
+
+	function Neff_from_rho_z(z)
+		real(dl) :: Neff_from_rho_z
+		real(dl), intent(in) :: z
+		real(dl) :: rhototnu, ndeq, totf
+		integer :: ix
+
+		totf=0.d0
+		do ix=1, flavorNumber
+			totf = totf + nuFactor(ix)
+		end do
+		ndeq=nuDensityLinEq(z)
+		rhototnu = (allNuDensity(z) - totf*ndeq)/ndeq
+		Neff_from_rho_z = (zid/z)**4 * &
+			(3.d0 + rhototnu)
+	end function Neff_from_rho_z
 end module ndEquations

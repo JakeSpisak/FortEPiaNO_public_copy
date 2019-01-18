@@ -135,11 +135,7 @@ module ndCosmology
 		real(dl), intent(in) :: z
 		integer, intent(in) :: iFl
 		integer :: ix
-		type(nuDensArgs) :: vec
 
-		vec%x=0.d0
-		vec%z=z
-		vec%iFl=iFl
 		do ix=1, Ny
 			y = y_arr(ix)
 			fy_arr(ix) = y*y*y * nuDensMatVec(ix)%re(iFl, iFl) * fermiDirac(y/z)
@@ -196,5 +192,17 @@ module ndCosmology
 		end do
 		allNuDensity = allNuDensity
 	end function allNuDensity
+
+	function nuDensityLinEq(z)
+		real(dl) :: nuDensityLinEq, y
+		real(dl), intent(in) :: z
+		integer :: ix
+
+		do ix=1, Ny
+			y = y_arr(ix)
+			fy_arr(ix) = y*y*y * fermiDirac(y/z)
+		end do
+		nuDensityLinEq = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQD2
+	end function nuDensityLinEq
 
 end module
