@@ -164,17 +164,20 @@ program tests
 		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
 		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
 
-		call assert_double_rel("nuDens test 1", nuDensity(1.d0, 1), 1.15145d0, 1d-3)
-		call assert_double_rel("nuDens test 2", nuDensity(1.076d0, 1), 1.54346d0, 1d-3)
-		call assert_double_rel("nuDens test 3", nuDensity(1.32d0, 1), 3.49577d0, 1d-3)
-		call assert_double_rel("nuDens test 4", nuDensity(1.37d0, 2), 2.d0*4.05629d0, 3d-3)
-		call assert_double_rel("nuDens test 5", nuDensity(1.003d0, 3), 3.d0*1.16533d0, 1d-3)
+		call assert_double_rel("nuDens test 1", nuDensity(1.d0, 1), 1.15145d0, 1d-4)
+		call assert_double_rel("nuDens test 2", nuDensity(1.076d0, 1), 1.54346d0, 1d-4)
+		call assert_double_rel("nuDens test 3", nuDensity(1.32d0, 1), 3.49577d0, 3d-4)
+		call assert_double_rel("nuDens test 4", nuDensity(1.37d0, 2), 2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDens test 5", nuDensity(1.003d0, 3), 3.d0*1.16533d0, 1d-4)
 
-		call assert_double_rel("nuDensLin test 1", nuDensityLin(1.d0, 1), 1.15145d0, 1d-3)
-		call assert_double_rel("nuDensLin test 2", nuDensityLin(1.076d0, 1), 1.54346d0, 1d-3)
-		call assert_double_rel("nuDensLin test 3", nuDensityLin(1.32d0, 1), 3.49577d0, 1d-3)
-		call assert_double_rel("nuDensLin test 4", nuDensityLin(1.37d0, 2), 2.d0*4.05629d0, 3d-3)
-		call assert_double_rel("nuDensLin test 5", nuDensityLin(1.003d0, 3), 3.d0*1.16533d0, 1d-3)
+		call assert_double_rel("nuDensLin test 1", nuDensityLin(1.d0, 1), 1.15145d0, 1d-4)
+		call assert_double_rel("nuDensLin test 2", nuDensityLin(1.076d0, 1), 1.54346d0, 1d-4)
+		call assert_double_rel("nuDensLin test 3", nuDensityLin(1.32d0, 1), 3.49577d0, 2d-4)
+		call assert_double_rel("nuDensLin test 4", nuDensityLin(1.37d0, 2), 2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDensLin test 5", nuDensityLin(1.003d0, 3), 3.d0*1.16533d0, 1d-4)
+
+		call assert_double_rel("nuDensLinEq test 1", nuDensityLinEq(1.d0), 1.15145d0, 1d-4)
+		call assert_double_rel("nuDensLinEq test 2", nuDensityLinEq(1.37d0), 4.055034d0, 1d-4)
 
 		call assert_double_rel("allNuDensLin test 1", allNuDensity(1.d0), 6*1.15145d0, 1d-3)
 		call assert_double_rel("allNuDensLin test 2", allNuDensity(1.076d0), 6*1.54346d0, 1d-3)
@@ -190,6 +193,25 @@ program tests
 		call assert_double("radDens test 1", radDensity(0.7d0, 1.04d0), 6.11141d0, 1d-3)
 		call assert_double("radDens test 2", radDensity(1.d0, 1.04d0), 6.06205d0, 1d-3)
 		call assert_double("radDens test 3", radDensity(1.d0, 1.24d0), 12.309d0, 3d-3)
+
+		call assert_double_rel("Neff test 1", Neff_from_rho_z(zid), 3.0d0, 1d-5)
+		call assert_double_rel("Neff test 2", Neff_from_rho_z(1.39975d0), 3.011d0, 1d-4)
+		do iy=1, Ny
+			nuDensMatVec(iy)%re(1, 1) = 1.2d0
+		end do
+		call assert_double_rel("Neff test 3", Neff_from_rho_z(zid), 3.2d0, 1d-5)
+		do iy=1, Ny
+			nuDensMatVec(iy)%re(1, 1) = 1.00920d0
+			nuDensMatVec(iy)%re(2, 2) = 1.00392d0
+			nuDensMatVec(iy)%re(3, 3) = 1.00392d0
+		end do
+		call assert_double("Neff test 4", Neff_from_rho_z(1.397843d0), 3.045d0, 1d-3)
+		do iy=1, Ny
+			nuDensMatVec(iy)%re(1, 1) = 1.00699d0
+			nuDensMatVec(iy)%re(2, 2) = 1.00511d0
+			nuDensMatVec(iy)%re(3, 3) = 1.00519d0
+		end do
+		call assert_double("Neff test 5", Neff_from_rho_z(1.39779d0), 3.045d0, 1d-3)
 	end subroutine do_tests_cosmology
 
 	subroutine do_tests_JKYG
@@ -752,22 +774,22 @@ program tests
 		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
 		nA%re(3,:) = (/-0.03d0, 0.d0, 0.96d0/)
 		nA%im(1,:) = (/0.d0, 0.0001d0, -0.004d0/)
-		nA%im(2,:) = (/0.0001d0, 0.d0, 0.001d0/)
-		nA%im(3,:) = (/-0.004d0, 0.001d0, 0.d0/)
+		nA%im(2,:) = (/-0.0001d0, 0.d0, 0.001d0/)
+		nA%im(3,:) = (/0.004d0, -0.001d0, 0.d0/)
 		!rhoB = {{1.23, 0.1 - 0.08 I, 0.008 + 0.007 I}, {0.1 - 0.08 I, 1.7, -0.02}, {0.008 + 0.007 I, -0.02, 0.77}};
 		nB%re(1,:) = (/1.23d0, 0.1d0, 0.008d0/)
 		nB%re(2,:) = (/0.1d0, 1.7d0, -0.02d0/)
 		nB%re(3,:) = (/0.008d0, -0.02d0, 0.77d0/)
 		nB%im(1,:) = (/0.d0, -0.08d0, 0.007d0/)
-		nB%im(2,:) = (/-0.08d0, 0.d0, 0.d0/)
-		nB%im(3,:) = (/0.007d0, 0.d0, 0.d0/)
+		nB%im(2,:) = (/0.08d0, 0.d0, 0.d0/)
+		nB%im(3,:) = (/-0.007d0, 0.d0, 0.d0/)
 		!RR
-		tmpmatA(1,:) = (/-0.0419526, -0.00402972, 0.000838691/)
-		tmpmatA(2,:) = (/-0.00402972, -0.0565451, 0.000746814/)
-		tmpmatA(3,:) = (/0.000838691, 0.000746814, -0.027583/)
-		tmpmatB(1,:) = (/0.0000229817, 0.00279841, - 0.000103477/)
-		tmpmatB(2,:) = (/0.00279841, 0.0000183936, - 0.0000638581/)
-		tmpmatB(3,:) = (/-0.000103477, -0.0000638581, 5.41474e-6/)
+		tmpmatA(1,:) = (/-0.0419512, -0.00402987, 0.000838691/)
+		tmpmatA(2,:) = (/-0.00402987, -0.0565448, 0.000740187/)
+		tmpmatA(3,:) = (/0.000838691, 0.000740187, -0.0275819/)
+		tmpmatB(1,:) = (/0., 0.00279858, -0.000103477/)
+		tmpmatB(2,:) = (/-0.00279858, 0., -0.0000142409/)
+		tmpmatB(3,:) = (/0.000103477, 0.0000142409, 0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
@@ -776,12 +798,12 @@ program tests
 			end do
 		end do
 		!LL
-		tmpmatA(1,:) = (/-0.4191434, 0.0101556, 0.00807072/)
-		tmpmatA(2,:) = (/0.0101556, -0.0762068, 0.000840218/)
-		tmpmatA(3,:) = (/0.00807072, 0.000840218, -0.0372522/)
-		tmpmatB(1,:) = (/- 0.0000844192, - 0.0103256, 0.00186556/)
-		tmpmatB(2,:) = (/- 0.0103256, -0.0000654895, 0.0000216574/)
-		tmpmatB(3,:) = (/0.00186556, 0.0000216574, - 0.0000178139/)
+		tmpmatA(1,:) = (/-0.4191489, 0.0101562, 0.00807072/)
+		tmpmatA(2,:) = (/0.0101562, -0.0762081, 0.000864564/)
+		tmpmatA(3,:) = (/0.00807072, 0.000864564, -0.0372565/)
+		tmpmatB(1,:) = (/0., -0.0103262, 0.00186556/)
+		tmpmatB(2,:) = (/0.0103262, 0., -0.000160603/)
+		tmpmatB(3,:) = (/-0.00186556, 0.000160603, 0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann11 test 1 full rho ',2I1)") ix,iy
@@ -790,12 +812,12 @@ program tests
 			end do
 		end do
 		!LR
-		tmpmatA(1,:) = (/-0.1326454, -0.00381131, 0.00112954/)
-		tmpmatA(2,:) = (/-0.00381131,  0.0656934, -0.00086764/)
-		tmpmatA(3,:) = (/0.00112954, -0.00086764, 0.0320456/)
-		tmpmatB(1,:) = (/0.0000726631, 0.00272959, - 0.0000740348/)
-		tmpmatB(2,:) = (/0.00272959, - 0.0000213695, 0.0000741896/)
-		tmpmatB(3,:) = (/- 0.0000740348, 0.0000741896, - 6.29078e-6/)
+		tmpmatA(1,:) = (/-0.1326407, -0.00381177, 0.00112954/)
+		tmpmatA(2,:) = (/-0.00381177, 0.0656931, -0.00085994/)
+		tmpmatA(3,:) = (/0.00112954, -0.00085994, 0.0320443/)
+		tmpmatB(1,:) = (/0., +0.00273011, -0.0000740348/)
+		tmpmatB(2,:) = (/-0.00273011, 0., +0.0000165449/)
+		tmpmatB(3,:) = (/+0.0000740348, -0.0000165449, 0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann12 test 1 full rho ',2I1)") ix,iy
@@ -804,12 +826,12 @@ program tests
 			end do
 		end do
 		!RL
-		tmpmatA(1,:) = (/-0.1325653, -0.00399034, 0.00115456/)
-		tmpmatA(2,:) = (/-0.00399034, 0.0655944, -0.000723211/)
-		tmpmatA(3,:) = (/0.00115456, -0.000723211, 0.0320646/)
-		tmpmatB(1,:) = (/- 0.0000266998, 0.00287291, - 0.0000508025/)
-		tmpmatB(2,:) = (/0.00287291, 0.0000563695, - 0.0000186415/)
-		tmpmatB(3,:) = (/- 0.0000508025, - 0.0000186415, 0.0000153332/)
+		tmpmatA(1,:) = (/-0.132567, -0.00399017, 0.00115456/)
+		tmpmatA(2,:) = (/-0.00399017, 0.0655955, -0.000744167/)
+		tmpmatA(3,:) = (/0.00115456, -0.000744167, 0.0320682/)
+		tmpmatB(1,:) = (/0., +0.00287272, -0.0000508025/)
+		tmpmatB(2,:) = (/-0.00287272, 0., +0.000138238/)
+		tmpmatB(3,:) = (/+0.0000508025, -0.000138238, 0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann21 test 1 full rho ',2I1)") ix,iy
@@ -819,12 +841,12 @@ program tests
 		end do
 		!second series
 		!RR
-		tmpmatA(1,:) = (/-0.0690001, -0.00652359, 0.00140441/)
-		tmpmatA(2,:) = (/-0.00652359, -0.0914355, 0.00123319/)
-		tmpmatA(3,:) = (/0.00140441, 0.00123319, -0.0459147/)
-		tmpmatB(1,:) = (/0.0000640169, 0.00441096, -0.000161176/)
-		tmpmatB(2,:) = (/0.00441096, 0.0000512366, -0.000135525/)
-		tmpmatB(3,:) = (/-0.000161176, -0.000135525, 0.0000150831/)
+		tmpmatA(1,:) = (/-0.0689959, -0.00652399, 0.00140441/)
+		tmpmatA(2,:) = (/-0.00652399, -0.0914345, 0.00121473/)
+		tmpmatA(3,:) = (/0.00140441, 0.00121473, -0.0459115/)
+		tmpmatB(1,:) = (/0., +0.00441142, -0.000161176/)
+		tmpmatB(2,:) = (/-0.00441142, +0., +2.68659e-6/)
+		tmpmatB(3,:) = (/+0.000161176, -2.68659e-6, +0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann22 test 2 full rho ',2I1)") ix,iy
@@ -833,12 +855,12 @@ program tests
 			end do
 		end do
 		!LL
-		tmpmatA(1,:) = (/-0.6890818, -0.0282017, -0.00945936/)
-		tmpmatA(2,:) = (/-0.0282017, -0.1230948, 0.00119709/)
-		tmpmatA(3,:) = (/-0.00945936, 0.00119709, -0.0620348/)
-		tmpmatB(1,:) = (/-0.000235155, 0.0255287, -0.00317523/)
-		tmpmatB(2,:) = (/0.0255287, -0.000182425, 0.000117498/)
-		tmpmatB(3,:) = (/-0.00317523, 0.000117498, -0.0000496218/)
+		tmpmatA(1,:) = (/-0.689097, -0.0282022, -0.00945936/)
+		tmpmatA(2,:) = (/-0.0282022, -0.1230982, 0.00126491/)
+		tmpmatA(3,:) = (/-0.00945936, 0.00126491, -0.0620467/)
+		tmpmatB(1,:) = (/+0., +0.0255293, -0.00317523/)
+		tmpmatB(2,:) = (/-0.0255293, +0., -0.000390201/)
+		tmpmatB(3,:) = (/+0.00317523, +0.000390201, 0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann11 test 2 full rho ',2I1)") ix,iy
@@ -847,12 +869,12 @@ program tests
 			end do
 		end do
 		!LR
-		tmpmatA(1,:) = (/-0.2181635, -0.00713197, 0.000594222/)
-		tmpmatA(2,:) = (/-0.00713197, 0.1062286, -0.00143271/)
-		tmpmatA(3,:) = (/0.000594222, -0.00143271, 0.0533432/)
-		tmpmatB(1,:) = (/0.000202408, 0.00460267, - 0.00024319/)
-		tmpmatB(2,:) = (/0.00460267, -0.000059526, 0.000157452/)
-		tmpmatB(3,:) = (/- 0.00024319, 0.000157452, -0.0000175234/)
+		tmpmatA(1,:) = (/-0.2181504, -0.0071315, 0.000594222/)
+		tmpmatA(2,:) = (/-0.0071315, 0.1062276, -0.00141126/)
+		tmpmatA(3,:) = (/0.000594222, -0.00141126, 0.0533395/)
+		tmpmatB(1,:) = (/0., +0.00460214, -0.00024319/)
+		tmpmatB(2,:) = (/-0.00460214, 0., -3.12125e-6/)
+		tmpmatB(3,:) = (/+0.00024319, +3.12125e-6, +0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann12 test 2 full rho ',2I1)") ix,iy
@@ -861,12 +883,12 @@ program tests
 			end do
 		end do
 		!RL
-		tmpmatA(1,:) = (/-0.2179405, -0.00641388, 0.00228429/)
-		tmpmatA(2,:) = (/-0.00641388, 0.1059528, -0.00103039/)
-		tmpmatA(3,:) = (/0.00228429, -0.00103039, 0.053396/)
-		tmpmatB(1,:) = (/- 0.0000743741, 0.00461848, - 0.000014447/)
-		tmpmatB(2,:) = (/0.00461848, 0.000157021, - 0.000101135/)
-		tmpmatB(3,:) = (/- 0.000014447, - 0.000101135, 0.0000427115/)
+		tmpmatA(1,:) = (/-0.2179453, -0.00641341, 0.00228429/)
+		tmpmatA(2,:) = (/-0.00641341, 0.1059558, -0.00108876/)
+		tmpmatA(3,:) = (/0.00228429, -0.00108876, 0.0534062/)
+		tmpmatB(1,:) = (/0., +0.00461794, -0.000014447/)
+		tmpmatB(2,:) = (/-0.00461794, 0., +0.000335862/)
+		tmpmatB(3,:) = (/+0.000014447, -0.000335862, 0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann21 test 2 full rho ',2I1)") ix,iy
@@ -875,16 +897,15 @@ program tests
 			end do
 		end do
 
-
 		write(*,*)
 		write(*,"(a)") "F_sc functions, full rho (144 tests)"
 		!RR
-		tmpmatA(1,:) = (/0.0093356, 0.00308994, 0.000821132/)
-		tmpmatA(2,:) = (/0.00308994, 0.0248959, -0.000676366/)
-		tmpmatA(3,:) = (/0.000821132, -0.000676366, -0.00692737/)
-		tmpmatB(1,:) = (/-0.000017038, -0.00257011, 0.000305504/)
-		tmpmatB(2,:) = (/-0.00257011, -0.0000136365, 8.81481e-7/)
-		tmpmatB(3,:) = (/0.000305504, 8.81481e-7, -4.01434e-6/)
+		tmpmatA(1,:) = (/0.0093345,0.00309005,0.000821132/)
+		tmpmatA(2,:) = (/0.00309005,0.0248957,-0.000671452/)
+		tmpmatA(3,:) = (/0.000821132,-0.000671452,-0.00692823/)
+		tmpmatB(1,:) = (/0.,-0.00257023,+0.000305504/)
+		tmpmatB(2,:) = (/+0.00257023,0.,-0.0000359033/)
+		tmpmatB(3,:) = (/-0.000305504,+0.0000359033,0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc22 test 1 full rho ',2I1)") ix,iy
@@ -893,12 +914,12 @@ program tests
 			end do
 		end do
 		!LL
-		tmpmatA(1,:) = (/0.0931395, -0.0126822, 0.00174399/)
-		tmpmatA(2,:) = (/-0.0126822, 0.033518, -0.000788527/)
-		tmpmatA(3,:) = (/0.00174399, -0.000788527, -0.00933392/)
-		tmpmatB(1,:) = (/0.000062586, 0.00943161, -0.000486463/)
-		tmpmatB(2,:) = (/0.00943161, 0.0000485521, -0.0000787672/)
-		tmpmatB(3,:) = (/-0.000486463, -0.0000787672, 0.0000132067/)
+		tmpmatA(1,:) = (/0.0931435,-0.0126826,0.00174399/)
+		tmpmatA(2,:) = (/-0.0126826,0.0335189,-0.000806577/)
+		tmpmatA(3,:) = (/0.00174399,-0.000806577,-0.00933077/)
+		tmpmatB(1,:) = (/+0.,+0.00943206,-0.000486463/)
+		tmpmatB(2,:) = (/-0.00943206,+0.,+0.0000563555/)
+		tmpmatB(3,:) = (/+0.000486463,-0.0000563555,0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc11 test 1 full rho ',2I1)") ix,iy
@@ -907,12 +928,12 @@ program tests
 			end do
 		end do
 		!LR
-		tmpmatA(1,:) = (/0.0295172, 0.00292802, 0.000605503/)
-		tmpmatA(2,:) = (/0.00292802, -0.0289238, 0.000785794/)
-		tmpmatA(3,:) = (/0.000605503, 0.000785794, 0.00804814/)
-		tmpmatB(1,:) = (/-0.0000538704, -0.00251908, 0.000283677/)
-		tmpmatB(2,:) = (/-0.00251908, 0.0000158427, -1.02409e-6/)
-		tmpmatB(3,:) = (/0.000283677, -1.02409e-6, 4.66381e-6/)
+		tmpmatA(1,:) = (/0.0295137,0.00292836,0.000605503/)
+		tmpmatA(2,:) = (/0.00292836,-0.0289235,0.000780085/)
+		tmpmatA(3,:) = (/0.000605503,0.000780085,0.00804914/)
+		tmpmatB(1,:) = (/0.,-0.00251947,+0.000283677/)
+		tmpmatB(2,:) = (/+0.00251947,0.,+0.0000417121/)
+		tmpmatB(3,:) = (/-0.000283677,-0.0000417121,+0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc12 test 1 full rho ',2I1)") ix,iy
@@ -921,12 +942,12 @@ program tests
 			end do
 		end do
 		!RL
-		tmpmatA(1,:) = (/0.0294578, 0.00306075, 0.000586954/)
-		tmpmatA(2,:) = (/0.00306075, -0.0288504, 0.000678718/)
-		tmpmatA(3,:) = (/0.000586954, 0.000678718, 0.0080341/)
-		tmpmatB(1,:) = (/0.0000197945, -0.00262534, 0.000266453/)
-		tmpmatB(2,:) = (/-0.00262534, -0.0000417908, 0.0000677983/)
-		tmpmatB(3,:) = (/0.000266453, +0.0000677983, -0.0000113676/)
+		tmpmatA(1,:) = (/0.0294591,0.00306062,0.000586954/)
+		tmpmatA(2,:) = (/0.00306062,-0.0288512,0.000694255/)
+		tmpmatA(3,:) = (/0.000586954,0.000694255,0.00803138/)
+		tmpmatB(1,:) = (/+0.,-0.0026252,+0.000266453/)
+		tmpmatB(2,:) = (/+0.0026252,0.,-0.0000485076/)
+		tmpmatB(3,:) = (/-0.000266453,+0.0000485076,+0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc21 test 1 full rho ',2I1)") ix,iy
@@ -936,12 +957,12 @@ program tests
 		end do
 		!second series
 		!RR
-		tmpmatA(1,:) = (/-0.0057045, -0.000732622, -0.00101446/)
-		tmpmatA(2,:) = (/-0.000732622, -0.0129254, 0.000189991/)
-		tmpmatA(3,:) = (/-0.00101446, 0.000189991, 0.00109802/)
-		tmpmatB(1,:) = (/-0.0000239973, 0.000956323, -0.000198153/)
-		tmpmatB(2,:) = (/0.000956323, -0.0000192065, 0.0000583729/)
-		tmpmatB(3,:) = (/-0.000198153, 0.0000583729, -5.65404e-6/)
+		tmpmatA(1,:) = (/-0.00570605,-0.000732471,-0.00101446/)
+		tmpmatA(2,:) = (/-0.000732471,-0.0129257,0.000196912/)
+		tmpmatA(3,:) = (/-0.00101446,0.000196912,0.00109681/)
+		tmpmatB(1,:) = (/0.,+0.000956151,-0.000198153/)
+		tmpmatB(2,:) = (/-0.000956151,+0.,+6.56285e-6/)
+		tmpmatB(3,:) = (/+0.000198153,-6.56285e-6,+0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc22 test 2 full rho ',2I1)") ix,iy
@@ -950,12 +971,12 @@ program tests
 			end do
 		end do
 		!LL
-		tmpmatA(1,:) = (/-0.0572917, -0.00823674, 0.00289993/)
-		tmpmatA(2,:) = (/-0.00823674, -0.0175661, 0.000431652/)
-		tmpmatA(3,:) = (/0.00289993, 0.000431652, 0.00150503/)
-		tmpmatB(1,:) = (/0.00008815, 0.00522956, 6.31568e-6/)
-		tmpmatB(2,:) = (/0.00522956, 0.0000683837,-0.0000338275/)
-		tmpmatB(3,:) = (/6.31568e-6,-0.0000338275, 0.0000186012/)
+		tmpmatA(1,:) = (/-0.057286,-0.00823654,0.00289993/)
+		tmpmatA(2,:) = (/-0.00823654,-0.0175649,0.00040623/)
+		tmpmatA(3,:) = (/0.00289993,0.00040623,0.00150947/)
+		tmpmatB(1,:) = (/+0.,+0.00522933,+6.31568e-6/)
+		tmpmatB(2,:) = (/-0.00522933,+0.,+0.000156488/)
+		tmpmatB(3,:) = (/-6.31568e-6,-0.000156488,0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc11 test 2 full rho ',2I1)") ix,iy
@@ -964,12 +985,12 @@ program tests
 			end do
 		end do
 		!LR
-		tmpmatA(1,:) = (/-0.0180364, -0.000504563, -0.000710753/)
-		tmpmatA(2,:) = (/-0.000504563, 0.0150165, -0.000220729/)
-		tmpmatA(3,:) = (/-0.000710753, -0.000220729, -0.00127566/)
-		tmpmatB(1,:) = (/-0.0000758744,0.000884456,-0.00016741/)
-		tmpmatB(2,:) = (/0.000884456,0.0000223139,-0.0000678169/)
-		tmpmatB(3,:) = (/-0.00016741,-0.0000678169, 6.5688e-6/)
+		tmpmatA(1,:) = (/-0.0180413,-0.000504739,-0.000710753/)
+		tmpmatA(2,:) = (/-0.000504739,0.0150169,-0.00022877/)
+		tmpmatA(3,:) = (/-0.000710753,-0.00022877,-0.00127426/)
+		tmpmatB(1,:) = (/0.,+0.000884656,-0.00016741/)
+		tmpmatB(2,:) = (/-0.000884656,0.,-7.62464e-6/)
+		tmpmatB(3,:) = (/+0.00016741,+7.62464e-6,+0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc12 test 2 full rho ',2I1)") ix,iy
@@ -978,12 +999,12 @@ program tests
 			end do
 		end do
 		!RL
-		tmpmatA(1,:) = (/-0.01812, -0.000773746, -0.00134429/)
-		tmpmatA(2,:) = (/-0.000773746, 0.0151199, -0.000371541/)
-		tmpmatA(3,:) = (/-0.00134429, -0.000371541, -0.00129544/)
-		tmpmatB(1,:) = (/0.0000278798,0.000878531,-0.000253156/)
-		tmpmatB(2,:) = (/0.000878531,-0.0000588607,0.0000291168/)
-		tmpmatB(3,:) = (/-0.000253156,0.0000291168,-0.0000160108/)
+		tmpmatA(1,:) = (/-0.0181182,-0.000773921,-0.00134429/)
+		tmpmatA(2,:) = (/-0.000773921,0.0151188,-0.000349659/)
+		tmpmatA(3,:) = (/-0.00134429,-0.000349659,-0.00129926/)
+		tmpmatB(1,:) = (/+2.7336e-21,+0.000878732,-0.000253156/)
+		tmpmatB(2,:) = (/-0.000878732,-1.09344e-20,-0.000134696/)
+		tmpmatB(3,:) = (/+0.000253156,+0.000134696,+0./)
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc21 test 2 full rho ',2I1)") ix,iy
@@ -1001,7 +1022,7 @@ program tests
 		integer :: i!,j, k
 		real(dl) :: errr1,errr2, res1,res2,res3,res4, cf
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
-		real(dl) ::  VK(2), tv(2)
+		real(dl) ::  VK(2)
 
 		x=0.05d0
 		y1=1.2d0
@@ -1027,16 +1048,15 @@ program tests
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
 
-		vk=(/4.d0,2.2d0/)
-		tv=(/4.d0,2.99701245d0/)
+		print *,y_arr(21)
+		vk=(/5.2d0,2.34820292d0/)
 		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
-		res2=coll_nue_3_sc_int_re(n, tv, collArgs)
+		res2=coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
 		call assert_double_rel("test coll sc 4 vs 3 sing", res1,res2, 1d-7)
 
 		vk=(/4.d0,2.2d0/)
-		tv=(/5.01030756d0,2.2d0/)
 		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
-		res2=coll_nue_3_ann_int_re(n, tv, collArgs)
+!		res2=coll_nue_3_ann_int_re(n, tv, collArgs)
 		call assert_double_rel("test coll ann 4 vs 3 sing", res1,res2, 1d-7)
 
 		do i=1, flavorNumber
@@ -1047,7 +1067,7 @@ program tests
 			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 			ifail=0
 			itrans=0
-			call D01GCF(n,coll_nue_3_sc_int_re, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+!			call D01GCF(n,coll_nue_3_sc_int_re, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
 			call assert_double_rel("test coll sc 4 vs 3", res1,res2, 5d-3)
 !			write(*,"(I2,*(E17.9))") i, res1, res2
 			ifail=0
@@ -1055,7 +1075,7 @@ program tests
 			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 			ifail=0
 			itrans=0
-			call D01GCF(n,coll_nue_3_ann_int_re, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+!			call D01GCF(n,coll_nue_3_ann_int_re, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
 			call assert_double_rel("test coll ann 4 vs 3", res1,res2, 1d-2)
 !			write(*,"(*(E17.9))") res1, res2
 		end do
