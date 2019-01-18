@@ -8,7 +8,7 @@ subroutine assert_double(testname, num1, num2, tol)
 		write(*, fmt="(a)", advance="no") "."
 	else
 		print *, testname, " failed"
-		write (*,"(*(E15.7))") num1, num2, num1 - num2, tol
+		write (*,"(*(E17.9))") num1, num2, num1 - num2, tol
 		call exit()
 	end if
 end subroutine assert_double
@@ -23,7 +23,7 @@ subroutine assert_double_rel(testname, num1, num2, tol)
 		write(*, fmt="(a)", advance="no") "."
 	else
 		print *, testname, " failed"
-		write (*,"(*(E15.7))") num1, num2, (num1 - num2)/num1, tol
+		write (*,"(*(E17.9))") num1, num2, (num1 - num2)/num1, tol
 		call exit()
 	end if
 end subroutine assert_double_rel
@@ -212,6 +212,8 @@ program tests
 			nuDensMatVec(iy)%re(3, 3) = 1.00519d0
 		end do
 		call assert_double("Neff test 5", Neff_from_rho_z(1.39779d0), 3.045d0, 1d-3)
+
+		deallocate(ndmv_re)
 	end subroutine do_tests_cosmology
 
 	subroutine do_tests_JKYG
@@ -304,41 +306,66 @@ program tests
 
 	subroutine do_tests_Di
 		write(*,*) ""
-		write(*,"(a)") "D_i functions (12 tests)"
+		write(*,"(a)") "D_i functions (18 tests)"
 		call assert_double("D1 test 1", D1_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 2", D1_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 3", D1_full(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
 		call assert_double("D1 test 4", D1_full(10.03d0,5.4d0,8.8d0,6.63d0), 21.6d0, 1d-4)
+		call assert_double("D1 test 5", D1_full(10.d0,2.d0,5.3d0,6.7d0), 8.d0, 1d-7)
+		call assert_double("D1 test 6", D1_full(2.d0,10.d0,6.7d0,5.3d0), 8.d0, 1d-7)
 		call assert_double("D2 test 1", D2_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
 		call assert_double("D2 test 2", D2_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
 		call assert_double("D2 test 3", D2_full(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
 		call assert_double("D2 test 4", D2_full(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
+		call assert_double_rel("D2 test 5", D2_full(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
+		call assert_double_rel("D2 test 6", D2_full(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
 		call assert_double("D3 test 1", D3_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
 		call assert_double("D3 test 2", D3_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
 		call assert_double("D3 test 3", D3_full(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
-		call assert_double("D3 test 4", D3_full(10.03d0,5.4d0,8.8d0,6.63d0), 22692.2d0, 3d-1)
+		call assert_double_rel("D3 test 4", D3_full(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
+		call assert_double_rel("D3 test 5", D3_full(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
+		call assert_double_rel("D3 test 6", D3_full(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
 	end subroutine do_tests_Di
 
 	subroutine do_tests_Pi_ij
 		real(dl), dimension(2) :: temp_v2
 		write(*,*) ""
-		write(*,"(a)") "Pi(yi,yj) functions (12 tests)"
+		write(*,"(a)") "Pi(yi,yj) functions (24 tests)"
 		call assert_double("Pi_1_12 test 1", PI1_12_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.00933333d0, 1d-7)
 		call assert_double("Pi_1_12 test 2", PI1_12_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.0893333d0, 1d-7)
-		call assert_double("Pi_1_13 test 1", PI1_13_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.0106667d0, 1d-7)
-		call assert_double("Pi_1_13 test 2", PI1_13_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.0106667d0, 1d-7)
+		call assert_double_rel("Pi_1_12 test 3", PI1_12_full(10.d0, 2.d0, 5.3d0, 6.7d0), 170.66667d0, 1d-7)
+		call assert_double_rel("Pi_1_12 test 4", PI1_12_full(2.d0, 10.d0, 6.7d0, 5.3d0), 170.66667d0, 1d-7)
+
+		call assert_double_rel("Pi_1_13 test 1", PI1_13_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.010666667d0, 1d-7)
+		call assert_double_rel("Pi_1_13 test 2", PI1_13_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.010666667d0, 1d-7)
+		call assert_double_rel("Pi_1_13 test 3", PI1_13_full(10.d0, 2.d0, 5.3d0, 6.7d0), 96.53333d0, 1d-7)
+		call assert_double_rel("Pi_1_13 test 4", PI1_13_full(2.d0, 10.d0, 6.7d0, 5.3d0), 96.53333d0, 1d-7)
+
 		temp_v2 = PI2_nn_f(0.1d0, 0.2d0, 0.3d0, 0.4d0, 0.3d0, 0.4d0)
 		call assert_double("Pi_2_14 test 1", temp_v2(1), 0.00267733d0, 1d-7)
 		call assert_double("Pi_2_13 test 1", temp_v2(2), 0.000810667d0, 1d-7)
 		temp_v2 = PI2_nn_f(0.4d0, 0.3d0, 0.2d0, 0.1d0, 0.2d0, 0.1d0)
 		call assert_double("Pi_2_14 test 2", temp_v2(1), 0.00267733d0, 1d-7)
 		call assert_double("Pi_2_13 test 2", temp_v2(2), 0.000810667d0, 1d-7)
+		temp_v2 = PI2_nn_f(10.d0, 2.d0, 5.3d0, 6.7d0, 5.3d0, 6.7d0)
+		call assert_double_rel("Pi_2_14 test 3", temp_v2(1), 1978.88d0, 1d-7)
+		call assert_double_rel("Pi_2_13 test 3", temp_v2(2), 3293.01333d0, 1d-7)
+		temp_v2 = PI2_nn_f(2.d0, 10.d0, 6.7d0, 5.3d0, 6.7d0, 5.3d0)
+		call assert_double_rel("Pi_2_14 test 4", temp_v2(1), 1978.88d0, 1d-7)
+		call assert_double_rel("Pi_2_13 test 4", temp_v2(2), 3293.01333d0, 1d-7)
+
 		temp_v2 = PI2_ne_f(0.1d0, 0.2d0, 0.3d0, 0.4d0, 0.2d0, 0.4d0)
 		call assert_double("Pi_2_14 test 1", temp_v2(1), 0.00267733d0, 1d-7)
 		call assert_double("Pi_2_12 test 1", temp_v2(2), 0.00427733d0, 1d-7)
 		temp_v2 = PI2_ne_f(0.4d0, 0.3d0, 0.2d0, 0.1d0, 0.3d0, 0.1d0)
 		call assert_double("Pi_2_14 test 2", temp_v2(1), 0.00267733d0, 1d-7)
 		call assert_double("Pi_2_12 test 2", temp_v2(2), 0.00427733d0, 1d-7)
+		temp_v2 = PI2_ne_f(10.d0, 2.d0, 5.3d0, 6.7d0, 2.d0, 6.7d0)
+		call assert_double("Pi_2_14 test 3", temp_v2(1), 1978.88d0, 1d-7)
+		call assert_double("Pi_2_12 test 3", temp_v2(2), 9420.8d0, 1d-7)
+		temp_v2 = PI2_ne_f(2.d0, 10.d0, 6.7d0, 5.3d0, 10.d0, 5.3d0)
+		call assert_double("Pi_2_14 test 4", temp_v2(1), 1978.88d0, 1d-7)
+		call assert_double("Pi_2_12 test 4", temp_v2(2), 9420.8d0, 1d-7)
 	end subroutine do_tests_Pi_ij
 
 	subroutine do_f_ann_sc_re_tests_eq
@@ -1019,10 +1046,11 @@ program tests
 	subroutine do_tests_coll_int
 		real(dl) :: x,z, y1
 		type(coll_args) :: collArgs
-		integer :: i!,j, k
+		integer :: i, iy!,j, k
 		real(dl) :: errr1,errr2, res1,res2,res3,res4, cf
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
+		real(dl), dimension(:), allocatable :: ndmv_re
 
 		x=0.05d0
 		y1=1.2d0
@@ -1032,11 +1060,24 @@ program tests
 		n=2
 
 		call allocateCmplxMat(collArgs%n)
+		allocate(ndmv_re(Ny))
+
+		do i=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVec(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy)/z)
+				ndmv_re(iy) = nuDensMatVec(iy)%re(i, i)
+			end do
+#ifdef LOGY
+			call interpNuDens%re(i, i)%replace(Ny, logy_arr, ndmv_re)
+#else
+			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
+#endif
+		end do
 
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%y1 = y1
-		collArgs%dme2 = dme2_electron(x, 0.d0, z)
+		collArgs%dme2 = 0.d0!dme2_electron(x, 0.d0, z)
 		collArgs%n%re = 0.d0
 		collArgs%n%im = 0.d0
 		do i=1, flavorNumber
@@ -1048,16 +1089,17 @@ program tests
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
 
-		print *,y_arr(21)
-		vk=(/5.2d0,2.34820292d0/)
+		vk=(/5.2d0,2.35132498560248d0/)
 		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 		res2=coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
-		call assert_double_rel("test coll sc 4 vs 3 sing", res1,res2, 1d-7)
+		call assert_double_rel("test coll sc 4 vs 3 sing 1a", res2, -4.8611d0, 2d-4)
+		call assert_double_rel("test coll sc 4 vs 3 sing 1b", res1, res2, 1d-7)
 
-		vk=(/4.d0,2.2d0/)
+		vk=(/2.24741107392278d0,3.0d0/)
 		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
-!		res2=coll_nue_3_ann_int_re(n, tv, collArgs)
-		call assert_double_rel("test coll ann 4 vs 3 sing", res1,res2, 1d-7)
+		res2=coll_nue_3_ann_int_re(21, 3.d0, collArgs)
+		call assert_double_rel("test coll ann 4 vs 3 sing 1a", res2, -2.75887d0, 1d-4)
+		call assert_double_rel("test coll ann 4 vs 3 sing 1b", res1, res2, 1d-7)
 
 		do i=1, flavorNumber
 			collArgs%ix1 = i
@@ -1080,6 +1122,7 @@ program tests
 !			write(*,"(*(E17.9))") res1, res2
 		end do
 		call assert_double("stop", 0.d0, 1.d0, 1d-4)
+		deallocate(ndmv_re)
 	end subroutine do_tests_coll_int
 
 	subroutine do_timing_tests

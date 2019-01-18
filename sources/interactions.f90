@@ -1127,13 +1127,24 @@ module ndInteractions
 				.or. y3.gt.obj%y1+y2+y4 &
 				.or. y4.gt.obj%y1+y2+y3)) then
 			fd = fermiDirac(y2 / obj%z)
+#ifdef LOGY
 			logy2 = log10(y2)
+#endif
 			do ix=1, flavorNumber
-				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy2) * fd
+#ifdef LOGY
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy2)
+#else
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(y2)
+#endif
 				nX%im(ix,ix) = 0.d0
 				do iy=ix+1, flavorNumber
+#ifdef LOGY
 					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy2)
 					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy2)
+#else
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(y2)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(y2)
+#endif
 					nX%re(iy,ix) = nX%re(ix,iy)
 					nX%im(iy,ix) = -nX%im(ix,iy)
 				end do
@@ -1181,13 +1192,24 @@ module ndInteractions
 				.or. y3.gt.obj%y1+y2+y4 &
 				.or. y4.gt.obj%y1+y2+y3)) then
 			fd = fermiDirac(y3 / obj%z)
+#ifdef LOGY
 			logy3 = log10(y3)
+#endif
 			do ix=1, flavorNumber
-				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3) * fd
+#ifdef LOGY
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3)
+#else
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(y3)
+#endif
 				nX%im(ix,ix) = 0.d0
 				do iy=ix+1, flavorNumber
+#ifdef LOGY
 					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy3)
 					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy3)
+#else
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(y3)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(y3)
+#endif
 					nX%re(iy,ix) = nX%re(ix,iy)
 					nX%im(iy,ix) = -nX%im(ix,iy)
 				end do
@@ -1218,35 +1240,21 @@ module ndInteractions
 			+ coll_nue_4_ann_int_re(ndim, ve, obj)
 	end function coll_nue_4_int_re
 
-	function coll_nue_3_ann_int_re(ndim, ve, obj)
+	function coll_nue_3_ann_int_re(iy2, y4, obj)
 		!annihilation
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
+		integer, intent(in) :: iy2
+		real(dl), intent(in) :: y4
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_3_ann_int_re
 		integer :: ix, iy
 		real(dl), dimension(2) :: pi2_vec
-		type(cmplxMatNN) :: nX
-		real(dl) :: y2,y3,y4, f3,f4, E3, E4, dme2, fd, logy2, t1, t2
+		real(dl) :: y2,y3, f3,f4, E3, E4, dme2, fd, t1, t2
 
 		coll_nue_3_ann_int_re = 0.d0
-		call allocateCmplxMat(nX)
 
 		dme2 = obj%dme2
-		y2 = ve(1)
+		y2 = y_arr(iy2)
 		fd = fermiDirac(y2 / obj%z)
-		logy2 = log10(y2)
-		do ix=1, flavorNumber
-			nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy2) * fd
-			nX%im(ix,ix) = 0.d0
-			do iy=ix+1, flavorNumber
-				nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy2)
-				nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy2)
-				nX%re(iy,ix) = nX%re(ix,iy)
-				nX%im(iy,ix) = -nX%im(ix,iy)
-			end do
-		end do
-		y4 = ve(2)
 		E4 = Ebare_i_dme(obj%x,y4, dme2)
 		f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
 
@@ -1258,7 +1266,7 @@ module ndInteractions
 		else
 			y3 = sqrt(t1 - t2)
 		endif
-		if (.not.(y2.lt.0.d0 &
+		if (.not.(y3.lt.0.d0 &
 				.or. obj%y1.gt.y3+y2+y4 &
 				.or. y2.gt.obj%y1+y3+y4 &
 				.or. y3.gt.obj%y1+y2+y4 &
@@ -1269,47 +1277,32 @@ module ndInteractions
 				y3/E3 * &
 				y4/E4 * &
 				( &
-					pi2_vec(1) * F_ab_ann_re(obj%n,nX,f3,f4, 1, 1, obj%ix1,obj%ix2) + &
-					pi2_vec(2) * F_ab_ann_re(obj%n,nX,f3,f4, 2, 2, obj%ix1,obj%ix2) + &
-					(obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_ann_re(obj%n,nX,f3,f4, 2, 1, obj%ix1,obj%ix2) + &
-						F_ab_ann_re(obj%n,nX,f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
+					pi2_vec(1) * F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2) &
+					+ pi2_vec(2) * F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2) &
+					+ (obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
+						F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 2, 1, obj%ix1,obj%ix2) + &
+						F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
 	end function coll_nue_3_ann_int_re
 
-	function coll_nue_3_sc_int_re(ndim, ve, obj)
+	function coll_nue_3_sc_int_re(iy3, y2, obj)
 		!scattering, summing positron and electrons
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
+		integer, intent(in) :: iy3
+		real(dl), intent(in) :: y2
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_3_sc_int_re
 		integer :: ix, iy
 		real(dl), dimension(2) :: pi2_vec
-		type(cmplxMatNN) :: nX
-		real(dl) :: y2,y3,y4, f2,f4, E2, E4, dme2, fd, logy3, t1, t2
+		real(dl) :: y3,y4, f2,f4, E2, E4, dme2, fd, t1, t2
 
 		coll_nue_3_sc_int_re = 0.d0
-		call allocateCmplxMat(nX)
 
 		dme2 = obj%dme2
-		y2 = ve(1)
 		E2 = Ebare_i_dme(obj%x,y2, dme2)
 		f2 = fermiDirac(E_k_m(y2, obj%x) / obj%z)
-		y3 = ve(2)
+		y3 = y_arr(iy3)
 		fd = fermiDirac(y3 / obj%z)
-		logy3 = log10(y3)
-		do ix=1, flavorNumber
-			nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3) * fd
-			nX%im(ix,ix) = 0.d0
-			do iy=ix+1, flavorNumber
-				nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy3)
-				nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy3)
-				nX%re(iy,ix) = nX%re(ix,iy)
-				nX%im(iy,ix) = -nX%im(ix,iy)
-			end do
-		end do
-
 		E4 = obj%y1 + E2 - y3
 		t1 = E4*E4
 		t2 = obj%x*obj%x + dme2
@@ -1330,24 +1323,24 @@ module ndInteractions
 				y4/E4 * &
 				( &
 					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
-						F_ab_sc_re(obj%n,f2,nX,f4, 1, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_re(obj%n,f2,nX,f4, 2, 2, obj%ix1,obj%ix2) &
-					) - &
-					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
-						F_ab_sc_re(obj%n,f2,nX,f4, 2, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_re(obj%n,f2,nX,f4, 1, 2, obj%ix1,obj%ix2) ) &
+						F_ab_sc_re(obj%n,f2,nuDensMatVec(iy3),f4, 1, 1, obj%ix1,obj%ix2) &
+						+ F_ab_sc_re(obj%n,f2,nuDensMatVec(iy3),f4, 2, 2, obj%ix1,obj%ix2) &
+					) &
+					- 2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
+						F_ab_sc_re(obj%n,f2,nuDensMatVec(iy3),f4, 2, 1, obj%ix1,obj%ix2) &
+						+ F_ab_sc_re(obj%n,f2,nuDensMatVec(iy3),f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
 	end function coll_nue_3_sc_int_re
 
-	function coll_nue_3_int_re(ndim, ve, obj)
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
+	function coll_nue_3_int_re(iy, yx, obj)
+		integer, intent(in) :: iy
+		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_3_int_re
 		coll_nue_3_int_re = &
-			coll_nue_3_sc_int_re(ndim, ve, obj) &
-				+ coll_nue_3_ann_int_re(ndim, ve, obj)
+			coll_nue_3_sc_int_re(iy, yx, obj) &
+				+ coll_nue_3_ann_int_re(iy, yx, obj)
 	end function coll_nue_3_int_re
 
 	function coll_nue_int_im(ndim, ve, obj)
@@ -1491,48 +1484,53 @@ module ndInteractions
 		collArgs%dme2 = dme2_electron(x, 0.d0, z)
 		collArgs%n = n1
 
-		do i=1, flavorNumber
-			collArgs%ix1 = i
-			collArgs%ix2 = i
-			ifail=0
-			itrans=0
-			call D01GCF(n,coll_nue_4_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-			collision_terms%re(i,i) = collision_terms%re(i,i) + res1
-			if (collision_offdiag.eq.1) then
-				do j=i+1, flavorNumber
-					collArgs%ix2 = j
-					ifail=0
-					itrans=0
-					call D01GCF(n,coll_nue_4_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-					collision_terms%re(i,j) = collision_terms%re(i,j) + res1
+		if (collision_offdiag.eq.0) then
+			collision_terms%re = 0.d0
+			collision_terms%im = 0.d0
+		else
+			do i=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = i
+				ifail=0
+				itrans=0
+				call D01GCF(n,coll_nue_4_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+				collision_terms%re(i,i) = collision_terms%re(i,i) + res1
+				if (collision_offdiag.eq.1) then
+					do j=i+1, flavorNumber
+						collArgs%ix2 = j
+						ifail=0
+						itrans=0
+						call D01GCF(n,coll_nue_4_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+						collision_terms%re(i,j) = collision_terms%re(i,j) + res1
 
-					ifail=0
-					itrans=0
-					call D01GCF(n,coll_nue_int_im, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
-					collision_terms%im(i,j) = collision_terms%im(i,j) + res2
-				end do
-			else if (collision_offdiag.eq.2) then
-				!damping terms from Dolgov:2002ab, eq A.11
+						ifail=0
+						itrans=0
+						call D01GCF(n,coll_nue_int_im, region, npts, vk, nrand,itrans,res2,ERRr2,ifail, collArgs)
+						collision_terms%im(i,j) = collision_terms%im(i,j) + res2
+					end do
+				else if (collision_offdiag.eq.2) then
+					!damping terms from Dolgov:2002ab, eq A.11
+					do j=i+1, flavorNumber
+						collArgs%ix2 = j
+						collision_terms%im(i,j) = 0.d0
+						collision_terms%re(i,j) = 0.d0
+						if (i .eq. 1 .and. (j.eq.2 .or. j.eq.3)) then
+							collision_terms%re(i,j) = dampTermFactor * Damp_ex * y1*y1*y1 * n1%re(i,j)
+						elseif (i .eq. 2 .and. j.eq.3) then
+							collision_terms%re(i,j) = dampTermFactor * Damp_mt * y1*y1*y1 * n1%re(i,j)
+						end if
+					end do
+					print *,"Warning: should use damping factor...NYI"
+	!			else if (collision_offdiag.gt.2) then !no need to execute this!
+	!				collision_terms%re(i,j) = collision_terms%re(i,j) + 0.d0
+	!				collision_terms%im(i,j) = collision_terms%im(i,j) + 0.d0
+				end if
 				do j=i+1, flavorNumber
-					collArgs%ix2 = j
-					collision_terms%im(i,j) = 0.d0
-					collision_terms%re(i,j) = 0.d0
-					if (i .eq. 1 .and. (j.eq.2 .or. j.eq.3)) then
-						collision_terms%re(i,j) = dampTermFactor * Damp_ex * y1*y1*y1 * n1%re(i,j)
-					elseif (i .eq. 2 .and. j.eq.3) then
-						collision_terms%re(i,j) = dampTermFactor * Damp_mt * y1*y1*y1 * n1%re(i,j)
-					end if
+					collision_terms%re(j,i) = collision_terms%re(i,j)
+					collision_terms%im(j,i) = - collision_terms%im(i,j)
 				end do
-				print *,"Warning: should use damping factor...NYI"
-!			else if (collision_offdiag.gt.2) then !no need to execute this!
-!				collision_terms%re(i,j) = collision_terms%re(i,j) + 0.d0
-!				collision_terms%im(i,j) = collision_terms%im(i,j) + 0.d0
-			end if
-			do j=i+1, flavorNumber
-				collision_terms%re(j,i) = collision_terms%re(i,j)
-				collision_terms%im(j,i) = - collision_terms%im(i,j)
 			end do
-		end do
+		end if
 
 		cf = (y1*y1*x**4)
 		collision_terms%re(:,:) = collision_terms%re(:,:) * collTermFactor / cf

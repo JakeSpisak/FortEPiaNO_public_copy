@@ -32,7 +32,7 @@ module ndEquations
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
-				vec(k+i-1) = nuDensMatVec(m)%re(i,i)
+				vec(k+i-1) = nuDensMatVec(m)%re(i,i) / fermiDirac(y_arr(m) / vec(ntot))
 			end do
 			k=k+flavorNumber
 			if (collision_offdiag.ne.3) then
@@ -54,7 +54,8 @@ module ndEquations
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
-				nuDensMatVec(m)%re(i,i) = vec(k+i-1)
+				nuDensMatVec(m)%re(i,i) = vec(k+i-1) * fermiDirac(y_arr(m) / vec(ntot))
+				nuDensMatVec(m)%im(i,i) = 0.d0
 			end do
 			k=k+flavorNumber
 			if (collision_offdiag.ne.3) then
