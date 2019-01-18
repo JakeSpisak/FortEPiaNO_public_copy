@@ -16,8 +16,7 @@ program nuDens
 	call allocate_interpNuDens
 
 	call solver
-
-	print *,"Neff=",Neff_from_rho_z(nuDensVec(ntot))
+	call finalresults
 
 	call addToLog("Finished. closing log file.")
 	call closeLogFile

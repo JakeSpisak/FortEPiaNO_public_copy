@@ -150,7 +150,7 @@ program tests
 		end do
 
 		write(*,*) ""
-		write(*,"(a)") "Cosmology (28 tests)"
+		write(*,"(a)") "Cosmology (35 tests)"
 		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06283d0, 1d-4)
 		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.49493d0, 1d-4)
 		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377723d0, 1d-4)

@@ -604,4 +604,17 @@ module ndEquations
 		Neff_from_rho_z = (zid/z)**4 * &
 			(3.d0 + rhototnu)
 	end function Neff_from_rho_z
+
+	subroutine finalresults
+		real(dl) :: ndeq
+		integer :: ix
+
+		write(*,"('final z = ',F9.6)") nuDensVec(ntot)
+		ndeq=nuDensityLinEq(nuDensVec(ntot))
+		do ix=1, flavorNumber
+			write(*,"('dRho_',I1,'  = ',F6.3)") ix, &
+				(nuDensityLin(nuDensVec(ntot), ix) - ndeq)*nuFactor(ix)/ndeq
+		end do
+		write(*,"('Neff    = ',F6.3)") Neff_from_rho_z(nuDensVec(ntot))
+	end subroutine finalresults
 end module ndEquations
