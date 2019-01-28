@@ -1240,7 +1240,7 @@ module ndInteractions
 			+ coll_nue_4_ann_int_re(ndim, ve, obj)
 	end function coll_nue_4_int_re
 
-	function coll_nue_3_ann_int_re(iy2, y4, obj)
+	pure function coll_nue_3_ann_int_re(iy2, y4, obj)
 		!annihilation
 		integer, intent(in) :: iy2
 		real(dl), intent(in) :: y4
@@ -1272,7 +1272,7 @@ module ndInteractions
 				.or. y3.gt.obj%y1+y2+y4 &
 				.or. y4.gt.obj%y1+y2+y3)) then
 			f3 = fermiDirac(E_k_m(y3, obj%x) / obj%z)
-			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
+			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
 			coll_nue_3_ann_int_re = coll_nue_3_ann_int_re + &
 				y3/E3 * &
 				y4/E4 * &
@@ -1280,13 +1280,13 @@ module ndInteractions
 					pi2_vec(1) * F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2) &
 					+ pi2_vec(2) * F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2) &
 					+ (obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 2, 1, obj%ix1,obj%ix2) + &
-						F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
+						F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 2, 1, obj%ix1,obj%ix2) &
+						+ F_ab_ann_re(obj%n,nuDensMatVec(iy2),f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
 	end function coll_nue_3_ann_int_re
 
-	function coll_nue_3_sc_int_re(iy3, y2, obj)
+	pure function coll_nue_3_sc_int_re(iy3, y2, obj)
 		!scattering, summing positron and electrons
 		integer, intent(in) :: iy3
 		real(dl), intent(in) :: y2
@@ -1333,7 +1333,7 @@ module ndInteractions
 		end if
 	end function coll_nue_3_sc_int_re
 
-	function coll_nue_3_int_re(iy, yx, obj)
+	pure function coll_nue_3_int_re(iy, yx, obj)
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
@@ -1342,6 +1342,31 @@ module ndInteractions
 			coll_nue_3_sc_int_re(iy, yx, obj) &
 				+ coll_nue_3_ann_int_re(iy, yx, obj)
 	end function coll_nue_3_int_re
+
+	pure function integrate_coll_int_3(f, obj)
+		interface
+			pure real(dl) function f(a, b, o)
+				use variables
+				integer, intent(in) :: a
+				real(dl), intent(in) :: b
+				type(coll_args), intent(in) :: o
+			end function
+		end interface
+		real(dl) :: integrate_coll_int_3
+		type(coll_args), intent(in) :: obj
+		integer :: ia, ib
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(fy2_arr(Ny, Ny))
+
+		do ia=1, Ny
+			do ib=1, Ny
+				fy2_arr(ia,ib) = f(ia, y_arr(ib), obj)
+			end do
+		end do
+		integrate_coll_int_3 = integral_linearized_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
+		deallocate(fy2_arr)
+	end function integrate_coll_int_3
 
 	function coll_nue_int_im(ndim, ve, obj)
 		integer, intent(in) :: ndim

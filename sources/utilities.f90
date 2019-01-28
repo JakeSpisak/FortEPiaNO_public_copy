@@ -850,7 +850,7 @@ enddo                                                   !SG-PF
 		integral_linearized_1d = integral_linearized_1d * 0.5d0
 	end function integral_linearized_1d
 
-	function integral_linearized_2d(N1, N2, dx, dy, f)
+	pure function integral_linearized_2d(N1, N2, dx, dy, f)
 		real(dl), dimension(:), allocatable, intent(in) :: dx, dy
 		real(dl), dimension(:,:), allocatable, intent(in) :: f
 		integer, intent(in) :: N1, N2
@@ -858,6 +858,10 @@ enddo                                                   !SG-PF
 		integer :: ix, iy
 
 		integral_linearized_2d = 0.d0
+		!$omp parallel do &
+		default(shared) &
+		private(ix,iy) &
+		reduction(+:integral_linearized_2d)
 		do ix=1, N1-1
 			do iy=1, N2-1
 				integral_linearized_2d = integral_linearized_2d &
@@ -866,6 +870,7 @@ enddo                                                   !SG-PF
 					)
 			end do
 		end do
+		!$omp end parallel do
 		integral_linearized_2d = integral_linearized_2d * 0.25d0
 	end function integral_linearized_2d
 end module utilities
