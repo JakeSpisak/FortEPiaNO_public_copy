@@ -147,8 +147,8 @@ module variables
 	
 	contains
 	
-	subroutine allocateCmplxMat(m)
-		type(cmplxMatNN) :: m
+	pure subroutine allocateCmplxMat(m)
+		type(cmplxMatNN), intent(inout) :: m
 		
 		if (.not. m%a) then
 			m%a=.true.
@@ -159,8 +159,8 @@ module variables
 		end if
 	end subroutine allocateCmplxMat
 	
-	subroutine deallocateCmplxMat(m)
-		type(cmplxMatNN) :: m
+	pure subroutine deallocateCmplxMat(m)
+		type(cmplxMatNN), intent(inout) :: m
 		
 		if (m%a) then
 			m%a=.false.

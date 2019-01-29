@@ -200,10 +200,8 @@ program tests
 
 		do i=1, flavorNumber
 			do iy=1, Ny
-				ndmv_re(iy) = 1.d0
 				nuDensMatVec(iy)%re(i, i) = 1.d0
 			end do
-			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
 		end do
 		call assert_double("radDens test 1", radDensity(0.7d0, 1.04d0), 6.11141d0, 1d-3)
 		call assert_double("radDens test 2", radDensity(1.d0, 1.04d0), 6.06205d0, 1d-3)
@@ -1081,7 +1079,7 @@ program tests
 
 		do i=1, flavorNumber
 			do iy=1, Ny
-				nuDensMatVec(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy)/z)
+				nuDensMatVec(iy)%re(i, i) = 1.d0*i
 				ndmv_re(iy) = nuDensMatVec(iy)%re(i, i)
 			end do
 #ifdef LOGY
@@ -1097,13 +1095,16 @@ program tests
 		collArgs%dme2 = 0.d0!dme2_electron(x, 0.d0, z)
 		collArgs%n%re = 0.d0
 		collArgs%n%im = 0.d0
+		collArgs%n%y = y1
+		collArgs%n%logy = log10(y1)
 		do i=1, flavorNumber
-			collArgs%n%re(i,i) = 1.d0
+			collArgs%n%re(i,i) = 1.d0 / fermiDirac(y1/z)
 		end do
 
 		write(*,*) ""
 		write(*,"(a)") "Collision integrals (X tests)"
 
+		!first series of sc and ann tests
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
 		vk=(/5.2d0,2.35132498560248d0/)
@@ -1111,21 +1112,21 @@ program tests
 		res2=coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
 		call assert_double_rel("test coll sc 3 sing 1", res2, ref, 2d-4)
 		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
-		call assert_double_rel("test coll sc 4 vs 3 sing 1", res1, ref, 2d-4)
+		call assert_double_rel("test coll sc 4 sing 1", res1, ref, 2d-4)
 		collArgs%ix1 = 2
 		collArgs%ix2 = 2
 		ref = -1.0161576d0
 		res2 = coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
 		call assert_double_rel("test coll sc 3 sing 2", res2, ref, 2d-4)
 		res1 = coll_nue_4_sc_int_re(n, vk, collArgs)
-		call assert_double_rel("test coll sc 4 vs 3 sing 2", res1, ref, 2d-4)
+		call assert_double_rel("test coll sc 4 sing 2", res1, ref, 2d-4)
 		collArgs%ix1 = 3
 		collArgs%ix2 = 3
 		ref = -0.993358d0
 		res2 = coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
 		call assert_double_rel("test coll sc 3 sing 3", res2, ref, 2d-4)
 		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
-		call assert_double_rel("test coll sc 4 vs 3 sing 3", res1, ref, 2d-4)
+		call assert_double_rel("test coll sc 4 sing 3", res1, ref, 2d-4)
 
 		tmparrS = (/-160.602d0, -29.083d0, -23.845d0/)
 		do i=1, flavorNumber
@@ -1149,21 +1150,21 @@ program tests
 		res2=coll_nue_3_ann_int_re(21, 3.d0, collArgs)
 		call assert_double_rel("test coll ann 3 sing 1", res2, ref, 1d-4)
 		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
-		call assert_double_rel("test coll ann 4 vs 3 sing 1", res1, ref, 1d-4)
+		call assert_double_rel("test coll ann 4 sing 1", res1, ref, 1d-4)
 		collArgs%ix1 = 2
 		collArgs%ix2 = 2
 		ref = -0.981776d0
 		res2 = coll_nue_3_ann_int_re(21, 3.d0, collArgs)
 		call assert_double_rel("test coll ann 3 sing 2", res2, ref, 1d-4)
 		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
-		call assert_double_rel("test coll ann 4 vs 3 sing 2", res1, ref, 1d-4)
+		call assert_double_rel("test coll ann 4 sing 2", res1, ref, 1d-4)
 		collArgs%ix1 = 3
 		collArgs%ix2 = 3
 		ref = -1.47266d0
 		res2 = coll_nue_3_ann_int_re(21, 3.d0, collArgs)
 		call assert_double_rel("test coll ann 3 sing 3", res2, ref, 1d-4)
 		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
-		call assert_double_rel("test coll ann 4 vs 3 sing 3", res1, ref, 1d-4)
+		call assert_double_rel("test coll ann 4 sing 3", res1, ref, 1d-4)
 
 		tmparrA = (/-40.745d0, -17.299d0, -25.948d0/)
 		do i=1, flavorNumber
@@ -1179,7 +1180,101 @@ program tests
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), 2d-2)
 !			write(*,"(*(E17.9))") res1, res2, tmparrA(i)
 		end do
-!		call criticalError("stop")
+
+		!second series of sc and ann tests
+		y1 = 13.2d0
+		z = 1.3d0
+		do i=1, flavorNumber
+			collArgs%n%re(i,i) = 1.d0 / fermiDirac(y1/z)
+			do iy=1, Ny
+				nuDensMatVec(iy)%re(i, i) = 1.d0
+				ndmv_re(iy) = nuDensMatVec(iy)%re(i, i)
+			end do
+#ifdef LOGY
+			call interpNuDens%re(i, i)%replace(Ny, logy_arr, ndmv_re)
+#else
+			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
+#endif
+		end do
+		collArgs%x = 0.5d0
+		collArgs%z = z
+		collArgs%y1 = y1
+		collArgs%ix1 = 1
+		collArgs%ix2 = 1
+		vk=(/5.2d0,14.3669d0/)
+		ref = -3642.11d0
+		res2=coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
+		call assert_double_rel("test coll sc 3 sing 4", res2, ref, 2d-2)
+		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
+		call assert_double_rel("test coll sc 4 sing 4", res1, ref, 2d-2)
+		collArgs%ix1 = 2
+		collArgs%ix2 = 2
+		ref = -780.84d0
+		res2 = coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
+		call assert_double_rel("test coll sc 3 sing 5", res2, ref, 2d-2)
+		res1 = coll_nue_4_sc_int_re(n, vk, collArgs)
+		call assert_double_rel("test coll sc 4 sing 5", res1, ref, 2d-2)
+		collArgs%ix1 = 3
+		collArgs%ix2 = 3
+		ref = -780.84d0
+		res2 = coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
+		call assert_double_rel("test coll sc 3 sing 6", res2, ref, 2d-2)
+		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
+		call assert_double_rel("test coll sc 4 sing 6", res1, ref, 2d-2)
+
+		tmparrS = (/-607434d0, -130051d0, -130051d0/)
+		do i=1, flavorNumber
+			collArgs%ix1 = i
+			collArgs%ix2 = i
+			ifail=0
+			itrans=0
+			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
+			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), 0.025d0)
+			res2 = integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs)
+			write(tmparg,"('test coll sc 3 b - ',2I1)") i, i
+			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), 0.025d0)
+!			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
+		end do
+
+		collArgs%ix1 = 1
+		collArgs%ix2 = 1
+		vk=(/14.1982d0, 3.0d0/)
+		ref = -1880.98d0
+		res2=coll_nue_3_ann_int_re(21, 3.d0, collArgs)
+		call assert_double_rel("test coll ann 3 sing 4", res2, ref, 3d-3)
+		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
+		call assert_double_rel("test coll ann 4 sing 4", res1, ref, 3d-3)
+		collArgs%ix1 = 2
+		collArgs%ix2 = 2
+		ref = -263.819d0
+		res2 = coll_nue_3_ann_int_re(21, 3.d0, collArgs)
+		call assert_double_rel("test coll ann 3 sing 5", res2, ref, 3d-3)
+		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
+		call assert_double_rel("test coll ann 4 sing 5", res1, ref, 3d-3)
+		collArgs%ix1 = 3
+		collArgs%ix2 = 3
+		ref = -263.819d0
+		res2 = coll_nue_3_ann_int_re(21, 3.d0, collArgs)
+		call assert_double_rel("test coll ann 3 sing 6", res2, ref, 3d-3)
+		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
+		call assert_double_rel("test coll ann 4 sing 6", res1, ref, 3d-3)
+
+		tmparrA = (/-151024d0, -31971.3d0, -31971.3d0/)
+		do i=1, flavorNumber
+			collArgs%ix1 = i
+			collArgs%ix2 = i
+			ifail=0
+			itrans=0
+			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
+			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), 3d-3)
+			res2 = integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
+			write(tmparg,"('test coll ann 3 - ',2I1)") i, i
+			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), 1d-3)
+!			write(*,"(*(E17.9))") res1, res2, tmparrA(i)
+		end do
+		call criticalError("stop")
 		deallocate(ndmv_re)
 	end subroutine do_tests_coll_int
 

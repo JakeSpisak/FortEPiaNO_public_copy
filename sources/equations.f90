@@ -25,17 +25,18 @@ module ndEquations
 
 	contains 
 
-	subroutine densMat_2_vec(vec)
+	subroutine densMat_2_vec(vec, z)
 		real(dL), dimension(:), intent(out) :: vec
+		real(dL), intent(in) :: z
 		integer :: i,j,k,m
 		
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
-				vec(k+i-1) = nuDensMatVec(m)%re(i,i) / fermiDirac(y_arr(m) / vec(ntot))
+				vec(k+i-1) = nuDensMatVec(m)%re(i,i)! / fermiDirac(y_arr(m) / z)
 			end do
 			k=k+flavorNumber
-			if (collision_offdiag.ne.3) then
+			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						vec(k) = nuDensMatVec(m)%re(i,j)
@@ -47,18 +48,19 @@ module ndEquations
 		end do
 	end subroutine densMat_2_vec
 
-	subroutine vec_2_densMat(vec)
+	subroutine vec_2_densMat(vec, z)
 		real(dL), dimension(:), intent(in) :: vec
+		real(dL), intent(in) :: z
 		integer :: i,j,k,m
 	
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
-				nuDensMatVec(m)%re(i,i) = vec(k+i-1) * fermiDirac(y_arr(m) / vec(ntot))
+				nuDensMatVec(m)%re(i,i) = vec(k+i-1)! * fermiDirac(y_arr(m) / z)
 				nuDensMatVec(m)%im(i,i) = 0.d0
 			end do
 			k=k+flavorNumber
-			if (collision_offdiag.ne.3) then
+			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						nuDensMatVec(m)%re(i,j) = vec(k)
@@ -269,7 +271,7 @@ module ndEquations
 		end do
 		tmp = integral_linearized_1d(Ny, dy_arr, fy_arr)
 		coeffs = dzodxcoef_interp_func(x/z)
-		ydot(n) = coeffs(1) - coeffs(2)/ z**3 * tmp
+		ydot(n) = coeffs(1) - coeffs(2) * tmp/ z**3
 	end subroutine dz_o_dx_lin
 
 	subroutine test_dzodx_speed
@@ -339,10 +341,10 @@ module ndEquations
 		n1 = nuDensMatVec(iy)
 		y = nuDensMatVec(iy)%y
 		fd = fermiDirac(y / z)
-		do ix=1, flavorNumber
-			n1%re(ix,ix) = n1%re(ix,ix) * fd
-			n1%im(ix,ix) = n1%im(ix,ix) * fd
-		end do
+!		do ix=1, flavorNumber
+!			n1%re(ix,ix) = n1%re(ix,ix) * fd
+!			n1%im(ix,ix) = 0.d0
+!		end do
 		
 		overallNorm = planck_mass / (sqrt(radDensity(x,z)*PIx8D3))
 		
@@ -359,7 +361,7 @@ module ndEquations
 		cf = x**2/m_e_cub
 		matrix%im = - comm%im * cf
 		matrix%re = comm%re * cf
-		
+
 		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
 			lastColl%mat = collision_terms(x, z, y, n1)
 			lastColl%x = x
@@ -372,8 +374,8 @@ module ndEquations
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
 		do ix=1, flavorNumber
-			matrix%re(ix,ix) = matrix%re(ix,ix) / fd
-			matrix%im(ix,ix) = matrix%im(ix,ix) / fd
+			matrix%re(ix,ix) = matrix%re(ix,ix)! / fd
+			matrix%im(ix,ix) = 0.d0
 		end do
 	end subroutine drhoy_dx_fullMat
 	
@@ -384,8 +386,8 @@ module ndEquations
 		integer :: k, i, j, iy, totFiles
 		integer, dimension(:), allocatable :: units
 		character(len=200) :: fname
-		
-		call vec_2_densMat(vec)
+
+!		call vec_2_densMat(vec, z_in)
 		totFiles=flavNumSqu+1
 		allocate(units(totFiles),tmpvec(Ny))
 		do i=1, totFiles
@@ -404,7 +406,7 @@ module ndEquations
 			end do
 			write(units(k), '(*('//dblfmt//'))') x, tmpvec
 		end do
-		if (collision_offdiag.ne.3) then
+		if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 			do i=1, flavorNumber-1
 				do j=i+1,flavorNumber
 					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_re.dat'
@@ -434,7 +436,7 @@ module ndEquations
 			close(units(i))
 		end do
 		deallocate(units,tmpvec)
-		
+
 		firstWrite=.false.
 	end subroutine saveRelevantInfo
 	
@@ -467,9 +469,9 @@ module ndEquations
 		iwork=0
 		iwork(6)=99999999
 		jt=2
-		
-		call densMat_2_vec(nuDensVec)
+
 		nuDensVec(ntot)=z_in
+		call densMat_2_vec(nuDensVec, z_in)
 		
 		call readCheckpoints(nchk, xchk, ychk, chk)
 		
@@ -489,7 +491,7 @@ module ndEquations
 			ix_in=1
 			call saveRelevantInfo(xstart, nuDensVec)
 		end if
-		
+
 		do ix=ix_in+1, Nx
 			xend   = x_arr(ix)
 			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")"), xstart, xend
@@ -527,7 +529,7 @@ module ndEquations
 			tmpv(i) = mat%re(i,i)
 		end do
 		k=flavorNumber+1
-		if (collision_offdiag.ne.3) then
+		if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 			do i=1, flavorNumber-1
 				do j=i+1, flavorNumber
 					tmpv(k) = mat%re(i,j)
@@ -548,11 +550,10 @@ module ndEquations
 		use omp_lib
 		
 		type(cmplxMatNN) :: mat
-		integer :: n, i, j, k, m, s
+		integer :: n, m
 		real(dl) :: x, z
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
-!		real(dl), dimension(:), allocatable, save :: tmpv
 		character(len=100) :: tmpstr
 		logical :: file_exist
 		integer :: stat
@@ -574,16 +575,15 @@ module ndEquations
 		call printVerbose(trim(tmpstr),2)
 
 		call allocateCmplxMat(mat)
-		call init_interpNuDens
 		z = vars(n)
-		call vec_2_densMat(vars(1:n-1))
+		call vec_2_densMat(vars, vars(n))
 		do m=1, Ny
 			call derivative(x, z, m, mat, n, ydot)
 		end do
-		
-		call dz_o_dx(x,z, ydot, ntot)
-		
-		call densMat_2_vec(nuDensVec)
+
+		call dz_o_dx_lin(x,z, ydot, ntot)
+
+		call densMat_2_vec(nuDensVec, z)
 	end subroutine derivatives
 	
 	subroutine jdum

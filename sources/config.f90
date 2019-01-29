@@ -106,7 +106,7 @@ module ndConfig
 	subroutine init_matrices
 		real(dl), dimension(:), allocatable :: diag_el
 		integer :: ix
-		real(dl) :: fdm
+!		real(dl) :: fdm
 		
 		allocate(diag_el(flavorNumber))
 		
@@ -233,7 +233,7 @@ module ndConfig
 			
 			only_1a_1s = read_ini_logical('only_1a_1s', .false.)
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
-			if (collision_offdiag.ne.3) then
+			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 				flavNumSqu = flavorNumber**2
 			else
 				flavNumSqu = flavorNumber
