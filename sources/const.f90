@@ -90,7 +90,7 @@ module variables
 	logical :: dme2_temperature_corr
 	
 	!variables that will be read from config file
-	logical :: massOrdering, only_1a_1s
+	logical :: massOrdering
 	integer :: flavorNumber, flavNumSqu
 	real(dl) :: m_lightest
 	real(dl) :: theta12, dm12

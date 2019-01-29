@@ -126,7 +126,6 @@ program tests
 		!settings for collisional
 		collision_offdiag = 1
 		dme2_temperature_corr = .true.
-		only_1a_1s = .false.
 		flavorNumber = 3
 		flavNumSqu = flavorNumber**2
 		call allocateStuff

@@ -12,7 +12,7 @@ module ndConfig
 	integer :: num_args, ixa
 	character(len=300), dimension(:), allocatable :: args
 	
-	character(LEN=*), parameter :: mainPath="/home/gariazzo/software/nuDensity/"	
+	character(LEN=*), parameter :: mainPath="/home/gariazzo/software/nuDensity/"
 	
 	contains
 	
@@ -147,13 +147,12 @@ module ndConfig
 !			fdm = fermiDirac(y_arr(ix)/z_in)
 !			write(3154,"(2"//dblfmt//")") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
 			nuDensMatVec(ix)%re(1,1) = 1.d0!fdm
-			if (flavorNumber.ne.2 .or. (.not. only_1a_1s)) then
+			if (flavorNumber.gt.1 .and. .not.sterile(2)) &
 				nuDensMatVec(ix)%re(2,2) = 1.d0!fdm
-				if (flavorNumber.gt.2) &
-					nuDensMatVec(ix)%re(3,3) = 1.d0!fdm
-				if (flavorNumber.gt.3) &
-					nuDensMatVec(ix)%re(4,4) = 0.d0
-			end if
+			if (flavorNumber.gt.2 .and. .not.sterile(3)) &
+				nuDensMatVec(ix)%re(3,3) = 1.d0!fdm
+			if (flavorNumber.gt.3) &
+				nuDensMatVec(ix)%re(4,4) = 0.d0
 		end do
 !		close(3154)
 		
@@ -231,7 +230,6 @@ module ndConfig
 			collision_offdiag = read_ini_int("collision_offdiag",1)
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 			
-			only_1a_1s = read_ini_logical('only_1a_1s', .false.)
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 				flavNumSqu = flavorNumber**2

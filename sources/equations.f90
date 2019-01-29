@@ -388,7 +388,7 @@ module ndEquations
 		character(len=200) :: fname
 
 !		call vec_2_densMat(vec, z_in)
-		totFiles=flavNumSqu+1
+		totFiles=flavNumSqu+2
 		allocate(units(totFiles),tmpvec(Ny))
 		do i=1, totFiles
 			units(i) = 8972 + i
@@ -431,6 +431,8 @@ module ndEquations
 		end if
 		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
 		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)
+		call openFile(units(k+1), trim(outputFolder)//'/Neff.dat', firstWrite)
+		write(units(k+1), '(*('//dblfmt//'))') x, Neff_from_rho_z(vec(ntot))
 		
 		do i=1, totFiles
 			close(units(i))
@@ -598,7 +600,7 @@ module ndEquations
 
 		totf=0.d0
 		do ix=1, flavorNumber
-			totf = totf + nuFactor(ix)
+			if(.not.sterile(ix)) totf = totf + nuFactor(ix)
 		end do
 		ndeq=nuDensityLinEq(z)
 		rhototnu = (allNuDensity(z) - totf*ndeq)/ndeq
