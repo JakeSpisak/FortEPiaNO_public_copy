@@ -33,7 +33,7 @@ module ndEquations
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
-				vec(k+i-1) = nuDensMatVec(m)%re(i,i)! / fermiDirac(y_arr(m) / z)
+				vec(k+i-1) = nuDensMatVec(m)%re(i,i)
 			end do
 			k=k+flavorNumber
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
@@ -52,11 +52,12 @@ module ndEquations
 		real(dL), dimension(:), intent(in) :: vec
 		real(dL), intent(in) :: z
 		integer :: i,j,k,m
+		real(dL) :: fd
 	
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
-				nuDensMatVec(m)%re(i,i) = vec(k+i-1)! * fermiDirac(y_arr(m) / z)
+				nuDensMatVec(m)%re(i,i) = vec(k+i-1)
 				nuDensMatVec(m)%im(i,i) = 0.d0
 			end do
 			k=k+flavorNumber
@@ -71,6 +72,12 @@ module ndEquations
 					end do
 				end do
 			end if
+			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
+			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
+			fd = fermiDirac(y_arr(m) / z)
+			do i=1, flavorNumber
+				nuDensMatVecFD(m)%re(i,i) = nuDensMatVec(m)%re(i,i) * fd
+			end do
 		end do
 	end subroutine vec_2_densMat
 	
@@ -332,30 +339,23 @@ module ndEquations
 		type(cmplxMatNN), intent(out) :: matrix
 		real(dl) :: x,y,z, overallNorm, a, fd, cf
 		integer :: iy,k, ix
-		type(cmplxMatNN), save :: n1, comm
+		type(cmplxMatNN), save :: comm
 		
-		call allocateCmplxMat(n1)
 		call allocateCmplxMat(comm)
 		call allocateCmplxMat(matrix)
-		
-		n1 = nuDensMatVec(iy)
-		y = nuDensMatVec(iy)%y
+
+		y = nuDensMatVecFD(iy)%y
 		fd = fermiDirac(y / z)
-!		do ix=1, flavorNumber
-!			n1%re(ix,ix) = n1%re(ix,ix) * fd
-!			n1%im(ix,ix) = 0.d0
-!		end do
 		
 		overallNorm = planck_mass / (sqrt(radDensity(x,z)*PIx8D3))
 		
 		leptonDensities=0.d0
 		leptonDensities(1,1) = leptDensFactor * y / x**6 * electronDensity(x,z)
-!		matrix%im = 0.d0
 		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
 		
 		!switch imaginary and real parts because of the "-i" factor
-		call Commutator(matrix%re, n1%re, comm%im)
-		call Commutator(matrix%re, n1%im, comm%re)
+		call Commutator(matrix%re, nuDensMatVecFD(iy)%re, comm%im)
+		call Commutator(matrix%re, nuDensMatVecFD(iy)%im, comm%re)
 		
 		!matrix is now redefined
 		cf = x**2/m_e_cub
@@ -363,7 +363,7 @@ module ndEquations
 		matrix%re = comm%re * cf
 
 		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
-			lastColl%mat = collision_terms(x, z, y, n1)
+			lastColl%mat = collision_terms(x, z, y, iy)
 			lastColl%x = x
 			lastColl%y = y
 			lastColl%z = z

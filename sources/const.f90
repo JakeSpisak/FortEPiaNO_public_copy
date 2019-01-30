@@ -113,9 +113,8 @@ module variables
 	end type nuDensArgs
 	
 	type coll_args
-		type(cmplxMatNN) :: n
 		real(dl) :: y1, y2, y3, y4, x, z, dme2
-		integer :: ix1, ix2
+		integer :: ix1, ix2, iy
 	end type coll_args
 	
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
@@ -125,7 +124,7 @@ module variables
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
 	real(dl), dimension(:,:), allocatable :: idMat
 	
-	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec
+	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec, nuDensMatVecFD
 	real(dl), dimension(:), allocatable :: nuDensVec
 	integer :: ntot
 	

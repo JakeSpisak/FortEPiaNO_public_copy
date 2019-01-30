@@ -105,8 +105,8 @@ module ndConfig
 	
 	subroutine init_matrices
 		real(dl), dimension(:), allocatable :: diag_el
-		integer :: ix
-!		real(dl) :: fdm
+		integer :: ix, iy
+		real(dl) :: fdm
 		
 		allocate(diag_el(flavorNumber))
 		
@@ -134,25 +134,31 @@ module ndConfig
 		call createIdentityMat(idMat, flavorNumber)
 		
 		!nu density matrix
-		allocate(nuDensMatVec(Ny))
+		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
 		ntot = Ny*(flavNumSqu) + 1 !independent elements in nuDensity(y) + z
 		allocate(nuDensVec(ntot))
 !		open(unit=3154, file='test_fd.dat') !save the initial Fermi-Dirac distribution for nu
 		do ix=1, Ny
 			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
+			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
 			nuDensMatVec(ix)%y = y_arr(ix)
 			nuDensMatVec(ix)%logy = log10(y_arr(ix))
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
-!			fdm = fermiDirac(y_arr(ix)/z_in)
+			fdm = fermiDirac(y_arr(ix)/z_in)
 !			write(3154,"(2"//dblfmt//")") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
-			nuDensMatVec(ix)%re(1,1) = 1.d0!fdm
+			nuDensMatVec(ix)%re(1,1) = 1.d0
 			if (flavorNumber.gt.1 .and. .not.sterile(2)) &
-				nuDensMatVec(ix)%re(2,2) = 1.d0!fdm
+				nuDensMatVec(ix)%re(2,2) = 1.d0
 			if (flavorNumber.gt.2 .and. .not.sterile(3)) &
-				nuDensMatVec(ix)%re(3,3) = 1.d0!fdm
+				nuDensMatVec(ix)%re(3,3) = 1.d0
 			if (flavorNumber.gt.3) &
 				nuDensMatVec(ix)%re(4,4) = 0.d0
+			nuDensMatVecFD(ix)%re = nuDensMatVec(ix)%re
+			nuDensMatVecFD(ix)%im = nuDensMatVec(ix)%im
+			do iy=1, flavorNumber
+				nuDensMatVecFD(ix)%re(iy,iy) = nuDensMatVec(ix)%re(iy,iy) * fdm
+			end do
 		end do
 !		close(3154)
 		
