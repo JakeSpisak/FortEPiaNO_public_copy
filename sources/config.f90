@@ -196,6 +196,11 @@ module ndConfig
 			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-6)
 			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-6)
 			
+			interp_nx = read_ini_int('interp_nx', interp_nx0)
+			interp_nz = read_ini_int('interp_nz', interp_nz0)
+			interp_zmin = read_ini_real('interp_zmin', interp_zmin0)
+			interp_zmax = read_ini_real('interp_zmax', interp_zmax0)
+
 			Nx = read_ini_int('Nx',100)
 			Ny = read_ini_int('Ny',100)
 			allocate(x_arr(Nx), y_arr(Ny), logy_arr(Ny))

@@ -138,8 +138,11 @@ module variables
 	real(dl) :: toler, toler_dme2, toler_ed, toler_jkyg, dlsoda_atol, dlsoda_rtol
 
 	!used for 2d interpolation:
-	integer, parameter :: interp_nx = 300, interp_nz = 100, interp_ny = 40
-	real(dl), parameter :: interp_zmin = 1.0d0, interp_zmax = 1.5d0
+	integer, parameter :: interp_nx0 = 300, interp_nz0 = 100
+	integer :: interp_nx, interp_nz
+	integer, parameter :: interp_ny = 40!not used in real code, it's for interpolations of D and Pi functions
+	real(dl), parameter :: interp_zmin0 = 1.0d0, interp_zmax0 = 1.5d0
+	real(dl) :: interp_zmin, interp_zmax
 	real(dl), dimension(:), allocatable :: interp_xvec
 	real(dl), dimension(:), allocatable :: interp_zvec
 	real(dl), dimension(:), allocatable :: interp_xozvec

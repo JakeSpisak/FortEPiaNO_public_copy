@@ -19,6 +19,7 @@ module ndCosmology
 		
 		radDensity = photonDensity(z) + &
 			electronDensity(x,z) + &
+			muonDensity(x,z) + &
 			allNuDensity(z)
 	end function
 	
@@ -52,11 +53,18 @@ module ndCosmology
 	function electronDensity(x,z)
 		real(dl) :: electronDensity
 		real(dl), intent(in) :: x,z
-		integer :: iflag
+!		integer :: iflag
 
 		call elDens%evaluate(x,z,electronDensity)!linear
 !		call elDens%evaluate(x,z,0,0,electronDensity,iflag)!bspline
 	end function electronDensity
+
+	function muonDensity(x,z)
+		real(dl) :: muonDensity
+		real(dl), intent(in) :: x,z
+
+		muonDensity = 0.d0
+	end function muonDensity
 
 	subroutine init_interp_ElDensity
 		real(dl), dimension(:,:), allocatable :: ed_vec

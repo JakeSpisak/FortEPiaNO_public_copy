@@ -351,6 +351,7 @@ module ndEquations
 		
 		leptonDensities=0.d0
 		leptonDensities(1,1) = leptDensFactor * y / x**6 * electronDensity(x,z)
+		leptonDensities(2,2) = leptDensFactor * y / x**6 * muonDensity(x,z)
 		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
 		
 		!switch imaginary and real parts because of the "-i" factor
@@ -374,7 +375,7 @@ module ndEquations
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
 		do ix=1, flavorNumber
-			matrix%re(ix,ix) = matrix%re(ix,ix)! / fd
+			matrix%re(ix,ix) = matrix%re(ix,ix) / fd
 			matrix%im(ix,ix) = 0.d0
 		end do
 	end subroutine drhoy_dx_fullMat
@@ -454,9 +455,16 @@ module ndEquations
 		integer :: itol, itask, istate, iopt, lrw, liw, jt
 		real(dl), dimension(:), allocatable :: rwork, atol
 		integer, dimension(:), allocatable :: iwork
+		integer,dimension(8) :: values
+		integer, parameter :: timefileu = 8970
+		character(len=*), parameter :: timefilen = '/time.log'
 		
 		deriv_counter = 0
 		
+		call openFile(timefileu, trim(outputFolder)//timefilen,.true.)
+		write(timefileu,*) "starting solver"
+		close(timefileu)
+
 		itol=2
 		rtol=dlsoda_rtol
 		itask=1
@@ -498,6 +506,15 @@ module ndEquations
 			xend   = x_arr(ix)
 			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")"), xstart, xend
 			call addToLog("[solver] Starting DLSODA..."//trim(tmpstring))
+
+			call date_and_time(VALUES=values)
+			call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
+			write(timefileu, &
+				'("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2,'&
+				//"' - DLSODA x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") &
+				values(3), values(2), values(1), values(5),values(6),values(7), xstart, xend
+			close(timefileu)
+
 			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
 						itol,rtol,atol,itask,istate, &
 						iopt,rwork,lrw,iwork,liw,jdum,jt)
@@ -512,6 +529,16 @@ module ndEquations
 			xstart=xend
 		end do
 		write(tmpstring,"('x_end =',"//dblfmt//",' - z_end =',"//dblfmt//")"), xend, nuDensVec(ntot)
+
+		call date_and_time(VALUES=values)
+		call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
+		write(timefileu, &
+			'("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2,' &
+			//"' - DLSODA end after ',"//dblfmt//",' derivatives - " &
+			//"xend =',"//dblfmt//",' - T =',"//dblfmt//")") &
+			values(3), values(2), values(1), values(5),values(6),values(7), deriv_counter, xend, nuDensVec(ntot)
+		close(timefileu)
+
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
 
@@ -576,6 +603,8 @@ module ndEquations
 		write (tmpstr, "('[eq] Calling derivatives (',"//dblfmt//",' x=',"//dblfmt//",')')") deriv_counter,x
 		call printVerbose(trim(tmpstr),2)
 
+!		write(*,multidblfmt) nuDensMatVec
+!		write(*,multidblfmt) nuDensMatVecFD
 		call allocateCmplxMat(mat)
 		z = vars(n)
 		call vec_2_densMat(vars, vars(n))
@@ -612,12 +641,12 @@ module ndEquations
 		real(dl) :: ndeq
 		integer :: ix
 
-		write(*,"('final z = ',F9.6)") nuDensVec(ntot)
+		write(*,"('final z = ',F11.8)") nuDensVec(ntot)
 		ndeq=nuDensityLinEq(nuDensVec(ntot))
 		do ix=1, flavorNumber
-			write(*,"('dRho_',I1,'  = ',F6.3)") ix, &
+			write(*,"('dRho_',I1,'  = ',F9.6)") ix, &
 				(nuDensityLin(nuDensVec(ntot), ix) - ndeq)*nuFactor(ix)/ndeq
 		end do
-		write(*,"('Neff    = ',F6.3)") Neff_from_rho_z(nuDensVec(ntot))
+		write(*,"('Neff    = ',F9.6)") Neff_from_rho_z(nuDensVec(ntot))
 	end subroutine finalresults
 end module ndEquations
