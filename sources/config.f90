@@ -143,6 +143,8 @@ module ndConfig
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
 			nuDensMatVec(ix)%y = y_arr(ix)
 			nuDensMatVec(ix)%logy = log10(y_arr(ix))
+			nuDensMatVecFD(ix)%y = y_arr(ix)
+			nuDensMatVecFD(ix)%logy = log10(y_arr(ix))
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdm = fermiDirac(y_arr(ix)/z_in)
