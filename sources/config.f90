@@ -149,17 +149,17 @@ module ndConfig
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdm = fermiDirac(y_arr(ix)/z_in)
 !			write(3154,"(2"//dblfmt//")") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
-			nuDensMatVec(ix)%re(1,1) = 1.d0
-			if (flavorNumber.gt.1 .and. .not.sterile(2)) &
-				nuDensMatVec(ix)%re(2,2) = 1.d0
-			if (flavorNumber.gt.2 .and. .not.sterile(3)) &
-				nuDensMatVec(ix)%re(3,3) = 1.d0
+			nuDensMatVec(ix)%re(1,1) = 0.d0
+			if (flavorNumber.gt.1 .and. sterile(2)) &
+				nuDensMatVec(ix)%re(2,2) = -1.d0
+			if (flavorNumber.gt.2 .and. sterile(3)) &
+				nuDensMatVec(ix)%re(3,3) = -1.d0
 			if (flavorNumber.gt.3) &
-				nuDensMatVec(ix)%re(4,4) = 0.d0
+				nuDensMatVec(ix)%re(4,4) = -1.d0
 			nuDensMatVecFD(ix)%re = nuDensMatVec(ix)%re
 			nuDensMatVecFD(ix)%im = nuDensMatVec(ix)%im
 			do iy=1, flavorNumber
-				nuDensMatVecFD(ix)%re(iy,iy) = nuDensMatVec(ix)%re(iy,iy) * fdm
+				nuDensMatVecFD(ix)%re(iy,iy) = (1.d0+nuDensMatVec(ix)%re(iy,iy)) * fdm
 			end do
 		end do
 !		close(3154)

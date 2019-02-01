@@ -76,7 +76,7 @@ module ndEquations
 			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
 			fd = fermiDirac(y_arr(m) / z)
 			do i=1, flavorNumber
-				nuDensMatVecFD(m)%re(i,i) = nuDensMatVec(m)%re(i,i) * fd
+				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * fd
 			end do
 		end do
 	end subroutine vec_2_densMat
@@ -402,8 +402,7 @@ module ndEquations
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag',k,'.dat'
 			call openFile(units(k), trim(fname),firstWrite)
 			do iy=1, nY
-				tmpvec(iy)=nuDensMatVec(iy)%y**2*nuDensMatVec(iy)%re(k,k)! * &
-!					fermiDirac(nuDensMatVec(iy)%y / vec(ntot))
+				tmpvec(iy)=nuDensMatVec(iy)%re(k,k)
 			end do
 			write(units(k), '(*('//dblfmt//'))') x, tmpvec
 		end do
@@ -548,29 +547,23 @@ module ndEquations
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
 		integer :: i, j, k, s
-		real(dl), dimension(:), allocatable :: tmpv
 		type(cmplxMatNN) :: mat
-	
-		allocate(tmpv(flavNumSqu))
+
 		call drhoy_dx_fullMat(mat, x,z,m)
-		tmpv=0.d0
+		s=(m-1)*flavNumSqu
 		do i=1, flavorNumber
-			tmpv(i) = mat%re(i,i)
+			ydot(s+i) = mat%re(i,i)
 		end do
 		k=flavorNumber+1
 		if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 			do i=1, flavorNumber-1
 				do j=i+1, flavorNumber
-					tmpv(k) = mat%re(i,j)
-					tmpv(k+1) = mat%im(i,j)
+					ydot(s+k) = mat%re(i,j)
+					ydot(s+k+1) = mat%im(i,j)
 					k=k+2
 				end do
 			end do
 		end if
-		s=(m-1)*flavNumSqu
-		do i=1,flavNumSqu
-			ydot(s+i)=tmpv(i)
-		end do
 	end subroutine derivative
 
 	subroutine derivatives(n, x, vars, ydot)

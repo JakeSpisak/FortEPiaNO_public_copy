@@ -1618,8 +1618,10 @@ module ndInteractions
 			do i=1, flavorNumber
 				collArgs%ix1 = i
 				collArgs%ix2 = i
-				collision_terms%re(i,i) = collision_terms%re(i,i) &
-					+ integrate_coll_int_3(coll_nue_3_int_re, collArgs)
+				if (.not.sterile(i)) then
+					collision_terms%re(i,i) = collision_terms%re(i,i) &
+						+ integrate_coll_int_3(coll_nue_3_int_re, collArgs)
+				end if
 				if (collision_offdiag.eq.1) then
 					do j=i+1, flavorNumber
 						collArgs%ix2 = j
