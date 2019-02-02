@@ -63,6 +63,7 @@ module constants
 	real(dl), parameter :: ymed = 3.15137
 	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
+	real(dl), parameter :: overallFactor = planck_mass / sqrt(PIx8D3)
 
 	real(dl), parameter :: Damp_ex = 4.d0*sin2thW*sin2thW + 12.d0
     real(dl), parameter :: Damp_mt = 8.d0*sin2thW*sin2thW - 4.d0*sin2thW + 4.d0
@@ -90,7 +91,7 @@ module variables
 	logical :: dme2_temperature_corr
 	
 	!variables that will be read from config file
-	logical :: massOrdering
+	logical :: massOrdering, giveSinSq
 	integer :: flavorNumber, flavNumSqu
 	real(dl) :: m_lightest
 	real(dl) :: theta12, dm12

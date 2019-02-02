@@ -1253,8 +1253,6 @@ module ndInteractions
 		dme2 = obj%dme2
 		y2 = y_arr(iy2)
 		E4 = Ebare_i_dme(obj%x,y4, dme2)
-		f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
-
 		E3 = obj%y1 + y2 - E4
 		t1 = E3*E3
 		t2 = obj%x*obj%x + dme2
@@ -1273,6 +1271,7 @@ module ndInteractions
 				.or. y3.gt.obj%y1+y2+y4 &
 				.or. y4.gt.obj%y1+y2+y3)) then
 			f3 = fermiDirac(E_k_m(y3, obj%x) / obj%z)
+			f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
 			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
 !			write(*,multidblfmt) pi2_vec, PI1_12_full(obj%y1, y2, y3, y4)
 !			write(*,multidblfmt)F_ab_ann_re(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2), F_ab_ann_re(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2),F_ab_ann_re(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 1, obj%ix1,obj%ix2), F_ab_ann_re(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 2, obj%ix1,obj%ix2)
@@ -1303,7 +1302,6 @@ module ndInteractions
 
 		dme2 = obj%dme2
 		E2 = Ebare_i_dme(obj%x,y2, dme2)
-		f2 = fermiDirac(E_k_m(y2, obj%x) / obj%z)
 		y3 = y_arr(iy3)
 		E4 = obj%y1 + E2 - y3
 		t1 = E4*E4
@@ -1322,6 +1320,7 @@ module ndInteractions
 				.or. y2.gt.obj%y1+y3+y4 &
 				.or. y3.gt.obj%y1+y2+y4 &
 				.or. y4.gt.obj%y1+y2+y3)) then
+			f2 = fermiDirac(E_k_m(y2, obj%x) / obj%z)
 			f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
 !			write(*,multidblfmt) pi2_vec, PI1_13_full(obj%y1, y2, y3, y4)
@@ -1366,7 +1365,6 @@ module ndInteractions
 		dme2 = obj%dme2
 		y2 = y_arr(iy2)
 		E4 = Ebare_i_dme(obj%x,y4, dme2)
-		f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
 
 		E3 = obj%y1 + y2 - E4
 		t1 = E3*E3
@@ -1382,6 +1380,7 @@ module ndInteractions
 				.or. y3.gt.obj%y1+y2+y4 &
 				.or. y4.gt.obj%y1+y2+y3)) then
 			f3 = fermiDirac(E_k_m(y3, obj%x) / obj%z)
+			f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
 			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
 			coll_nue_3_ann_int_im = coll_nue_3_ann_int_im + &
 				y3/E3 * &
@@ -1410,7 +1409,6 @@ module ndInteractions
 
 		dme2 = obj%dme2
 		E2 = Ebare_i_dme(obj%x,y2, dme2)
-		f2 = fermiDirac(E_k_m(y2, obj%x) / obj%z)
 		y3 = y_arr(iy3)
 		E4 = obj%y1 + E2 - y3
 		t1 = E4*E4
@@ -1425,6 +1423,7 @@ module ndInteractions
 				.or. y2.gt.obj%y1+y3+y4 &
 				.or. y3.gt.obj%y1+y2+y4 &
 				.or. y4.gt.obj%y1+y2+y3)) then
+			f2 = fermiDirac(E_k_m(y2, obj%x) / obj%z)
 			f4 = fermiDirac(E_k_m(y4, obj%x) / obj%z)
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
 			coll_nue_3_sc_int_im = coll_nue_3_sc_int_im + &
@@ -1589,27 +1588,29 @@ module ndInteractions
 		RETURN
 	END SUBROUTINE region
 
-	function collision_terms(x, z, y1, iy1)
+	pure function collision_terms(collArgsIn)
 		type(cmplxMatNN) :: collision_terms
-		real(dl), intent(in) :: x,z, y1
-		integer, intent(in) :: iy1
-		type(coll_args), save :: collArgs
+		real(dl) :: x,z, y1
+		integer :: iy1
+		type(coll_args), intent(in) :: collArgsIn
+		type(coll_args) :: collArgs
 		integer :: i,j, k
 		real(dl) :: cf, res1, res2
 
 		call allocateCmplxMat(collision_terms)
+
+		collArgs=collArgsIn
+
+		x = collArgs%x
+		z = collArgs%z
+		y1 = collArgs%y1
+		iy1 = collArgs%iy
 
 		collision_terms%y = y1
 		collision_terms%x = x
 		collision_terms%z = z
 		collision_terms%re = 0.d0
 		collision_terms%im = 0.d0
-
-		collArgs%x = x
-		collArgs%z = z
-		collArgs%y1 = y1
-		collArgs%dme2 = dme2_electron(x, 0.d0, z)
-		collArgs%iy = iy1
 
 		if (collision_offdiag.eq.0) then
 			collision_terms%re = 0.d0
@@ -1619,17 +1620,14 @@ module ndInteractions
 				collArgs%ix1 = i
 				collArgs%ix2 = i
 				if (.not.sterile(i)) then
-					collision_terms%re(i,i) = collision_terms%re(i,i) &
-						+ integrate_coll_int_3(coll_nue_3_int_re, collArgs)
+					collision_terms%re(i,i) = integrate_coll_int_3(coll_nue_3_int_re, collArgs)
 				end if
 				if (collision_offdiag.eq.1) then
 					do j=i+1, flavorNumber
 						collArgs%ix2 = j
-						collision_terms%re(i,j) = collision_terms%re(i,j) &
-							+ integrate_coll_int_3(coll_nue_3_int_re, collArgs)
+						collision_terms%re(i,j) = integrate_coll_int_3(coll_nue_3_int_re, collArgs)
 
-						collision_terms%im(i,j) = collision_terms%im(i,j) &
-							+ integrate_coll_int_3(coll_nue_3_int_im, collArgs)
+						collision_terms%im(i,j) = integrate_coll_int_3(coll_nue_3_int_im, collArgs)
 					end do
 				else if (collision_offdiag.eq.2) then
 					!damping terms from Dolgov:2002ab, eq A.11
@@ -1637,13 +1635,12 @@ module ndInteractions
 						collArgs%ix2 = j
 						collision_terms%re(i,j) = 0.d0
 						collision_terms%im(i,j) = 0.d0
-						if (i .eq. 1 .and. (j.eq.2 .or. j.eq.3)) then
-							collision_terms%re(i,j) = dampTermFactor * Damp_ex * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
-						elseif (i .eq. 2 .and. j.eq.3) then
-							collision_terms%re(i,j) = dampTermFactor * Damp_mt * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
-						end if
+!						if (i .eq. 1 .and. (j.eq.2 .or. j.eq.3)) then
+!							collision_terms%re(i,j) = dampTermFactor * Damp_ex * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
+!						elseif (i .eq. 2 .and. j.eq.3) then
+!							collision_terms%re(i,j) = dampTermFactor * Damp_mt * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
+!						end if
 					end do
-					print *,"Warning: should use damping factor...NYI"
 !				else if (collision_offdiag.gt.2) then !no need to execute this!
 !					collision_terms%re(i,j) = collision_terms%re(i,j) + 0.d0
 !					collision_terms%im(i,j) = collision_terms%im(i,j) + 0.d0

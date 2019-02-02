@@ -337,21 +337,29 @@ module ndEquations
 
 	subroutine drhoy_dx_fullMat (matrix,x,z,iy)
 		type(cmplxMatNN), intent(out) :: matrix
-		real(dl) :: x,y,z, overallNorm, a, fd, cf
+		real(dl) :: x,y,z, overallNorm, a, fd, cf, ldf
 		integer :: iy,k, ix
+		type(coll_args) :: collArgs
 		type(cmplxMatNN), save :: comm
-		
+
 		call allocateCmplxMat(comm)
 		call allocateCmplxMat(matrix)
 
 		y = nuDensMatVecFD(iy)%y
 		fd = fermiDirac(y / z)
-		
-		overallNorm = planck_mass / (sqrt(radDensity(x,z)*PIx8D3))
+
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%y1 = y
+		collArgs%dme2 = dme2_electron(x, 0.d0, z)
+		collArgs%iy = iy
+
+		overallNorm = overallFactor / sqrt(radDensity(x,z))
 		
 		leptonDensities=0.d0
-		leptonDensities(1,1) = leptDensFactor * y / x**6 * electronDensity(x,z)
-		leptonDensities(2,2) = leptDensFactor * y / x**6 * muonDensity(x,z)
+		ldf = leptDensFactor * y / x**6
+		leptonDensities(1,1) = ldf * electronDensity(x,z)
+		leptonDensities(2,2) = ldf * muonDensity(x,z)
 		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
 		
 		!switch imaginary and real parts because of the "-i" factor
@@ -364,7 +372,7 @@ module ndEquations
 		matrix%re = comm%re * cf
 
 		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
-			lastColl%mat = collision_terms(x, z, y, iy)
+			lastColl%mat = collision_terms(collArgs)
 			lastColl%x = x
 			lastColl%y = y
 			lastColl%z = z
