@@ -1173,12 +1173,13 @@ program tests
 	subroutine do_tests_coll_int
 		real(dl) :: x,z
 		type(coll_args) :: collArgs
-		integer :: i, iy1, iy!,j, k
+		integer :: i, j, iy1, iy
 		real(dl) :: errr1,errr2, res1,res2,res3,res4, cf, ref
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
 		real(dl), dimension(:), allocatable :: ndmv_re
 		real(dl), dimension(3) :: tmparrS, tmparrA
+		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
 		character(len=300) :: tmparg
 
 		write(*,*) ""
@@ -1405,6 +1406,82 @@ program tests
 			write(tmparg,"('test coll ann 3 b - ',2I1)") i, i
 			call assert_double_verb(trim(tmparg), res2, tmparrA(i), 0.2d0)
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
+		end do
+
+		x=0.05d0
+		iy1=7 !1.22151515151515
+		z=1.06d0
+		write(*,*)
+		write(*,"(a)") "Collision integrands im part and off diagonal (36 tests)"
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collArgs%dme2 = 0.d0
+
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re = 0.d0
+			nuDensMatVecFD(iy)%im = 0.d0
+		end do
+		nuDensMatVecFD(7)%re(1, :) = (/1.d0*fermiDirac(y_arr(7)/z), 0.1d0, 0.01d0/)
+		nuDensMatVecFD(7)%re(2, :) = (/0.1d0, 1.05d0*fermiDirac(y_arr(7)/z), 0.03d0/)
+		nuDensMatVecFD(7)%re(3, :) = (/0.01d0, 0.03d0, 1.1d0*fermiDirac(y_arr(7)/z)/)
+		nuDensMatVecFD(7)%im(1, :) = (/0.d0, -0.1d0, 0.03d0/)
+		nuDensMatVecFD(7)%im(2, :) = (/0.1d0, 0.d0, -0.02d0/)
+		nuDensMatVecFD(7)%im(3, :) = (/-0.03d0, 0.02d0, 0.d0/)
+		nuDensMatVecFD(21)%re(1, :) = (/1.1d0*fermiDirac(y_arr(21)/z), 0.d0, 0.12d0/)
+		nuDensMatVecFD(21)%re(2, :) = (/0.d0, 1.4d0*fermiDirac(y_arr(21)/z), 0.04d0/)
+		nuDensMatVecFD(21)%re(3, :) = (/0.12d0, 0.04d0, 1.7d0*fermiDirac(y_arr(21)/z)/)
+		nuDensMatVecFD(21)%im(1, :) = (/0.d0, -0.05d0, 0.d0/)
+		nuDensMatVecFD(21)%im(2, :) = (/0.05d0, 0.0d0, 0.01d0/)
+		nuDensMatVecFD(21)%im(3, :) = (/0.d0, -0.01d0, 0.d0/)
+
+		tmpmatA(1,:) = (/0.233319, -0.400263, -1.78407/)
+		tmpmatA(2,:) = (/-0.400263, 0.160039, 0.534194/)
+		tmpmatA(3,:) = (/-1.78407, 0.534194, 0.154635/)
+		tmpmatB(1,:) = (/0., 1.14946, -0.119463/)
+		tmpmatB(2,:) = (/-1.14946, 0., 0.263104/)
+		tmpmatB(3,:) = (/0.119463, -0.263104, 0./)
+		tmparrA(:) = (/0.002d0, 0.001d0, 0.001d0/)
+		tmparrS(:) = (/0.001d0, 0.001d0, 0.001d0/)
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('coll sc integrand full ',2I1)") i,j
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				res1 = coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
+				res2 = coll_nue_3_sc_int_im(21, 5.2d0, collArgs)
+				call assert_double_rel(trim(tmparg)//"re", res1, tmpmatA(i,j), tmparrA(i))
+				if (i.eq.j) then
+					call assert_double(trim(tmparg)//"im", res2, tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", res2, tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+
+		tmpmatA(1,:) = (/0.177672, -0.186694, 1.1394/)
+		tmpmatA(2,:) = (/-0.186694, 0.114661, -0.0736612/)
+		tmpmatA(3,:) = (/1.1394, -0.0736612, -0.0902576/)
+		tmpmatB(1,:) = (/0., -0.22164, -0.0714177/)
+		tmpmatB(2,:) = (/0.22164, 0., 0.206023/)
+		tmpmatB(3,:) = (/0.0714177, -0.206023, 0./)
+		tmparrA(:) = (/0.004d0, 0.001d0, 0.0015d0/)
+		tmparrS(:) = (/0.001d0, 0.001d0, 0.001d0/)
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('coll ann integrand full ',2I1)") i,j
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				res1 = coll_nue_3_ann_int_re(21, 3.d0, collArgs)
+				res2 = coll_nue_3_ann_int_im(21, 3.d0, collArgs)
+				call assert_double_rel(trim(tmparg)//"re", res1, tmpmatA(i,j), tmparrA(i))
+				if (i.eq.j) then
+					call assert_double(trim(tmparg)//"im", res2, tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", res2, tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
 		end do
 !		call criticalError("stop")
 		deallocate(ndmv_re)
