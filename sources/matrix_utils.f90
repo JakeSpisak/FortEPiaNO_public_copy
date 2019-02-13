@@ -74,8 +74,8 @@ module ndMatrices
 		
 		mat(ix1, ix1) = cos(theta)
 		mat(ix2, ix2) = cos(theta)
-		mat(ix1, ix2) = -sin(theta)
-		mat(ix2, ix1) = sin(theta)
+		mat(ix1, ix2) = sin(theta)
+		mat(ix2, ix1) = -sin(theta)
 	end subroutine createRotMat
 	
 	pure function traceMat(inM)

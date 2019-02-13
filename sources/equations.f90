@@ -25,6 +25,16 @@ module ndEquations
 
 	contains 
 
+	subroutine updateLeptonDensities(x,y,z)
+		real(dl), intent(in) :: x,y,z
+		real(dl) :: ldf
+
+		leptonDensities=0.d0
+		ldf = leptDensFactor * y / x**6
+		leptonDensities(1,1) = ldf * electronDensity(x,z)
+		leptonDensities(2,2) = ldf * muonDensity(x,z)
+	end subroutine updateLeptonDensities
+
 	subroutine densMat_2_vec(vec, z)
 		real(dL), dimension(:), intent(out) :: vec
 		real(dL), intent(in) :: z
@@ -355,11 +365,7 @@ module ndEquations
 		collArgs%iy = iy
 
 		overallNorm = overallFactor / sqrt(radDensity(x,z))
-		
-		leptonDensities=0.d0
-		ldf = leptDensFactor * y / x**6
-		leptonDensities(1,1) = ldf * electronDensity(x,z)
-		leptonDensities(2,2) = ldf * muonDensity(x,z)
+		call updateLeptonDensities(x,y,z)
 		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
 		
 		!switch imaginary and real parts because of the "-i" factor
@@ -613,6 +619,7 @@ module ndEquations
 			call derivative(x, z, m, mat, n, ydot)
 		end do
 
+!		write(*,multidblfmt) ydot
 		call dz_o_dx_lin(x,z, ydot, ntot)
 
 		call densMat_2_vec(nuDensVec, z)

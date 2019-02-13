@@ -78,6 +78,8 @@ program tests
 	write(*,*) ""
 	write(*,"(a)") "Starting tests"
 	call do_test_linearized_integrals
+	call do_test_commutator
+	call do_test_nu_matrices
 	call do_tests_cosmology
 	call do_tests_JKYG
 	call do_tests_dzodx
@@ -87,6 +89,7 @@ program tests
 	call do_f_ann_sc_re_tests_eq
 	call do_f_ann_sc_re_tests_full
 	call do_tests_coll_int
+	call do_test_collision_terms
 
 	write(*,*) ""
 	write(*,*) ""
@@ -206,6 +209,123 @@ program tests
 		deallocate(fy1_arr)
 		deallocate(fy2_arr)
 	end subroutine do_test_linearized_integrals
+
+	subroutine do_test_commutator
+		real(dl), dimension(:,:), allocatable :: m1, m2, m3, res
+		integer :: i,j
+		character(len=300) :: tmparg
+
+		allocate(m1(4,4), m2(4,4), res(4,4))
+		m1(1,:) = (/0.2, 0.6, 3.01, 0.3/)
+		m1(2,:) = (/-0.12, 0.045, -0.05, 0./)
+		m1(3,:) = (/0., 0.11, 0.22, -0.11/)
+		m1(4,:) = (/1., 4., -0.03, 0.04/)
+		m2(1,:) = (/1., 2., -1., -2./)
+		m2(2,:) = (/0.5, -0.6, 0.7, -0.8/)
+		m2(3,:) = (/0.01, 0.66, 0.55, 0.31/)
+		m2(4,:) = (/0.98, 0.4, -0.78, 0.4/)
+
+		write(*,*)
+		write(*,"(a)") "Commutator & anticommutator (32 tests)"
+		call Commutator(m1, m2, m3)
+		res(1,:) = (/2.8641, 9.5666, -1.1085, -0.1569/)
+		res(2,:) = (/0.53, 2.55, -1.589, 0.1475/)
+		res(3,:) = (/-0.2834, -1.301, 0.175, -0.0187/)
+		res(4,:) = (/2.4909, -2.524, -0.9939, -5.5891/)
+		do i=1,4
+			do j=1,4
+				write(tmparg,"('commutator ',2I1)") i,j
+				call assert_double_rel(trim(tmparg), m3(i,j), res(i,j), 2d-7)
+			end do
+		end do
+		call Anticommutator(m1, m2, m3)
+		res(1,:) = (/-1.2159, -5.2734, 4.3915, 0.5031/)
+		res(2,:) = (/-0.726, -3.15, 1.837, 0.2295/)
+		res(3,:) = (/0.1822, 1.3714, 0.3926, -0.1089/)
+		res(4,:) = (/3.5869, 1.7164, 4.4985, -4.7975/)
+		do i=1,4
+			do j=1,4
+				write(tmparg,"('anticommutator ',2I1)") i,j
+				call assert_double_rel(trim(tmparg), m3(i,j), res(i,j), 2d-7)
+			end do
+		end do
+		deallocate(m1, m2, m3, res)
+	end subroutine do_test_commutator
+
+	subroutine do_test_nu_matrices
+		real(dl), dimension(3,3) :: m
+		real(dl), dimension(:,:), allocatable :: ide
+		integer :: i,j
+		character(len=300) :: tmparg
+
+		write(*,*)
+		write(*,"(a)") "Neutrino matrices (63 tests)"
+
+		m(1,:) = (/0.825082, 0.54529713, 0.1479548/)
+		m(2,:) = (/-0.47410446, 0.525726198, 0.7062839/)
+		m(3,:) = (/0.30735086, -0.6528882, 0.69229506/)
+		do i=1,3
+			do j=1,3
+				write(tmparg,"('mixing matrix ',2I1)") i,j
+				call assert_double_rel(trim(tmparg), mixMat(i,j), m(i,j), 1d-7)
+			end do
+		end do
+		do i=1,3
+			do j=1,3
+				write(tmparg,"('inverse mixing matrix ',2I1)") i,j
+				call assert_double_rel(trim(tmparg), mixMatInv(i,j), m(j,i), 1d-7)
+			end do
+		end do
+		call createIdentityMat(ide, 3)
+		m = matmul(mixMat, mixMatInv)
+		do i=1,3
+			do j=1,3
+				write(tmparg,"('mixing matrix product A ',2I1)") i,j
+				call assert_double(trim(tmparg), m(i,j), ide(i,j), 1d-7)
+			end do
+		end do
+		m = matmul(mixMatInv, mixMat)
+		do i=1,3
+			do j=1,3
+				write(tmparg,"('mixing matrix product B ',2I1)") i,j
+				call assert_double(trim(tmparg), m(i,j), ide(i,j), 1d-7)
+			end do
+		end do
+		deallocate(ide)
+
+		m(1,:) = (/0.00007745186685918483, 0.00028443083990052604, 0.00023082995114815183/)
+		m(2,:) = (/0.00028443083990052604, 0.001275536536721503, 0.0012040271446586716/)
+		m(3,:) = (/0.00023082995114815185, 0.0012040271446586716, 0.001237611596419312/)
+		do i=1,3
+			do j=1,3
+				write(tmparg,"('mass matrix ',2I1)") i,j
+				call assert_double(trim(tmparg), nuMassesMat(i,j), m(i,j), 1d-7)
+			end do
+		end do
+
+		leptonDensities=0.d0
+		call updateLeptonDensities(0.076d0, 1.22d0, 1.32d0)
+		print*,leptonDensities
+		m(1,:) = (/-0.00268169554, 0., 0./)
+		m(2,:) = (/0.,0.,0./)
+		m(3,:) = (/0.,0.,0./)
+		do i=1,3
+			do j=1,3
+				write(tmparg,"('mass matrix ',2I1)") i,j
+				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
+			end do
+		end do
+		call updateLeptonDensities(2.d1, 0.22d0, 1.2d0)
+		m(1,:) = (/-1.7579704699583362d-23, 0.d0, 0.d0/)
+		m(2,:) = (/0.,0.,0./)
+		m(3,:) = (/0.,0.,0./)
+		do i=1,3
+			do j=1,3
+				write(tmparg,"('mass matrix ',2I1)") i,j
+				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 5d-26)
+			end do
+		end do
+	end subroutine do_test_nu_matrices
 
 	subroutine do_tests_cosmology
 		real(dl), dimension(:), allocatable :: ndmv_re
@@ -396,20 +516,20 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 		write(*,*) ""
-		write(*,"(a)") "dz/dx functions (X tests)"
+		write(*,"(a)") "dz/dx functions (6 tests)"
 		call dz_o_dx(0.01d0, 1.d0, ydot, n)
-		call assert_double("dz_o_dx test 1", ydot(n), -0.17511d0, 1d-5)
-		call dz_o_dx(1.d0/1.1d0, 1.1d0, ydot, n)
-		call assert_double("dz_o_dx test 2", ydot(n), -0.159145d0, 5d-3)
+		call assert_double_rel("dz_o_dx test 1", ydot(n), -0.1751102d0, 3d-6)
+		call dz_o_dx(1.1d0, 1.1d0, ydot, n)
+		call assert_double_rel("dz_o_dx test 2", ydot(n), -0.1591454d0, 3d-6)
 		call dz_o_dx(6.d0, 1.2d0, ydot, n)
-		call assert_double("dz_o_dx test 3", ydot(n), -0.359906d0, 1d-5)
+		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.35990563d0, 2d-6)
 
 		call dz_o_dx_lin(0.01d0, 1.d0, ydot, n)
-		call assert_double("dz_o_dx_lin test 1", ydot(n), -0.17511d0, 1d-5)
-		call dz_o_dx_lin(1.d0/1.1d0, 1.1d0, ydot, n)
-		call assert_double("dz_o_dx_lin test 2", ydot(n), -0.159145d0, 5d-3)
+		call assert_double_rel("dz_o_dx_lin test 1", ydot(n), -0.1751102d0, 3d-6)
+		call dz_o_dx_lin(1.1d0, 1.1d0, ydot, n)
+		call assert_double_rel("dz_o_dx_lin test 2", ydot(n), -0.1591454d0, 3d-6)
 		call dz_o_dx_lin(6.d0, 1.2d0, ydot, n)
-		call assert_double("dz_o_dx_lin test 3", ydot(n), -0.359906d0, 1d-5)
+		call assert_double_rel("dz_o_dx_lin test 3", ydot(n), -0.35990563d0, 2d-6)
 	end subroutine do_tests_dzodx
 
 	subroutine do_tests_dme2
@@ -1486,6 +1606,68 @@ program tests
 !		call criticalError("stop")
 		deallocate(ndmv_re)
 	end subroutine do_tests_coll_int
+
+	subroutine do_test_collision_terms
+		real(dl) :: x,z
+		integer :: i, j, iy1, iy
+		real(dl) :: y,res1,res2
+		type(coll_args) :: collArgs
+		real(dl), dimension(3) :: tmparrS, tmparrA
+		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
+		character(len=300) :: tmparg
+		type(cmplxMatNN) :: cts
+
+		call allocateCmplxMat(cts)
+
+		x=0.75d0
+		iy1=7 !1.22151515151515
+		z=1.186d0
+		write(*,*)
+		write(*,"(a)") "Collision_terms (18 tests)"
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collArgs%dme2 = 0.d0
+
+		do iy=1, Ny
+			y = y_arr(iy)/z
+			nuDensMatVecFD(iy)%re(1, :) = (/1.d0*fermiDirac(y/z)/y, 0.01d0/y, (y/10.d0)/)
+			nuDensMatVecFD(iy)%re(2, :) = (/0.01d0/y, 1.05d0*fermiDirac(y/z), 0.03d0*sqrt(y)/)
+			nuDensMatVecFD(iy)%re(3, :) = (/(y/10.d0), 0.03d0*sqrt(y), 1.1d0*fermiDirac(y/z)/sqrt(y)/)
+			nuDensMatVecFD(iy)%im(1, :) = (/0.d0, -0.1d0, (30.d0-y)/)
+			nuDensMatVecFD(iy)%im(2, :) = (/0.1d0, 0.d0, -0.02d0/)
+			nuDensMatVecFD(iy)%im(3, :) = (/-(30.d0-y), 0.02d0, 0.d0/)
+		end do
+
+		tmpmatA(1,:) = (/0., -0.186694, 1.1394/)
+		tmpmatA(2,:) = (/-0.186694, 0.114661, -0.0736612/)
+		tmpmatA(3,:) = (/1.1394, -0.0736612, -0.0902576/)
+		tmpmatB(1,:) = (/0., -0.22164, -0.0714177/)
+		tmpmatB(2,:) = (/0.22164, 0., 0.206023/)
+		tmpmatB(3,:) = (/0.0714177, -0.206023, 0./)
+		tmparrA(:) = (/0.001d0, 0.001d0, 0.001d0/)
+		tmparrS(:) = (/0.001d0, 0.001d0, 0.001d0/)
+		cts = collision_terms(collArgs)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		write(*,multidblfmt)cts
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms ',2I1)") i,j
+				if (abs(tmpmatA(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
+				end if
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+	end subroutine do_test_collision_terms
 
 	subroutine test_speed_coll_int
 		real(dl) :: x,z, y1

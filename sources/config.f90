@@ -166,7 +166,7 @@ module ndConfig
 		
 		deallocate(diag_el)
 	end subroutine init_matrices
-	
+
 	subroutine initConfig()
 		character(len=300) :: tmparg, tmpstr
 		integer :: ix
