@@ -141,7 +141,6 @@ program tests
 			dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 		end do
 		dy_arr(Ny) = 0.d0
-		z_in = 1.00003d0
 		m_lightest   = 0.0d0
 		massOrdering = .true.
 		!read cosmo parameters
@@ -165,6 +164,7 @@ program tests
 			dm23         = i_dm23
 			deltaCP13    = i_deltaCP13
 		end if
+		call zin_solver
 		call setMixingMatrix()
 		call setMassMatrix()
 		call init_matrices

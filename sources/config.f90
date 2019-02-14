@@ -6,6 +6,7 @@ module ndConfig
 	use FileIni
 	use ndMatrices
 	use ndInteractions
+	use ndEquations
 	use utilities
 	implicit none
 
@@ -106,7 +107,7 @@ module ndConfig
 	subroutine init_matrices
 		real(dl), dimension(:), allocatable :: diag_el
 		integer :: ix, iy
-		real(dl) :: fdm
+		real(dl) :: fdm, fdme
 		
 		allocate(diag_el(flavorNumber))
 		
@@ -147,7 +148,8 @@ module ndConfig
 			nuDensMatVecFD(ix)%logy = log10(y_arr(ix))
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
-			fdm = fermiDirac(y_arr(ix))!/z_in)
+			fdme = fermiDirac(y_arr(ix)/z_in)
+			fdm = fermiDirac(y_arr(ix))
 !			write(3154,"(2"//dblfmt//")") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
 			nuDensMatVec(ix)%re(1,1) = 0.d0
 			if (flavorNumber.gt.1 .and. sterile(2)) &
@@ -159,7 +161,8 @@ module ndConfig
 			nuDensMatVecFD(ix)%re = nuDensMatVec(ix)%re
 			nuDensMatVecFD(ix)%im = nuDensMatVec(ix)%im
 			do iy=1, flavorNumber
-				nuDensMatVecFD(ix)%re(iy,iy) = (1.d0+nuDensMatVec(ix)%re(iy,iy)) * fdm
+				nuDensMatVecFD(ix)%re(iy,iy) = (1.d0+nuDensMatVec(ix)%re(iy,iy)) * fdme
+				nuDensMatVec(ix)%re(iy,iy) = nuDensMatVecFD(ix)%re(iy,iy)/fdm - 1.d0
 			end do
 		end do
 !		close(3154)
@@ -229,7 +232,7 @@ module ndConfig
 			end do
 			dy_arr(Ny) = 0.d0
 
-			z_in    = read_ini_real('z_in', 1.00003d0)
+			call zin_solver
 			
 			!read mixing parameters and create matrices
 			m_lightest   = read_ini_real('m_lightest', 0.0d0)

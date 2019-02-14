@@ -35,9 +35,8 @@ module ndEquations
 		leptonDensities(2,2) = ldf * muonDensity(x,z)
 	end subroutine updateLeptonDensities
 
-	subroutine densMat_2_vec(vec, z)
+	subroutine densMat_2_vec(vec)
 		real(dL), dimension(:), intent(out) :: vec
-		real(dL), intent(in) :: z
 		integer :: i,j,k,m
 		
 		k=1
@@ -58,9 +57,8 @@ module ndEquations
 		end do
 	end subroutine densMat_2_vec
 
-	subroutine vec_2_densMat(vec, z)
+	subroutine vec_2_densMat(vec)
 		real(dL), dimension(:), intent(in) :: vec
-		real(dL), intent(in) :: z
 		integer :: i,j,k,m
 		real(dL) :: fd
 	
@@ -84,7 +82,7 @@ module ndEquations
 			end if
 			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
 			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
-			fd = fermiDirac(y_arr(m))! / z)
+			fd = fermiDirac(y_arr(m))
 			do i=1, flavorNumber
 				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * fd
 			end do
@@ -291,6 +289,74 @@ module ndEquations
 		ydot(n) = coeffs(1) - coeffs(2) * tmp/ z**3
 	end subroutine dz_o_dx_lin
 
+	subroutine dz_o_dx_eq_lin(n, x, vars, ydot)
+		integer, intent(in) :: n
+		real(dl), intent(in) :: x
+		real(dl), dimension(n), intent(in) :: vars
+		real(dl), dimension(n), intent(out) :: ydot
+		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
+		!integral without need of interpolation, just use linear approx in y bins
+		real(dl) :: z, j, y, xoz, num, den
+		real(dl), dimension(2) :: coeffs
+		integer :: ix, m
+		real(dl), dimension(2) :: g12
+
+		z = vars(n)
+		xoz=x/z
+
+		j      = J_funcFull(xoz)
+		y      = Y_funcFull(xoz)
+		g12    = G12_funcFull(xoz)
+		num= xoz * j + g12(1)
+		den= xoz**2 * j + y + PISQ/7.5d0 + g12(2)
+
+		ydot(n) = num/den
+	end subroutine dz_o_dx_eq_lin
+
+	subroutine zin_solver
+		integer :: n
+		character(len=3) :: istchar
+		character(len=100) :: tmpstring
+		real(dl) :: rtol, xvh
+		integer :: itol, itask, istate, iopt, lrw, liw, jt
+		real(dl), dimension(:), allocatable :: rwork, atol, cvec
+		integer, dimension(:), allocatable :: iwork
+
+		call addToLog("[zin] Computation of z_in started. ")
+		n=1
+
+		itol=2
+		rtol=dlsoda_rtol
+		itask=1
+		istate=1
+		iopt=1
+
+		lrw=60
+		liw=60
+		allocate(atol(n), cvec(n), rwork(lrw), iwork(liw))
+		atol=1d-7
+		rwork=0.
+		iwork=0
+		iwork(6)=99999999
+		jt=2
+
+		cvec(1) = 1.d0
+		xvh = 0.0001d0
+
+		call dlsoda(dz_o_dx_eq_lin,n,cvec,xvh,x_in,&
+					itol,rtol,atol,itask,istate, &
+					iopt,rwork,lrw,iwork,liw,jdum,jt)
+
+		if (istate.lt.0) then
+			write(istchar, "(I3)") istate
+			call criticalError('[zin] istate='//istchar)
+		end if
+
+		write(tmpstring,"('[zin] ended with z_in =',E16.9,'.')") cvec(n)
+		z_in = cvec(n)
+		call addToLog(trim(tmpstring))
+	end subroutine zin_solver
+
 	subroutine test_dzodx_speed
 		real(dl), dimension(:), allocatable :: fd_vec, fd_x
 		integer :: ix, iflag, interp_nfd
@@ -402,7 +468,6 @@ module ndEquations
 		integer, dimension(:), allocatable :: units
 		character(len=200) :: fname
 
-!		call vec_2_densMat(vec, z_in)
 		totFiles=flavNumSqu+2
 		allocate(units(totFiles),tmpvec(Ny))
 		do i=1, totFiles
@@ -494,7 +559,7 @@ module ndEquations
 		jt=2
 
 		nuDensVec(ntot)=z_in
-		call densMat_2_vec(nuDensVec, z_in)
+		call densMat_2_vec(nuDensVec)
 		
 		call readCheckpoints(nchk, xchk, ychk, chk)
 		
@@ -614,7 +679,7 @@ module ndEquations
 !		write(*,multidblfmt) nuDensMatVecFD
 		call allocateCmplxMat(mat)
 		z = vars(n)
-		call vec_2_densMat(vars, vars(n))
+		call vec_2_densMat(vars)
 		do m=1, Ny
 			call derivative(x, z, m, mat, n, ydot)
 		end do
@@ -622,7 +687,7 @@ module ndEquations
 !		write(*,multidblfmt) ydot
 		call dz_o_dx_lin(x,z, ydot, ntot)
 
-		call densMat_2_vec(nuDensVec, z)
+		call densMat_2_vec(nuDensVec)
 	end subroutine derivatives
 	
 	subroutine jdum
