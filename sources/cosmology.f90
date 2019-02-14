@@ -208,7 +208,7 @@ module ndCosmology
 
 		do ix=1, Ny
 			y = y_arr(ix)
-			fy_arr(ix) = y*y*y * fermiDirac(y/z)
+			fy_arr(ix) = y*y*y * fermiDirac(y)!/z)
 		end do
 		nuDensityLinEq = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQD2
 	end function nuDensityLinEq

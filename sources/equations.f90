@@ -84,7 +84,7 @@ module ndEquations
 			end if
 			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
 			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
-			fd = fermiDirac(y_arr(m) / z)
+			fd = fermiDirac(y_arr(m))! / z)
 			do i=1, flavorNumber
 				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * fd
 			end do
@@ -258,7 +258,7 @@ module ndEquations
 			do ix=1, flavorNumber
 				der(m) = der(m) + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 			end do
-			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m) / z)
+			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m))! / z)
 		end do
 		call params%initialize(Ny, y_arr, der)
 		tmp = rombint_spli(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)
@@ -284,7 +284,7 @@ module ndEquations
 			do ix=1, flavorNumber
 				tmp = tmp + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 			end do
-			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m) / z)
+			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))! / z)
 		end do
 		tmp = integral_linearized_1d(Ny, dy_arr, fy_arr)
 		coeffs = dzodxcoef_interp_func(x/z)
@@ -356,7 +356,7 @@ module ndEquations
 		call allocateCmplxMat(matrix)
 
 		y = nuDensMatVecFD(iy)%y
-		fd = fermiDirac(y / z)
+		fd = fermiDirac(y)! / z)
 
 		collArgs%x = x
 		collArgs%z = z

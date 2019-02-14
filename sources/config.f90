@@ -147,7 +147,7 @@ module ndConfig
 			nuDensMatVecFD(ix)%logy = log10(y_arr(ix))
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
-			fdm = fermiDirac(y_arr(ix)/z_in)
+			fdm = fermiDirac(y_arr(ix))!/z_in)
 !			write(3154,"(2"//dblfmt//")") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
 			nuDensMatVec(ix)%re(1,1) = 0.d0
 			if (flavorNumber.gt.1 .and. sterile(2)) &
