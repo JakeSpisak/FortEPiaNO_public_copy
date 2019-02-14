@@ -1301,6 +1301,9 @@ program tests
 		real(dl), dimension(3) :: tmparrS, tmparrA, tmperr
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
 		character(len=300) :: tmparg
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(fy2_arr(Ny, Ny))
 
 		write(*,*) ""
 		write(*,"(a)") "Collision integrals (54 tests)"
@@ -1335,6 +1338,9 @@ program tests
 		collArgs%z = z
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
 		collArgs%dme2 = 0.d0!dme2_electron(x, 0.d0, z)
 
 		!first series of fake sc and ann tests
@@ -1377,6 +1383,32 @@ program tests
 		end do
 
 		!first series of sc and ann tests
+		collArgs%ix1 = 1
+		collArgs%ix2 = 1
+		res1=coll_nue_3_sc_int_re(13, y_arr(13), collArgs)
+		print*,y_arr(13),res1
+		call criticalError("stop")
+		do i=1, Ny
+			do j=1, Ny
+				fy2_arr(i,j) = coll_nue_3_sc_int_re(i, y_arr(j), collArgs)
+			end do
+		end do
+		call openFile(987, "test_sc3_re.dat", .true.)
+		do i=1, Ny
+			write(987,multidblfmt) fy2_arr(i,:)
+		end do
+		close(987)
+		do i=1, Ny
+			do j=1, Ny
+				fy2_arr(i,j) = coll_nue_3_ann_int_re(i, y_arr(j), collArgs)
+			end do
+		end do
+		call openFile(987, "test_ann3_re.dat", .true.)
+		do i=1, Ny
+			write(987,multidblfmt) fy2_arr(i,:)
+		end do
+		close(987)
+
 		vk=(/5.2d0,2.3728449568592263d0/)
 		tmparrS = (/3d-4, -0.15544d0, -0.466535d0/)
 		tmparrA = (/4d-4, 5d-4, 2d-4/)
@@ -1420,7 +1452,7 @@ program tests
 		collArgs%ix2 = 1
 		res2=coll_nue_3_ann_int_re(21, 3.d0, collArgs)
 		call assert_double("test coll ann 3 sing 1", res2, tmparrS(1), tmperr(1))
-		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
+		res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 		call assert_double("test coll ann 4 sing 1", res1, tmparrS(1), tmperr(1))
 		do i=2, flavorNumber
 			collArgs%ix1 = i
@@ -1468,8 +1500,29 @@ program tests
 		collArgs%z = z
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		collArgs%ix1 = 1
-		collArgs%ix2 = 1
+		collArgs%ix1 = 3
+		collArgs%ix2 = 3
+		do i=1, Ny
+			do j=1, Ny
+				fy2_arr(i,j) = coll_nue_3_sc_int_re(i, y_arr(j), collArgs)
+			end do
+		end do
+		call openFile(987, "test_sc3b_re.dat", .true.)
+		do i=1, Ny
+			write(987,multidblfmt) fy2_arr(i,:)
+		end do
+		close(987)
+		do i=1, Ny
+			do j=1, Ny
+				fy2_arr(i,j) = coll_nue_3_ann_int_re(i, y_arr(j), collArgs)
+			end do
+		end do
+		call openFile(987, "test_ann3b_re.dat", .true.)
+		do i=1, Ny
+			write(987,multidblfmt) fy2_arr(i,:)
+		end do
+		close(987)
+
 		vk=(/5.2d0,14.503650021949795d0/)
 		tmparrS = (/-0.0015d0, -3.3d-4, -3.3d-4/)
 		tmperr = (/0.002d0, 4d-4, 4d-4/)
