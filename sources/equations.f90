@@ -82,7 +82,7 @@ module ndEquations
 			end if
 			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
 			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
-			fd = fermiDirac(y_arr(m))
+			fd = fermiDirac(y_arr(m))!/z_in)
 			do i=1, flavorNumber
 				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * fd
 			end do
@@ -203,7 +203,7 @@ module ndEquations
 		integer::ix, nx, iflag
 		
 		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx...")
-		nx=interp_nx
+		nx=interp_nxz
 		allocate(A(nx),B(nx))
 		do ix=1, nx
 			j      = J_funcFull(interp_xozvec(ix))
@@ -256,7 +256,7 @@ module ndEquations
 			do ix=1, flavorNumber
 				der(m) = der(m) + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 			end do
-			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m))! / z)
+			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m))!/z_in)
 		end do
 		call params%initialize(Ny, y_arr, der)
 		tmp = rombint_spli(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)
@@ -282,7 +282,7 @@ module ndEquations
 			do ix=1, flavorNumber
 				tmp = tmp + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 			end do
-			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))! / z)
+			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))!/z_in)
 		end do
 		tmp = integral_linearized_1d(Ny, dy_arr, fy_arr)
 		coeffs = dzodxcoef_interp_func(x/z)
@@ -411,7 +411,21 @@ module ndEquations
 		call addToLog("[equations] ...done!")
 	end subroutine test_dzodx_speed
 
-	subroutine drhoy_dx_fullMat (matrix,x,z,iy)
+	subroutine drhoy_dx_fullMat (matrix,x,z,iy, Fre, Fim)
+		interface
+			pure real(dl) function Fre(a, b, o)
+				use variables
+				integer, intent(in) :: a
+				real(dl), intent(in) :: b
+				type(coll_args), intent(in) :: o
+			end function
+			pure real(dl) function Fim(a, b, o)
+				use variables
+				integer, intent(in) :: a
+				real(dl), intent(in) :: b
+				type(coll_args), intent(in) :: o
+			end function
+		end interface
 		type(cmplxMatNN), intent(out) :: matrix
 		real(dl) :: x,y,z, overallNorm, a, fd, cf, ldf
 		integer :: iy,k, ix
@@ -422,7 +436,7 @@ module ndEquations
 		call allocateCmplxMat(matrix)
 
 		y = nuDensMatVecFD(iy)%y
-		fd = fermiDirac(y)! / z)
+		fd = fermiDirac(y)!/z_in)
 
 		collArgs%x = x
 		collArgs%z = z
@@ -444,7 +458,7 @@ module ndEquations
 		matrix%re = comm%re * cf
 
 		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
-			lastColl%mat = collision_terms(collArgs)
+			lastColl%mat = get_collision_terms(collArgs, Fre, Fim)
 			lastColl%x = x
 			lastColl%y = y
 			lastColl%z = z
@@ -628,7 +642,7 @@ module ndEquations
 		integer :: i, j, k, s
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x,z,m)
+		call drhoy_dx_fullMat(mat, x,z,m, coll_nue_3_int_re, coll_nue_3_int_im)
 		s=(m-1)*flavNumSqu
 		do i=1, flavorNumber
 			ydot(s+i) = mat%re(i,i)

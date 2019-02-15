@@ -131,16 +131,16 @@ module variables
 	
 	!technical settings
 	integer :: verbose = 1
-	integer :: Nx, Ny
-	real(dl) :: x_in, x_fin, y_min, y_max, z_in, logx_in, logx_fin, logy_min, logy_max
-	real(dl), dimension(:), allocatable :: x_arr, y_arr, logy_arr
+	integer :: Nx, Ny, Nylog
+	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
+	real(dl), dimension(:), allocatable :: x_arr, y_arr
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter
 	real(dl) :: toler, toler_dme2, toler_ed, toler_jkyg, dlsoda_atol, dlsoda_rtol
 
 	!used for 2d interpolation:
-	integer, parameter :: interp_nx0 = 500, interp_nz0 = 150
-	integer :: interp_nx, interp_nz
+	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 1500
+	integer :: interp_nx, interp_nz, interp_nxz
 	integer, parameter :: interp_ny = 40!not used in real code, it's for interpolations of D and Pi functions
 	real(dl), parameter :: interp_zmin0 = 0.9d0, interp_zmax0 = 1.5d0
 	real(dl) :: interp_zmin, interp_zmax

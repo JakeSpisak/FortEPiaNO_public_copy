@@ -138,7 +138,8 @@ module ndConfig
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
 		ntot = Ny*(flavNumSqu) + 1 !independent elements in nuDensity(y) + z
 		allocate(nuDensVec(ntot))
-!		open(unit=3154, file='test_fd.dat') !save the initial Fermi-Dirac distribution for nu
+		if(trim(outputFolder).ne."")&
+			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)
 		do ix=1, Ny
 			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
@@ -150,7 +151,8 @@ module ndConfig
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdme = fermiDirac(y_arr(ix)/z_in)
 			fdm = fermiDirac(y_arr(ix))
-!			write(3154,"(2"//dblfmt//")") y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
+			if(trim(outputFolder).ne."")&
+				write(3154, multidblfmt) y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
 			nuDensMatVec(ix)%re(1,1) = 0.d0
 			if (flavorNumber.gt.1 .and. sterile(2)) &
 				nuDensMatVec(ix)%re(2,2) = -1.d0
@@ -165,7 +167,8 @@ module ndConfig
 				nuDensMatVec(ix)%re(iy,iy) = nuDensMatVecFD(ix)%re(iy,iy)/fdm - 1.d0
 			end do
 		end do
-!		close(3154)
+		if(trim(outputFolder).ne."")&
+			close(3154)
 		
 		deallocate(diag_el)
 	end subroutine init_matrices
@@ -188,6 +191,11 @@ module ndConfig
 		if(num_args.gt.0) then
 			call addToLog("[config] reading additional configuration from "//mainPath//trim(args(1)))
 			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
+
+			tmparg=trim(read_ini_char('outputFolder'))
+			if (trim(tmparg)/="") outputFolder=tmparg
+			call addToLog("[config] Writing to: "//trim(outputFolder)//"/...")
+			call system('mkdir -p '//trim(outputFolder))
 			
 			verbose = read_ini_int('verbose', verbose)
 			checkpoint = read_ini_logical('checkpoint', .true.)
@@ -201,12 +209,14 @@ module ndConfig
 			
 			interp_nx = read_ini_int('interp_nx', interp_nx0)
 			interp_nz = read_ini_int('interp_nz', interp_nz0)
+			interp_nxz = read_ini_int('interp_nxz', interp_nxz0)
 			interp_zmin = read_ini_real('interp_zmin', interp_zmin0)
 			interp_zmax = read_ini_real('interp_zmax', interp_zmax0)
 
 			Nx = read_ini_int('Nx',100)
 			Ny = read_ini_int('Ny',100)
-			allocate(x_arr(Nx), y_arr(Ny), logy_arr(Ny))
+			Nylog = read_ini_int('Nylog',7)
+			allocate(x_arr(Nx), y_arr(Ny))
 			allocate(dy_arr(Ny), fy_arr(Ny))
 			
 			x_in    = read_ini_real('x_in', 0.01d0)
@@ -215,18 +225,11 @@ module ndConfig
 			logx_fin = log10(x_fin)
 			x_arr = logspace(logx_in, logx_fin, Nx)
 
-			y_min   = read_ini_real('y_min', 0.01d0)
-			y_max   = read_ini_real('y_max', 20.0d0)
-			logy_min = log10(y_min)
-			logy_max = log10(y_max)
+			y_min = read_ini_real('y_min', 0.01d0)
+			y_max = read_ini_real('y_max', 20.0d0)
+			y_cen = read_ini_real('y_cen', 1.0d0)
+			y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
 
-#ifdef LOGY
-			y_arr = logspace(logy_min, logy_max, Ny)
-			logy_arr = log10(y_arr)
-#else
-			y_arr = linspace(y_min, y_max, Ny)
-			logy_arr = log10(y_arr)
-#endif
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 			end do
@@ -244,7 +247,9 @@ module ndConfig
 			photonTemperatureToday = read_ini_real('photonTemperatureToday', i_photonTempToday)
 			
 			!settings for collisional
-			collision_offdiag = read_ini_int("collision_offdiag",1)
+			collision_offdiag = read_ini_int("collision_offdiag", 1)
+			if (collision_offdiag.eq.2) &
+				call criticalError("Damping factors not yet implemented!")
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 			
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
@@ -308,31 +313,17 @@ module ndConfig
 			
 			call setMixingMatrix()
 			call setMassMatrix()
-			
 			!create other matrices
 			call init_matrices
 			
-			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nx))
+			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
 			interp_xvec = logspace(logx_in, logx_fin, interp_nx)
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nx)
-		
-!			tmparg=trim(read_ini_char('pionFluxFile'))
-!			if (trim(tmparg)/="") pionFluxFile=tmparg
-!			tmparg=trim(read_ini_char('kaonFluxFile'))
-!			if (trim(tmparg)/="") kaonFluxFile=tmparg
-!			tmparg=trim(read_ini_char('outMinInfo'))
-!			if (trim(tmparg)/="") outMinInfo=tmparg
-			tmparg=trim(read_ini_char('outputFolder'))
-			if (trim(tmparg)/="") outputFolder=tmparg
-			call addToLog("[config] Writing to: "//trim(outputFolder)//"/...")
-			call system('mkdir -p '//trim(outputFolder))
+			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
 		else
 			call criticalError("You are not passing a configuration file...are you sure?")
 		end if
 		call ini_file_close()
-		
 		call addToLog("[config] Read configuration from ini file: complete.")
-		
 	end subroutine initconfig
 end module ndConfig

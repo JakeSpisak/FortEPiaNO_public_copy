@@ -169,6 +169,24 @@ module utilities
 		write (*,*) string, " Time Taken -->", real(t2-t1)
 	end subroutine toc
 
+	pure function loglinspace(minv, cenv, maxv, numb, numlog)
+		real(dl), intent(in) :: minv, maxv, cenv
+		integer,  intent(in) :: numb, numlog
+		real(dl), dimension(numb) :: loglinspace
+		real(dl) :: dx
+		integer :: i
+
+		dx = (log10(cenv)-log10(minv)) / (numlog-1)
+		do concurrent (I = 1:numlog-1)
+			loglinspace(i) = 10.d0**((i-1)*dx + log10(minv))
+		end do
+		dx = (maxv-cenv) / (numb-numlog)
+		do concurrent (I = 1:numb-numlog+1)
+			loglinspace(i+numlog-1) = (i-1)*dx + cenv
+		end do
+		return
+	end function loglinspace
+
 	pure function linspace(minv, maxv, numb)
 		real(dl), intent(in) :: minv, maxv
 		integer,  intent(in) :: numb
@@ -844,9 +862,14 @@ enddo                                                   !SG-PF
 		integer :: ix
 
 		integral_linearized_1d = 0.d0
+		!$omp parallel do &
+		default(shared) &
+		private(ix) &
+		reduction(+:integral_linearized_1d)
 		do ix=1, N-1
 			integral_linearized_1d = integral_linearized_1d + dx(ix) * (f(ix) + f(ix+1))
 		end do
+		!$omp end parallel do
 		integral_linearized_1d = integral_linearized_1d * 0.5d0
 	end function integral_linearized_1d
 
