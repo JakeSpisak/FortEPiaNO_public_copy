@@ -919,7 +919,7 @@ program tests
 
 	subroutine do_f_ann_sc_re_tests_full
 		integer :: a, b, ix, iy
-		real(dl) :: fdA, fdB, f1, f2, f3
+		real(dl) :: fdA, fdB, f1, f2, f3, r1, r2
 		type(cmplxMatNN) :: nA, nB
 		character(len=300) :: tmparg
 		real(dl), dimension(3) :: tmparrA, tmparrB
@@ -1294,6 +1294,55 @@ program tests
 				write(tmparg,"('F_sc21 test 2 full rho ',2I1)") ix,iy
 				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, f2, nA, f3, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, f2, nA, f3, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+			end do
+		end do
+
+		write(*,*)
+		write(*,"(a)") "F_ann functions, final tests (36 tests)"
+		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
+		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
+		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
+		nA%re(3,:) = (/-0.03d0, 0.d0, 0.96d0/)
+		nA%im(1,:) = (/0.d0, 0.0001d0, -0.004d0/)
+		nA%im(2,:) = (/-0.0001d0, 0.d0, 0.001d0/)
+		nA%im(3,:) = (/0.004d0, -0.001d0, 0.d0/)
+		!rhoB = rhoA;
+		nB = nA
+		!RR
+		tmpmatA(1,:) = (/-0.023346, -0.000578945, 0.00164337/)
+		tmpmatA(2,:) = (/-0.000578945, -0.0212209, 7.06991e-6/)
+		tmpmatA(3,:) = (/0.00164337, 7.06991e-6, -0.0266302/)
+		tmpmatB(1,:) = (/0., -5.90586e-6, 0.00021888/)
+		tmpmatB(2,:) = (/5.90586e-6, 0., -0.0000530457/)
+		tmpmatB(3,:) = (/-0.00021888, 0.0000530457, 0./)
+		do ix=1, flavorNumber
+			do iy=1, flavorNumber
+				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
+				call assert_double_rel(trim(tmparg)//"re", F_ab_ann_re(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatA(ix,iy), 1d-5)
+				if (abs(r2).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-5)
+				end if
+			end do
+		end do
+		!LL
+		tmpmatA(1,:) = (/0.0580013, -0.00422802, 0.0113064/)
+		tmpmatA(2,:) = (/-0.00422802, 0.0104606, -0.0000779103/)
+		tmpmatA(3,:) = (/0.0113064, -0.0000779103, 0.00354312/)
+		tmpmatB(1,:) = (/0., -0.0000361964, 0.00150834/)
+		tmpmatB(2,:) = (/0.0000361964, 0., -0.0000807178/)
+		tmpmatB(3,:) = (/-0.00150834, 0.0000807178, 0./)
+		do ix=1, flavorNumber
+			do iy=1, flavorNumber
+				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
+				call assert_double_rel(trim(tmparg)//"re", F_ab_sc_re(nA, 0.1d0, nB, 0.7d0, 1,1, ix,iy), tmpmatA(ix,iy), 1d-5)
+				r2 = F_ab_sc_im(nA, 0.1d0, nB, 0.7d0, 1,1, ix,iy)
+				if (abs(r2).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-5)
+				end if
 			end do
 		end do
 		call deallocateCmplxMat(nA)
