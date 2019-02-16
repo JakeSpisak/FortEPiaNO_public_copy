@@ -104,7 +104,7 @@ module variables
 	!Intended to have the relative shape correction with respect to the FD in the diagonal
 	type cmplxMatNN
 		real(dl), dimension(:,:), allocatable :: re, im
-		real(dl) :: x, y, z, logy
+		real(dl) :: x, y, z
 		logical :: a=.false. !allocated?
 	end type cmplxMatNN
 	

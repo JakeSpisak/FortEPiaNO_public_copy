@@ -16,6 +16,7 @@ module ndEquations
 	type collTerm
 		type(cmplxMatNN) :: mat
 		real(dl) :: x,y,z
+		logical :: f5
 	end type collTerm
 	type(collTerm) :: lastColl
 	
@@ -411,7 +412,7 @@ module ndEquations
 		call addToLog("[equations] ...done!")
 	end subroutine test_dzodx_speed
 
-	subroutine drhoy_dx_fullMat (matrix,x,z,iy, Fre, Fim)
+	subroutine drhoy_dx_fullMat(matrix,x,z,iy, Fre, Fim)
 		interface
 			pure real(dl) function Fre(a, b, o)
 				use variables
@@ -457,7 +458,7 @@ module ndEquations
 		matrix%im = - comm%im * cf
 		matrix%re = comm%re * cf
 
-		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z) then
+		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z .or. lastColl%f5) then
 			lastColl%mat = get_collision_terms(collArgs, Fre, Fim)
 			lastColl%x = x
 			lastColl%y = y

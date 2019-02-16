@@ -1083,7 +1083,7 @@ module ndInteractions
 		real(dl) :: coll_nue_4_ann_int_re
 		integer :: ix, iy
 		real(dl), dimension(2) :: pi2_vec
-		real(dl) :: y2,y3,y4, f3,f4, E3, E4, dme2, logy2
+		real(dl) :: y2,y3,y4, f3,f4, E3, E4, dme2
 		type(cmplxMatNN) :: nB
 
 		coll_nue_4_ann_int_re = 0.d0
@@ -1135,7 +1135,7 @@ module ndInteractions
 		real(dl) :: coll_nue_4_sc_int_re
 		integer :: ix, iy
 		real(dl), dimension(2) :: pi2_vec
-		real(dl) :: y2,y3,y4, f2,f4, E2, E4, dme2, logy3
+		real(dl) :: y2,y3,y4, f2,f4, E2, E4, dme2
 		type(cmplxMatNN) :: nB
 
 		coll_nue_4_sc_int_re = 0.d0
@@ -1437,7 +1437,7 @@ module ndInteractions
 		integer :: ix, iy
 		real(dl), dimension(2) :: pi2_vec
 		type(cmplxMatNN) :: nX
-		real(dl) :: yA, y2,y3,y4, f2,f3,f4, E2, E3, E4, dme2, logy2, logy3
+		real(dl) :: yA, y2,y3,y4, f2,f3,f4, E2, E3, E4, dme2
 
 		coll_nue_int_im = 0.0
 		call allocateCmplxMat(nX)
@@ -1461,13 +1461,12 @@ module ndInteractions
 			coll_nue_int_im = coll_nue_int_im + 0.d0
 		else
 !			fd = fermiDirac(y3 / obj%z)
-			logy3 = log10(y3)
 			do ix=1, flavorNumber
-				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy3)! * fd
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(y3)! * fd
 				nX%im(ix,ix) = 0.d0
 				do iy=ix+1, flavorNumber
-					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy3)
-					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy3)
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(y3)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(y3)
 					nX%re(iy,ix) = nX%re(ix,iy)
 					nX%im(iy,ix) = -nX%im(ix,iy)
 				end do
@@ -1503,13 +1502,12 @@ module ndInteractions
 			coll_nue_int_im = coll_nue_int_im + 0.d0
 		else
 !			fd = fermiDirac(y2 / obj%z)
-			logy2 = log10(y2)
 			do ix=1, flavorNumber
-				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(logy2)! * fd
+				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(y2)! * fd
 				nX%im(ix,ix) = 0.d0
 				do iy=ix+1, flavorNumber
-					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(logy2)
-					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(logy2)
+					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(y2)
+					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(y2)
 					nX%re(iy,ix) = nX%re(ix,iy)
 					nX%im(iy,ix) = -nX%im(ix,iy)
 				end do
@@ -1609,9 +1607,6 @@ module ndInteractions
 !							get_collision_terms%re(i,j) = dampTermFactor * Damp_mt * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
 !						end if
 				end do
-!				else if (collision_offdiag.gt.2) then !no need to execute this!
-!					get_collision_terms%re(i,j) = get_collision_terms%re(i,j) + 0.d0
-!					get_collision_terms%im(i,j) = get_collision_terms%im(i,j) + 0.d0
 			end if
 			do j=i+1, flavorNumber
 				get_collision_terms%re(j,i) = get_collision_terms%re(i,j)

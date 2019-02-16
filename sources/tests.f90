@@ -1665,16 +1665,30 @@ program tests
 		deallocate(ndmv_re)
 	end subroutine do_tests_coll_int
 
-	pure real(dl) function fakecollint(a, b, o)
+	pure real(dl) function fakecollint1(a, b, o)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
-		fakecollint=1.d0
+		fakecollint1=1.d0
+	end function
+	pure real(dl) function fakecollint0(a, b, o)
+		use variables
+		integer, intent(in) :: a
+		real(dl), intent(in) :: b
+		type(coll_args), intent(in) :: o
+		fakecollint0=0.d0
+	end function
+	pure real(dl) function fakecollinty(a, b, o)
+		use variables
+		integer, intent(in) :: a
+		real(dl), intent(in) :: b
+		type(coll_args), intent(in) :: o
+		fakecollinty=1.d4*b**2
 	end function
 
 	subroutine do_test_collision_terms
-		real(dl) :: x,z
+		real(dl) :: x,z,dme2
 		integer :: i, j, iy1, iy
 		real(dl) :: y,res1,res2
 		type(coll_args) :: collArgs
@@ -1685,42 +1699,102 @@ program tests
 
 		call allocateCmplxMat(cts)
 
-		x=0.75d0
-		iy1=7 !1.22151515151515
-		z=1.186d0
+		x = 0.75d0
+		iy1 = 7 !1.22151515151515
+		z = 1.186d0
+		dme2 = 0.1d0
 		write(*,*)
-		write(*,"(a)") "Collision_terms (18 tests)"
+		write(*,"(a)") "Collision_terms (36 tests)"
+		collArgs%ix1 = 1
+		collArgs%ix1 = 1
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		collArgs%dme2 = 0.1d0
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = dme2
 
-		do iy=1, Ny
-			y = y_arr(iy)/z
-			nuDensMatVecFD(iy)%re(1, :) = (/1.d0*fermiDirac(y/z)/y, 0.01d0/y, (y/10.d0)/)
-			nuDensMatVecFD(iy)%re(2, :) = (/0.01d0/y, 1.05d0*fermiDirac(y/z), 0.03d0*sqrt(y)/)
-			nuDensMatVecFD(iy)%re(3, :) = (/(y/10.d0), 0.03d0*sqrt(y), 1.1d0*fermiDirac(y/z)/sqrt(y)/)
-			nuDensMatVecFD(iy)%im(1, :) = (/0.d0, -0.1d0, (30.d0-y)/)
-			nuDensMatVecFD(iy)%im(2, :) = (/0.1d0, 0.d0, -0.02d0/)
-			nuDensMatVecFD(iy)%im(3, :) = (/-(30.d0-y), 0.02d0, 0.d0/)
-		end do
-
-		tmpmatA(1,:) = (/0., -0.186694, 1.1394/)
-		tmpmatA(2,:) = (/-0.186694, 0.114661, -0.0736612/)
-		tmpmatA(3,:) = (/1.1394, -0.0736612, -0.0902576/)
-		tmpmatB(1,:) = (/0., -0.22164, -0.0714177/)
-		tmpmatB(2,:) = (/0.22164, 0., 0.206023/)
-		tmpmatB(3,:) = (/0.0714177, -0.206023, 0./)
-		tmparrA(:) = (/0.001d0, 0.001d0, 0.001d0/)
-		tmparrS(:) = (/0.001d0, 0.001d0, 0.001d0/)
-		cts = get_collision_terms(collArgs, fakecollint, fakecollint)
+		!fake function
+		tmpmatA(1,:) = (/348548, 348548, 348548/)
+		tmpmatA(2,:) = (/348548, 348548, 348548/)
+		tmpmatA(3,:) = (/348548, 348548, 348548/)
+		tmpmatB(1,:) = (/0., 0.26128, 0.26128/)
+		tmpmatB(2,:) = (/-0.26128, 0., 0.26128/)
+		tmpmatB(3,:) = (/-0.26128, -0.26128, 0./)
+		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
-		write(*,multidblfmt)cts
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms ',2I1)") i,j
+				write(tmparg,"('collision_terms f ',2I1)") i,j
+				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+
+		x=0.05d0
+		iy1 = 7 !1.22151515151515
+!		z=1.06d0
+		dme2=0.1d0
+!		iy1 = 67 !13.3366666666667
+		z = 1.3d0
+		collArgs%ix1 = 1
+		collArgs%ix1 = 1
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = dme2
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re(:,:) = 0.d0
+			nuDensMatVecFD(iy)%im(:,:) = 0.d0
+			do i=1, flavorNumber
+				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
+			end do
+		end do
+
+		!real params
+!		do iy=1, Ny
+!			y = y_arr(iy)
+!			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 0.d0, 0.d0/)
+!			nuDensMatVecFD(iy)%re(2,:) = (/0.d0, 1.d0*fermiDirac(y), 0.d0/)
+!			nuDensMatVecFD(iy)%re(3,:) = (/0.d0, 0.d0, 1.d0*fermiDirac(y)/)
+!!			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0/)
+!!			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0/)
+!!			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
+!			nuDensMatVecFD(iy)%im(:,:) = 0.d0
+!		end do
+
+		collArgs%ix1=1
+		collArgs%ix2=1
+!		print *,collArgs
+!		write(*,multidblfmt) integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs),integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
+		tmpmatA(1,:) = (/-149.474, 0., 0./)
+		tmpmatA(2,:) = (/0., -38.1733, 0./)
+		tmpmatA(3,:) = (/0., 0., -38.1733/)
+		tmpmatB(1,:) = (/0., 0., 0./)
+		tmpmatB(2,:) = (/0., 0., 0./)
+		tmpmatB(3,:) = (/0., 0., 0./)
+		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
+		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
+		cts = get_collision_terms(collArgs, coll_nue_3_int_re, coll_nue_3_int_im)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+!		write(*,multidblfmt)cts
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms r ',2I1)") i,j
 				if (abs(tmpmatA(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7)
 				else
@@ -1870,13 +1944,13 @@ program tests
 		GLR_vectmp = GLR_vec
 		GLR_vec = 0.d0
 		write(*,*) ""
-		write(*,"(a)") "d rho/d x [without collision_terms] (36 tests)"
+		write(*,"(a)") "d rho/d x [without collision_terms or with fake ones] (72 tests)"
 		call allocateCmplxMat(res)
 		x = 0.06d0
 		z = 1.23d0
 		iy = 12 !2.231111111111111
 		do i=1, Ny
-			fd = fermiDirac(y_arr(i)/z)
+			fd = fermiDirac(y_arr(i))
 			nuDensMatVecFD(i)%re(1, :) = (/fd, 0.01d0, 0.04d0/)
 			nuDensMatVecFD(i)%re(2, :) = (/0.01d0, fd, -0.3d0/)
 			nuDensMatVecFD(i)%re(3, :) = (/0.04d0, -0.3d0, fd/)
@@ -1885,17 +1959,42 @@ program tests
 			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
 		end do
 
-		fd = fermiDirac(y_arr(iy)/z)
-		res%re(1,:) = (/422.823d0/fd, 10906.d0, 51312.7d0/)
-		res%re(2,:) = (/10906.d0, -1853.02d0/fd, -215.053d0/)
-		res%re(3,:) = (/51312.7d0, -215.053d0, 1430.19d0/fd/)
-		res%im(1,:) = (/0.,5958.18,21086.2/)
-		res%im(2,:) = (/-5958.18,0.,16.963/)
-		res%im(3,:) = (/-21086.2,-16.963,0./)
-		call drhoy_dx_fullMat (outp,x,z,iy, fakecollint, fakecollint)
+		fd = fermiDirac(y_arr(iy))
+		res%re(1,:) = (/532.517d0/fd, 13735.4d0, 64624.8d0/)
+		res%re(2,:) = (/13735.4d0, -2333.75d0/fd, -270.845d0/)
+		res%re(3,:) = (/64624.8d0, -270.845d0, 1801.23d0/fd/)
+		res%im(1,:) = (/0., 7503.92, 26556.6/)
+		res%im(2,:) = (/-7503.92, 0., 21.3638/)
+		res%im(3,:) = (/-26556.6, -21.3638, 0./)
+		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms ',2I1)") i,j
+				write(tmparg,"('collision_terms a ',2I1)") i,j
+				if (abs(res%re(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
+				end if
+				if (abs(res%im(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
+				end if
+			end do
+		end do
+
+		lastColl%f5 = .true.
+		fd = fermiDirac(y_arr(iy))
+		res%re(1,:) = (/1226.3d0/fd, 14429.2d0, 65318.6d0/)
+		res%re(2,:) = (/14429.2d0, -1639.96d0/fd, 422.941d0/)
+		res%re(3,:) = (/65318.6d0, 422.941d0, 2495.02d0/fd/)
+		res%im(1,:) = (/0., 8197.71, 27250.4/)
+		res%im(2,:) = (/-8197.71, 0., 715.15/)
+		res%im(3,:) = (/-27250.4, -715.15, 0./)
+		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint1, fakecollint1)
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms b ',2I1)") i,j
 				if (abs(res%re(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
 				else
@@ -1913,7 +2012,7 @@ program tests
 		z = 1.31d0
 		iy = 34 !6.67333333333333
 		do i=1, Ny
-			fd = fermiDirac(y_arr(i)/z)
+			fd = fermiDirac(y_arr(i))
 			nuDensMatVecFD(i)%re(1, :) = (/fd, 0.01d0, 0.04d0/)
 			nuDensMatVecFD(i)%re(2, :) = (/0.01d0, fd, -0.3d0/)
 			nuDensMatVecFD(i)%re(3, :) = (/0.04d0, -0.3d0, fd/)
@@ -1922,17 +2021,41 @@ program tests
 			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
 		end do
 
-		fd = fermiDirac(y_arr(iy)/z)
-		res%re(1,:) = (/108883.d0/fd, 229487.d0, 318909.d0/)
-		res%re(2,:) = (/229487.d0, -477177.d0/fd, -55379.d0/)
-		res%re(3,:) = (/318909.d0, -55379.d0, 368294.d0/fd/)
-		res%im(1,:) = (/0.,244832.,272051./)
-		res%im(2,:) = (/-244832.,0.,4368.21/)
-		res%im(3,:) = (/-272051.,-4368.21,0./)
-		call drhoy_dx_fullMat (outp,x,z,iy, fakecollint, fakecollint)
+		lastColl%f5 = .true.
+		fd = fermiDirac(y_arr(iy))
+		res%re(1,:) = (/146401.d0/fd, 308564.d0, 428798.d0/)
+		res%re(2,:) = (/308564.d0, -641603.d0/fd, -74461.5d0/)
+		res%re(3,:) = (/428798.d0, -74461.5d0, 495201.d0/fd/)
+		res%im(1,:) = (/0., 329196., 365795./)
+		res%im(2,:) = (/-329196., 0., 5873.4/)
+		res%im(3,:) = (/-365795., -5873.4, 0./)
+		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms ',2I1)") i,j
+				write(tmparg,"('collision_terms c ',2I1)") i,j
+				if (abs(res%re(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
+				end if
+				if (abs(res%im(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
+				end if
+			end do
+		end do
+
+		res%re(1,:) = (/146535.d0/fd, 308698.d0, 428932.d0/)
+		res%re(2,:) = (/308698.d0, -641469.d0/fd, -74328.d0/)
+		res%re(3,:) = (/428932.d0, -74328.d0, 495335.d0/fd/)
+		res%im(1,:) = (/0., 329330., 365928./)
+		res%im(2,:) = (/-329330., 0., 6006.94/)
+		res%im(3,:) = (/-365928., -6006.94, 0./)
+		call drhoy_dx_fullMat(outp,x,z,iy, fakecollinty, fakecollinty)
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms d ',2I1)") i,j
 				if (abs(res%re(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
 				else
