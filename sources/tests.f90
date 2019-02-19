@@ -71,8 +71,8 @@ program tests
 	write(*,"(a)") "Initializations"
 	call do_tests_initialization
 	call init_interp_jkyg12
-	call init_interp_ElDensity
 	call init_interp_dme2_e
+	call init_interp_ElDensity
 	call allocate_interpNuDens
 
 	write(*,*) ""
@@ -332,22 +332,22 @@ program tests
 
 		leptonDensities=0.d0
 		call updateLeptonDensities(0.076d0, 1.22d0, 1.32d0)
-		m(1,:) = (/-0.00268169554, 0., 0./)
+		m(1,:) = (/-0.0026760938, 0., 0./)
 		m(2,:) = (/0.,0.,0./)
 		m(3,:) = (/0.,0.,0./)
 		do i=1,3
 			do j=1,3
-				write(tmparg,"('mass matrix ',2I1)") i,j
+				write(tmparg,"('lepton matrix A ',2I1)") i,j
 				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
 			end do
 		end do
 		call updateLeptonDensities(2.d1, 0.22d0, 1.2d0)
-		m(1,:) = (/-1.7579704699583362d-23, 0.d0, 0.d0/)
+		m(1,:) = (/-1.7572758d-23, 0.d0, 0.d0/)
 		m(2,:) = (/0.,0.,0./)
 		m(3,:) = (/0.,0.,0./)
 		do i=1,3
 			do j=1,3
-				write(tmparg,"('mass matrix ',2I1)") i,j
+				write(tmparg,"('lepton matrix B ',2I1)") i,j
 				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 5d-26)
 			end do
 		end do
@@ -368,16 +368,16 @@ program tests
 
 		write(*,*) ""
 		write(*,"(a)") "Cosmology (36 tests)"
-		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06283d0, 1d-4)
-		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.49493d0, 1d-4)
-		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377723d0, 1d-4)
-		call assert_double_rel("elDensF test 4", electronDensityFull(2.d1, 1.2d0), 0.0000421964d0, 1d-4)
-		call assert_double_rel("elDensF test 5", electronDensityFull(3.d1, 1.2d0), 2.61468d-8, 5d-3)
-		call assert_double_rel("elDens test 1", electronDensity(1.d0, 1.d0), 1.06283d0, 1d-4)
-		call assert_double_rel("elDens test 2", electronDensity(0.076d0, 1.32d0), 3.49493d0, 1d-4)
-		call assert_double_rel("elDens test 3", electronDensity(1.d1, 1.2d0), 0.0377723d0, 1d-2)
-		call assert_double_rel("elDens test 4", electronDensity(2.d1, 1.2d0), 0.0000421964d0, 2d-2)
-		call assert_double_rel("elDens test 5", electronDensity(3.d1, 1.2d0), 2.61468d-8, 5d-2)
+		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06102d0, 1d-4)
+		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.48762d0, 1d-4)
+		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377464d0, 1d-4)
+		call assert_double_rel("elDensF test 4", electronDensityFull(2.d1, 1.2d0), 0.0000421797d0, 1d-4)
+		call assert_double_rel("elDensF test 5", electronDensityFull(3.d1, 1.2d0), 2.61396d-8, 5d-3)
+		call assert_double_rel("elDens test 1", electronDensity(1.d0, 1.d0), 1.06102d0, 1d-4)
+		call assert_double_rel("elDens test 2", electronDensity(0.076d0, 1.32d0), 3.48762d0, 1d-4)
+		call assert_double_rel("elDens test 3", electronDensity(1.d1, 1.2d0), 0.0377464d0, 1d-2)
+		call assert_double_rel("elDens test 4", electronDensity(2.d1, 1.2d0), 0.0000421797d0, 2d-2)
+		call assert_double_rel("elDens test 5", electronDensity(3.d1, 1.2d0), 2.61396d-8, 5d-2)
 		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
 		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
 
@@ -434,9 +434,9 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double("radDens test 1", radDensity(0.7d0, 1.04d0), 5.52466d0, 1d-3)
-		call assert_double("radDens test 2", radDensity(1.d0, 1.04d0), 5.4753d0, 1d-3)
-		call assert_double("radDens test 3", radDensity(1.d0, 1.24d0), 7.59651d0, 3d-3)
+		call assert_double("radDens test 1", radDensity(0.7d0, 1.04d0), 5.52237d0, 1d-3)
+		call assert_double("radDens test 2", radDensity(1.d0, 1.04d0), 5.47313d0, 1d-3)
+		call assert_double("radDens test 3", radDensity(1.d0, 1.24d0), 7.59143d0, 3d-3)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
@@ -2009,12 +2009,12 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/532.517d0/fd, 13735.4d0, 64624.8d0/)
-		res%re(2,:) = (/13735.4d0, -2333.75d0/fd, -270.845d0/)
-		res%re(3,:) = (/64624.8d0, -270.845d0, 1801.23d0/fd/)
-		res%im(1,:) = (/0., 7503.92, 26556.6/)
-		res%im(2,:) = (/-7503.92, 0., 21.3638/)
-		res%im(3,:) = (/-26556.6, -21.3638, 0./)
+		res%re(1,:) = (/532.698d0/fd, 13715.3d0, 64523.2d0/)
+		res%re(2,:) = (/13715.3d0, -2334.54d0/fd, -270.937d0/)
+		res%re(3,:) = (/64523.2d0, -270.937d0, 1801.85d0/fd/)
+		res%im(1,:) = (/0., 7494.11, 26512.2/)
+		res%im(2,:) = (/-7494.11, 0., 21.371/)
+		res%im(3,:) = (/-26512.2, -21.371, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2027,19 +2027,19 @@ program tests
 				if (abs(res%im(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
 				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-4)
 				end if
 			end do
 		end do
 
 		lastColl%f5 = .true.
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/1226.3d0/fd, 14429.2d0, 65318.6d0/)
-		res%re(2,:) = (/14429.2d0, -1639.96d0/fd, 422.941d0/)
-		res%re(3,:) = (/65318.6d0, 422.941d0, 2495.02d0/fd/)
-		res%im(1,:) = (/0., 8197.71, 27250.4/)
-		res%im(2,:) = (/-8197.71, 0., 715.15/)
-		res%im(3,:) = (/-27250.4, -715.15, 0./)
+		res%re(1,:) = (/1226.72d0/fd, 14409.4d0, 65217.2d0/)
+		res%re(2,:) = (/14409.4d0, -1640.52d0/fd, 423.085d0/)
+		res%re(3,:) = (/65217.2d0, 423.085d0, 2495.87d0/fd/)
+		res%im(1,:) = (/0., 8188.13, 27210.2/)
+		res%im(2,:) = (/-8188.13, 0., 715.393/)
+		res%im(3,:) = (/-27210.2, -715.393, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint1, fakecollint1)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2072,12 +2072,12 @@ program tests
 
 		lastColl%f5 = .true.
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/146401.d0/fd, 308564.d0, 428798.d0/)
-		res%re(2,:) = (/308564.d0, -641603.d0/fd, -74461.5d0/)
-		res%re(3,:) = (/428798.d0, -74461.5d0, 495201.d0/fd/)
-		res%im(1,:) = (/0., 329196., 365795./)
-		res%im(2,:) = (/-329196., 0., 5873.4/)
-		res%im(3,:) = (/-365795., -5873.4, 0./)
+		res%re(1,:) = (/146450.d0/fd, 308666.d0, 428941.d0/)
+		res%re(2,:) = (/308666.d0, -641816.d0/fd, -74486.3d0/)
+		res%re(3,:) = (/428941.d0, -74486.3d0, 495366.d0/fd/)
+		res%im(1,:) = (/0., 329305., 365916./)
+		res%im(2,:) = (/-329305., 0., 5875.35/)
+		res%im(3,:) = (/-365916., -5875.35, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2095,12 +2095,12 @@ program tests
 			end do
 		end do
 
-		res%re(1,:) = (/146535.d0/fd, 308698.d0, 428932.d0/)
-		res%re(2,:) = (/308698.d0, -641469.d0/fd, -74328.d0/)
-		res%re(3,:) = (/428932.d0, -74328.d0, 495335.d0/fd/)
-		res%im(1,:) = (/0., 329330., 365928./)
-		res%im(2,:) = (/-329330., 0., 6006.94/)
-		res%im(3,:) = (/-365928., -6006.94, 0./)
+		res%re(1,:) = (/146584.d0/fd, 308800.d0, 429074.d0/)
+		res%re(2,:) = (/308800.d0, -641682.d0/fd, -74352.7d0/)
+		res%re(3,:) = (/429074.d0, -74352.7d0, 495499.d0/fd/)
+		res%im(1,:) = (/0., 329439., 366050./)
+		res%im(2,:) = (/-329439., 0., 6008.94/)
+		res%im(3,:) = (/-366050., -6008.94, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollinty, fakecollinty)
 		do i=1, flavorNumber
 			do j=1, flavorNumber

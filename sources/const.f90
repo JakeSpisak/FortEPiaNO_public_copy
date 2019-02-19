@@ -22,6 +22,7 @@ module constants
 	real(dl), parameter :: SQRTPI = sqrt(PI)
 	real(dl), parameter :: PISQ = PI*PI
 	real(dl), parameter :: PISQD2 = PISQ/2.d0
+	real(dl), parameter :: PISQD4 = PISQ/4.d0
 	real(dl), parameter :: PISQD15=PISQ/15.d0
 	real(dl), parameter :: PISQD30=PISQ/30.d0
 	real(dl), parameter :: PICub = PI*PI*PI

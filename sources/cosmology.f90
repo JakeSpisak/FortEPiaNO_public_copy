@@ -30,21 +30,22 @@ module ndCosmology
 		photonDensity = PISQD15 * z**4
 	end function photonDensity
 	
-	pure function integr_rho_e(vec,y)
+	function integr_rho_e(vec,y)
 		real(dl) :: integr_rho_e, Emk
 		real(dl), intent(in) :: y
-		real(dl), dimension(2), intent(in) :: vec
-		Emk = E_k_m(y,vec(1))
+		real(dl), dimension(3), intent(in) :: vec
+		Emk = Ebare_i_dme(y, vec(1), vec(3))
 		integr_rho_e = y*y*Emk * fermiDirac(Emk/vec(2))
 	end function integr_rho_e
 	
 	function electronDensityFull(x,z)!electron + positron!
 		real(dl) :: electronDensityFull
 		real(dl), intent(in) :: x,z
-		real(dl), dimension(2) :: vec
+		real(dl), dimension(3) :: vec
 
 		vec(1)=x
 		vec(2)=z
+		vec(3)=dme2_electron(x, 0.d0, z)
 
 		electronDensityFull = rombint_vec(vec, integr_rho_e, fe_l, fe_u, toler_ed, maxiter)
 		electronDensityFull = electronDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
