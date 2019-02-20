@@ -125,6 +125,7 @@ module variables
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
 	real(dl), dimension(:,:), allocatable :: idMat
+	real(dl), dimension(:,:), allocatable :: xcutsCollInt
 	
 	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec, nuDensMatVecFD
 	real(dl), dimension(:), allocatable :: nuDensVec

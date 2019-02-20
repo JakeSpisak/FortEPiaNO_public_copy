@@ -24,6 +24,7 @@ module ndConfig
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
+		allocate(xcutsCollInt(nf,nf))
 	end subroutine allocateStuff
 	
 	subroutine setMassMatrix()
@@ -303,6 +304,16 @@ module ndConfig
 					theta34      = read_ini_real('theta34', zero)
 					dm14         = read_ini_real('dm14', zero)
 				end if
+			end if
+			xcutsCollInt(1, 2) = read_ini_real('xcut_12', 0.d0)
+			if (flavorNumber .gt. 2) then
+				xcutsCollInt(1, 3) = read_ini_real('xcut_13', 0.d0)
+				xcutsCollInt(2, 3) = read_ini_real('xcut_23', 0.d0)
+			end if
+			if (flavorNumber .gt. 3) then
+				xcutsCollInt(1, 4) = read_ini_real('xcut_14', 0.d0)
+				xcutsCollInt(2, 4) = read_ini_real('xcut_24', 0.d0)
+				xcutsCollInt(3, 4) = read_ini_real('xcut_34', 0.d0)
 			end if
 			if (flavorNumber .gt. maxflavorNumber) then
 				call error("[config] WARNING: only up to 4 neutrino flavors are supported. Using N=4")

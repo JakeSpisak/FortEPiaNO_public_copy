@@ -1590,10 +1590,12 @@ module ndInteractions
 			end if
 			if (collision_offdiag.eq.1) then
 				do j=i+1, flavorNumber
-					collArgs%ix2 = j
-					get_collision_terms%re(i,j) = integrate_coll_int_3(Fre, collArgs)
+					if (x.ge.xcutsCollInt(i,j)) then
+						collArgs%ix2 = j
+						get_collision_terms%re(i,j) = integrate_coll_int_3(Fre, collArgs)
 
-					get_collision_terms%im(i,j) = integrate_coll_int_3(Fim, collArgs)
+						get_collision_terms%im(i,j) = integrate_coll_int_3(Fim, collArgs)
+					end if
 				end do
 			else if (collision_offdiag.eq.2) then
 				!damping terms from Dolgov:2002ab, eq A.11
