@@ -726,15 +726,21 @@ module ndEquations
 	end function Neff_from_rho_z
 
 	subroutine finalresults
-		real(dl) :: ndeq
+		real(dl) :: ndeq, tmp
 		integer :: ix
 
+		call openFile(9876, trim(outputFolder)//"/resume.dat", .true.)
 		write(*,"('final z = ',F11.8)") nuDensVec(ntot)
+		write(9876,"('final z = ',F11.8)") nuDensVec(ntot)
 		ndeq=nuDensityLinEq(nuDensVec(ntot))
 		do ix=1, flavorNumber
-			write(*,"('dRho_',I1,'  = ',F9.6)") ix, &
-				(nuDensityLin(nuDensVec(ntot), ix) - ndeq)*nuFactor(ix)/ndeq
+			tmp = (nuDensityLin(nuDensVec(ntot), ix) - ndeq)*nuFactor(ix)/ndeq
+			write(*,"('dRho_',I1,'  = ',F9.6)") ix, tmp
+			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 		end do
-		write(*,"('Neff    = ',F9.6)") Neff_from_rho_z(nuDensVec(ntot))
+		tmp = Neff_from_rho_z(nuDensVec(ntot))
+		write(*,"('Neff    = ',F9.6)") tmp
+		write(9876,"('Neff    = ',F9.6)") tmp
+		close(9876)
 	end subroutine finalresults
 end module ndEquations
