@@ -23,6 +23,7 @@ module ndConfig
 		allocate(nuMasses(nf), nuFactor(nf), sterile(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
+		allocate(dampTermMatrixCoeff(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 		allocate(xcutsCollInt(nf,nf))
 	end subroutine allocateStuff
@@ -104,7 +105,52 @@ module ndConfig
 		call inverseMat(mixMat, mixMatInv)
 		deallocate(m1,m2,m3,m4)
 	end subroutine setMixingMatrix
-	
+
+	subroutine setDampingFactorCoeffs
+		real(dl) :: nue_nux, nue_nus, numu_nutau, nux_nus
+		!numbers from McKellar:1992ja
+		!nu_e - nu_X
+		nue_nux = &
+			8.d0 &!e+nu -> e+nu
+			+ 6.d0 &!nu+(b)nu -> nu+(b)nu
+			+ (8.d0*sin2thW**2 + 1.d0)!nu+bnu -> e+e-
+		!nu_mu - nu_tau
+		numu_nutau = &
+			6.d0 &!nu+(b)nu -> nu+(b)nu
+			+ (8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)!nu+bnu -> e+e-
+		!nu_e - nu_s
+		nue_nus = &
+			(8.d0*sin2thW**2 + 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
+			+ 13.d0 &!nu+(b)nu -> nu+(b)nu
+			+ (4.d0*sin2thW**2 + 2.d0*sin2thW + 0.5d0)!nu+bnu -> e+e-
+		!nu_X - nu_s
+		nux_nus = &
+			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
+			+ 13.d0 &!nu+(b)nu -> nu+(b)nu
+			+ (4.d0*sin2thW**2 - 2.d0*sin2thW + 0.5d0)!nu+bnu -> e+e-
+		if (flavorNumber .ge. 2) then
+			if (sterile(2)) then
+				dampTermMatrixCoeff(1, 2) = nue_nus
+			else
+				dampTermMatrixCoeff(1, 2) = nue_nux
+			end if
+		end if
+		if (flavorNumber .ge. 3) then
+			if (sterile(3)) then
+				dampTermMatrixCoeff(1, 3) = nue_nus
+				dampTermMatrixCoeff(2, 3) = nux_nus
+			else
+				dampTermMatrixCoeff(1, 3) = nue_nux
+				dampTermMatrixCoeff(2, 3) = numu_nutau
+			end if
+		end if
+		if (flavorNumber .ge. 4) then
+			dampTermMatrixCoeff(1, 4) = nue_nus
+			dampTermMatrixCoeff(2, 4) = nux_nus
+			dampTermMatrixCoeff(3, 4) = nux_nus
+		end if
+	end subroutine setDampingFactorCoeffs
+
 	subroutine init_matrices
 		real(dl), dimension(:), allocatable :: diag_el
 		integer :: ix, iy
@@ -128,6 +174,8 @@ module ndConfig
 		end do
 		call createDiagMat(GR_mat, flavorNumber, diag_el)
 		GLR_vec(2,:,:) = GR_mat
+
+		call setDampingFactorCoeffs
 		
 		!lepton densities
 		leptonDensities = 0.d0
@@ -247,8 +295,6 @@ module ndConfig
 			
 			!settings for collisional
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
-			if (collision_offdiag.eq.2) &
-				call criticalError("Damping factors not yet implemented!")
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 			
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)

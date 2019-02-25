@@ -1601,13 +1601,8 @@ module ndInteractions
 				!damping terms from Dolgov:2002ab, eq A.11
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
-					get_collision_terms%re(i,j) = 0.d0
-					get_collision_terms%im(i,j) = 0.d0
-!						if (i .eq. 1 .and. (j.eq.2 .or. j.eq.3)) then
-!							get_collision_terms%re(i,j) = dampTermFactor * Damp_ex * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
-!						elseif (i .eq. 2 .and. j.eq.3) then
-!							get_collision_terms%re(i,j) = dampTermFactor * Damp_mt * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
-!						end if
+					get_collision_terms%re(i,j) = dampTermFactor * dampTermMatrixCoeff(i,j) * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
+					get_collision_terms%im(i,j) = dampTermFactor * dampTermMatrixCoeff(i,j) * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
 				end do
 			end if
 			do j=i+1, flavorNumber
