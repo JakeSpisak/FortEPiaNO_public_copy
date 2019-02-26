@@ -90,8 +90,9 @@ program tests
 	call do_f_ann_sc_re_tests_eq
 	call do_f_ann_sc_re_tests_full
 	call do_tests_coll_int
-	call test_drho_dx
+	call do_test_drho_dx
 	call do_test_collision_terms
+	call do_test_damping_factors
 
 	write(*,*) ""
 	write(*,*) ""
@@ -1982,7 +1983,7 @@ program tests
 		call addToLog("[interactions] ...done!")
 	end subroutine test_speed_coll_int
 
-	subroutine test_drho_dx
+	subroutine do_test_drho_dx
 		real(dl) :: x,z,fd
 		type(cmplxMatNN) :: res, outp
 		character(len=300) :: tmparg
@@ -2119,7 +2120,212 @@ program tests
 		end do
 		GLR_vec = GLR_vectmp
 		deallocate(GLR_vectmp)
-	end subroutine test_drho_dx
+	end subroutine do_test_drho_dx
+
+	subroutine do_test_damping_factors
+		real(dl) :: x,z,dme2
+		integer :: i, j, ix, iy1, iy
+		real(dl) :: y,res1,res2
+		type(coll_args) :: collArgs
+		real(dl), dimension(3) :: tmparrS, tmparrA
+		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
+		character(len=300) :: tmparg
+		type(cmplxMatNN) :: cts
+
+		call allocateCmplxMat(cts)
+
+		collision_offdiag = 2
+
+		x = 0.75d0
+		iy1 = 7 !1.22151515151515
+		z = 1.186d0
+		dme2 = 0.1d0
+		write(*,*)
+		write(*,"(a)") "Damping terms (28 tests)"
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = dme2
+		do iy=1, Ny
+			y = y_arr(iy)
+			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 10.d0, 33.d0/)
+			nuDensMatVecFD(iy)%re(2,:) = (/10.d0, 1.d0*fermiDirac(y), 45.d0/)
+			nuDensMatVecFD(iy)%re(3,:) = (/33.d0, 45.d0, 1.d0*fermiDirac(y)/)
+			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0/)
+			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0/)
+			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
+		end do
+
+		!2+1
+		sterile(3) = .true.
+		call setDampingFactorCoeffs
+		tmpmatA(1,:) = (/0., -0.928646, -6.56674/)
+		tmpmatA(2,:) = (/0., 0., -7.45108/)
+		tmpmatA(3,:) = (/0., 0., 0./)
+		tmpmatB(1,:) = (/0., 0.0000928646, -0.000596976/)
+		tmpmatB(2,:) = (/0., 0., 0.000331159/)
+		tmpmatB(3,:) = (/0., 0., 0./)
+		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=i+1, flavorNumber
+				write(tmparg,"('damping term 2+1 ',2I1)") i,j
+				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+
+!		!3+0
+		sterile(3) = .false.
+		call setDampingFactorCoeffs
+		tmpmatA(1,:) = (/0., -0.928646, -3.06453/)
+		tmpmatA(2,:) = (/0., 0., -1.76139/)
+		tmpmatA(3,:) = (/0., 0., 0./)
+		tmpmatB(1,:) = (/0., 0.0000928646, -0.000278594/)
+		tmpmatB(2,:) = (/0., 0., 0.0000782838/)
+		tmpmatB(3,:) = (/0., 0., 0./)
+		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=i+1, flavorNumber
+				write(tmparg,"('damping term 3+0 ',2I1)") i,j
+				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+
+		flavorNumber = 2
+		flavNumSqu = flavorNumber**2
+		call deallocateStuff
+		call allocateStuff
+		!1+1
+		sterile(2) = .true.
+		call setDampingFactorCoeffs
+		tmpmatA(1,:) = (/0., -1.98992, 0./)
+		tmpmatA(2,:) = (/0., 0., 0./)
+		tmpmatA(3,:) = (/0., 0., 0./)
+		tmpmatB(1,:) = (/0., 0.000198992, 0./)
+		tmpmatB(2,:) = (/0., 0., 0./)
+		tmpmatB(3,:) = (/0., 0., 0./)
+		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=i+1, flavorNumber
+				write(tmparg,"('damping term 1+1 ',2I1)") i,j
+				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+
+		!2+0
+		sterile(2) = .false.
+		call setDampingFactorCoeffs
+		tmpmatA(1,:) = (/0., -0.928646, 0./)
+		tmpmatA(2,:) = (/0., 0., 0./)
+		tmpmatA(3,:) = (/0., 0., 0./)
+		tmpmatB(1,:) = (/0., 0.0000928646, 0./)
+		tmpmatB(2,:) = (/0., 0., 0./)
+		tmpmatB(3,:) = (/0., 0., 0./)
+		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=i+1, flavorNumber
+				write(tmparg,"('damping term 2+0 ',2I1)") i,j
+				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+
+		flavorNumber = 4
+		flavNumSqu = flavorNumber**2
+		call deallocateStuff
+		call allocateStuff
+		call setDampingFactorCoeffs
+		do ix=1, Ny
+			deallocate(nuDensMatVecFD(ix)%re, nuDensMatVecFD(ix)%im)
+			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
+		end do
+		do iy=1, Ny
+			y = y_arr(iy)
+			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 10.d0, 33.d0, 12.d0/)
+			nuDensMatVecFD(iy)%re(2,:) = (/10.d0, 1.d0*fermiDirac(y), 45.d0, 8.d0/)
+			nuDensMatVecFD(iy)%re(3,:) = (/33.d0, 45.d0, 1.d0*fermiDirac(y), 23.d0/)
+			nuDensMatVecFD(iy)%re(4,:) = (/12.d0, 8.d0, 23.d0, 1.d0*fermiDirac(y)/)
+			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0, 0.1d0/)
+			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0, -0.2d0/)
+			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0, 0.5d0/)
+			nuDensMatVecFD(iy)%im(4,:) = (/-0.1d0, 0.2d0, -0.5d0, 0.d0/)
+		end do
+		!3+1
+		sterile(4) = .true.
+		call setDampingFactorCoeffs
+		tmpmatA(1,:) = (/-0.928646, -3.06453, -2.38791/)
+		tmpmatA(2,:) = (/0., -1.76139, -1.32464/)
+		tmpmatA(3,:) = (/0., 0., -3.80833/)
+		tmpmatB(1,:) = (/0.0000928646, -0.000278594, -0.0198992/)
+		tmpmatB(2,:) = (/0., 0.0000782838, 0.0331159/)
+		tmpmatB(3,:) = (/0., 0., -0.0827898/)
+		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=i+1, flavorNumber
+				write(tmparg,"('damping term 3+1 ',2I1)") i,j
+				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i, j-1), tmparrA(i))
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), tmparrS(i))
+				end if
+			end do
+		end do
+
+		!restore initial settings
+		flavorNumber = 3
+		flavNumSqu = flavorNumber**2
+		call deallocateStuff
+		call allocateStuff
+		call setDampingFactorCoeffs
+		do ix=1, Ny
+			deallocate(nuDensMatVecFD(ix)%re, nuDensMatVecFD(ix)%im)
+			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
+		end do
+		collision_offdiag = 1
+	end subroutine do_test_damping_factors
 
 	subroutine do_timing_tests
 		timing_tests = .true.

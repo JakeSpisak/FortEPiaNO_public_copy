@@ -27,7 +27,18 @@ module ndConfig
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 		allocate(xcutsCollInt(nf,nf))
 	end subroutine allocateStuff
-	
+
+	subroutine deallocateStuff()
+		integer :: nf
+		nf = flavorNumber
+		deallocate(nuMasses, nuFactor, sterile)
+		deallocate(mixMat, mixMatInv)
+		deallocate(nuMassesMat, leptonDensities)
+		deallocate(dampTermMatrixCoeff)
+		deallocate(GL_mat, GR_mat, GLR_vec)
+		deallocate(xcutsCollInt)
+	end subroutine deallocateStuff
+
 	subroutine setMassMatrix()
 		integer :: nf
 		integer :: ix
@@ -119,15 +130,15 @@ module ndConfig
 			6.d0 &!nu+(b)nu -> nu+(b)nu
 			+ (8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)!nu+bnu -> e+e-
 		!nu_e - nu_s
-		nue_nus = &
+		nue_nus = 2.d0*(&
 			(8.d0*sin2thW**2 + 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
 			+ 13.d0 &!nu+(b)nu -> nu+(b)nu
-			+ (4.d0*sin2thW**2 + 2.d0*sin2thW + 0.5d0)!nu+bnu -> e+e-
+			+ (4.d0*sin2thW**2 + 2.d0*sin2thW + 0.5d0))!nu+bnu -> e+e-
 		!nu_X - nu_s
-		nux_nus = &
+		nux_nus = 2.d0*(&
 			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
 			+ 13.d0 &!nu+(b)nu -> nu+(b)nu
-			+ (4.d0*sin2thW**2 - 2.d0*sin2thW + 0.5d0)!nu+bnu -> e+e-
+			+ (4.d0*sin2thW**2 - 2.d0*sin2thW + 0.5d0))!nu+bnu -> e+e-
 		if (flavorNumber .ge. 2) then
 			if (sterile(2)) then
 				dampTermMatrixCoeff(1, 2) = nue_nus
