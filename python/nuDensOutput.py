@@ -49,6 +49,16 @@ class NuDensRun():
 					self.rho[i, j, 1] = np.loadtxt(
 						"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
 
+	def plotFD(self, ls="-", lc="k"):
+		plt.plot(
+			self.yv, self.fd,
+			label=self.label, ls=ls, marker=".", c=lc
+			)
+		plt.xscale("log")
+		plt.yscale("log")
+		plt.xlabel("$y$")
+		plt.ylabel(r"$y^2 f(y)$")
+
 	def plotZ(self, ls="-", lc="k"):
 		plt.plot(
 			*stripRepeated(self.zdat, 0, 1),
