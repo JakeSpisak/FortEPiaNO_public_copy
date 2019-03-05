@@ -136,7 +136,7 @@ module ndCosmology
 		vec%x=0.d0
 		vec%z=z
 		vec%iFl=iFl
-		nuDensity = rombint_nD(vec, integr_rho_nu, y_min, y_max, 1d-3, maxiter) / PISQD2
+		nuDensity = rombint_nD(vec, integr_rho_nu, y_min, y_max, 1d-3, maxiter) / PISQ
 	end function nuDensity
 
 	function nuDensityLin(z, iFl)
@@ -149,7 +149,7 @@ module ndCosmology
 			y = y_arr(ix)
 			fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%re(iFl, iFl)
 		end do
-		nuDensityLin = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQD2
+		nuDensityLin = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQ
 	end function nuDensityLin
 
 	subroutine test_nuDens_speed
@@ -211,7 +211,7 @@ module ndCosmology
 			y = y_arr(ix)
 			fy_arr(ix) = y*y*y * fermiDirac(y)!/z_in)
 		end do
-		nuDensityLinEq = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQD2
+		nuDensityLinEq = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQ
 	end function nuDensityLinEq
 
 end module
