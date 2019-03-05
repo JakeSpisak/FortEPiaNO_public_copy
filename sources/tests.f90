@@ -382,62 +382,62 @@ program tests
 		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
 		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
 
-		call assert_double_rel("nuDens test 1", nuDensity(1.d0, 1), 1.15145d0, 1d-4)
-		call assert_double_rel("nuDens test 2", nuDensity(1.076d0, 1), 1.54346d0, 1d-4)
-		call assert_double_rel("nuDens test 3", nuDensity(1.32d0, 1), 3.49577d0, 3d-4)
-		call assert_double_rel("nuDens test 4", nuDensity(1.37d0, 2), 2.d0*4.05629d0, 5d-4)
-		call assert_double_rel("nuDens test 5", nuDensity(1.003d0, 3), 3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuDens test 1", nuDensity(1.d0, 1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDens test 2", nuDensity(1.076d0, 1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDens test 3", nuDensity(1.32d0, 1), 0.575727d0, 3d-4)
+		call assert_double_rel("nuDens test 4", nuDensity(1.37d0, 2), 2.d0*0.575727d0, 5d-4)
+		call assert_double_rel("nuDens test 5", nuDensity(1.003d0, 3), 3.d0*0.575727d0, 1d-4)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 1", nuDensityLin(1.d0, 1), 1.15145d0, 1d-4)
+		call assert_double_rel("nuDensLin test 1", nuDensityLin(1.d0, 1), 0.575727d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 2", nuDensityLin(1.076d0, 1), 1.54346d0, 1d-4)
+		call assert_double_rel("nuDensLin test 2", nuDensityLin(1.076d0, 1), 0.5d0*1.54346d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 3", nuDensityLin(1.32d0, 1), 3.49577d0, 2d-4)
+		call assert_double_rel("nuDensLin test 3", nuDensityLin(1.32d0, 1), 0.5d0*3.49577d0, 2d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 4", nuDensityLin(1.37d0, 2), 2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDensLin test 4", nuDensityLin(1.37d0, 2), 0.5d0*2.d0*4.05629d0, 5d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 5", nuDensityLin(1.003d0, 3), 3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuDensLin test 5", nuDensityLin(1.003d0, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
 
-		call assert_double_rel("nuDensLinEq test 1", nuDensityLinEq(1.d0), 1.15145d0, 1d-4)
-		call assert_double_rel("nuDensLinEq test 2", nuDensityLinEq(1.37d0), 1.15145d0, 1d-4)
+		call assert_double_rel("nuDensLinEq test 1", nuDensityLinEq(1.d0), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensLinEq test 2", nuDensityLinEq(1.37d0), 0.575727d0, 1d-4)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double_rel("allNuDensLin test 1", allNuDensity(1.d0), 6*1.15145d0, 1d-3)
-		call assert_double_rel("allNuDensLin test 2", allNuDensity(1.276d0), 6*1.15145d0, 1d-3)
+		call assert_double_rel("allNuDensLin test 1", allNuDensity(1.d0), 6*0.575727d0, 1d-3)
+		call assert_double_rel("allNuDensLin test 2", allNuDensity(1.276d0), 6*0.575727d0, 1d-3)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double("radDens test 1", radDensity(0.7d0, 1.04d0), 5.52237d0, 1d-3)
-		call assert_double("radDens test 2", radDensity(1.d0, 1.04d0), 5.47313d0, 1d-3)
-		call assert_double("radDens test 3", radDensity(1.d0, 1.24d0), 7.59143d0, 3d-3)
+		call assert_double("radDens test 1", radDensity(0.7d0, 1.04d0), 3.79519d0, 1d-3)
+		call assert_double("radDens test 2", radDensity(1.d0, 1.04d0), 3.74595d0, 1d-3)
+		call assert_double("radDens test 3", radDensity(1.d0, 1.24d0), 5.86425d0, 3d-3)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
@@ -2010,16 +2010,16 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/532.698d0/fd, 13715.3d0, 64523.2d0/)
-		res%re(2,:) = (/13715.3d0, -2334.54d0/fd, -270.937d0/)
-		res%re(3,:) = (/64523.2d0, -270.937d0, 1801.85d0/fd/)
-		res%im(1,:) = (/0., 7494.11, 26512.2/)
-		res%im(2,:) = (/-7494.11, 0., 21.371/)
-		res%im(3,:) = (/-26512.2, -21.371, 0./)
+		res%re(1,:) = (/606.103d0/fd, 15605.3d0, 73414.3d0/)
+		res%re(2,:) = (/15605.3d0, -2656.24d0/fd, -308.271d0/)
+		res%re(3,:) = (/73414.3d0, -308.271d0, 2050.14d0/fd/)
+		res%im(1,:) = (/0., 8526.79, 30170./)
+		res%im(2,:) = (/-8526.79, 0., 24.3159/)
+		res%im(3,:) = (/-30170., -24.3159, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms a ',2I1)") i,j
+				write(tmparg,"('drho/dx a ',2I1)") i,j
 				if (abs(res%re(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
 				else
@@ -2035,16 +2035,16 @@ program tests
 
 		lastColl%f5 = .true.
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/1226.72d0/fd, 14409.4d0, 65217.2d0/)
-		res%re(2,:) = (/14409.4d0, -1640.52d0/fd, 423.085d0/)
-		res%re(3,:) = (/65217.2d0, 423.085d0, 2495.87d0/fd/)
-		res%im(1,:) = (/0., 8188.13, 27210.2/)
-		res%im(2,:) = (/-8188.13, 0., 715.393/)
-		res%im(3,:) = (/-27210.2, -715.393, 0./)
+		res%re(1,:) = (/1395.76d0/fd, 16394.9d0, 74204.d0/)
+		res%re(2,:) = (/16394.9d0, -1866.58d0/fd, 481.386d0/)
+		res%re(3,:) = (/74204.d0, 481.386d0, 2839.79d0/fd/)
+		res%im(1,:) = (/0., 9316.44, 30959.7/)
+		res%im(2,:) = (/-9316.44, 0., 813.973/)
+		res%im(3,:) = (/-30959.7, -813.973, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint1, fakecollint1)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms b ',2I1)") i,j
+				write(tmparg,"('drho/dx b ',2I1)") i,j
 				if (abs(res%re(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
 				else
@@ -2073,16 +2073,16 @@ program tests
 
 		lastColl%f5 = .true.
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/146450.d0/fd, 308666.d0, 428941.d0/)
-		res%re(2,:) = (/308666.d0, -641816.d0/fd, -74486.3d0/)
-		res%re(3,:) = (/428941.d0, -74486.3d0, 495366.d0/fd/)
-		res%im(1,:) = (/0., 329305., 365916./)
-		res%im(2,:) = (/-329305., 0., 5875.35/)
-		res%im(3,:) = (/-365916., -5875.35, 0./)
+		res%re(1,:) = (/164543.d0/fd, 346799.d0, 481933.d0/)
+		res%re(2,:) = (/346799.d0, -721106.d0/fd, -83688.4d0/)
+		res%re(3,:) = (/481933.d0, -83688.4d0, 556564.d0/fd/)
+		res%im(1,:) = (/0., 369988., 411122./)
+		res%im(2,:) = (/-369988., 0., 6601.2/)
+		res%im(3,:) = (/-411122., -6601.2, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms c ',2I1)") i,j
+				write(tmparg,"('drho/dx c ',2I1)") i,j
 				if (abs(res%re(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
 				else
@@ -2096,16 +2096,16 @@ program tests
 			end do
 		end do
 
-		res%re(1,:) = (/146584.d0/fd, 308800.d0, 429074.d0/)
-		res%re(2,:) = (/308800.d0, -641682.d0/fd, -74352.7d0/)
-		res%re(3,:) = (/429074.d0, -74352.7d0, 495499.d0/fd/)
-		res%im(1,:) = (/0., 329439., 366050./)
-		res%im(2,:) = (/-329439., 0., 6008.94/)
-		res%im(3,:) = (/-366050., -6008.94, 0./)
+		res%re(1,:) = (/164693.d0/fd, 346950.d0, 482083.d0/)
+		res%re(2,:) = (/346950.d0, -720956.d0/fd, -83538.3d0/)
+		res%re(3,:) = (/482083.d0, -83538.3d0, 556714.d0/fd/)
+		res%im(1,:) = (/0., 370138., 411272./)
+		res%im(2,:) = (/-370138., 0., 6751.29/)
+		res%im(3,:) = (/-411272., -6751.29, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollinty, fakecollinty)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms d ',2I1)") i,j
+				write(tmparg,"('drho/dx d ',2I1)") i,j
 				if (abs(res%re(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
 				else

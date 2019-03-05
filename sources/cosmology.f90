@@ -124,7 +124,7 @@ module ndCosmology
 		real(dl) :: integr_rho_nu
 		real(dl), intent(in) :: y
 		type(nuDensArgs), intent(in) :: vec
-		integr_rho_nu = y*y*y * interpNuDens%re(vec%iFl, vec%iFl)%evaluate(y) * fermiDirac(y/vec%z)
+		integr_rho_nu = y*y*y * interpNuDens%re(vec%iFl, vec%iFl)%evaluate(y) * fermiDirac(y)
 	end function integr_rho_nu
 	
 	function nuDensity(z, iFl)

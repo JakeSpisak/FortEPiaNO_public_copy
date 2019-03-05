@@ -537,7 +537,7 @@ module ndInteractions
 				y2=(y_max-y_min)*y2 + y_min
 				y3=(y_max-y_min)*y3 + y_min
 				y4=(y_max-y_min)*y4 + y_min
-				d1a = d1_full(y1,y2,y3,y4)
+!				d1a = d1_full(y1,y2,y3,y4)
 				d1a = d2_full(y1,y2,y3,y4)
 				d1b = d3_full(y1,y2,y3,y4)
 !				d2a = PI1_12_full(y1,y2,y3,y4)
@@ -555,7 +555,7 @@ module ndInteractions
 				y2=(y_max-y_min)*y2 + y_min
 				y3=(y_max-y_min)*y3 + y_min
 				y4=(y_max-y_min)*y4 + y_min
-				d1a = d1_pablo(y1,y2,y3,y4)
+!				d1a = d1_pablo(y1,y2,y3,y4)
 				d1a = d2_pablo(y1,y2,y3,y4)
 				d1b = d3_pablo(y1,y2,y3,y4)
 !				d2a = PI1_12_full(y1,y2,y3,y4)
