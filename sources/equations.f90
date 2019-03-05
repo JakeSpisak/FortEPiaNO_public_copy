@@ -265,7 +265,6 @@ module ndEquations
 		dzodx = coeffs(1) - coeffs(2)/ z**3 * tmp
 
 		ydot(n)=dzodx
-
 	end subroutine dz_o_dx
 
 	subroutine dz_o_dx_lin(x,z, ydot, n)

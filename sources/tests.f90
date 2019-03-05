@@ -564,7 +564,7 @@ program tests
 
 	subroutine do_tests_Di
 		write(*,*) ""
-		write(*,"(a)") "D_i functions (18 tests)"
+		write(*,"(a)") "D_i functions (48 tests)"
 		call assert_double("D1 test 1", D1_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 2", D1_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 3", D1_full(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
@@ -583,6 +583,38 @@ program tests
 		call assert_double_rel("D3 test 4", D3_full(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
 		call assert_double_rel("D3 test 5", D3_full(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
 		call assert_double_rel("D3 test 6", D3_full(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
+
+		call assert_double("D2c test 1", D2_cases(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
+		call assert_double("D2c test 2", D2_cases(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
+		call assert_double("D2c test 3", D2_cases(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
+		call assert_double("D2c test 4", D2_cases(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
+		call assert_double_rel("D2c test 5", D2_cases(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
+		call assert_double_rel("D2c test 6", D2_cases(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
+		call assert_double("D3c test 1", D3_cases(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
+		call assert_double("D3c test 2", D3_cases(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
+		call assert_double("D3c test 3", D3_cases(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
+		call assert_double_rel("D3c test 4", D3_cases(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
+		call assert_double_rel("D3c test 5", D3_cases(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
+		call assert_double_rel("D3c test 6", D3_cases(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
+
+		call assert_double("D1p test 1", D1_pablo(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
+		call assert_double("D1p test 2", D1_pablo(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
+		call assert_double("D1p test 3", D1_pablo(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
+		call assert_double("D1p test 4", D1_pablo(10.03d0,5.4d0,8.8d0,6.63d0), 21.6d0, 1d-4)
+		call assert_double("D1p test 5", D1_pablo(10.d0,2.d0,5.3d0,6.7d0), 8.d0, 1d-7)
+		call assert_double("D1p test 6", D1_pablo(2.d0,10.d0,6.7d0,5.3d0), 8.d0, 1d-7)
+		call assert_double("D2p test 1", D2_pablo(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
+		call assert_double("D2p test 2", D2_pablo(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
+		call assert_double("D2p test 3", D2_pablo(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
+		call assert_double("D2p test 4", D2_pablo(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
+		call assert_double_rel("D2p test 5", D2_pablo(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
+		call assert_double_rel("D2p test 6", D2_pablo(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
+		call assert_double("D3p test 1", D3_pablo(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
+		call assert_double("D3p test 2", D3_pablo(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
+		call assert_double("D3p test 3", D3_pablo(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
+		call assert_double_rel("D3p test 4", D3_pablo(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
+		call assert_double_rel("D3p test 5", D3_pablo(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
+		call assert_double_rel("D3p test 6", D3_pablo(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
 	end subroutine do_tests_Di
 
 	subroutine do_tests_Pi_ij

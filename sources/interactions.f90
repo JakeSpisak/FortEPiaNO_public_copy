@@ -665,52 +665,51 @@ module ndInteractions
 		real(dl) :: y1, y2, y3, y4
 		real(dl) :: a
 
-		if (y1.le.y2) then
-			y1=q2
-			y2=q1
+		if (q3.le.q4) then
+			y1=q4
+			y2=q3
 		else
-			y1=q1
-			y2=q2
+			y1=q3
+			y2=q4
 		end if
-		if (y3.le.y4) then
-			y3=q4
-			y4=q3
+		if (q1.le.q2) then
+			y3=q2
+			y4=q1
 		else
-			y3=q3
-			y4=q4
+			y3=q1
+			y4=q2
 		end if
 		if (y1+y2 .ge. y3+y4) then
 			if (y1+y4 .ge. y2+y3) then
 				if (y1 .le. y2+y3+y4) then
 					a = (y1-y2)
-					D2_cases = ( a**3 &
+					D2_cases = - ( a**3 &
 						+ 2.d0 * (y3**3 + y4**3) &
 						- 3.d0 * a * (y3**2 + y4**2) &
-						) / 12.d0
+						) / 3.d0
 				else
 					D2_cases = 0.d0
 				end if
 			else
-				D2_cases = y4**3 / 3.d0
+				D2_cases = - y4**3 / 0.75d0
 			end if
 		else
 			if (y1+y4 .le. y2+y3) then
 				if (y3 .le. y2+y1+y4) then
 					a = (y1+y2)
-					D2_cases = ( - a**3 &
+					D2_cases = - ( - a**3 &
 						- 2.d0 * (y3**3 - y4**3) &
 						+ 3.d0 * a * (y3**2 + y4**2) &
-						) / 12.d0
+						) / 3.d0
 				else
 					D2_cases = 0.d0
 				end if
 			else
-				D2_cases = y2 / 6.d0 * ( &
+				D2_cases = - y2 / 1.5d0 * ( &
 					3.d0 * (y3**2 + y4**2 - y1**2) &
 					- y2**2 )
 			end if
 		end if
-
 	end function D2_cases
 
     elemental real(dl) function D2_pablo(y1,y2,y3,y4)
@@ -868,24 +867,24 @@ module ndInteractions
 		real(dl) :: y1, y2, y3, y4
 		real(dl) :: a
 
-		if (y1.le.y2) then
-			y1=q2
-			y2=q1
+		if (q3.le.q4) then
+			y1=q4
+			y2=q3
 		else
-			y1=q1
-			y2=q2
+			y1=q3
+			y2=q4
 		end if
-		if (y3.le.y4) then
-			y3=q4
-			y4=q3
+		if (q1.le.q2) then
+			y3=q2
+			y4=q1
 		else
-			y3=q3
-			y4=q4
+			y3=q1
+			y4=q2
 		end if
 		if (y1+y2 .ge. y3+y4) then
 			if (y1+y4 .ge. y2+y3) then
 				if (y1 .le. y2+y3+y4) then
-					D3_cases = 1.d0 / 60.d0 * ( &
+					D3_cases = 1.d0 / 15.d0 * ( &
 						y1**5 - y2**5 - y3**5 - y4**5 + 5.d0 * &
 						( y1**2 * (y2**3 + y3**3 + y4**3) &
 						- y1**3 * (y2**2 + y3**2 + y4**2) &
@@ -896,24 +895,23 @@ module ndInteractions
 					D3_cases = 0.d0
 				end if
 			else
-				D3_cases = y4**3 / 30.d0 * (5.d0 * (y1**2 + y2**2 + y3**2) -y4**2 )
+				D3_cases = y4**3 / 7.5d0 * (5.d0 * (y1**2 + y2**2 + y3**2) - y4**2 )
 			end if
 		else
 			if (y1+y4 .le. y2+y3) then
 				if (y3 .le. y2+y1+y4) then
-					D3_cases = 1.d0 / 60.d0 * ( &
+					D3_cases = 1.d0 / 15.d0 * ( &
 						y3**5 - y4**5 - y1**5 - y2**5 + 5.d0 * &
 						( y3**2 * (y4**3 + y1**3 + y2**3) &
 						- y3**3 * (y4**2 + y1**2 + y2**2) &
 						+ y4**2 * y1**2 * (y4 + y1) &
 						+ y4**2 * y2**2 * (y4 + y2) &
 						+ y2**2 * y1**2 * (y2 + y1) ) )
-					D3_cases = 1.d0
 				else
 					D3_cases = 0.d0
 				end if
 			else
-				D3_cases = y2**3 / 30.d0 * (5.d0 * (y1**2 + y4**2 + y3**2) -y2**2 )
+				D3_cases = y2**3 / 7.5d0 * (5.d0 * (y1**2 + y3**2 + y4**2) - y2**2 )
 			end if
 		end if
 
