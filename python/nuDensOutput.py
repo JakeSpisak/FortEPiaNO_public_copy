@@ -1,11 +1,41 @@
 """Functions and classes that read the output and help to do plots"""
 
+import re
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 
-colors = ["r", "g", "b", "k", "c", "m", "y"]
+colors = ["r", "g", "b", "k", "c", "m", "y", "#cc6699", "#ff9933"]
 styles = ["-", "--", ":", "-."]
+
+def finalizePlot(fname,
+		lloc="best",
+		xlab=None,
+		ylab=None,
+		xscale=None,
+		yscale=None,
+		xlim=None,
+		ylim=None,
+		):
+	ax=plt.gca()
+	ax.tick_params("both", which="both", direction="out",
+		left=True, right=True, top=True, bottom=True)
+	plt.legend(loc=lloc)
+	if xlab is not None:
+		plt.xlabel(xlab)
+	if ylab is not None:
+		plt.ylabel(ylab)
+	if xscale is not None:
+		plt.xscale(xscale)
+	if yscale is not None:
+		plt.yscale(yscale)
+	if xlim is not None:
+		plt.xlim(xlim)
+	if ylim is not None:
+		plt.ylim(ylim)
+	plt.tight_layout()
+	plt.savefig(fname)
+	plt.close()
 
 def stripRepeated(data, ix1, ix2):
 	"""Strip the repeated points from an output file,
@@ -39,7 +69,28 @@ class NuDensRun():
 		self.rho = np.asarray([
 			[[None, None] for i in range(nnu)] for j in range(nnu)
 			])
+		try:
+			with open("%s/resume.dat"%folder) as _f:
+				self.resume = _f.readlines()
+		except FileNotFoundError:
+			self.resume = [""]*(self.nnu+2)
+			self.hasResume= False
+		else:
+			self.hasResume = True
+		if self.hasResume:
+			self.Neff = float(
+				re.match("Neff[ =]*([\d.]*)", self.resume[-1]).group(1))
+			self.zfin = float(
+				re.match("final z[ =]*([\d.]*)", self.resume[0]).group(1))
+		self.deltarhofin = []
 		for i in range(self.nnu):
+			if self.hasResume:
+				self.deltarhofin.append(
+					float(
+						re.match("dRho_%s[ =]*([\d.]*)"%(i+1), self.resume[i+1])
+							.group(1)
+						)
+					)
 			self.rho[i, i, 0] = np.loadtxt(
 				"%s/nuDens_diag%d.dat"%(folder, i+1))
 			if full:
@@ -48,6 +99,19 @@ class NuDensRun():
 						"%s/nuDens_nd_%d%d_re.dat"%(folder, i+1, j+1))
 					self.rho[i, j, 1] = np.loadtxt(
 						"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
+		self.printTableLine()
+
+	def printTableLine(self):
+		if self.hasResume:
+			deltastr = ""
+			for i in range(self.nnu):
+				deltastr += "{:.5f} & ".format(self.deltarhofin[i])
+			print("{lab:<15s} & {zfin:.5f} & {deltastr:s}{Neff:.5f}\\\\".format(
+				lab=self.label,
+				Neff=self.Neff,
+				zfin=self.zfin,
+				deltastr=deltastr,
+				))
 
 	def plotFD(self, ls="-", lc="k"):
 		plt.plot(
@@ -123,3 +187,16 @@ class NuDensRun():
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho_{ij}$")
+
+	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k"):
+		if iy is None:
+			iy = ix
+		if ri not in [0, 1]:
+			ri = 0
+		plt.plot(
+			self.yv, self.rho[ix, iy, ri][-1, 1:],
+			ls=ls, c=lc,
+			label="%s %d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im"),
+			)
+		plt.xlabel("$y$")
+		plt.ylabel(r"$\rho_{ij}^{\rm fin}(y)$")

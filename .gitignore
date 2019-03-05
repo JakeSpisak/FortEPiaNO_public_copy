@@ -12,6 +12,7 @@ OUT
 *.dat
 *.txt
 plots/
+bin/
 *.ipynb*
 output*
 gmon.out
