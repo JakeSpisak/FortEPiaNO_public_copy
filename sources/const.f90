@@ -71,8 +71,8 @@ module constants
 	
 	real(dl), parameter :: fe_l = 0.d0, fe_u = 100.d0
 	
-	character(len=5), parameter :: dblfmt = "E15.7"
-	character(len=10), parameter :: multidblfmt = "(*(E15.7))"
+	character(len=5), parameter :: dblfmt = "E17.9"
+	character(len=10), parameter :: multidblfmt = "(*(E17.9))"
 end module constants
 
 module variables
