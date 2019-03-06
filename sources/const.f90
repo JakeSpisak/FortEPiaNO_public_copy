@@ -58,9 +58,6 @@ module constants
 	real(dl), parameter :: i_dm23 = 0.00244
 	real(dl), parameter :: i_deltaCP13 = 0.
 	
-	real(dl), parameter :: i_photonTempToday = 2.7255
-	real(dl), parameter :: i_HubbleParam = 70.
-	
 	real(dl), parameter :: ymed = 3.15137
 	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
@@ -95,8 +92,6 @@ module variables
 	real(dl) :: theta12, dm12
 	real(dl) :: theta13, theta23, dm23, deltaCP13
 	real(dl) :: theta14, theta24, theta34, dm14
-	
-	real(dl) :: photonTemperatureToday, hubbleParam
 
 	!complex matrix, it will host the neutrino density matrix.
 	!Intended to have the relative shape correction with respect to the FD in the diagonal

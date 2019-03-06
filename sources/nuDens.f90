@@ -3,17 +3,13 @@ program nuDens
 	use ndConfig
 	use ndErrors
 	use ndEquations
-!	use omp_lib
 	implicit none
 
 	call initConfig
 
-!	call init_interp_FD		!interpolation slower than function!
-!	call init_interp_d123	!interpolation slower than function!
 	call init_interp_jkyg12
 	call init_interp_dme2_e
 	call init_interp_ElDensity
-!	call allocate_interpNuDens
 
 	call solver
 	call finalresults

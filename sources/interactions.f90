@@ -555,9 +555,9 @@ module ndInteractions
 				y2=(y_max-y_min)*y2 + y_min
 				y3=(y_max-y_min)*y3 + y_min
 				y4=(y_max-y_min)*y4 + y_min
-!				d1a = d1_pablo(y1,y2,y3,y4)
-				d1a = d2_pablo(y1,y2,y3,y4)
-				d1b = d3_pablo(y1,y2,y3,y4)
+!				d1a = D1_bis(y1,y2,y3,y4)
+				d1a = D2_bis(y1,y2,y3,y4)
+				d1b = D3_bis(y1,y2,y3,y4)
 !				d2a = PI1_12_full(y1,y2,y3,y4)
 !				d3a = PI1_13_full(y1,y2,y3,y4)
 			end do
@@ -584,15 +584,15 @@ module ndInteractions
 			abs( y1+y2+y3+y4)
 	end function D1_full
 
-	elemental function D1_pablo(y1, y2, y3, y4)
+	elemental function D1_bis(y1, y2, y3, y4)
 		implicit none
-		real(dl) :: D1_pablo
+		real(dl) :: D1_bis
 		real(dl), intent(in) :: y1, y2, y3, y4
-          real(dl) a12,a34
-          a12=y1+y2
-          a34=y3+y4
-          D1_pablo=a12+a34-dabs(a12-a34)-dabs(y1-y2+y3-y4)-dabs(y1-y2-y3+y4)
-	end function D1_pablo
+		real(dl) a12,a34
+		a12=y1+y2
+		a34=y3+y4
+		D1_bis=a12+a34-abs(a12-a34)-abs(y1-y2+y3-y4)-abs(y1-y2-y3+y4)
+	end function D1_bis
 
 	function D2_f(y1, y2, y3, y4)
 		implicit none
@@ -712,37 +712,37 @@ module ndInteractions
 		end if
 	end function D2_cases
 
-    elemental real(dl) function D2_pablo(y1,y2,y3,y4)
-          implicit none
-          real(dl),intent(in)::y1,y2,y3,y4
-          real(dl) a12,a13,a14,a34,a123,a124,a134,a234,a1234,s12,s13,s14
-          real(dl) a12_2,sum1,sum2
+    elemental real(dl) function D2_bis(y1,y2,y3,y4)
+		implicit none
+		real(dl),intent(in)::y1,y2,y3,y4
+		real(dl) a12,a13,a14,a34,a123,a124,a134,a234,a1234,s12,s13,s14
+		real(dl) a12_2,sum1,sum2
 
-          a12_2=y1+y2
-          a34=y3+y4
-          
-          a123=a12_2+y3-y4
-          a124=a12_2-y3+y4
-          a134=y1-y2+a34
-          a234=-y1+y2+a34
-          a1234=a12_2+a34
-          a12=a12_2-a34
-          a13=y1-y2+y3-y4
-          a14=y1-y2-y3+y4
-          s12=a12*a12*dsign(1.d0,a12)
-          s13=a13*a13*dsign(1.d0,a13)
-          s14=a14*a14*dsign(1.d0,a14)
+		a12_2=y1+y2
+		a34=y3+y4
 
-          sum1=-a123*a123 + a1234*a1234 - a124*a124 + s12
-          sum2=- a134*a134 + a234*a234 + s13 + s14
+		a123=a12_2+y3-y4
+		a124=a12_2-y3+y4
+		a134=y1-y2+a34
+		a234=-y1+y2+a34
+		a1234=a12_2+a34
+		a12=a12_2-a34
+		a13=y1-y2+y3-y4
+		a14=y1-y2-y3+y4
+		s12=a12*a12*sign(1.d0,a12)
+		s13=a13*a13*sign(1.d0,a13)
+		s14=a14*a14*sign(1.d0,a14)
 
-          D2_pablo=(a123**3 - a1234**3 + a124**3 + a134**3 + a234**3 + &
-           3.d0*(sum1 + sum2)*y1 + &
-           3.d0*(sum1 - sum2)*y2 - dabs(a12)**3 - dabs(a13)**3 - &
-           dabs(a14)**3 + 6.d0*y1*y2*(a12_2 - 3.d0*a34 - dabs(a12) + &
-           dabs(a13) + dabs(a14)))/6.d0
+		sum1=-a123*a123 + a1234*a1234 - a124*a124 + s12
+		sum2=- a134*a134 + a234*a234 + s13 + s14
 
-        end function D2_pablo
+		D2_bis=(a123**3 - a1234**3 + a124**3 + a134**3 + a234**3 + &
+			3.d0*(sum1 + sum2)*y1 + &
+			3.d0*(sum1 - sum2)*y2 - abs(a12)**3 - abs(a13)**3 - &
+			abs(a14)**3 + 6.d0*y1*y2*(a12_2 - 3.d0*a34 - abs(a12) + &
+			abs(a13) + abs(a14)))/6.d0
+
+	end function D2_bis
 
 	function D3_f(y1, y2, y3, y4)
 		implicit none
@@ -917,70 +917,72 @@ module ndInteractions
 
 	end function D3_cases
 
-    elemental real(dl) function D3_pablo(y1,y2,y3,y4)
-          implicit none
-          real(dl),intent(in)::y1,y2,y3,y4
-          real(dl) a12,a13,a14,a123,a124,a134,a234,a1234,P1234,s12,s13,s14
-          real(dl) absa12,absa13,absa14,absa12e3,absa13e3,absa14e3
-          real(dl) ampp,appm,apmp,a123e2,a124e2,a134e2,a234e2,a1234e2
-          real(dl) a123e3,a124e3,a134e3,a234e3,a1234e3
-          real(dl) a123e5,a124e5,a134e5,a234e5,a1234e5
+    elemental real(dl) function D3_bis(y1,y2,y3,y4)
+		implicit none
+		real(dl),intent(in)::y1,y2,y3,y4
+		real(dl) a12,a13,a14,a123,a124,a134,a234,a1234,P1234,s12,s13,s14
+		real(dl) absa12,absa13,absa14,absa12e3,absa13e3,absa14e3
+		real(dl) ampp,appm,apmp,a123e2,a124e2,a134e2,a234e2,a1234e2
+		real(dl) a123e3,a124e3,a134e3,a234e3,a1234e3
+		real(dl) a123e5,a124e5,a134e5,a234e5,a1234e5
 
-          a12=y1+y2-y3-y4
-          a13=y1-y2+y3-y4
-          a14=y1-y2-y3+y4
-          a123=y1+y2+y3-y4
-          a124=y1+y2-y3+y4
-          a134=y1-y2+y3+y4
-          a234=-y1+y2+y3+y4
-          a1234=y1+y2+y3+y4
-          s12=a12**2*dsign(1.0d0,a12)
-          s13=a13**2*dsign(1.0d0,a13)
-          s14=a14**2*dsign(1.0d0,a14)
-          P1234=-120.d0*y1*y2*y3*y4
+		a12=y1+y2-y3-y4
+		a13=y1-y2+y3-y4
+		a14=y1-y2-y3+y4
+		a123=y1+y2+y3-y4
+		a124=y1+y2-y3+y4
+		a134=y1-y2+y3+y4
+		a234=-y1+y2+y3+y4
+		a1234=y1+y2+y3+y4
+		s12=a12**2*sign(1.0d0,a12)
+		s13=a13**2*sign(1.0d0,a13)
+		s14=a14**2*sign(1.0d0,a14)
+		P1234=-120.d0*y1*y2*y3*y4
 
-          absa12=dabs(a12)
-          absa13=dabs(a13)
-          absa14=dabs(a14)
-          absa12e3=absa12**3
-          absa13e3=absa13**3
-          absa14e3=absa14**3
-          ampp=-absa12e3 + absa13e3 + absa14e3
-          appm=absa12e3 + absa13e3 - absa14e3
-          apmp=absa12e3 - absa13e3 + absa14e3
-          a123e2=a123*a123
-          a124e2=a124*a124
-          a134e2=a134*a134
-          a234e2=a234*a234
-          a1234e2=a1234*a1234
-          a123e3=a123e2*a123
-          a124e3=a124e2*a124
-          a134e3=a134e2*a134
-          a234e3=a234e2*a234
-          a1234e3=a1234e2*a1234
+		absa12=abs(a12)
+		absa13=abs(a13)
+		absa14=abs(a14)
+		absa12e3=absa12**3
+		absa13e3=absa13**3
+		absa14e3=absa14**3
+		ampp=-absa12e3 + absa13e3 + absa14e3
+		appm=absa12e3 + absa13e3 - absa14e3
+		apmp=absa12e3 - absa13e3 + absa14e3
+		a123e2=a123*a123
+		a124e2=a124*a124
+		a134e2=a134*a134
+		a234e2=a234*a234
+		a1234e2=a1234*a1234
+		a123e3=a123e2*a123
+		a124e3=a124e2*a124
+		a134e3=a134e2*a134
+		a234e3=a234e2*a234
+		a1234e3=a1234e2*a1234
 
-          a123e5=a123e3*a123e2
-          a124e5=a124e3*a124e2
-          a134e5=a134e3*a134e2
-          a234e5=a234e3*a234e2
-          a1234e5=a1234e3*a1234e2
+		a123e5=a123e3*a123e2
+		a124e5=a124e3*a124e2
+		a134e5=a134e3*a134e2
+		a234e5=a234e3*a234e2
+		a1234e5=a1234e3*a1234e2
 
-          D3_pablo= (4.d0*(a1234e5 - a123e5 - a124e5 - a134e5 - a234e5) - &
-           absa12**5 - absa13**5 - absa14**5 + &
-           (a123 + a1234 + a124 + a134 + a234 + absa12 + absa13 + absa14)*P1234 + &
-           5.d0*(a12**3*s12+a13**3*s13 +a14**3*s14) + &
-           20.d0*((-a1234e3 + a123e3 + a124e3 - a134e3 - a234e3 + ampp)*y1*y2 + &
-            (-a1234e3 + a123e3 - a124e3 + a134e3 - a234e3 + apmp)*y1*y3 + &
-            (-a1234e3 + a123e3 - a124e3 - a134e3 + a234e3 + appm)*y2*y3 + &
-            (-a1234e3 - a123e3 + a124e3 + a134e3 - a234e3 + appm)*y1*y4 + &
-            (-a1234e3 - a123e3 + a124e3 - a134e3 + a234e3 + apmp)*y2*y4 + &
-            (-a1234e3 - a123e3 - a124e3 + a134e3 + a234e3 + ampp)*y3*y4) + &
-           60.d0*((a1234e2 + a123e2 - a124e2 + a134e2 + a234e2 - s12 + s13 - s14)*y1*y2*y4 + &
-            (a1234e2 - a123e2 + a124e2 + a134e2 + a234e2 - s12 - s13 + s14)*y1*y2*y3 + &
-            (a1234e2 + a123e2 + a124e2 - a134e2 + a234e2 + s12 - s13 - s14)*y1*y3*y4 + &
-            (a1234e2 + a123e2 + a124e2 + a134e2 - a234e2 + s12 + s13 + s14)*y2*y3*y4))/120.d0
+		D3_bis = (&
+			4.d0*(a1234e5 - a123e5 - a124e5 - a134e5 - a234e5) - &
+			absa12**5 - absa13**5 - absa14**5 + &
+			(a123 + a1234 + a124 + a134 + a234 + absa12 + absa13 + absa14)*P1234 + &
+			5.d0*(a12**3*s12+a13**3*s13 +a14**3*s14) + &
+			20.d0*((-a1234e3 + a123e3 + a124e3 - a134e3 - a234e3 + ampp)*y1*y2 + &
+			(-a1234e3 + a123e3 - a124e3 + a134e3 - a234e3 + apmp)*y1*y3 + &
+			(-a1234e3 + a123e3 - a124e3 - a134e3 + a234e3 + appm)*y2*y3 + &
+			(-a1234e3 - a123e3 + a124e3 + a134e3 - a234e3 + appm)*y1*y4 + &
+			(-a1234e3 - a123e3 + a124e3 - a134e3 + a234e3 + apmp)*y2*y4 + &
+			(-a1234e3 - a123e3 - a124e3 + a134e3 + a234e3 + ampp)*y3*y4) + &
+			60.d0*((a1234e2 + a123e2 - a124e2 + a134e2 + a234e2 - s12 + s13 - s14)*y1*y2*y4 + &
+			(a1234e2 - a123e2 + a124e2 + a134e2 + a234e2 - s12 - s13 + s14)*y1*y2*y3 + &
+			(a1234e2 + a123e2 + a124e2 - a134e2 + a234e2 + s12 - s13 - s14)*y1*y3*y4 + &
+			(a1234e2 + a123e2 + a124e2 + a134e2 - a234e2 + s12 + s13 + s14)*y2*y3*y4) &
+			)/120.d0
 
-        end function D3_pablo
+	end function D3_bis
 
 	function PI1_12_i(y1, y2, y3, y4)
 		implicit none

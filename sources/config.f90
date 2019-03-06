@@ -299,11 +299,7 @@ module ndConfig
 			m_lightest   = read_ini_real('m_lightest', 0.0d0)
 			massOrdering = read_ini_logical('massOrdering', .true.)
 			giveSinSq = read_ini_logical('givesinsq', .false.)
-			
-			!read cosmo parameters
-			hubbleParam = read_ini_real('hubbleParam', i_HubbleParam)
-			photonTemperatureToday = read_ini_real('photonTemperatureToday', i_photonTempToday)
-			
+
 			!settings for collisional
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)

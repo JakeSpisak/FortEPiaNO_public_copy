@@ -705,7 +705,7 @@ module ndEquations
 	end subroutine derivatives
 	
 	subroutine jdum
-		!necessary but not needed
+		!necessary for dlsoda but not needed
 	end subroutine jdum
 
 	function Neff_from_rho_z(z)
