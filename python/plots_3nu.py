@@ -11,6 +11,10 @@ fIOd = NuDensRun("OUT/3nu/20_df_io/", label="IO damp")
 fnoosc20 = NuDensRun("OUT/3nu/20_noosc/", label="no osc Ny=20", full=False)
 fnoosc40 = NuDensRun("OUT/3nu/40_noosc/", label="no osc Ny=40", full=False)
 fnoosc70 = NuDensRun("OUT/3nu/70_noosc/", label="no osc Ny=70", full=False)
+# fNO100 = NuDensRun("OUT/3nu/100_ci_no/", label="NO")
+# fIO100 = NuDensRun("OUT/3nu/100_ci_io/", label="IO")
+fNO100d = NuDensRun("OUT/3nu/100_df_no/", label="NO damp")
+fIO100d = NuDensRun("OUT/3nu/100_df_io/", label="IO damp")
 fnoosc100 = NuDensRun("OUT/3nu/100_noosc/", label="no osc Ny=100", full=False)
 
 for i in range(3):
@@ -20,6 +24,20 @@ for i in range(3):
 	fnoosc100.plotRhoDiag(i, 20, styles[i], lc=colors[4])
 finalizePlot(
 	"plots/3nu/rho_diag_noosc.pdf",
+	xlab="$x$",
+	ylab=r"$\rho/\rho_{eq}-1$",
+	xscale="log",
+	lloc="upper left",
+	)
+
+for i in range(3):
+	fnoosc20.plotRhoDiagY(i, 5., styles[i], lc=colors[0])
+	fnoosc40.plotRhoDiagY(i, 5., styles[i], lc=colors[1])
+	fnoosc70.plotRhoDiagY(i, 5., styles[i], lc=colors[2])
+	fnoosc100.plotRhoDiagY(i, 5., styles[i], lc=colors[4])
+finalizePlot(
+	"plots/3nu/rho_diag_noosc_y.pdf",
+	title="$y=5$",
 	xlab="$x$",
 	ylab=r"$\rho/\rho_{eq}-1$",
 	xscale="log",
@@ -112,3 +130,55 @@ for fn, cl, ol in [
 		xlim=[0, 12],
 		ylim=[-0.01, 0.07],
 		)
+
+fNOd.label = "NO Ny=20"
+fIOd.label = "IO Ny=20"
+fNO100d.label = "NO Ny=100"
+fIO100d.label = "IO Ny=100"
+for i in range(3):
+	fnoosc100.plotRhoDiagY(i, 5, styles[i], lc=colors[3])
+	fNOd.plotRhoDiagY(i, 5, styles[i], lc=colors[0])
+	fIOd.plotRhoDiagY(i, 5, styles[i], lc=colors[1])
+	fNO100d.plotRhoDiagY(i, 5, styles[i], lc=colors[2])
+	fIO100d.plotRhoDiagY(i, 5, styles[i], lc=colors[4])
+finalizePlot(
+	"plots/3nu/rho_diag_Ny_damp.pdf",
+	title="with damping terms only",
+	xlab="$x$",
+	ylab=r"$\rho/\rho_{eq}-1$",
+	xscale="log",
+	lloc="upper left",
+	)
+
+for fn, ol in [
+		["ord", [fNOd, fIOd, fNO100d, fIO100d]],
+		]:
+	for i in range(3):
+		for j in range(i+1, 3):
+			for io, o in enumerate(ol):
+				o.plotRhoOffDiagY(i, j, 5, lc=colors[io], ls=styles[i+j], im=False)
+	finalizePlot(
+		"plots/3nu/rho_offdiag_Ny_%s.pdf"%fn,
+		lloc="lower left",
+		)
+
+	for i in range(3):
+		for j in range(i+1, 3):
+			for io, o in enumerate(ol):
+				o.plotdRhoOffDiagY(i, j, 5, lc=colors[io], ls=styles[i+j], im=False)
+	finalizePlot(
+		"plots/3nu/rho_doffdiag_Ny_%s.pdf"%fn,
+		lloc="lower right",
+		)
+
+fNOd.plotDeltaZ(fnoosc100, lc=colors[0])
+fIOd.plotDeltaZ(fnoosc100, lc=colors[1])
+fNO100d.plotDeltaZ(fnoosc100, lc=colors[2])
+fIO100d.plotDeltaZ(fnoosc100, lc=colors[4])
+finalizePlot(
+	"plots/3nu/deltaz_damp.pdf",
+	title=r"$\Delta z$ with respect to Ny=100, no oscillations",
+	xlab="$x$",
+	ylab=r"$z-z_{\rm no osc}$",
+	xscale="log",
+	)

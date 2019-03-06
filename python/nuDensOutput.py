@@ -10,6 +10,7 @@ styles = ["-", "--", ":", "-."]
 
 def finalizePlot(fname,
 		lloc="best",
+		title="",
 		xlab=None,
 		ylab=None,
 		xscale=None,
@@ -17,6 +18,7 @@ def finalizePlot(fname,
 		xlim=None,
 		ylim=None,
 		):
+	plt.title(title)
 	ax=plt.gca()
 	ax.tick_params("both", which="both", direction="out",
 		left=True, right=True, top=True, bottom=True)
@@ -101,6 +103,21 @@ class NuDensRun():
 						"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
 		self.printTableLine()
 
+	def interpolateRhoIJ(self, i1, i2, y, ri=0):
+		xv = []
+		yv = []
+		prevy = 0
+		for i, x in enumerate(self.rho[i1, i2, ri][:, 0]):
+			fy = interp1d(self.yv, self.rho[i1, i2, ri][i, 1:])
+			cy = fy(y)
+			if cy != prevy:
+				prevy = cy
+				yv.append(prevy)
+				xv.append(x)
+		xv.append(x)
+		yv.append(cy)
+		return xv, yv
+
 	def printTableLine(self):
 		if self.hasResume:
 			deltastr = ""
@@ -154,7 +171,7 @@ class NuDensRun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho/\rho_{eq}-1$")
 
-	def plotRhoOffDiag(self, i1, i2, iy, lc="k"):
+	def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True):
 		if not self.full:
 			print("no offdiagonal loaded")
 			return
@@ -162,28 +179,30 @@ class NuDensRun():
 			*stripRepeated(self.rho[i1, i2, 0], 0, iy),
 			ls="-", c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1)
 			)
-		plt.plot(
-			*stripRepeated(self.rho[i1, i2, 1], 0, iy),
-			ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
-			)
+		if im:
+			plt.plot(
+				*stripRepeated(self.rho[i1, i2, 1], 0, iy),
+				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
+				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho_{ij}$")
 
-	def plotdRhoOffDiag(self, i1, i2, iy, lc="k"):
+	def plotdRhoOffDiag(self, i1, i2, iy, lc="k", im=True):
 		if not self.full:
 			print("no offdiagonal loaded")
 			return
 		dijrex, dijrey = stripRepeated(self.rho[i1, i2, 0], 0, iy)
-		dijimx, dijimy = stripRepeated(self.rho[i1, i2, 1], 0, iy)
 		plt.plot(
 			dijrex, np.gradient(dijrey, dijrex),
 			ls="-", c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1)
 			)
-		plt.plot(
-			dijimx, np.gradient(dijimy, dijimx),
-			ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
-			)
+		if im:
+			dijimx, dijimy = stripRepeated(self.rho[i1, i2, 1], 0, iy)
+			plt.plot(
+				dijimx, np.gradient(dijimy, dijimx),
+				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
+				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho_{ij}$")
@@ -200,3 +219,48 @@ class NuDensRun():
 			)
 		plt.xlabel("$y$")
 		plt.ylabel(r"$\rho_{ij}^{\rm fin}(y)$")
+
+	def plotRhoDiagY(self, inu, y, ls, lc="k"):
+		plt.plot(
+			*self.interpolateRhoIJ(inu, inu, y, ri=0),
+			label="%s %d"%(self.label, inu+1), ls=ls, c=lc
+			)
+		plt.xscale("log")
+		plt.xlabel("$x$")
+		plt.ylabel(r"$\rho/\rho_{eq}-1$")
+
+	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True):
+		if not self.full:
+			print("no offdiagonal loaded")
+			return
+		plt.plot(
+			*self.interpolateRhoIJ(i1, i2, y, ri=0),
+			ls=ls, c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1)
+			)
+		if im:
+			plt.plot(
+				*self.interpolateRhoIJ(i1, i2, y, ri=1),
+				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
+				)
+		plt.xscale("log")
+		plt.xlabel("$x$")
+		plt.ylabel(r"$\rho_{ij}$")
+
+	def plotdRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True):
+		if not self.full:
+			print("no offdiagonal loaded")
+			return
+		dijrex, dijrey = self.interpolateRhoIJ(i1, i2, y, ri=0)
+		plt.plot(
+			dijrex, np.gradient(dijrey, dijrex),
+			ls=ls, c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1)
+			)
+		if im:
+			dijimx, dijimy = self.interpolateRhoIJ(i1, i2, y, ri=1)
+			plt.plot(
+				dijimx, np.gradient(dijimy, dijimx),
+				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
+				)
+		plt.xscale("log")
+		plt.xlabel("$x$")
+		plt.ylabel(r"$\rho_{ij}$")
