@@ -10,12 +10,14 @@ fNOd = NuDensRun("OUT/3nu/20_df_no/", label="NO damp")
 fIOd = NuDensRun("OUT/3nu/20_df_io/", label="IO damp")
 fnoosc20 = NuDensRun("OUT/3nu/20_noosc/", label="no osc Ny=20", full=False)
 fnoosc40 = NuDensRun("OUT/3nu/40_noosc/", label="no osc Ny=40", full=False)
+fnoosc70 = NuDensRun("OUT/3nu/70_noosc/", label="no osc Ny=70", full=False)
 fnoosc100 = NuDensRun("OUT/3nu/100_noosc/", label="no osc Ny=100", full=False)
 
 for i in range(3):
-	fnoosc20.plotRhoDiag(i, 3, styles[i], lc=colors[3])
-	fnoosc40.plotRhoDiag(i, 8, styles[i], lc=colors[5])
-	fnoosc100.plotRhoDiag(i, 19, styles[i], lc=colors[6])
+	fnoosc20.plotRhoDiag(i, 4, styles[i], lc=colors[0])
+	fnoosc40.plotRhoDiag(i, 9, styles[i], lc=colors[1])
+	fnoosc70.plotRhoDiag(i, 17, styles[i], lc=colors[2])
+	fnoosc100.plotRhoDiag(i, 20, styles[i], lc=colors[4])
 finalizePlot(
 	"plots/3nu/rho_diag_noosc.pdf",
 	xlab="$x$",
