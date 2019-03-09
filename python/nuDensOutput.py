@@ -59,7 +59,7 @@ def stripRepeated(data, ix1, ix2):
 class NuDensRun():
 	"""Class that reads the output and helps to do plots"""
 
-	def __init__(self, folder, nnu=3, full=True, label=""):
+	def __init__(self, folder, nnu=3, full=True, label="", plots=False):
 		self.folder = folder
 		self.full = full
 		self.label = label
@@ -102,6 +102,8 @@ class NuDensRun():
 					self.rho[i, j, 1] = np.loadtxt(
 						"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
 		self.printTableLine()
+		if plots:
+			self.doAllPlots()
 
 	def interpolateRhoIJ(self, i1, i2, y, ri=0):
 		xv = []
@@ -264,3 +266,43 @@ class NuDensRun():
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$d\rho_{ij}/dt$")
+
+	def doAllPlots(self, yref=5., color="k"):
+		plt.close()
+		self.plotZ(lc=color)
+		finalizePlot(
+			"%s/z.pdf"%self.folder,
+			xlab="$x$",
+			ylab=r"$z$",
+			xscale="log",
+			)
+
+		for i in range(self.nnu):
+			self.plotRhoDiagY(i, yref, styles[i], lc=colors[i])
+		finalizePlot(
+			"%s/rho_diag.pdf"%self.folder,
+			xlab="$x$",
+			ylab=r"$\rho/\rho_{eq}-1$",
+			xscale="log",
+			)
+
+		for i in range(self.nnu):
+			self.plotRhoFin(i, ls=styles[i], lc=colors[i])
+		finalizePlot(
+			"%s/rhofin_diag.pdf"%self.folder,
+			)
+
+		if self.full:
+			for i in range(self.nnu):
+				for j in range(i+1, self.nnu):
+					self.plotRhoOffDiagY(i, j, yref, lc=colors[2*i+j-1])
+			finalizePlot(
+				"%s/rho_offdiag.pdf"%self.folder,
+				)
+
+			for i in range(self.nnu):
+				for j in range(i+1, self.nnu):
+					self.plotdRhoOffDiagY(i, j, yref, lc=colors[2*i+j-1])
+			finalizePlot(
+				"%s/drho_offdiag.pdf"%self.folder,
+				)
