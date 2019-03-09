@@ -126,6 +126,7 @@ module variables
 	
 	!technical settings
 	integer :: verbose = 1
+	real(dl) :: Nprintderivs = 100.d0
 	integer :: Nx, Ny, Nylog
 	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
 	real(dl), dimension(:), allocatable :: x_arr, y_arr

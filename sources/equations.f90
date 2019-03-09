@@ -597,7 +597,7 @@ module ndEquations
 		do ix=ix_in+1, Nx
 			xend   = x_arr(ix)
 			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")"), xstart, xend
-			call addToLog("[solver] Starting DLSODA..."//trim(tmpstring))
+			call addToLog("[solver] Start DLSODA..."//trim(tmpstring))
 
 			call date_and_time(VALUES=values)
 			call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
@@ -687,7 +687,7 @@ module ndEquations
 #endif
 		deriv_counter = deriv_counter+1
 		write (tmpstr, "('[eq] Calling derivatives (',"//dblfmt//",' x=',"//dblfmt//",')')") deriv_counter,x
-		call printVerbose(trim(tmpstr),2)
+		call printVerbose(trim(tmpstr), 1+int(mod(deriv_counter, Nprintderivs)))
 
 !		write(*,multidblfmt) nuDensMatVec
 !		write(*,multidblfmt) nuDensMatVecFD

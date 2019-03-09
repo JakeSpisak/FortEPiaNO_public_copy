@@ -256,6 +256,7 @@ module ndConfig
 			call system('mkdir -p '//trim(outputFolder))
 			
 			verbose = read_ini_int('verbose', verbose)
+			Nprintderivs = read_ini_real('Nprintderivs', Nprintderivs)
 			checkpoint = read_ini_logical('checkpoint', .true.)
 			maxiter = read_ini_int('maxiter', 100)
 			toler = read_ini_real('tolerance', 1.d-5)
