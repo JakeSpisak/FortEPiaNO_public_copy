@@ -81,15 +81,15 @@ class NuDensRun():
 			self.hasResume = True
 		if self.hasResume:
 			self.Neff = float(
-				re.match("Neff[ =]*([\d.]*)", self.resume[-1]).group(1))
+				re.match("Neff[ =]*([-\d.]*)", self.resume[-1]).group(1))
 			self.zfin = float(
-				re.match("final z[ =]*([\d.]*)", self.resume[0]).group(1))
+				re.match("final z[ =]*([-\d.]*)", self.resume[0]).group(1))
 		self.deltarhofin = []
 		for i in range(self.nnu):
 			if self.hasResume:
 				self.deltarhofin.append(
 					float(
-						re.match("dRho_%s[ =]*([\d.]*)"%(i+1), self.resume[i+1])
+						re.match("dRho_%s[ =]*([-\d.]*)"%(i+1), self.resume[i+1])
 							.group(1)
 						)
 					)
@@ -160,7 +160,7 @@ class NuDensRun():
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$z$")
+		plt.ylabel(r"$z-z_{\rm ref}$")
 
 	def plotRhoDiag(self, inu, iy, ls, lc="k"):
 		plt.plot(
@@ -205,7 +205,7 @@ class NuDensRun():
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ij}$")
+		plt.ylabel(r"$d\rho_{ij}/dt$")
 
 	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k"):
 		if iy is None:
@@ -263,4 +263,4 @@ class NuDensRun():
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ij}$")
+		plt.ylabel(r"$d\rho_{ij}/dt$")
