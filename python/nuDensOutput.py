@@ -120,6 +120,13 @@ class NuDensRun():
 		yv.append(cy)
 		return xv, yv
 
+	def interpolateRhoIJ_x(self, i1, i2, x, ri=0):
+		ov = []
+		for i, y in enumerate(self.yv):
+			fx = interp1d(self.rho[i1, i2, ri][:, 0], self.rho[i1, i2, ri][:, i])
+			ov.append(fx(x))
+		return self.yv, ov
+
 	def printTableLine(self):
 		if self.hasResume:
 			deltastr = ""
@@ -221,6 +228,19 @@ class NuDensRun():
 			)
 		plt.xlabel("$y$")
 		plt.ylabel(r"$\rho_{ij}^{\rm fin}(y)$")
+
+	def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k"):
+		if i2 is None:
+			i2 = i1
+		if ri not in [0, 1]:
+			ri = 0
+		plt.plot(
+			*self.interpolateRhoIJ_x(i1, i2, x, ri),
+			ls=ls, c=lc,
+			label="%s %d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x),
+			)
+		plt.xlabel("$y$")
+		plt.ylabel(r"$\rho_{ij}(y)$")
 
 	def plotRhoDiagY(self, inu, y, ls, lc="k"):
 		plt.plot(
