@@ -256,7 +256,6 @@ def oscParams(args):
 
 def getIniValues(args):
 	values = oscParams(args)
-	print(values)
 	values["verbose"] = args.verbose
 	values["factors"] = "\n".join(
 		["nuFactor%d = %f"%(i+1, f) for i, f in enumerate(values["factors"])])
@@ -323,7 +322,7 @@ dlsoda_atol = {dlsoda_atol:}
 dlsoda_rtol = {dlsoda_rtol:}
 outputFolder = {folder:}
 """.format(**values)
-	print(iniText, filename)
+	print("Writing to %s"%filename)
 	with open(filename, "w") as _f:
 		_f.write(iniText)
 
@@ -332,5 +331,4 @@ if __name__=='__main__':
 	parser = setParser()
 	args = parser.parse_args(sys.argv[1:])
 	values = getIniValues(args)
-	print(values)
 	writeIni(args.inifile, values)
