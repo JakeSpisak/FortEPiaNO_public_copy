@@ -373,10 +373,12 @@ module ndConfig
 				call error("[config] WARNING: only up to 4 neutrino flavors are supported. Using N=4")
 				flavorNumber = maxflavorNumber
 			end if
-			
+
 			call setMixingMatrix()
 			call setMassMatrix()
 			!create other matrices
+			write(tmpstr,"('[config] Using Ny=',I3,' and Nylog=',I3)") Ny, Nylog
+			call addToLog(trim(tmpstr))
 			call init_matrices
 			
 			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
