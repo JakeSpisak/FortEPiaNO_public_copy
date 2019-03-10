@@ -215,16 +215,16 @@ def oscParams(args):
 				and args.default_active == "VLC":
 			if args.ordering.lower() in ["no", "nh", "normal"]:
 				osc["ordering"] = "T"
-				osc["dm21"] = 0.32
+				osc["dm21"] = 7.55e-05
 				osc["dm31"] = 0.00250
-				osc["th12"] = 7.55e-05
+				osc["th12"] = 0.32
 				osc["th13"] = 0.0216
 				osc["th23"] = 0.547
 			else:
 				osc["ordering"] = "F"
-				osc["dm21"] = 0.32
+				osc["dm21"] = 7.55e-05
 				osc["dm31"] = 0.00242
-				osc["th12"] = 7.55e-05
+				osc["th12"] = 0.32
 				osc["th13"] = 0.0222
 				osc["th23"] = 0.551
 		else:
