@@ -1,4 +1,5 @@
 import sys
+import os
 import argparse
 
 
@@ -323,6 +324,8 @@ dlsoda_rtol = {dlsoda_rtol:}
 outputFolder = {folder:}
 """.format(**values)
 	print("Writing to %s"%filename)
+	if not os.path.exists(os.path.dirname(os.path.abspath(filename))):
+		os.mkdir(os.path.dirname(os.path.abspath(filename)))
 	with open(filename, "w") as _f:
 		_f.write(iniText)
 
