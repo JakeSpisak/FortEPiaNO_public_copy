@@ -138,6 +138,11 @@ class NuDensRun():
 				zfin=self.zfin,
 				deltastr=deltastr,
 				))
+		else:
+			print("{lab:<35s} not finished, currently on x={x:}".format(
+				lab=self.label,
+				x=self.zdat[-1],
+				))
 
 	def plotFD(self, ls="-", lc="k"):
 		plt.plot(
