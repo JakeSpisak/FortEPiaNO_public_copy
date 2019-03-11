@@ -226,7 +226,7 @@ class NuDensRun():
 		plt.plot(
 			self.yv, self.rho[ix, iy, ri][-1, 1:],
 			ls=ls, c=lc,
-			label="%s %d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im"),
+			label="%s %d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im")
 			)
 		plt.xlabel("$y$")
 		plt.ylabel(ylabel)
@@ -241,7 +241,7 @@ class NuDensRun():
 		plt.plot(
 			*self.interpolateRhoIJ_x(i1, i2, x, ri),
 			ls=ls, c=lc,
-			label="%s %d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x),
+			label="%s %d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x)
 			)
 		plt.xlabel("$y$")
 		plt.ylabel(ylabel)
