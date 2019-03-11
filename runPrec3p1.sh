@@ -9,4 +9,5 @@ python python/prepareIni.py ini/3p1/70_${lab}.ini OUT/prec_3p1/70_${lab}/ 3+1 da
 for ny in 15 20 30 40 70;
 do
 	bin/nuDens.exe ini/3p1/${ny}_${lab}.ini
+	python -c "import matplotlib; matplotlib.use('agg'); from nuDensOutput import NuDensRun; NuDensRun('OUT/prec_3p1/${ny}_${lab}/', nnu=4, plots=True)"
 done

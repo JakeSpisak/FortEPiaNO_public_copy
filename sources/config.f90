@@ -234,6 +234,7 @@ module ndConfig
 	subroutine initConfig()
 		character(len=300) :: tmparg, tmpstr
 		integer :: ix
+		logical :: file_exist
 		
 		if (verbose>0) write(*,*) '[config] init configuration'
 		num_args = command_argument_count()
@@ -252,6 +253,10 @@ module ndConfig
 
 			tmparg=trim(read_ini_char('outputFolder'))
 			if (trim(tmparg)/="") outputFolder=tmparg
+			inquire(file=trim(outputFolder)//"/resume.dat", exist=file_exist)
+			if (file_exist) then
+				call criticalError("[config] resume.dat already exists! No need to proceed.")
+			end if
 			call addToLog("[config] Writing to: "//trim(outputFolder)//"/...")
 			call system('mkdir -p '//trim(outputFolder))
 			
