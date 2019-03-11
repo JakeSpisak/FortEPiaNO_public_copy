@@ -6,7 +6,7 @@ python python/prepareIni.py ini/3p1/20_${lab}.ini OUT/prec_3p1/20_${lab}/ 3+1 da
 python python/prepareIni.py ini/3p1/30_${lab}.ini OUT/prec_3p1/30_${lab}/ 3+1 damping --dlsoda_rtol=$prec --dlsoda_atol=$prec --Nx=2000 --Ny=30 --Nylog=3 --y_cen=1
 python python/prepareIni.py ini/3p1/40_${lab}.ini OUT/prec_3p1/40_${lab}/ 3+1 damping --dlsoda_rtol=$prec --dlsoda_atol=$prec --Nx=2000 --Ny=40 --Nylog=5 --y_cen=1
 python python/prepareIni.py ini/3p1/70_${lab}.ini OUT/prec_3p1/70_${lab}/ 3+1 damping --dlsoda_rtol=$prec --dlsoda_atol=$prec --Nx=2000 --Ny=70 --Nylog=10 --y_cen=1
-for ny in 20 40 70 100;
+for ny in 15 20 30 40 70;
 do
 	bin/nuDens.exe ini/3p1/${ny}_${lab}.ini
 done
