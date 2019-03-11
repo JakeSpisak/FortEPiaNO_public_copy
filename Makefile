@@ -63,7 +63,7 @@ $(BUILD_DIR)/tests.o: $(OBJ_FILES)
 all: nudens
 
 directories:
-	mkdir -p $(BUILD_DIR)
+	mkdir -p bin/ log/ $(BUILD_DIR)
 
 objects: $(OBJ_FILES) $(BUILD_DIR)/nuDens.o
 
