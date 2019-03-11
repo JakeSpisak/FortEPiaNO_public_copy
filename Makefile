@@ -6,7 +6,7 @@ USER_DEFINED ?=
 
 #ifort
 F90=ifort
-  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -parallel -par-report1 -no-prec-div $(USER_DEFINED)
+  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -openmp -parallel -par-report1 -no-prec-div $(USER_DEFINED)
 DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all $(USER_DEFINED)
 # -check all -check noarg_temp_created
 # -stand f03  -check all -warn all -fstack-protector -assume protect_parens -implicitnone
