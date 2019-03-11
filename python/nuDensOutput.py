@@ -217,8 +217,10 @@ class NuDensRun():
 		plt.ylabel(r"$d\rho_{ij}/dt$")
 
 	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k"):
+		ylabel = r"$\rho_{ij}^{\rm fin}(y)$"
 		if iy is None:
 			iy = ix
+			ylabel = r"$\rho_{ij}^{\rm fin}(y)/\rho_{eq}-1$"
 		if ri not in [0, 1]:
 			ri = 0
 		plt.plot(
@@ -227,11 +229,13 @@ class NuDensRun():
 			label="%s %d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im"),
 			)
 		plt.xlabel("$y$")
-		plt.ylabel(r"$\rho_{ij}^{\rm fin}(y)$")
+		plt.ylabel(ylabel)
 
 	def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k"):
+		ylabel = r"$\rho_{ij}(y)$"
 		if i2 is None:
 			i2 = i1
+			ylabel = r"$\rho_{ij}(y)/\rho_{eq}-1$"
 		if ri not in [0, 1]:
 			ri = 0
 		plt.plot(
@@ -240,7 +244,7 @@ class NuDensRun():
 			label="%s %d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x),
 			)
 		plt.xlabel("$y$")
-		plt.ylabel(r"$\rho_{ij}(y)$")
+		plt.ylabel(ylabel)
 
 	def plotRhoDiagY(self, inu, y, ls, lc="k"):
 		plt.plot(

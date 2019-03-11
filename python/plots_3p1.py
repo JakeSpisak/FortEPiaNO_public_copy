@@ -6,13 +6,12 @@ import numpy as np
 from nuDensOutput import colors, styles, finalizePlot, stripRepeated, NuDensRun
 
 fNO40d = NuDensRun("OUT/3nu/40_df_no/", label="3nu NO damp")
-s1p1_df_20_hp = NuDensRun("folder/", nnu=2, label="1p1 low prec, Ny=20")
-s3p1_df_lp = NuDensRun("output3p1dfE/", nnu=4, label="3p1 low prec, Ny=15")
-s3p1_df_hp = NuDensRun("output3p1dfE1/", nnu=4, label="3p1 high prec, Ny=20")
-s3p1_df_hp40 = NuDensRun("output3p1dfEH1/", nnu=4, label="3p1 low prec, Ny=40")
-s3p1_df_hp40 = NuDensRun("output3p1dfEH/", nnu=4, label="3p1 high prec, Ny=40")
-s3p1_df_hp100 = NuDensRun("output3p1dfEM1/", nnu=4, label="3p1 low prec, Ny=70")
-s3p1_df_hp100 = NuDensRun("output3p1dfEM/", nnu=4, label="3p1 high prec, Ny=70", plots=True)
+s3p1_df_lp = NuDensRun("OUT/prec_3p1/15_lp/", nnu=4, label="3p1 low prec, Ny=15")
+s3p1_df_hp = NuDensRun("OUT/prec_3p1/20_mp/", nnu=4, label="3p1 high prec, Ny=20")
+s3p1_df_hp40 = NuDensRun("OUT/prec_3p1/40_lp/", nnu=4, label="3p1 low prec, Ny=40")
+s3p1_df_hp40 = NuDensRun("OUT/prec_3p1/40_mp/", nnu=4, label="3p1 high prec, Ny=40")
+s3p1_df_hp70 = NuDensRun("OUT/prec_3p1/70_lp/", nnu=4, label="3p1 low prec, Ny=70")
+s3p1_df_hp70 = NuDensRun("OUT/prec_3p1/70_mp/", nnu=4, label="3p1 high prec, Ny=70", plots=True)
 
 for i in range(3):
 	fNO40d.plotRhoDiagY(i, 5, styles[i], lc=colors[3])
