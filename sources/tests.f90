@@ -118,14 +118,14 @@ program tests
 		dlsoda_rtol = 1.d-6
 		Nx = 100
 		Ny = 100
-		interp_nx = 300
-		interp_nz = 100
-		interp_nxz = 300
+		interp_nx = interp_nx0
+		interp_nz = interp_nz0
+		interp_nxz = interp_nxz0
 		interp_zmin = interp_zmin0
 		interp_zmax = interp_zmax0
 		allocate(x_arr(Nx), y_arr(Ny))
 		allocate(dy_arr(Ny), fy_arr(Ny))
-		x_in    = 0.01d0
+		x_in    = 0.001d0
 		x_fin   = 40.d0
 		logx_in  = log10(x_in)
 		logx_fin = log10(x_fin)
@@ -134,7 +134,7 @@ program tests
 		y_max = 20.0d0
 		y_cen = 0.01d0
 		Nylog = 1
-		y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
+		y_arr = linspace(y_min, y_max, Ny)
 		do ix=1, Ny-1
 			dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 		end do
@@ -148,7 +148,7 @@ program tests
 		call allocateStuff
 		do ix=1, flavorNumber
 			nuFactor(ix) = 1.d0
-			sterile(ix) = 0.d0
+			sterile(ix) = .false.
 		end do
 		theta12      = i_theta12
 		dm12         = i_dm12
@@ -165,7 +165,7 @@ program tests
 		allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
 		interp_xvec = logspace(logx_in, logx_fin, interp_nx)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nx)
+		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
 	end subroutine do_tests_initialization
 
 	subroutine do_basic_tests
@@ -283,7 +283,7 @@ program tests
 		character(len=300) :: tmparg
 
 		write(*,*)
-		write(*,"(a)") "Neutrino matrices (63 tests)"
+		write(*,"(a)") "Neutrino and lepton matrices (63 tests)"
 
 		m(1,:) = (/0.825082, 0.54529713, 0.1479548/)
 		m(2,:) = (/-0.47410446, 0.525726198, 0.7062839/)
@@ -330,12 +330,16 @@ program tests
 		leptonDensities=0.d0
 		call updateLeptonDensities(0.076d0, 1.22d0, 1.32d0)
 		m(1,:) = (/-0.0026760938, 0., 0./)
-		m(2,:) = (/0.,0.,0./)
+		m(2,:) = (/0.,-2.58816e-6,0./)
 		m(3,:) = (/0.,0.,0./)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix A ',2I1)") i,j
-				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
+				if (m(i,j).gt.1d-16) then
+					call assert_double_rel(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-6)
+				else
+					call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
+				end if
 			end do
 		end do
 		call updateLeptonDensities(2.d1, 0.22d0, 1.2d0)
@@ -466,7 +470,26 @@ program tests
 		end do
 		call assert_double("Neff test 5", Neff_from_rho_z(1.39779d0), 3.045d0, 1d-3)
 
-		call assert_double("muonDens test 0", muonDensity(1.d-5, 1.d-5), 0.d0, 1d-15)
+		call assert_double("muonDensF test 1", muonDensityFull(1.d0, 1.d0), 0.d0, 1d-15)
+		call assert_double_rel("muonDensF test 2", muonDensityFull(0.1d0, 1.32d0), 0.000146007d0, 1d-4)
+		call assert_double_rel("muonDensF test 3", muonDensityFull(0.01d0, 1.2d0), 1.86472d0, 1d-4)
+		call assert_double_rel("muonDensF test 4", muonDensityFull(3.d-3, 1.2d0), 2.3396d0, 1d-4)
+		call assert_double_rel("muonDensF test 5", muonDensityFull(1.d-3, 1.d0), 1.14785d0, 1d-4)
+		call assert_double("muonDensF test 6", muonDensityFull(4.d0, 1.3d0), 0.d0, 1d-15)
+
+		call assert_double("muonDens test 1", muonDensity(1.d0, 1.d0), 0.d0, 1d-15)
+		call assert_double_rel("muonDens test 2", muonDensity(1.d-1, 1.32d0), 0.000146007d0, 1.1d-2)
+		call assert_double_rel("muonDens test 3", muonDensity(1.d-2, 1.2d0), 1.86472d0, 1d-4)
+		call assert_double_rel("muonDens test 4", muonDensity(3.d-3, 1.2d0), 2.3396d0, 1d-4)
+		call assert_double_rel("muonDens test 5", muonDensity(1.d-3, 1.d0), 1.14785d0, 1d-4)
+		call assert_double("muonDens test 6", muonDensity(4.d0, 1.3d0), 0.d0, 1d-15)
+
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re(1, 1) = 1.d0 * fermiDirac(y_arr(iy))
+			nuDensMatVecFD(iy)%re(2, 2) = 1.d0 * fermiDirac(y_arr(iy))
+			nuDensMatVecFD(iy)%re(3, 3) = 1.d0 * fermiDirac(y_arr(iy))
+		end do
+		call assert_double("radDens test 4", radDensity(0.01d0, 1.24d0), 8.16007d0, 1d-3)
 		deallocate(ndmv_re)
 	end subroutine do_tests_cosmology
 
@@ -1348,7 +1371,7 @@ program tests
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//"re", F_ab_ann_re(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatA(ix,iy), 1d-5)
-				if (abs(r2).lt.1d-7) then
+				if (abs(tmpmatB(ix,iy)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
 				else
 					call assert_double_rel(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-5)
@@ -1367,7 +1390,7 @@ program tests
 				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//"re", F_ab_sc_re(nA, 0.1d0, nB, 0.7d0, 1,1, ix,iy), tmpmatA(ix,iy), 1d-5)
 				r2 = F_ab_sc_im(nA, 0.1d0, nB, 0.7d0, 1,1, ix,iy)
-				if (abs(r2).lt.1d-7) then
+				if (abs(tmpmatB(ix,iy)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7)
 				else
 					call assert_double_rel(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-5)
@@ -1385,7 +1408,7 @@ program tests
 		real(dl) :: errr1,errr2, res1,res2,res3,res4, cf, ref
 		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
 		real(dl) ::  VK(2)
-		real(dl), dimension(:), allocatable :: ndmv_re
+		real(dl), dimension(:), allocatable :: ndmv_re, tmpfy2_arr
 		real(dl), dimension(3) :: tmparrS, tmparrA, tmperr, tmperr3,tmperr4
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
 		character(len=300) :: tmparg
@@ -1474,9 +1497,11 @@ program tests
 			end do
 		end do
 		write(*,*) ""
+		allocate(tmpfy2_arr(Ny))
 		call openFile(987, "test_sc3_re.dat", .true.)
 		do i=1, Ny
-			write(987,multidblfmt) fy2_arr(i,:)
+			tmpfy2_arr = fy2_arr(i,:)
+			write(987,multidblfmt) tmpfy2_arr
 		end do
 		close(987)
 		do i=1, Ny
@@ -1486,7 +1511,8 @@ program tests
 		end do
 		call openFile(987, "test_ann3_re.dat", .true.)
 		do i=1, Ny
-			write(987,multidblfmt) fy2_arr(i,:)
+			tmpfy2_arr = fy2_arr(i,:)
+			write(987,multidblfmt) tmpfy2_arr
 		end do
 		close(987)
 
@@ -1518,9 +1544,9 @@ program tests
 			collArgs%ix2 = i
 			ifail=0
 			itrans=0
-			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-			write(tmparg,"('test coll sc 4 - ',2I1)") i, i
-			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
+!			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+!			write(tmparg,"('test coll sc 4 - ',2I1)") i, i
+!			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
 			res2 = integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs)
 			write(tmparg,"('test coll sc 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
@@ -1551,9 +1577,9 @@ program tests
 			collArgs%ix2 = i
 			ifail=0
 			itrans=0
-			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
-			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
+!			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+!			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
+!			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
 			res2 = integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
 			write(tmparg,"('test coll ann 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
@@ -1584,7 +1610,8 @@ program tests
 		end do
 		call openFile(987, "test_sc3b_re.dat", .true.)
 		do i=1, Ny
-			write(987,multidblfmt) fy2_arr(i,:)
+			tmpfy2_arr = fy2_arr(i,:)
+			write(987,multidblfmt) tmpfy2_arr
 		end do
 		close(987)
 		do i=1, Ny
@@ -1594,7 +1621,8 @@ program tests
 		end do
 		call openFile(987, "test_ann3b_re.dat", .true.)
 		do i=1, Ny
-			write(987,multidblfmt) fy2_arr(i,:)
+			tmpfy2_arr = fy2_arr(i,:)
+			write(987,multidblfmt) tmpfy2_arr
 		end do
 		close(987)
 
@@ -1621,8 +1649,8 @@ program tests
 			collArgs%ix2 = i
 			ifail=0
 			itrans=0
-			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
+!			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+!			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
 			res2 = integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs)
 			write(tmparg,"('test coll sc 3 b - ',2I1)") i, i
@@ -1655,9 +1683,9 @@ program tests
 			collArgs%ix2 = i
 			ifail=0
 			itrans=0
-			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-			write(tmparg,"('test coll ann 4 b - ',2I1)") i, i
-			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
+!			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+!			write(tmparg,"('test coll ann 4 b - ',2I1)") i, i
+!			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
 			res2 = integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
 			write(tmparg,"('test coll ann 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
@@ -2038,12 +2066,12 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/606.103d0/fd, 15605.3d0, 73414.3d0/)
-		res%re(2,:) = (/15605.3d0, -2656.24d0/fd, -308.271d0/)
-		res%re(3,:) = (/73414.3d0, -308.271d0, 2050.14d0/fd/)
-		res%im(1,:) = (/0., 8526.79, 30170./)
-		res%im(2,:) = (/-8526.79, 0., 24.3159/)
-		res%im(3,:) = (/-30170., -24.3159, 0./)
+		res%re(1,:) = (/605.541d0/fd, 15531.6d0, 73346.3d0/)
+		res%re(2,:) = (/15531.6d0, -2653.78d0/fd, -604.533d0/)
+		res%re(3,:) = (/73346.3d0, -604.533d0, 2048.24d0/fd/)
+		res%im(1,:) = (/0., 8489.27, 30142.1/)
+		res%im(2,:) = (/-8489.27, 0., -865.415/)
+		res%im(3,:) = (/-30142.1, 865.415, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2063,12 +2091,12 @@ program tests
 
 		lastColl%f5 = .true.
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/1395.76d0/fd, 16394.9d0, 74204.d0/)
-		res%re(2,:) = (/16394.9d0, -1866.58d0/fd, 481.386d0/)
-		res%re(3,:) = (/74204.d0, 481.386d0, 2839.79d0/fd/)
-		res%im(1,:) = (/0., 9316.44, 30959.7/)
-		res%im(2,:) = (/-9316.44, 0., 813.973/)
-		res%im(3,:) = (/-30959.7, -813.973, 0./)
+		res%re(1,:) = (/1394.47d0/fd, 16320.5d0, 74135.2d0/)
+		res%re(2,:) = (/16320.5d0, -1864.85d0/fd, 184.352d0/)
+		res%re(3,:) = (/74135.2d0, 184.352d0, 2837.16d0/fd/)
+		res%im(1,:) = (/0., 9278.19, 30931./)
+		res%im(2,:) = (/-9278.19, 0., -76.52251/)
+		res%im(3,:) = (/-30931., 76.52251, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint1, fakecollint1)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2334,7 +2362,7 @@ program tests
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 3+1 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i, j-1), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
+				if (abs(tmpmatB(i,j-1)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), 1d-7)
 				else
 					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), tmparrS(i))

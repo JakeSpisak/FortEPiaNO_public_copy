@@ -290,7 +290,11 @@ module ndConfig
 			y_min = read_ini_real('y_min', 0.01d0)
 			y_max = read_ini_real('y_max', 20.0d0)
 			y_cen = read_ini_real('y_cen', 1.0d0)
-			y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
+			if (Nylog .lt. 2) then
+				y_arr = linspace(y_min, y_max, Ny)
+			else
+				y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
+			end if
 
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)

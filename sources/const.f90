@@ -41,6 +41,8 @@ module constants
 	real(dl), parameter :: m_e = 0.5109989461*Mev2eV!eV
 	real(dl), parameter :: m_e_sq = m_e**2
 	real(dl), parameter :: m_e_cub = m_e**3
+	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
+	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
 	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
 	real(dl), parameter :: G_F = 1.1663787d-5/(Gev2eV*Gev2eV)
 	real(dl), parameter :: G_Fsq = G_F * G_F

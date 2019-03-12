@@ -4,7 +4,7 @@ EXECNAME ?= nuDens.exe
 # use e.g. with USER_DEFINED=-DTESTSPEED=1 and EXECNAME=nuDens_speed.exe
 USER_DEFINED ?= 
 
-ifortErr = $(shell which ifort >/dev/null; echo $$?)
+ifortErr = $(shell which ifort &>/dev/null; echo $$?)
 ifeq "$(ifortErr)" "0"
 #ifort
 F90=ifort
@@ -15,7 +15,7 @@ else
 #gfortran
 F90=gfortran
 F90FLAGS=-cpp -O3 -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -ffast-math -ffree-line-length-none -fopenmp $(USER_DEFINED)
-DEBUGFLAGS=-O3 -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -g -traceback -ffree-line-length-none -fopenmp $(USER_DEFINED)
+DEBUGFLAGS=-O0 -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all $(USER_DEFINED)
 endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
@@ -71,7 +71,7 @@ tests: directories objects Makefile $(BUILD_DIR)/tests.o
 	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/tests.o $(DEBUGFLAGS)
 
 clean: 
-	rm -f bin/* $(BUILD_DIR)/*o $(BUILD_DIR)/*mod
+	rm -rf bin/* $(BUILD_DIR)*/ build*/
 
 $(BUILD_DIR)/%.o: sources/%.f90 Makefile
 	$(F90) $(FFLAGS) -c sources/$*.f90 -o $(BUILD_DIR)/$*.o

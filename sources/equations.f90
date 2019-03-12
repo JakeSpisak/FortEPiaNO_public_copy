@@ -206,6 +206,7 @@ module ndEquations
 		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx...")
 		nx=interp_nxz
 		allocate(A(nx),B(nx))
+		!$omp parallel do default(shared) private(ix, j, y, g12, num, den) schedule(dynamic)
 		do ix=1, nx
 			j      = J_funcFull(interp_xozvec(ix))
 			y      = Y_funcFull(interp_xozvec(ix))
@@ -215,6 +216,7 @@ module ndEquations
 			A(ix) = num / den
 			B(ix) = 1./(2.d0*PISQ*den)
 		end do
+		!$omp end parallel do
 		call dzodx_A_interp%initialize(interp_xozvec,A,4,iflag)
 		call dzodx_B_interp%initialize(interp_xozvec,B,4,iflag)
 

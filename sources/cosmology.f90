@@ -5,18 +5,16 @@ module ndCosmology
 	use ndErrors
 	use ndInteractions
 	use linear_interpolation_module
-!	use bspline_module
 	implicit none
 
-	type(linear_interp_2d) :: elDens
-!	type(bspline_2d) :: elDens
+	type(linear_interp_2d) :: elDens, muDens
 
 	contains
 	
 	function radDensity(x,z)
 		real(dl) :: radDensity
 		real(dl), intent(in) :: x,z
-		
+
 		radDensity = photonDensity(z) + &
 			electronDensity(x,z) + &
 			muonDensity(x,z) + &
@@ -45,7 +43,7 @@ module ndCosmology
 
 		vec(1)=x
 		vec(2)=z
-		vec(3)=dme2_electron(x, 0.d0, z)
+		vec(3)=dme2_electronFull(x, 0.d0, z)
 
 		electronDensityFull = rombint_vec(vec, integr_rho_e, fe_l, fe_u, toler_ed, maxiter)
 		electronDensityFull = electronDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
@@ -54,34 +52,60 @@ module ndCosmology
 	function electronDensity(x,z)
 		real(dl) :: electronDensity
 		real(dl), intent(in) :: x,z
-!		integer :: iflag
 
-		call elDens%evaluate(x,z,electronDensity)!linear
-!		call elDens%evaluate(x,z,0,0,electronDensity,iflag)!bspline
+		call elDens%evaluate(x,z,electronDensity)
 	end function electronDensity
+
+	function integr_rho_mu(vec,y)
+		real(dl) :: integr_rho_mu, Emk
+		real(dl), intent(in) :: y
+		real(dl), dimension(3), intent(in) :: vec
+		Emk = E_k_m(y, vec(1)*m_mu_o_m_e)
+		integr_rho_mu = y*y*Emk * fermiDirac(Emk/vec(2))
+	end function integr_rho_mu
+
+	function muonDensityFull(x,z)!electron + positron!
+		real(dl) :: muonDensityFull
+		real(dl), intent(in) :: x,z
+		real(dl), dimension(3) :: vec
+
+		vec(1)=x
+		vec(2)=z
+		vec(3)=0.
+
+		if (x.gt.0.5d0) then
+			muonDensityFull = 0.d0
+		else
+			muonDensityFull = rombint_vec(vec, integr_rho_mu, fe_l, fe_u, toler_ed, maxiter)
+			muonDensityFull = muonDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
+		end if
+	end function muonDensityFull
 
 	function muonDensity(x,z)
 		real(dl) :: muonDensity
 		real(dl), intent(in) :: x,z
 
-		muonDensity = 0.d0
+		call muDens%evaluate(x,z,muonDensity)
 	end function muonDensity
 
 	subroutine init_interp_ElDensity
-		real(dl), dimension(:,:), allocatable :: ed_vec
+		real(dl), dimension(:,:), allocatable :: ed_vec, md_vec
 		integer :: ix, iz, iflag
 		real(dl) :: x,z, t1,t2
 		real(8) :: timer1
 
-		call addToLog("[cosmo] Initializing interpolation for electron density...")
-		allocate(ed_vec(interp_nx,interp_nz))
+		call addToLog("[cosmo] Initializing interpolation for electron and muon density...")
+		allocate(ed_vec(interp_nx, interp_nz), md_vec(interp_nx, interp_nz))
+		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
 			do iz=1, interp_nz
-				ed_vec(ix,iz) = electronDensityFull(interp_xvec(ix),interp_zvec(iz))
+				ed_vec(ix,iz) = electronDensityFull(interp_xvec(ix), interp_zvec(iz))
+				md_vec(ix,iz) = muonDensityFull(interp_xvec(ix), interp_zvec(iz))
 			end do
 		end do
-		call elDens%initialize(interp_xvec,interp_zvec,ed_vec,iflag)!linear
-!		call elDens%initialize(interp_xvec,interp_zvec,ed_vec,4,4,iflag)!bspline
+		!$omp end parallel do
+		call elDens%initialize(interp_xvec, interp_zvec, ed_vec, iflag)!linear
+		call muDens%initialize(interp_xvec, interp_zvec, md_vec, iflag)!linear
 
 		call random_seed()
 		call random_number(x)
@@ -91,7 +115,10 @@ module ndCosmology
 		write(*,"(' [cosmo] test electronDensityInterp in ',*(E12.5))") x,z
 		t1 = electronDensityFull(x,z)
 		t2 = electronDensity(x,z)
-		write(*,"(' [cosmo] comparison (true vs interp): ',*(E17.10))") t1,t2
+		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1,t2
+		t1 = muonDensityFull(x,z)
+		t2 = muonDensity(x,z)
+		write(*,"(' [cosmo] comparison muon density (true vs interp): ',*(E17.10))") t1,t2
 
 		if (timing_tests) then
 			call tic(timer1)
@@ -196,7 +223,6 @@ module ndCosmology
 		
 		allNuDensity = 0.d0
 		do ix=1, flavorNumber
-			! allNuDensity = allNuDensity + nuDensity(z,ix)*nuFactor(ix)
 			allNuDensity = allNuDensity + nuDensityLin(z,ix)*nuFactor(ix)
 		end do
 		allNuDensity = allNuDensity
@@ -209,9 +235,8 @@ module ndCosmology
 
 		do ix=1, Ny
 			y = y_arr(ix)
-			fy_arr(ix) = y*y*y * fermiDirac(y)!/z_in)
+			fy_arr(ix) = y*y*y * fermiDirac(y)
 		end do
 		nuDensityLinEq = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQ
 	end function nuDensityLinEq
-
 end module

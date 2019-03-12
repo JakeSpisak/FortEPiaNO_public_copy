@@ -70,11 +70,13 @@ module ndInteractions
 		
 		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
 		allocate(dme_vec(interp_nx,interp_nz))
+		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
 			do iz=1, interp_nz
 				dme_vec(ix,iz) = dme2_electronFull(interp_xvec(ix),0.d0,interp_zvec(iz))
 			end do
 		end do
+		!$omp end parallel do
 		call dmeCorr%initialize(interp_xvec,interp_zvec,dme_vec,iflag)!linear
 		
 		call random_seed()
@@ -249,7 +251,7 @@ module ndInteractions
 	elemental function Ebare_i_dme(x,y,dme2)!for electrons
 		real(dl) :: Ebare_i_dme
 		real(dl), intent(in) :: x,y,dme2
-		
+
 		Ebare_i_dme = sqrt(x*x+y*y+dme2)
 	end function Ebare_i_dme
 	
