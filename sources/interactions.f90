@@ -1404,7 +1404,7 @@ module ndInteractions
 				+ coll_nue_3_ann_int_im(iy, yx, obj)
 	end function coll_nue_3_int_im
 
-	pure function integrate_coll_int_3(f, obj)
+	function integrate_coll_int_3(f, obj)
 		interface
 			pure real(dl) function f(a, b, o)
 				use variables
@@ -1539,7 +1539,7 @@ module ndInteractions
 		RETURN
 	END SUBROUTINE region
 
-	pure function get_collision_terms(collArgsIn, Fre, Fim)
+	function get_collision_terms(collArgsIn, Fre, Fim)
 		interface
 			pure real(dl) function Fre(a, b, o)
 				use variables

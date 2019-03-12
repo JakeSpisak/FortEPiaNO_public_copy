@@ -247,7 +247,7 @@ module utilities
 		if (verbose.gt.1) call addToLog("[ckpt] saving checkpoint")
 		
 		!save a tmp file and then move to the real one
-		open(file=trim(outputFolder)//"/checkpoint.chk_tmp", unit=8643, status="unknown", form="binary")
+		open(file=trim(outputFolder)//"/checkpoint.chk_tmp", unit=8643, status="unknown", form="unformatted")
 		write(8643) n
 		write(8643) x
 		write(8643) vars(:)
@@ -270,7 +270,7 @@ module utilities
 		call addToLog("[ckpt] reading checkpoint...")
 		
 		!save a tmp file and then move to the real one
-		open(file=trim(outputFolder)//"/checkpoint.chk", unit=8643, form="binary")
+		open(file=trim(outputFolder)//"/checkpoint.chk", unit=8643, form="unformatted")
 		read(8643) n
 		read(8643) x
 		allocate(vars(n))
@@ -524,10 +524,7 @@ SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
          PK = 1.0D0
          DPK = 1.0D0/PTS
  !SG170328
-   !$omp parallel do &
-   default(shared) &
-   private(wt,xx,c,d,grad,j,x) &
-   reduction(+:res)
+   !$omp parallel do default(shared) private(wt,xx,c,d,grad,j,x) reduction(+:res)
 do k1=1,int(pts)                                        !SG-PF
  !SG170328 if(omp_get_thread_num().eq.0) &
  !SG170328		print *,OMP_GET_NUM_THREADS()
@@ -862,10 +859,7 @@ enddo                                                   !SG-PF
 		integer :: ix
 
 		integral_linearized_1d = 0.d0
-		!$omp parallel do &
-		default(shared) &
-		private(ix) &
-		reduction(+:integral_linearized_1d)
+		!$omp parallel do default(shared) private(ix) reduction(+:integral_linearized_1d)
 		do ix=1, N-1
 			integral_linearized_1d = integral_linearized_1d + dx(ix) * (f(ix) + f(ix+1))
 		end do
@@ -873,7 +867,7 @@ enddo                                                   !SG-PF
 		integral_linearized_1d = integral_linearized_1d * 0.5d0
 	end function integral_linearized_1d
 
-	pure function integral_linearized_2d(N1, N2, dx, dy, f)
+	function integral_linearized_2d(N1, N2, dx, dy, f)
 		real(dl), dimension(:), allocatable, intent(in) :: dx, dy
 		real(dl), dimension(:,:), allocatable, intent(in) :: f
 		integer, intent(in) :: N1, N2
@@ -881,10 +875,7 @@ enddo                                                   !SG-PF
 		integer :: ix, iy
 
 		integral_linearized_2d = 0.d0
-		!$omp parallel do &
-		default(shared) &
-		private(ix,iy) &
-		reduction(+:integral_linearized_2d)
+		!$omp parallel do default(shared) private(ix,iy) reduction(+:integral_linearized_2d)
 		do ix=1, N1-1
 			do iy=1, N2-1
 				integral_linearized_2d = integral_linearized_2d &

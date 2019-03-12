@@ -90,7 +90,7 @@ module ndEquations
 		end do
 	end subroutine vec_2_densMat
 	
-	elemental function J_int(o, u)
+	pure function J_int(o, u)
 		real(dl) :: J_int, esuo
 		real(dl), intent(in) :: o, u
 
@@ -105,7 +105,7 @@ module ndEquations
 		J_funcFull = rombint_re(o, J_int,0.d0,upper,toler_jkyg,maxiter)/PISQ
 	end function J_funcFull
 	
-	elemental function Jprime_int(o, u)
+	pure function Jprime_int(o, u)
 		real(dl) :: Jprime_int
 		real(dl), intent(in) :: o, u
 		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
@@ -124,7 +124,7 @@ module ndEquations
 		JprimeFull = rombint_re(o, Jprime_int,0.d0,upper,toler_jkyg,maxiter) * o / PISQ
 	end function JprimeFull
 	
-	elemental function K_int(o, u)
+	pure function K_int(o, u)
 		real(dl) :: K_int,suo
 		real(dl), intent(in) :: o, u
 		
@@ -139,7 +139,7 @@ module ndEquations
 		k_funcFull = rombint_re(o, k_int,0.d0,upper,toler_jkyg,maxiter)/PISQ
 	end function K_funcFull
 	
-	elemental function Kprime_int(o, u)
+	pure function Kprime_int(o, u)
 		real(dl) :: Kprime_int
 		real(dl), intent(in) :: o, u
 		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
@@ -159,7 +159,7 @@ module ndEquations
 		KprimeFull = - rombint_re(o, Kprime_int,0.d0,upper,toler_jkyg, maxiter) * o / PISQ
 	end function KprimeFull
 	
-	elemental function Y_int(o, u)
+	pure function Y_int(o, u)
 		real(dl) :: Y_int, esuo
 		real(dl), intent(in) :: o, u
 		
@@ -596,7 +596,7 @@ module ndEquations
 
 		do ix=ix_in+1, Nx
 			xend   = x_arr(ix)
-			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")"), xstart, xend
+			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") xstart, xend
 			call addToLog("[solver] Start DLSODA..."//trim(tmpstring))
 
 			call date_and_time(VALUES=values)
@@ -620,7 +620,7 @@ module ndEquations
 			call saveRelevantInfo(xend, nuDensVec)
 			xstart=xend
 		end do
-		write(tmpstring,"('x_end =',"//dblfmt//",' - z_end =',"//dblfmt//")"), xend, nuDensVec(ntot)
+		write(tmpstring,"('x_end =',"//dblfmt//",' - z_end =',"//dblfmt//")") xend, nuDensVec(ntot)
 
 		call date_and_time(VALUES=values)
 		call openFile(timefileu, trim(outputFolder)//timefilen, .false.)

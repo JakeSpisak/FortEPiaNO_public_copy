@@ -12,11 +12,9 @@ module ndConfig
 
 	integer :: num_args, ixa
 	character(len=300), dimension(:), allocatable :: args
-	
-	character(LEN=*), parameter :: mainPath="/home/gariazzo/software/nuDensity/"
-	
+
 	contains
-	
+
 	subroutine allocateStuff()
 		integer :: nf
 		nf = flavorNumber
@@ -248,8 +246,8 @@ module ndConfig
 		end if
 		call openLogFile
 		if(num_args.gt.0) then
-			call addToLog("[config] reading additional configuration from "//mainPath//trim(args(1)))
-			call ini_file_open(mainPath//trim(args(1)), mainPath//trim(args(1))//".log")
+			call addToLog("[config] reading additional configuration from "//trim(args(1)))
+			call ini_file_open(trim(args(1)), trim(args(1))//".log")
 
 			tmparg=trim(read_ini_char('outputFolder'))
 			if (trim(tmparg)/="") outputFolder=tmparg
