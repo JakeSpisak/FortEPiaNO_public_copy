@@ -4,7 +4,7 @@ EXECNAME ?= nuDens.exe
 # use e.g. with USER_DEFINED=-DTESTSPEED=1 and EXECNAME=nuDens_speed.exe
 USER_DEFINED ?= 
 
-ifortErr = $(shell which ifort &>/dev/null; echo $$?)
+ifortErr = $(shell which ifort >/dev/null; echo $$?)
 ifeq "$(ifortErr)" "0"
 #ifort
 F90=ifort
