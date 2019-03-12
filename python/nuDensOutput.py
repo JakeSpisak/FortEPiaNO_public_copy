@@ -5,8 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 
-colors = ["r", "g", "b", "k", "c", "m", "y", "#cc6699", "#ff9933"]
+try:
+	FileNotFoundError
+except NameError:
+	FileNotFoundError = IOError
+
+colors = ["r", "g", "b", "k", "c", "m", "y", "#99ff33", "#ff9933"]
 styles = ["-", "--", ":", "-."]
+markers = [".", "+", "x", "o"]
 
 def finalizePlot(fname,
 		lloc="best",
