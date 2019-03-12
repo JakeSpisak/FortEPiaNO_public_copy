@@ -12,7 +12,7 @@ except NameError:
 
 colors = ["r", "g", "b", "k", "c", "m", "y", "#99ff33", "#ff9933"]
 styles = ["-", "--", ":", "-."]
-markers = [".", "+", "x", "o"]
+markers = [".", "+", "x", "^", "*", "h", "D"]
 
 def finalizePlot(fname,
 		lloc="best",
@@ -23,12 +23,13 @@ def finalizePlot(fname,
 		yscale=None,
 		xlim=None,
 		ylim=None,
+		legcol=1,
 		):
 	plt.title(title)
 	ax=plt.gca()
 	ax.tick_params("both", which="both", direction="out",
 		left=True, right=True, top=True, bottom=True)
-	plt.legend(loc=lloc)
+	plt.legend(loc=lloc, ncol=legcol)
 	if xlab is not None:
 		plt.xlabel(xlab)
 	if ylab is not None:
