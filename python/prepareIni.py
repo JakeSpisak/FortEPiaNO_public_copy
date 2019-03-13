@@ -33,14 +33,14 @@ def setParser():
 	parser.add_argument(
 		'--default_active',
 		nargs=1,
-		choices=["VLC", ""],
+		choices=["VLC", "None"],
 		default="VLC",
 		help='define the mixing parameters for the active neutrinos as obtained from the Valencia global fit'
 		)
 	parser.add_argument(
 		'--default_sterile',
 		nargs=1,
-		choices=["Gariazzo&al", ""],
+		choices=["Gariazzo&al", "None"],
 		default="Gariazzo&al",
 		help='define the active-sterile mixing parameters as obtained from the Gariazzo et al. global fit (with th24=th34=0)'
 		)

@@ -74,14 +74,14 @@ for iy, nyl in enumerate([2, 3, 4]):
 for iy, nyl in enumerate([2, 3, 4]):
 	for ix, xin in enumerate([1e-3, 9e-4, 8e-4, 5e-4]):
 		rlab = "Nylog=%s, xin=%s"%(nyl, xin)
-		for ny in [25, 30]:
+		for ny in [20, 25, 30, 35]:
 			plotAttr(attr, ny, ix, "Ny=%s %s"%(ny, rlab), "OUT/prec_3p1/%s_hp_%s_%s/"%(ny, nyl, xin),
 				nnu=4, prange=yran, color=colors[iy], mar=markers[ix])
 finalizePlot(
 	"plots/prec_3p1_xy.pdf",
 	xlab="$N_y$",
 	ylab=r"$N_{\rm eff}$",
-	xlim=(20, 35),
+	xlim=(17, 38),
 	ylim=yran,
 	title="3 (NO, VLC 2018) + 1 (Delta=1.29, Ue4=0.01, Um4=Ut4=0) neutrinos",
 	lloc="lower right", legcol=2,
