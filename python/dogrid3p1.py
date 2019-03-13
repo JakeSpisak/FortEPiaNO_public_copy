@@ -174,6 +174,21 @@ def setParser():
 		default=5,
 		help='number of points in sin^2 theta_{34}',
 		)
+	parser_prepare.add_argument(
+		'--sinsq2th14',
+		action="store_true",
+		help='use sin^2theta14 instead of sin^2(2theta14)',
+		)
+	parser_prepare.add_argument(
+		'--sinsq2th24',
+		action="store_true",
+		help='use sin^2theta24 instead of sin^2(2theta24)',
+		)
+	parser_prepare.add_argument(
+		'--sinsq2th34',
+		action="store_true",
+		help='use sin^2theta34 instead of sin^2(2theta34)',
+		)
 	parser_prepare.set_defaults(func=call_prepare)
 
 	parser_read = subparsers.add_parser(
