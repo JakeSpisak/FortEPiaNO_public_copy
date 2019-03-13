@@ -479,7 +479,8 @@ def call_run(args):
 	print("submitting the grid %s"%args.gridname)
 	for f in files:
 		os.system(
-			"clusterlauncher -N r%s -n 1 --openmp -q short-seq bin/nuDens.exe %s"%(
+			"clusterlauncher -N %s_%s -n 1 --openmp -q short-seq bin/nuDens.exe %s"%(
+				args.gridname,
 				f.split(os.sep)[-1].replace(".ini", ""),
 				f,
 				))
