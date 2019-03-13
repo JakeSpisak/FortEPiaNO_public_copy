@@ -52,7 +52,8 @@ $(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o \
 	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/nuDens.o: $(OBJ_FILES)
-$(BUILD_DIR)/tests.o: $(OBJ_FILES)
+$(BUILD_DIR)/stuff.o: $(OBJ_FILES)
+$(BUILD_DIR)/tests.o: $(OBJ_FILES) $(BUILD_DIR)/stuff.o
 
 all: nudens
 
@@ -68,7 +69,7 @@ nudens_debug: directories objects Makefile
 	$(F90) -o bin/nuDens_debug.exe $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
 
 tests: directories objects Makefile $(BUILD_DIR)/tests.o
-	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/tests.o $(DEBUGFLAGS)
+	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/tests.o $(DEBUGFLAGS)
 
 clean: 
 	rm -rf bin/* $(BUILD_DIR)*/ build*/

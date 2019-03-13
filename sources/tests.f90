@@ -63,6 +63,7 @@ program tests
 	use ndConfig
 	use ndErrors
 	use ndEquations
+	use ndstuff
 	implicit none
 
 	call openLogFile

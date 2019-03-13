@@ -26,17 +26,6 @@ module ndConfig
 		allocate(xcutsCollInt(nf,nf))
 	end subroutine allocateStuff
 
-	subroutine deallocateStuff()
-		integer :: nf
-		nf = flavorNumber
-		deallocate(nuMasses, nuFactor, sterile)
-		deallocate(mixMat, mixMatInv)
-		deallocate(nuMassesMat, leptonDensities)
-		deallocate(dampTermMatrixCoeff)
-		deallocate(GL_mat, GR_mat, GLR_vec)
-		deallocate(xcutsCollInt)
-	end subroutine deallocateStuff
-
 	subroutine setMassMatrix()
 		integer :: nf
 		integer :: ix

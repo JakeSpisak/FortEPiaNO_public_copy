@@ -8,66 +8,16 @@ module ndInteractions
 	use linear_interpolation_module
 	implicit none
 
-	type interpNuDens_obj
-		type(spline_class), dimension(:,:), allocatable :: re, im
-	end type interpNuDens_obj
-	type(interpNuDens_obj) :: interpNuDens
-
-	type(spline_class) :: FD_interp
 	type(linear_interp_2d) :: dmeCorr
-	
-	type(linear_interp_4d) :: D2_interp, D3_interp, PI1_12_interp, PI1_13_interp
 
 	contains
-
-	subroutine allocate_interpNuDens
-		real(dl), dimension(:), allocatable :: ndmv_re, ndmv_im
-		integer :: i, j, iy
-		allocate(interpNuDens%re(flavorNumber, flavorNumber), &
-			interpNuDens%im(flavorNumber, flavorNumber))
-		allocate(ndmv_re(Ny), ndmv_im(Ny))
-		do i=1, flavorNumber
-			do iy=1, Ny
-				ndmv_re(iy) = nuDensMatVecFD(iy)%re(i, i)
-			end do
-			call interpNuDens%re(i, i)%initialize(Ny, y_arr, ndmv_re)
-			do j=i+1, flavorNumber
-				do iy=1, Ny
-					ndmv_re(iy) = nuDensMatVecFD(iy)%re(i, j)
-					ndmv_im(iy) = nuDensMatVecFD(iy)%im(i, j)
-				end do
-				call interpNuDens%re(i, j)%initialize(Ny, y_arr, ndmv_re)
-				call interpNuDens%im(i, j)%initialize(Ny, y_arr, ndmv_im)
-			end do
-		end do
-	end subroutine allocate_interpNuDens
-
-	subroutine init_interpNuDens
-		real(dl), dimension(:), allocatable :: ndmv_re, ndmv_im
-		integer :: i, j, iy
-		allocate(ndmv_re(Ny), ndmv_im(Ny))
-		do i=1, flavorNumber
-			do iy=1, Ny
-				ndmv_re(iy) = nuDensMatVecFD(iy)%re(i, i)
-			end do
-			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
-			do j=i+1, flavorNumber
-				do iy=1, Ny
-					ndmv_re(iy) = nuDensMatVecFD(iy)%re(i, j)
-					ndmv_im(iy) = nuDensMatVecFD(iy)%im(i, j)
-				end do
-				call interpNuDens%re(i, j)%replace(Ny, y_arr, ndmv_re)
-				call interpNuDens%im(i, j)%replace(Ny, y_arr, ndmv_im)
-			end do
-		end do
-	end subroutine init_interpNuDens
 
 	subroutine init_interp_dme2_e
 		real(dl), dimension(:,:), allocatable :: dme_vec
 		integer :: ix, iz, iflag
 		real(dl) :: x,z,t1,t2
 		real(8) :: timer1
-		
+
 		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
 		allocate(dme_vec(interp_nx,interp_nz))
 		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
@@ -78,7 +28,7 @@ module ndInteractions
 		end do
 		!$omp end parallel do
 		call dmeCorr%initialize(interp_xvec,interp_zvec,dme_vec,iflag)!linear
-		
+
 		call random_seed()
 		if (timing_tests) then
 			call tic(timer1)
@@ -115,87 +65,18 @@ module ndInteractions
 		deallocate(dme_vec)
 		call addToLog("[interactions] ...done!")
 	end subroutine init_interp_dme2_e
-	
+
 	elemental function E_k_m(k,m)
 		real(dl), intent(in) :: k,m
 		real(dl) :: E_k_m
 		E_k_m = sqrt(k*k+m*m)
 	end function E_k_m
-	
-	elemental function fermiDirac_full(x)
-		real(dl) :: fermiDirac_full
-		real(dl), intent(in) :: x
-
-		fermiDirac_full = 1.d0/(exp(x) + 1.d0)
-	end function fermiDirac_full
 
 	elemental function fermiDirac(x)
 		real(dl) :: fermiDirac
 		real(dl), intent(in) :: x
-
-		fermiDirac = fermiDirac_full(x)
-!		fermiDirac = fermiDirac_i(x)
+		fermiDirac = 1.d0/(exp(x) + 1.d0)
 	end function fermiDirac
-
-	pure function fermiDirac_i(x)
-		real(dl) :: fermiDirac_i
-		real(dl), intent(in) :: x
-
-		fermiDirac_i = FD_interp%evaluate(x)
-	end function fermiDirac_i
-
-	subroutine init_interp_FD
-		real(dl), dimension(:), allocatable :: fd_vec, fd_x
-		integer :: ix, iflag, interp_nfd
-		real(dl) :: x, t1,t2
-		real(8) :: timer1
-
-		call addToLog("[interactions] Initializing interpolation for FermiDirac...")
-		interp_nfd=100
-		allocate(fd_x(interp_nfd), fd_vec(interp_nfd))
-		fd_x=logspace(-3.d0, 2.d0, interp_nfd)
-		do ix=1, interp_nfd
-			fd_vec(ix) = fermiDirac_full(fd_x(ix))
-		end do
-		call FD_interp%initialize(interp_nfd, fd_x, fd_vec)
-
-		call random_seed()
-		call random_number(x)
-		x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
-		write(*,"(' [interactions] test fermiDirac in ',*(E12.5))") x
-		t1 = fermiDirac_full(x)
-		t2 = fermiDirac_i(x)
-		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
-
-		if (timing_tests) then
-			write (*,*) "[interactions] now doing some timing..."
-			call tic(timer1)
-			do ix=1, 100000000
-				call random_number(x)
-				x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
-				t1 = fermiDirac_i(x)
-			end do
-			call toc(timer1, "<reset>")
-
-			call tic(timer1)
-			do ix=1, 100000000
-				call random_number(x)
-				x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
-				t1 = fermiDirac_i(x)
-			end do
-			call toc(timer1, "<interpolated>")
-
-			call tic(timer1)
-			do ix=1, 100000000
-				call random_number(x)
-				x=10.d0**(x*(2.d0-(-3.d0)) - 3.d0)
-				t1 = fermiDirac_full(x)
-			end do
-			call toc(timer1, "<full>")
-		end if
-
-		call addToLog("[interactions] ...done!")
-	end subroutine init_interp_FD
 
 	pure function dme2_e_i1(vec, k)
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12 first integral
@@ -208,7 +89,7 @@ module ndInteractions
 		Ekm = E_k_m(k,m)
 		dme2_e_i1 = k*k/Ekm * fermiDirac(Ekm/T)
 	end function dme2_e_i1
-	
+
 	pure function dme2_e_i2(vec, k) !not used
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12 second integral
 		real(dl) :: dme2_e_i2
@@ -227,34 +108,34 @@ module ndInteractions
 		real(dl) :: dme2_electronFull, tmp
 		real(dl), intent(in) :: x,y,z
 		real(dl), dimension(3) :: vec
-		
+
 		if (dme2_temperature_corr) then
 			vec(1) = x
 			vec(2) = z
 			vec(3) = y !not used
-			
+
 			tmp = rombint_vec(vec, dme2_e_i1, fe_l, fe_u, toler_dme2, maxiter)
 			dme2_electronFull = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
 		else
 			dme2_electronFull = 0.d0
 		end if
 	end function dme2_electronFull
-	
+
 	function dme2_electron(x,y,z)
 		real(dl) :: dme2_electron
 		real(dl), intent(in) :: x,y,z
 		integer :: iflag
-		
+
 		call dmeCorr%evaluate(x,z,dme2_electron)!linear
 	end function dme2_electron
-	
+
 	elemental function Ebare_i_dme(x,y,dme2)!for electrons
 		real(dl) :: Ebare_i_dme
 		real(dl), intent(in) :: x,y,dme2
 
 		Ebare_i_dme = sqrt(x*x+y*y+dme2)
 	end function Ebare_i_dme
-	
+
 	pure function F_ab_ann_re(n1,n2,f3,f4, a,b, i, j)!a, b must be either 1(=L) or 2(=R)
 	!doi:10.1088/1475-7516/2016/07/051 eq. 2.5
 		real(dl) :: F_ab_ann_re
@@ -263,7 +144,7 @@ module ndInteractions
 		integer, intent(in) :: a,b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
-		
+
 !		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 !			call criticalError("[F_ab_ann_re] a and b must be either 1(=L) or 2(=R)")
 
@@ -298,7 +179,7 @@ module ndInteractions
 			- (1.d0 - f3) * (1.d0 - f4) * &
 				(t2a * GLR_vec(a,j,j) + t2b * GLR_vec(a,i,i))
 	end function F_ab_ann_re
-	
+
 	pure function F_ab_ann_im(n1,n2,f3,f4, a,b, i, j)!a, b must be either 1(=L) or 2(=R)
 	!doi:10.1088/1475-7516/2016/07/051 eq. 2.5
 		real(dl) :: F_ab_ann_im
@@ -431,150 +312,12 @@ module ndInteractions
 				((t2a) * GLR_vec(a,j,j) + (t2b) * GLR_vec(a,i,i))
 	end function F_ab_sc_im
 
-	subroutine init_interp_d123
-		real(dl), dimension(:,:,:,:), allocatable :: d2, d3, pi1_12, pi1_13
-		real(dl) :: y1,  y2,  y3,  y4, d1a, d1b, d2a, d2b, d3a, d3b
-		integer  :: ix1, ix2, ix3, ix4, iflag
-		real(dl), dimension(2) :: PI1
-		real(dl), dimension(:), allocatable :: yarr
-		real(8) :: timer1
-		
-		call addToLog("[interactions] Initializing interpolation for D1/2/3 functions...")
-		allocate(yarr(interp_ny))
-		yarr = logspace(log10(y_min), log10(y_max), interp_ny)
-		allocate(d2(interp_ny,interp_ny,interp_ny,interp_ny), &
-			d3(interp_ny,interp_ny,interp_ny,interp_ny), &
-			pi1_12(interp_ny,interp_ny,interp_ny,interp_ny), &
-			pi1_13(interp_ny,interp_ny,interp_ny,interp_ny))
-		do ix1=1, interp_ny
-			do ix2=1, interp_ny
-				do ix3=1, interp_ny
-					do ix4=1, interp_ny
-						d2(ix1,ix2,ix3,ix4) = d2_full(yarr(ix1), yarr(ix2), yarr(ix3), yarr(ix4))
-						d3(ix1,ix2,ix3,ix4) = d3_full(yarr(ix1), yarr(ix2), yarr(ix3), yarr(ix4))
-
-						pi1_12(ix1,ix2,ix3,ix4) = PI1_12_full(yarr(ix1), yarr(ix2), yarr(ix3), yarr(ix4))
-						pi1_13(ix1,ix2,ix3,ix4) = PI1_13_full(yarr(ix1), yarr(ix2), yarr(ix3), yarr(ix4))
-					end do
-				end do
-			end do
-		end do
-		call PI1_12_interp%initialize(yarr, yarr, yarr, yarr, pi1_12, iflag)
-		deallocate(pi1_12)
-		call PI1_13_interp%initialize(yarr, yarr, yarr, yarr, pi1_13, iflag)
-		deallocate(pi1_13)
-
-		call D2_interp%initialize(yarr, yarr, yarr, yarr, d2, iflag)
-		deallocate(d2)
-		call D3_interp%initialize(yarr, yarr, yarr, yarr, d3, iflag)
-		deallocate(d3)
-
-		call random_seed()
-		call random_number(y1)
-		call random_number(y2)
-		call random_number(y3)
-		call random_number(y4)
-		y1=(y_max-y_min)*y1 + y_min
-		y2=(y_max-y_min)*y2 + y_min
-		y3=(y_max-y_min)*y3 + y_min
-		y4=(y_max-y_min)*y4 + y_min
-
-		write(*,"(' [interactions] test PI_1, D2_f, D3_f in ',*(E12.5))") y1,y2,y3,y4
-		d2a = D2_f(y1,y2,y3,y4)
-		d3a = D3_f(y1,y2,y3,y4)
-		d2b = D2_full(y1,y2,y3,y4)
-		d3b = D3_full(y1,y2,y3,y4)
-		pi1 = PI1_full(y1,y2,y3,y4)
-		write(*,"(' [interactions] comparison pi1_12_i (true vs interp): ',*(E17.10))") PI1_12_full(y1,y2,y3,y4), pi1_12_i(y1,y2,y3,y4)
-		write(*,"(' [interactions] comparison pi1_13_i (true vs interp): ',*(E17.10))") PI1_13_full(y1,y2,y3,y4), pi1_13_i(y1,y2,y3,y4)
-		write(*,"(' [interactions] comparison D2_f (true vs interp): ',*(E17.10))") d2a,d2b
-		write(*,"(' [interactions] comparison D3_f (true vs interp): ',*(E17.10))") d3a,d3b
-
-		if (timing_tests) then
-			call tic(timer1)
-			write (*,*) "[interactions] now doing some timing..."
-			call tic(timer1)
-			do ix1=1, 10000000
-				call random_number(y1)
-				call random_number(y2)
-				call random_number(y3)
-				call random_number(y4)
-				y1=(y_max-y_min)*y1 + y_min
-				y2=(y_max-y_min)*y2 + y_min
-				y3=(y_max-y_min)*y3 + y_min
-				y4=(y_max-y_min)*y4 + y_min
-!				d1a = d1_cases(y1,y2,y3,y4)
-				d1a = d2_cases(y1,y2,y3,y4)
-				d1b = d3_cases(y1,y2,y3,y4)
-!				d2a = PI1_12_i(y1,y2,y3,y4)
-!				d3a = PI1_13_i(y1,y2,y3,y4)
-			end do
-			call toc(timer1, "<reset>")
-
-			call tic(timer1)
-			do ix1=1, 100000000
-				call random_number(y1)
-				call random_number(y2)
-				call random_number(y3)
-				call random_number(y4)
-				y1=(y_max-y_min)*y1 + y_min
-				y2=(y_max-y_min)*y2 + y_min
-				y3=(y_max-y_min)*y3 + y_min
-				y4=(y_max-y_min)*y4 + y_min
-!				d1a = d1_cases(y1,y2,y3,y4)
-				d1a = d2_cases(y1,y2,y3,y4)
-				d1b = d3_cases(y1,y2,y3,y4)
-!				d2a = PI1_12_i(y1,y2,y3,y4)
-!				d3a = PI1_13_i(y1,y2,y3,y4)
-			end do
-			call toc(timer1, "<cases>")
-
-			call tic(timer1)
-			do ix1=1, 100000000
-				call random_number(y1)
-				call random_number(y2)
-				call random_number(y3)
-				call random_number(y4)
-				y1=(y_max-y_min)*y1 + y_min
-				y2=(y_max-y_min)*y2 + y_min
-				y3=(y_max-y_min)*y3 + y_min
-				y4=(y_max-y_min)*y4 + y_min
-!				d1a = d1_full(y1,y2,y3,y4)
-				d1a = d2_full(y1,y2,y3,y4)
-				d1b = d3_full(y1,y2,y3,y4)
-!				d2a = PI1_12_full(y1,y2,y3,y4)
-!				d3a = PI1_13_full(y1,y2,y3,y4)
-			end do
-			call toc(timer1, "<full>")
-
-			call tic(timer1)
-			do ix1=1, 100000000
-				call random_number(y1)
-				call random_number(y2)
-				call random_number(y3)
-				call random_number(y4)
-				y1=(y_max-y_min)*y1 + y_min
-				y2=(y_max-y_min)*y2 + y_min
-				y3=(y_max-y_min)*y3 + y_min
-				y4=(y_max-y_min)*y4 + y_min
-!				d1a = D1_bis(y1,y2,y3,y4)
-				d1a = D2_bis(y1,y2,y3,y4)
-				d1b = D3_bis(y1,y2,y3,y4)
-!				d2a = PI1_12_full(y1,y2,y3,y4)
-!				d3a = PI1_13_full(y1,y2,y3,y4)
-			end do
-			call toc(timer1, "<pablo>")
-		end if
-
-		call addToLog("[interactions] ...done!")
-	end subroutine init_interp_d123
-
 	elemental function D1_full(y1, y2, y3, y4)
 	!10.1103/PhysRevD.94.033009 eq.D1
 		implicit none
 		real(dl) :: D1_full
 		real(dl), intent(in) :: y1, y2, y3, y4
-		
+
 		D1_full = &
 			abs( y1+y2+y3-y4) + &
 			abs( y1+y2-y3+y4) + &
@@ -586,26 +329,6 @@ module ndInteractions
 			abs( y1+y2+y3+y4)
 	end function D1_full
 
-	elemental function D1_bis(y1, y2, y3, y4)
-		implicit none
-		real(dl) :: D1_bis
-		real(dl), intent(in) :: y1, y2, y3, y4
-		real(dl) a12,a34
-		a12=y1+y2
-		a34=y3+y4
-		D1_bis=a12+a34-abs(a12-a34)-abs(y1-y2+y3-y4)-abs(y1-y2-y3+y4)
-	end function D1_bis
-
-	function D2_f(y1, y2, y3, y4)
-		implicit none
-		real(dl) :: D2_f
-		real(dl), intent(in) :: y1, y2, y3, y4
-		integer :: iflag
-
-		D2_f=0.d0
-		call D2_interp%evaluate(y1,y2,y3,y4, D2_f)
-	end function D2_f
-	
 	elemental function D2_full(y1, y2, y3, y4)
 	!10.1103/PhysRevD.94.033009 eq.D2
 		implicit none
@@ -618,16 +341,16 @@ module ndInteractions
 		real(dl) :: &
 			Ap1p2m3m4, Ap1m2p3m4, Ap1p2p3m4, Ap1m2m3p4, &
 			Ap1p2m3p4, Ap1m2p3p4, Am1p2p3p4, Ap1p2p3p4
-		
+
 		p1p2m3m4 =  y1 +y2 -y3 -y4 
 		p1m2m3p4 =  y1 -y2 -y3 +y4 
 		p1m2p3m4 =  y1 -y2 +y3 -y4 
-		
+
 		m1p2p3p4 = -y1 +y2 +y3 +y4
 		p1m2p3p4 =  y1 -y2 +y3 +y4
 		p1p2m3p4 =  y1 +y2 -y3 +y4
 		p1p2p3m4 =  y1 +y2 +y3 -y4
-		
+
 		p1p2p3p4 =  y1 +y2 +y3 +y4 
 
 		Ap1p2m3m4 = Abs(p1p2m3m4)
@@ -659,103 +382,6 @@ module ndInteractions
 			) / 6.d0
 	end function D2_full
 
-	elemental function D2_cases(q1, q2, q3, q4)
-	!10.1103/PhysRevD.94.033009 eq.D2
-		implicit none
-		real(dl) :: D2_cases
-		real(dl), intent(in) :: q1, q2, q3, q4
-		real(dl) :: y1, y2, y3, y4
-		real(dl) :: a
-
-		if (q3.le.q4) then
-			y1=q4
-			y2=q3
-		else
-			y1=q3
-			y2=q4
-		end if
-		if (q1.le.q2) then
-			y3=q2
-			y4=q1
-		else
-			y3=q1
-			y4=q2
-		end if
-		if (y1+y2 .ge. y3+y4) then
-			if (y1+y4 .ge. y2+y3) then
-				if (y1 .le. y2+y3+y4) then
-					a = (y1-y2)
-					D2_cases = - ( a**3 &
-						+ 2.d0 * (y3**3 + y4**3) &
-						- 3.d0 * a * (y3**2 + y4**2) &
-						) / 3.d0
-				else
-					D2_cases = 0.d0
-				end if
-			else
-				D2_cases = - y4**3 / 0.75d0
-			end if
-		else
-			if (y1+y4 .le. y2+y3) then
-				if (y3 .le. y2+y1+y4) then
-					a = (y1+y2)
-					D2_cases = - ( - a**3 &
-						- 2.d0 * (y3**3 - y4**3) &
-						+ 3.d0 * a * (y3**2 + y4**2) &
-						) / 3.d0
-				else
-					D2_cases = 0.d0
-				end if
-			else
-				D2_cases = - y2 / 1.5d0 * ( &
-					3.d0 * (y3**2 + y4**2 - y1**2) &
-					- y2**2 )
-			end if
-		end if
-	end function D2_cases
-
-    elemental real(dl) function D2_bis(y1,y2,y3,y4)
-		implicit none
-		real(dl),intent(in)::y1,y2,y3,y4
-		real(dl) a12,a13,a14,a34,a123,a124,a134,a234,a1234,s12,s13,s14
-		real(dl) a12_2,sum1,sum2
-
-		a12_2=y1+y2
-		a34=y3+y4
-
-		a123=a12_2+y3-y4
-		a124=a12_2-y3+y4
-		a134=y1-y2+a34
-		a234=-y1+y2+a34
-		a1234=a12_2+a34
-		a12=a12_2-a34
-		a13=y1-y2+y3-y4
-		a14=y1-y2-y3+y4
-		s12=a12*a12*sign(1.d0,a12)
-		s13=a13*a13*sign(1.d0,a13)
-		s14=a14*a14*sign(1.d0,a14)
-
-		sum1=-a123*a123 + a1234*a1234 - a124*a124 + s12
-		sum2=- a134*a134 + a234*a234 + s13 + s14
-
-		D2_bis=(a123**3 - a1234**3 + a124**3 + a134**3 + a234**3 + &
-			3.d0*(sum1 + sum2)*y1 + &
-			3.d0*(sum1 - sum2)*y2 - abs(a12)**3 - abs(a13)**3 - &
-			abs(a14)**3 + 6.d0*y1*y2*(a12_2 - 3.d0*a34 - abs(a12) + &
-			abs(a13) + abs(a14)))/6.d0
-
-	end function D2_bis
-
-	function D3_f(y1, y2, y3, y4)
-		implicit none
-		real(dl) :: D3_f
-		real(dl), intent(in) :: y1, y2, y3, y4
-		integer :: iflag
-
-		D3_f=0.d0
-		call D3_interp%evaluate(y1,y2,y3,y4, D3_f)
-	end function D3_f
-	
 	elemental function D3_full(y1, y2, y3, y4)
 	!10.1103/PhysRevD.94.033009 eq.D3
 		implicit none
@@ -858,153 +484,7 @@ module ndInteractions
 					y2**3-y1**3+p34**3 &
 				) &
 			)/24.d0
-
 	end function D3_full
-
-	elemental function D3_cases(q1, q2, q3, q4)
-	!10.1103/PhysRevD.94.033009
-		implicit none
-		real(dl) :: D3_cases
-		real(dl), intent(in) :: q1, q2, q3, q4
-		real(dl) :: y1, y2, y3, y4
-		real(dl) :: a
-
-		if (q3.le.q4) then
-			y1=q4
-			y2=q3
-		else
-			y1=q3
-			y2=q4
-		end if
-		if (q1.le.q2) then
-			y3=q2
-			y4=q1
-		else
-			y3=q1
-			y4=q2
-		end if
-		if (y1+y2 .ge. y3+y4) then
-			if (y1+y4 .ge. y2+y3) then
-				if (y1 .le. y2+y3+y4) then
-					D3_cases = 1.d0 / 15.d0 * ( &
-						y1**5 - y2**5 - y3**5 - y4**5 + 5.d0 * &
-						( y1**2 * (y2**3 + y3**3 + y4**3) &
-						- y1**3 * (y2**2 + y3**2 + y4**2) &
-						+ y2**2 * y3**2 * (y2 + y3) &
-						+ y2**2 * y4**2 * (y2 + y4) &
-						+ y4**2 * y3**2 * (y4 + y3) ) )
-				else
-					D3_cases = 0.d0
-				end if
-			else
-				D3_cases = y4**3 / 7.5d0 * (5.d0 * (y1**2 + y2**2 + y3**2) - y4**2 )
-			end if
-		else
-			if (y1+y4 .le. y2+y3) then
-				if (y3 .le. y2+y1+y4) then
-					D3_cases = 1.d0 / 15.d0 * ( &
-						y3**5 - y4**5 - y1**5 - y2**5 + 5.d0 * &
-						( y3**2 * (y4**3 + y1**3 + y2**3) &
-						- y3**3 * (y4**2 + y1**2 + y2**2) &
-						+ y4**2 * y1**2 * (y4 + y1) &
-						+ y4**2 * y2**2 * (y4 + y2) &
-						+ y2**2 * y1**2 * (y2 + y1) ) )
-				else
-					D3_cases = 0.d0
-				end if
-			else
-				D3_cases = y2**3 / 7.5d0 * (5.d0 * (y1**2 + y3**2 + y4**2) - y2**2 )
-			end if
-		end if
-
-	end function D3_cases
-
-    elemental real(dl) function D3_bis(y1,y2,y3,y4)
-		implicit none
-		real(dl),intent(in)::y1,y2,y3,y4
-		real(dl) a12,a13,a14,a123,a124,a134,a234,a1234,P1234,s12,s13,s14
-		real(dl) absa12,absa13,absa14,absa12e3,absa13e3,absa14e3
-		real(dl) ampp,appm,apmp,a123e2,a124e2,a134e2,a234e2,a1234e2
-		real(dl) a123e3,a124e3,a134e3,a234e3,a1234e3
-		real(dl) a123e5,a124e5,a134e5,a234e5,a1234e5
-
-		a12=y1+y2-y3-y4
-		a13=y1-y2+y3-y4
-		a14=y1-y2-y3+y4
-		a123=y1+y2+y3-y4
-		a124=y1+y2-y3+y4
-		a134=y1-y2+y3+y4
-		a234=-y1+y2+y3+y4
-		a1234=y1+y2+y3+y4
-		s12=a12**2*sign(1.0d0,a12)
-		s13=a13**2*sign(1.0d0,a13)
-		s14=a14**2*sign(1.0d0,a14)
-		P1234=-120.d0*y1*y2*y3*y4
-
-		absa12=abs(a12)
-		absa13=abs(a13)
-		absa14=abs(a14)
-		absa12e3=absa12**3
-		absa13e3=absa13**3
-		absa14e3=absa14**3
-		ampp=-absa12e3 + absa13e3 + absa14e3
-		appm=absa12e3 + absa13e3 - absa14e3
-		apmp=absa12e3 - absa13e3 + absa14e3
-		a123e2=a123*a123
-		a124e2=a124*a124
-		a134e2=a134*a134
-		a234e2=a234*a234
-		a1234e2=a1234*a1234
-		a123e3=a123e2*a123
-		a124e3=a124e2*a124
-		a134e3=a134e2*a134
-		a234e3=a234e2*a234
-		a1234e3=a1234e2*a1234
-
-		a123e5=a123e3*a123e2
-		a124e5=a124e3*a124e2
-		a134e5=a134e3*a134e2
-		a234e5=a234e3*a234e2
-		a1234e5=a1234e3*a1234e2
-
-		D3_bis = (&
-			4.d0*(a1234e5 - a123e5 - a124e5 - a134e5 - a234e5) - &
-			absa12**5 - absa13**5 - absa14**5 + &
-			(a123 + a1234 + a124 + a134 + a234 + absa12 + absa13 + absa14)*P1234 + &
-			5.d0*(a12**3*s12+a13**3*s13 +a14**3*s14) + &
-			20.d0*((-a1234e3 + a123e3 + a124e3 - a134e3 - a234e3 + ampp)*y1*y2 + &
-			(-a1234e3 + a123e3 - a124e3 + a134e3 - a234e3 + apmp)*y1*y3 + &
-			(-a1234e3 + a123e3 - a124e3 - a134e3 + a234e3 + appm)*y2*y3 + &
-			(-a1234e3 - a123e3 + a124e3 + a134e3 - a234e3 + appm)*y1*y4 + &
-			(-a1234e3 - a123e3 + a124e3 - a134e3 + a234e3 + apmp)*y2*y4 + &
-			(-a1234e3 - a123e3 - a124e3 + a134e3 + a234e3 + ampp)*y3*y4) + &
-			60.d0*((a1234e2 + a123e2 - a124e2 + a134e2 + a234e2 - s12 + s13 - s14)*y1*y2*y4 + &
-			(a1234e2 - a123e2 + a124e2 + a134e2 + a234e2 - s12 - s13 + s14)*y1*y2*y3 + &
-			(a1234e2 + a123e2 + a124e2 - a134e2 + a234e2 + s12 - s13 - s14)*y1*y3*y4 + &
-			(a1234e2 + a123e2 + a124e2 + a134e2 - a234e2 + s12 + s13 + s14)*y2*y3*y4) &
-			)/120.d0
-
-	end function D3_bis
-
-	function PI1_12_i(y1, y2, y3, y4)
-		implicit none
-		real(dl) :: PI1_12_i
-		real(dl), intent(in) :: y1, y2, y3, y4
-		integer :: iflag
-
-		PI1_12_i=0.d0
-		call PI1_12_interp%evaluate(y1,y2,y3,y4, PI1_12_i)
-	end function PI1_12_i
-
-	function PI1_13_i(y1, y2, y3, y4)
-		implicit none
-		real(dl) :: PI1_13_i
-		real(dl), intent(in) :: y1, y2, y3, y4
-		integer :: iflag
-
-		PI1_13_i=0.d0
-		call PI1_13_interp%evaluate(y1,y2,y3,y4, PI1_13_i)
-	end function PI1_13_i
 
 	elemental function PI1_12_full (y1, y2, y3, y4) !(y1, y2)
 		real(dl) :: PI1_12_full
@@ -1022,20 +502,6 @@ module ndInteractions
 		PI1_13_full = y1 * y3 * D1_full(y1, y2, y3, y4) + D2_full(y1, y3, y2, y4)
 	end function PI1_13_full
 
-	pure function PI1_full (y1, y2, y3, y4) !1: (y1,y3), 	2: (y1, y2)
-		real(dl), dimension(2) :: PI1_full
-		real(dl), intent(in) :: y1, y2, y3, y4
-		real(dl) :: d1
-
-		d1 = D1_full(y1, y2, y3, y4)
-
-		!pi_1(y1, y3): nu+e -> nu+e
-		PI1_full(1) = y1 * y3 * d1 + D2_full(y1, y3, y2, y4)
-
-		!pi_1(y1, y2): nu+nu -> e+e
-		PI1_full(2) = y1 * y2 * d1 - D2_full(y1, y2, y3, y4)
-	end function PI1_full
-	
 	pure function PI2_nn_f (y1, y2, y3, y4, e3, e4) !1: (y1, y4),	2: (y1, y3)
 		real(dl), dimension(2) :: PI2_nn_f
 		real(dl), intent(in) :: y1, y2, y3, y4, e3, e4
@@ -1055,143 +521,26 @@ module ndInteractions
 			+ e1 * e3 * D2_full(y2, y4, y1, y3) &
 			+ e2 * e4 * D2_full(y1, y3, y2, y4) )
 	end function PI2_nn_f
-	
+
 	pure function PI2_ne_f (y1, y2, y3, y4, e2, e4) !1: (y1, y4),	2: (y1, y2)
 		real(dl), dimension(2) :: PI2_ne_f
 		real(dl), intent(in) :: y1, y2, y3, y4, e2, e4
 		real(dl) :: e1, e3, t
-		
+
 		e1 = y1
 		e3 = y3
 		t = e1 * e2 * e3 * e4 * D1_full(y1, y2, y3, y4) + D3_full(y1, y2, y3, y4)
-		
+
 		!pi_2(y1, y4)
 		PI2_ne_f(1) = 2.d0 * (t &
 			+ e2 * e3 * D2_full(y1, y4, y2, y3) &
 			+ e1 * e4 * D2_full(y2, y3, y1, y4) )
-		
+
 		!pi_2(y1, y2)
 		PI2_ne_f(2) = 2.d0 * (t &
 			- e1 * e2 * D2_full(y3, y4, y1, y2) &
 			- e3 * e4 * D2_full(y1, y2, y3, y4) )
-		
 	end function PI2_ne_f
-	
-	function coll_nue_4_ann_int_re(ndim, ve, obj)
-		!annihilation
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_4_ann_int_re
-		integer :: ix, iy
-		real(dl), dimension(2) :: pi2_vec
-		real(dl) :: y2,y3,y4, f3,f4, E3, E4, dme2
-		type(cmplxMatNN) :: nB
-
-		coll_nue_4_ann_int_re = 0.d0
-
-		dme2 = obj%dme2
-		y3 = ve(1)
-		E3 = Ebare_i_dme(obj%x,y3, dme2)
-		f3 = fermiDirac(E3 / obj%z)
-		y4 = ve(2)
-		E4 = Ebare_i_dme(obj%x,y4, dme2)
-		f4 = fermiDirac(E4 / obj%z)
-
-		y2 = E3 + E4 - obj%y1
-		if (.not. (y2.lt.0.d0 &
-				.or. obj%y1.gt.y3+y2+y4 &
-				.or. y2.gt.obj%y1+y3+y4 &
-				.or. y3.gt.obj%y1+y2+y4 &
-				.or. y4.gt.obj%y1+y2+y3)) then
-			call allocateCmplxMat(nB)
-			do ix=1, flavorNumber
-				nB%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(y2)
-				nB%im(ix,ix) = 0.d0
-				do iy=ix+1, flavorNumber
-					nB%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(y2)
-					nB%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(y2)
-					nB%re(iy,ix) = nB%re(ix,iy)
-					nB%im(iy,ix) = -nB%im(ix,iy)
-				end do
-			end do
-			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
-			coll_nue_4_ann_int_re = coll_nue_4_ann_int_re + &
-				y3/E3 * &
-				y4/E4 * &
-				( &
-					pi2_vec(1) * F_ab_ann_re(nuDensMatVecFD(obj%iy),nB,f3,f4, 1, 1, obj%ix1,obj%ix2) + &
-					pi2_vec(2) * F_ab_ann_re(nuDensMatVecFD(obj%iy),nB,f3,f4, 2, 2, obj%ix1,obj%ix2) + &
-					(obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_ann_re(nuDensMatVecFD(obj%iy),nB,f3,f4, 2, 1, obj%ix1,obj%ix2) + &
-						F_ab_ann_re(nuDensMatVecFD(obj%iy),nB,f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
-				)
-		end if
-	end function coll_nue_4_ann_int_re
-
-	function coll_nue_4_sc_int_re(ndim, ve, obj)
-		!scattering, summing positron and electrons
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_4_sc_int_re
-		integer :: ix, iy
-		real(dl), dimension(2) :: pi2_vec
-		real(dl) :: y2,y3,y4, f2,f4, E2, E4, dme2
-		type(cmplxMatNN) :: nB
-
-		coll_nue_4_sc_int_re = 0.d0
-
-		dme2 = obj%dme2
-		y2 = ve(1)
-		E2 = Ebare_i_dme(obj%x,y2, dme2)
-		f2 = fermiDirac(E2 / obj%z)
-		y4 = ve(2)
-		E4 = Ebare_i_dme(obj%x,y4, dme2)
-		f4 = fermiDirac(E4 / obj%z)
-
-		y3 = obj%y1 + E2 - E4
-		if (.not. (y3.lt.0.d0 &
-				.or. obj%y1.gt.y2+y3+y4 &
-				.or. y2.gt.obj%y1+y3+y4 &
-				.or. y3.gt.obj%y1+y2+y4 &
-				.or. y4.gt.obj%y1+y2+y3)) then
-			call allocateCmplxMat(nB)
-			do ix=1, flavorNumber
-				nB%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(y3)
-				nB%im(ix,ix) = 0.d0
-				do iy=ix+1, flavorNumber
-					nB%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(y3)
-					nB%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(y3)
-					nB%re(iy,ix) = nB%re(ix,iy)
-					nB%im(iy,ix) = -nB%im(ix,iy)
-				end do
-			end do
-			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
-			coll_nue_4_sc_int_re = coll_nue_4_sc_int_re + &
-				y2/E2 * &
-				y4/E4 * &
-				( &
-					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nB,f4, 1, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nB,f4, 2, 2, obj%ix1,obj%ix2) &
-					) - &
-					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nB,f4, 2, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nB,f4, 1, 2, obj%ix1,obj%ix2) ) &
-				)
-		end if
-	end function coll_nue_4_sc_int_re
-
-	function coll_nue_4_int_re(ndim, ve, obj)
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_4_int_re
-		coll_nue_4_int_re = &
-			coll_nue_4_sc_int_re(ndim, ve, obj) &
-			+ coll_nue_4_ann_int_re(ndim, ve, obj)
-	end function coll_nue_4_int_re
 
 	pure function coll_nue_3_ann_int_re(iy2, y4, obj)
 		!annihilation
@@ -1430,116 +779,6 @@ module ndInteractions
 		integrate_coll_int_3 = integral_linearized_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
 		deallocate(fy2_arr)
 	end function integrate_coll_int_3
-
-	function coll_nue_int_im(ndim, ve, obj)
-		integer, intent(in) :: ndim
-		real(dl), dimension(2), intent(in) :: ve
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_int_im
-		integer :: ix, iy
-		real(dl), dimension(2) :: pi2_vec
-		type(cmplxMatNN) :: nX
-		real(dl) :: yA, y2,y3,y4, f2,f3,f4, E2, E3, E4, dme2
-
-		coll_nue_int_im = 0.0
-		call allocateCmplxMat(nX)
-
-		yA = ve(1)
-		y4 = ve(2)
-		dme2 = obj%dme2
-		E4 = Ebare_i_dme(obj%x,y4, dme2)
-
-		!scattering, summing positrons and electrons
-		y2 = yA
-		E2 = Ebare_i_dme(obj%x,y2, dme2)
-		y3 = obj%y1 + E2 - E4
-		f2 = fermiDirac(E2 / obj%z)
-		f4 = fermiDirac(E4 / obj%z)
-		if (y3.lt.0.d0 &
-			.or. obj%y1.gt.y2+y3+y4 &
-			.or. y2.gt.obj%y1+y3+y4 &
-			.or. y3.gt.obj%y1+y2+y4 &
-			.or. y4.gt.obj%y1+y2+y3) then
-			coll_nue_int_im = coll_nue_int_im + 0.d0
-		else
-!			fd = fermiDirac(y3 / obj%z)
-			do ix=1, flavorNumber
-				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(y3)! * fd
-				nX%im(ix,ix) = 0.d0
-				do iy=ix+1, flavorNumber
-					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(y3)
-					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(y3)
-					nX%re(iy,ix) = nX%re(ix,iy)
-					nX%im(iy,ix) = -nX%im(ix,iy)
-				end do
-			end do
-
-			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
-
-			coll_nue_int_im = coll_nue_int_im + &
-				y2/E2 * &
-				y4/E4 * &
-				( &
-					( pi2_vec(1) * pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nX,f4, 1, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nX,f4, 2, 2, obj%ix1,obj%ix2) &
-					) - &
-					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( &!F_sc^RL and F_sc^LR
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nX,f4, 2,1, obj%ix1,obj%ix2) + &
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nX,f4, 1,2, obj%ix1,obj%ix2) ) &
-				)
-		end if
-
-		!annihilation
-		y3=yA
-		E3 = Ebare_i_dme(obj%x,y3, dme2)
-		y2 = E3 + E4 - obj%y1
-		f3 = fermiDirac(E3 / obj%z)
-		f4 = fermiDirac(E4 / obj%z)
-		if (y2.lt.0.d0 &
-			.or. obj%y1.gt.y3+y2+y4 &
-			.or. y2.gt.obj%y1+y3+y4 &
-			.or. y3.gt.obj%y1+y2+y4 &
-			.or. y4.gt.obj%y1+y2+y3) then
-			coll_nue_int_im = coll_nue_int_im + 0.d0
-		else
-!			fd = fermiDirac(y2 / obj%z)
-			do ix=1, flavorNumber
-				nX%re(ix,ix) = interpNuDens%re(ix,ix)%evaluate(y2)! * fd
-				nX%im(ix,ix) = 0.d0
-				do iy=ix+1, flavorNumber
-					nX%re(ix,iy) = interpNuDens%re(ix,iy)%evaluate(y2)
-					nX%im(ix,iy) = interpNuDens%im(ix,iy)%evaluate(y2)
-					nX%re(iy,ix) = nX%re(ix,iy)
-					nX%im(iy,ix) = -nX%im(ix,iy)
-				end do
-			end do
-
-			pi2_vec = PI2_nn_f (obj%y1, y2, y3, y4, E3, E4)
-
-			coll_nue_int_im = coll_nue_int_im + &
-				y3/E3 * &
-				y4/E4 * &
-				( &
-					pi2_vec(1) * F_ab_ann_im(nuDensMatVecFD(obj%iy),nX,f3,f4, 1, 1, obj%ix1,obj%ix2) + &
-					pi2_vec(2) * F_ab_ann_im(nuDensMatVecFD(obj%iy),nX,f3,f4, 2, 2, obj%ix1,obj%ix2) + &
-					(obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_ann_im(nuDensMatVecFD(obj%iy),nX,f3,f4, 2, 1, obj%ix1,obj%ix2) + &
-						F_ab_ann_im(nuDensMatVecFD(obj%iy),nX,f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
-				)
-		end if
-	end function coll_nue_int_im
-
-	pure SUBROUTINE region(ndim,x,j,c,d)
-		use precision
-		IMPLICIT NONE
-		REAL (dl), INTENT (OUT) :: c, d
-		INTEGER, INTENT (IN)    :: j, ndim
-		REAL (dl), INTENT (IN)  :: x(ndim)
-		c = y_min
-		d = y_max
-		RETURN
-	END SUBROUTINE region
 
 	function get_collision_terms(collArgsIn, Fre, Fim)
 		interface

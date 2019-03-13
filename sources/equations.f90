@@ -12,19 +12,19 @@ module ndEquations
 	implicit none
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
-	
+
 	type collTerm
 		type(cmplxMatNN) :: mat
 		real(dl) :: x,y,z
 		logical :: f5
 	end type collTerm
 	type(collTerm) :: lastColl
-	
+
 	real(dl), parameter :: upper = 1.d2
-	
+
 	real(dl) :: deriv_counter
 
-	contains 
+	contains
 
 	subroutine updateLeptonDensities(x,y,z)
 		real(dl), intent(in) :: x,y,z
@@ -39,7 +39,7 @@ module ndEquations
 	subroutine densMat_2_vec(vec)
 		real(dL), dimension(:), intent(out) :: vec
 		integer :: i,j,k,m
-		
+
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
@@ -62,7 +62,7 @@ module ndEquations
 		real(dL), dimension(:), intent(in) :: vec
 		integer :: i,j,k,m
 		real(dL) :: fd
-	
+
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
@@ -89,7 +89,7 @@ module ndEquations
 			end do
 		end do
 	end subroutine vec_2_densMat
-	
+
 	pure function J_int(o, u)
 		real(dl) :: J_int, esuo
 		real(dl), intent(in) :: o, u
@@ -97,95 +97,95 @@ module ndEquations
 		esuo=exp(sqrt(u*u+o*o))
 		J_int = u*u * esuo / ((1.d0+esuo)**2)
 	end function J_int
-	
+
 	pure function J_funcFull(o)
 		real(dl) :: J_funcFull
 		real(dl), intent(in) :: o
 
 		J_funcFull = rombint_re(o, J_int,0.d0,upper,toler_jkyg,maxiter)/PISQ
 	end function J_funcFull
-	
+
 	pure function Jprime_int(o, u)
 		real(dl) :: Jprime_int
 		real(dl), intent(in) :: o, u
 		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
-		
+
 		uuoo=u*u+o*o
 		sqrtuuoo = sqrt(uuoo)
 		expsqrtuuoo = exp(sqrtuuoo)
-		
+
 		Jprime_int = u*u * expsqrtuuoo * (1.d0-expsqrtuuoo) /(sqrtuuoo*(expsqrtuuoo+1)**3)
 	end function Jprime_int
-	
+
 	pure function JprimeFull(o)
 		real(dl) :: JprimeFull
 		real(dl), intent(in) :: o
-	
+
 		JprimeFull = rombint_re(o, Jprime_int,0.d0,upper,toler_jkyg,maxiter) * o / PISQ
 	end function JprimeFull
-	
+
 	pure function K_int(o, u)
 		real(dl) :: K_int,suo
 		real(dl), intent(in) :: o, u
-		
+
 		suo=sqrt(u*u+o*o)
 		K_int = u*u / (suo * (1.d0+exp(suo)))
 	end function K_int
-	
+
 	pure function K_funcFull(o)
 		real(dl) :: K_funcFull
 		real(dl), intent(in) :: o
-		
+
 		k_funcFull = rombint_re(o, k_int,0.d0,upper,toler_jkyg,maxiter)/PISQ
 	end function K_funcFull
-	
+
 	pure function Kprime_int(o, u)
 		real(dl) :: Kprime_int
 		real(dl), intent(in) :: o, u
 		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
-		
+
 		uuoo=u*u+o*o
 		sqrtuuoo = sqrt(uuoo)
 		expsqrtuuoo = exp(sqrtuuoo)
-		
+
 		Kprime_int = u*u / (uuoo*sqrtuuoo*(expsqrtuuoo+1)**2) * &
 			(1.d0 + expsqrtuuoo*(sqrtuuoo+1.d0))
 	end function Kprime_int
-	
+
 	pure function KprimeFull(o)
 		real(dl) :: KprimeFull
 		real(dl), intent(in) :: o
-	
+
 		KprimeFull = - rombint_re(o, Kprime_int,0.d0,upper,toler_jkyg, maxiter) * o / PISQ
 	end function KprimeFull
-	
+
 	pure function Y_int(o, u)
 		real(dl) :: Y_int, esuo
 		real(dl), intent(in) :: o, u
-		
+
 		esuo=exp(sqrt(u*u+o*o))
 		Y_int = u**4 * esuo / ((1.d0+esuo)**2)
 	end function Y_int
-	
+
 	pure function Y_funcFull(o)
 		real(dl) :: Y_funcFull
 		real(dl), intent(in) :: o
-		
+
 		Y_funcFull = rombint_re(o, Y_int,0.d0,upper,toler_jkyg, maxiter)/PISQ
 	end function Y_funcFull
-	
+
 	pure function G12_funcFull(o)
 		real(dl), dimension(2) :: G12_funcFull
 		real(dl), intent(in) :: o
 		real(dl) :: ko, jo, kp, jp, tmp
-		
+
 		if (dme2_temperature_corr) then
 			ko=k_funcFull(o)
 			jo=j_funcFull(o)
 			kp=kprimeFull(o)
 			jp=jprimeFull(o)
 			tmp = (kp/6.d0 - ko*kp + jp/6.d0 +jp*ko + jo*kp)
-			
+
 			G12_funcFull(1) = PIx2*alpha_fine *(&
 				(ko/3.d0 + 2.d0*ko*ko - jo/6.d0 -ko*jo)/o + &
 				tmp )
@@ -196,13 +196,13 @@ module ndEquations
 			G12_funcFull = 0.d0
 		end if
 	end function G12_funcFull
-	
+
 	subroutine init_interp_jkyg12
 		real(dl) :: num, den, j, y
 		real(dl), dimension(:),allocatable :: A, B
 		real(dl), dimension(2) :: g12
 		integer::ix, nx, iflag
-		
+
 		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx...")
 		nx=interp_nxz
 		allocate(A(nx),B(nx))
@@ -223,7 +223,7 @@ module ndEquations
 		deallocate(A, B)
 		call addToLog("[equations] ...done!")
 	end subroutine init_interp_jkyg12
-	
+
 	function dzodxcoef_interp_func(o)
 		real(dl), dimension(2) :: dzodxcoef_interp_func
 		real(dl), intent(in) :: o
@@ -231,43 +231,6 @@ module ndEquations
 		call dzodx_A_interp%evaluate(o,0,dzodxcoef_interp_func(1),iflag)
 		call dzodx_B_interp%evaluate(o,0,dzodxcoef_interp_func(2),iflag)
 	end function dzodxcoef_interp_func
-	
-	pure function integrate_dRhoNu(params, y)
-		real(dl) :: integrate_dRhoNu
-		real(dl), intent(in) :: y
-		type(spline_class), intent(in) :: params
-	
-		integrate_dRhoNu = params%evaluate(y)
-	end function integrate_dRhoNu
-	
-	subroutine dz_o_dx(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
-		real(dl), intent(in) :: x,z
-		integer, intent(in) :: n
-		real(dl), dimension(n), intent(inout) :: ydot
-		real(dl) :: dzodx, tmp
-		real(dl), dimension(2) :: coeffs
-		type(spline_class) :: params
-		real(dl), dimension(:), allocatable :: der
-		integer :: ix, m
-
-		coeffs = dzodxcoef_interp_func(x/z)
-
-		allocate(der(Ny))
-
-		der = 0.d0
-		do m=1, Ny
-			do ix=1, flavorNumber
-				der(m) = der(m) + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
-			end do
-			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m))!/z_in)
-		end do
-		call params%initialize(Ny, y_arr, der)
-		tmp = rombint_spli(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)
-
-		dzodx = coeffs(1) - coeffs(2)/ z**3 * tmp
-
-		ydot(n)=dzodx
-	end subroutine dz_o_dx
 
 	subroutine dz_o_dx_lin(x,z, ydot, n)
 		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
@@ -359,60 +322,6 @@ module ndEquations
 		call addToLog(trim(tmpstring))
 	end subroutine zin_solver
 
-	subroutine test_dzodx_speed
-		real(dl), dimension(:), allocatable :: fd_vec, fd_x
-		integer :: ix, iflag, interp_nfd
-		real(dl) :: x,z
-		real(8) :: timer1
-		integer, parameter :: n=901
-		real(dl), dimension(n) :: ydot
-		integer :: m
-
-		ydot = 0.d0
-		do m=1, Ny
-			ydot((m-1)*flavNumSqu + 1) = cos(0.02d0*y_arr(m))
-			ydot((m-1)*flavNumSqu + 2) = y_arr(m)/20.d0
-			ydot((m-1)*flavNumSqu + 3) = 1.d0
-		end do
-
-		call addToLog("[equations] Testing dz_o_dx speed...")
-		call random_seed()
-		call random_number(x)
-		call random_number(z)
-		call tic(timer1)
-		do ix=1, 1000000
-			call random_number(x)
-			call random_number(z)
-			x=(x_fin-x_in)*x + x_in
-			z=0.4d0*z + z_in
-			call dz_o_dx(x, z, ydot, n)
-			call dz_o_dx_lin(x, z, ydot, n)
-		end do
-		call toc(timer1, "<reset>")
-
-		call tic(timer1)
-		do ix=1, 1000000
-			call random_number(x)
-			call random_number(z)
-			x=(x_fin-x_in)*x + x_in
-			z=0.4d0*z + z_in
-			call dz_o_dx(x, z, ydot, n)
-		end do
-		call toc(timer1, "<rombint>")
-
-		call tic(timer1)
-		do ix=1, 1000000
-			call random_number(x)
-			call random_number(z)
-			x=(x_fin-x_in)*x + x_in
-			z=0.4d0*z + z_in
-			call dz_o_dx_lin(x, z, ydot, n)
-		end do
-		call toc(timer1, "<linearized>")
-
-		call addToLog("[equations] ...done!")
-	end subroutine test_dzodx_speed
-
 	subroutine drhoy_dx_fullMat(matrix,x,z,iy, Fre, Fim)
 		interface
 			pure real(dl) function Fre(a, b, o)
@@ -449,11 +358,11 @@ module ndEquations
 		overallNorm = overallFactor / sqrt(radDensity(x,z))
 		call updateLeptonDensities(x,y,z)
 		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
-		
+
 		!switch imaginary and real parts because of the "-i" factor
 		call Commutator(matrix%re, nuDensMatVecFD(iy)%re, comm%im)
 		call Commutator(matrix%re, nuDensMatVecFD(iy)%im, comm%re)
-		
+
 		!matrix is now redefined
 		cf = x**2/m_e_cub
 		matrix%im = - comm%im * cf
@@ -475,7 +384,7 @@ module ndEquations
 			matrix%im(ix,ix) = 0.d0
 		end do
 	end subroutine drhoy_dx_fullMat
-	
+
 	subroutine saveRelevantInfo(x, vec)
 		real(dl) :: x
 		real(dl), dimension(:) :: vec
@@ -489,10 +398,10 @@ module ndEquations
 		do i=1, totFiles
 			units(i) = 8972 + i
 		end do
-		
+
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=',x
 		call addToLog(trim(fname))!not a filename but the above string
-		
+
 		do k=1, flavorNumber
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag',k,'.dat'
 			call openFile(units(k), trim(fname),firstWrite)
@@ -512,7 +421,7 @@ module ndEquations
 					end do
 					write(units(k), '(*('//dblfmt//'))') x, tmpvec
 					k=k+1
-					
+
 					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_',i,j,'_im.dat'
 					call openFile(units(k), trim(fname),firstWrite)
 					tmpvec=0
@@ -528,7 +437,7 @@ module ndEquations
 		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)
 		call openFile(units(k+1), trim(outputFolder)//'/Neff.dat', firstWrite)
 		write(units(k+1), '(*('//dblfmt//'))') x, Neff_from_rho_z(vec(ntot))
-		
+
 		do i=1, totFiles
 			close(units(i))
 		end do
@@ -536,7 +445,7 @@ module ndEquations
 
 		firstWrite=.false.
 	end subroutine saveRelevantInfo
-	
+
 	subroutine solver
 		real(dl) :: xstart, xend, xchk
 		real(dl), dimension(:), allocatable :: y, ydot
@@ -552,9 +461,9 @@ module ndEquations
 		integer,dimension(8) :: values
 		integer, parameter :: timefileu = 8970
 		character(len=*), parameter :: timefilen = '/time.log'
-		
+
 		deriv_counter = 0
-		
+
 		call openFile(timefileu, trim(outputFolder)//timefilen,.true.)
 		write(timefileu,*) "starting solver"
 		close(timefileu)
@@ -564,7 +473,7 @@ module ndEquations
 		itask=1
 		istate=1
 		iopt=1
-		
+
 		lrw=22+ntot*(ntot+9)
 		liw=20+ntot
 		allocate(atol(ntot), rwork(lrw), iwork(liw))
@@ -576,9 +485,9 @@ module ndEquations
 
 		nuDensVec(ntot)=z_in
 		call densMat_2_vec(nuDensVec)
-		
+
 		call readCheckpoints(nchk, xchk, ychk, chk)
-		
+
 		if (chk .and. &
 			nchk.eq.ntot) then
 			xstart=xchk
@@ -612,13 +521,12 @@ module ndEquations
 			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
 						itol,rtol,atol,itask,istate, &
 						iopt,rwork,lrw,iwork,liw,jdum,jt)
-			
+
 			if (istate.lt.0) then
 				write(istchar, "(I3)") istate
 				call criticalError('istate='//istchar)
 			end if
 			call writeCheckpoints(ntot, xend, nuDensVec)
-			
 			call saveRelevantInfo(xend, nuDensVec)
 			xstart=xend
 		end do
@@ -665,7 +573,7 @@ module ndEquations
 !		compute all the rho derivatives (drho/dx for all y, dz/dx)
 !		needs allocation and interpolation of density matrix
 		use omp_lib
-		
+
 		type(cmplxMatNN) :: mat
 		integer :: n, m
 		real(dl) :: x, z
@@ -705,7 +613,7 @@ module ndEquations
 
 		call densMat_2_vec(nuDensVec)
 	end subroutine derivatives
-	
+
 	subroutine jdum
 		!necessary for dlsoda but not needed
 	end subroutine jdum

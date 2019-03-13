@@ -10,7 +10,7 @@ module ndCosmology
 	type(linear_interp_2d) :: elDens, muDens
 
 	contains
-	
+
 	function radDensity(x,z)
 		real(dl) :: radDensity
 		real(dl), intent(in) :: x,z
@@ -20,14 +20,14 @@ module ndCosmology
 			muonDensity(x,z) + &
 			allNuDensity(z)
 	end function
-	
+
 	elemental function photonDensity(z)
 		real(dl) :: photonDensity
 		real(dl), intent(in) :: z
-		
+
 		photonDensity = PISQD15 * z**4
 	end function photonDensity
-	
+
 	function integr_rho_e(vec,y)
 		real(dl) :: integr_rho_e, Emk
 		real(dl), intent(in) :: y
@@ -35,7 +35,7 @@ module ndCosmology
 		Emk = Ebare_i_dme(y, vec(1), vec(3))
 		integr_rho_e = y*y*Emk * fermiDirac(Emk/vec(2))
 	end function integr_rho_e
-	
+
 	function electronDensityFull(x,z)!electron + positron!
 		real(dl) :: electronDensityFull
 		real(dl), intent(in) :: x,z
@@ -48,7 +48,7 @@ module ndCosmology
 		electronDensityFull = rombint_vec(vec, integr_rho_e, fe_l, fe_u, toler_ed, maxiter)
 		electronDensityFull = electronDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
 	end function electronDensityFull
-	
+
 	function electronDensity(x,z)
 		real(dl) :: electronDensity
 		real(dl), intent(in) :: x,z
@@ -146,25 +146,6 @@ module ndCosmology
 
 		call addToLog("[cosmo] ...done!")
 	end subroutine init_interp_ElDensity
-	
-	function integr_rho_nu(vec,y)
-		real(dl) :: integr_rho_nu
-		real(dl), intent(in) :: y
-		type(nuDensArgs), intent(in) :: vec
-		integr_rho_nu = y*y*y * interpNuDens%re(vec%iFl, vec%iFl)%evaluate(y) * fermiDirac(y)
-	end function integr_rho_nu
-	
-	function nuDensity(z, iFl)
-		real(dl) :: nuDensity
-		real(dl), intent(in) :: z
-		integer, intent(in) :: iFl
-		type(nuDensArgs) :: vec
-		
-		vec%x=0.d0
-		vec%z=z
-		vec%iFl=iFl
-		nuDensity = rombint_nD(vec, integr_rho_nu, y_min, y_max, 1d-3, maxiter) / PISQ
-	end function nuDensity
 
 	function nuDensityLin(z, iFl)
 		real(dl) :: nuDensityLin, y
@@ -179,48 +160,11 @@ module ndCosmology
 		nuDensityLin = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQ
 	end function nuDensityLin
 
-	subroutine test_nuDens_speed
-		real(dl), dimension(:), allocatable :: fd_vec, fd_x
-		integer :: ix, iflag, interp_nfd
-		real(dl) :: x, t1,t2
-		real(8) :: timer1
-
-		call addToLog("[cosmology] Testing nuDensity speed...")
-		call random_seed()
-		call random_number(x)
-		call tic(timer1)
-		do ix=1, 1000000
-			call random_number(x)
-			x=10.d0**(x/6.d0)
-			t1 = nuDensity(x, 1)
-			t1 = nuDensityLin(x, 1)
-		end do
-		call toc(timer1, "<reset>")
-
-		call tic(timer1)
-		do ix=1, 1000000
-			call random_number(x)
-			x=10.d0**(x/6.d0)
-			t1 = nuDensity(x, 1)
-		end do
-		call toc(timer1, "<rombint>")
-
-		call tic(timer1)
-		do ix=1, 1000000
-			call random_number(x)
-			x=10.d0**(x/6.d0)
-			t1 = nuDensityLin(x, 1)
-		end do
-		call toc(timer1, "<linearized>")
-
-		call addToLog("[cosmology] ...done!")
-	end subroutine test_nuDens_speed
-
 	function allNuDensity(z)
 		real(dl) :: allNuDensity
 		real(dl), intent(in) :: z
 		integer :: ix
-		
+
 		allNuDensity = 0.d0
 		do ix=1, flavorNumber
 			allNuDensity = allNuDensity + nuDensityLin(z,ix)*nuFactor(ix)

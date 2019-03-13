@@ -8,7 +8,7 @@ end module Precision
 module constants
 	use precision
 	implicit none
-	
+
 	real(dl), parameter :: SQRT2 = sqrt(2.d0)
 	real(dl), parameter :: SQRT3 = sqrt(3.d0)
 	real(dl), parameter :: PI  =3.141592653589793238463d0
@@ -32,10 +32,10 @@ module constants
 	real(dl), parameter :: zeta5  = 1.0369277551433699263313_dl
 	real(dl), parameter :: zeta7  = 1.0083492773819228268397_dl
 	real(dl), parameter :: Gev2eV = 1.d9, Mev2eV = 1.d6, kev2eV = 1.d3
-	
+
 	real(dl), parameter :: zero = 0.0d0
 	real(dl), parameter :: largeNum = 1.e20
-	
+
 	real(dl), parameter :: c = 299792458!m/s
 	real(dl), parameter :: hbar = 1.054571800d-34 !Js
 	real(dl), parameter :: m_e = 0.5109989461*Mev2eV!eV
@@ -49,7 +49,7 @@ module constants
 	real(dl), parameter :: sin2thW =  0.23129
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
-	
+
 	integer,  parameter :: maxflavorNumber = 4
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2016: C. Patrignani et al.(Particle Data Group), Chin. Phys. C, 40, 100001 (2016).
@@ -59,7 +59,7 @@ module constants
 	real(dl), parameter :: i_dm12 = 7.53e-05
 	real(dl), parameter :: i_dm23 = 0.00244
 	real(dl), parameter :: i_deltaCP13 = 0.
-	
+
 	real(dl), parameter :: ymed = 3.15137
 	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
@@ -67,9 +67,9 @@ module constants
 	real(dl), parameter :: dampTermFactor = -7.d0*PISQ*PISQ/135.d0
 
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
-	
+
 	real(dl), parameter :: fe_l = 0.d0, fe_u = 100.d0
-	
+
 	character(len=5), parameter :: dblfmt = "E17.9"
 	character(len=10), parameter :: multidblfmt = "(*(E17.9))"
 end module constants
@@ -83,10 +83,10 @@ module variables
 	logical :: firstWrite = .true.
 	logical :: firstPoint = .false.
 	logical :: checkpoint = .false.
-	
+
 	integer :: collision_offdiag
 	logical :: dme2_temperature_corr
-	
+
 	!variables that will be read from config file
 	logical :: massOrdering, giveSinSq
 	integer :: flavorNumber, flavNumSqu
@@ -102,17 +102,12 @@ module variables
 		real(dl) :: x, y, z
 		logical :: a=.false. !allocated?
 	end type cmplxMatNN
-	
-	type nuDensArgs
-		real(dl) :: x,z
-		integer iFl
-	end type nuDensArgs
-	
+
 	type coll_args
 		real(dl) :: y1, y2, y3, y4, x, z, dme2
 		integer :: ix1, ix2, iy
 	end type coll_args
-	
+
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
 	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
@@ -121,11 +116,11 @@ module variables
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
 	real(dl), dimension(:,:), allocatable :: idMat
 	real(dl), dimension(:,:), allocatable :: xcutsCollInt
-	
+
 	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec, nuDensMatVecFD
 	real(dl), dimension(:), allocatable :: nuDensVec
 	integer :: ntot
-	
+
 	!technical settings
 	integer :: verbose = 1
 	real(dl) :: Nprintderivs = 100.d0
@@ -145,12 +140,11 @@ module variables
 	real(dl), dimension(:), allocatable :: interp_xvec
 	real(dl), dimension(:), allocatable :: interp_zvec
 	real(dl), dimension(:), allocatable :: interp_xozvec
-	
+
 	contains
-	
+
 	pure subroutine allocateCmplxMat(m)
 		type(cmplxMatNN), intent(inout) :: m
-		
 		if (.not. m%a) then
 			m%a=.true.
 			if (.not.allocated(m%re)) &
@@ -159,13 +153,4 @@ module variables
 				allocate(m%im(flavorNumber,flavorNumber))
 		end if
 	end subroutine allocateCmplxMat
-	
-	pure subroutine deallocateCmplxMat(m)
-		type(cmplxMatNN), intent(inout) :: m
-		
-		if (m%a) then
-			m%a=.false.
-			deallocate(m%re, m%im)
-		end if
-	end subroutine deallocateCmplxMat
 end module variables
