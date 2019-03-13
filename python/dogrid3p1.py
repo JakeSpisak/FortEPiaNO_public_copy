@@ -155,8 +155,10 @@ def call_plot(args):
 
 
 def call_prepare(args):
-	os.makedirs("grids/%s/ini/"%args.gridname, exist_ok=True)
-	os.makedirs("grids/%s/OUT/"%args.gridname, exist_ok=True)
+	if not os.path.exists("grids/%s/ini/"%args.gridname):
+		os.makedirs("grids/%s/ini/"%args.gridname)
+	if not os.path.exists("grids/%s/OUT/"%args.gridname):
+		os.makedirs("grids/%s/OUT/"%args.gridname)
 	files = list(glob.iglob("grids/%s/ini/*.ini"%args.gridname))
 	list(map(lambda x: os.remove(x), files))
 	for a in ["dm41", "ssq14", "ssq24", "ssq34"]:
@@ -210,7 +212,7 @@ def call_run(args):
 	print("submitting the grid %s"%args.gridname)
 	for f in files:
 		os.system(
-			"clusterlauncher -N %s -n 1 --openmp -q short-seq bin/nuDens.exe %s"%(
+			"clusterlauncher -N r%s -n 1 --openmp -q short-seq bin/nuDens.exe %s"%(
 				f.split(os.sep)[-1].replace(".ini", ""),
 				f,
 				))
