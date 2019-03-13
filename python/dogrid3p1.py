@@ -103,6 +103,36 @@ def setParser():
 		help='set the grid and create ini files'
 		)
 	parser_prepare.add_argument(
+		'--Nx',
+		type=int,
+		default=2000,
+		help='number of points in x where to save the output',
+		)
+	parser_prepare.add_argument(
+		'--Ny',
+		type=int,
+		default=30,
+		help='number of momenta',
+		)
+	parser_prepare.add_argument(
+		'--Nylog',
+		type=int,
+		default=4,
+		help='number of log-spaced points in 0.01 < y < 1',
+		)
+	parser_prepare.add_argument(
+		'--x_in',
+		type=float,
+		default=5e-4,
+		help='initial value in x',
+		)
+	parser_prepare.add_argument(
+		'--tolerance',
+		type=float,
+		default=1e-5,
+		help='tolerance for DLSODA',
+		)
+	parser_prepare.add_argument(
 		'--dm41_min',
 		type=float,
 		default=1e-2,
@@ -400,13 +430,13 @@ def call_prepare(args):
 			"grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, ssq14, ssq24, ssq34),
 			"3+1",
 			"damping",
-			"--dlsoda_rtol=1e-5",
-			"--dlsoda_atol=1e-5",
-			"--Nx=2000",
-			"--Ny=30",
-			"--Nylog=4",
+			"--dlsoda_rtol=%s"%args.tolerance,
+			"--dlsoda_atol=%s"%args.tolerance,
+			"--Nx=%s"%args.Nx,
+			"--Ny=%s"%args.Ny,
+			"--Nylog=%s"%args.Nylog,
 			"--y_cen=1",
-			"--x_in=0.0005",
+			"--x_in=%s"%args.x_in,
 			"--default_sterile=None",
 			"--dm41=%s"%dm41,
 			"--th14=%s"%ssq14,
