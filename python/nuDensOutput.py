@@ -66,7 +66,7 @@ def stripRepeated(data, ix1, ix2):
 class NuDensRun():
 	"""Class that reads the output and helps to do plots"""
 
-	def __init__(self, folder, nnu=3, full=True, label="", plots=False):
+	def __init__(self, folder, nnu=3, full=True, label="", plots=False, rho=True):
 		self.folder = folder
 		self.full = full
 		self.label = label
@@ -100,16 +100,17 @@ class NuDensRun():
 							.group(1)
 						)
 					)
-			self.rho[i, i, 0] = np.loadtxt(
-				"%s/nuDens_diag%d.dat"%(folder, i+1))
-			if full:
-				for j in range(i+1, self.nnu):
-					self.rho[i, j, 0] = np.loadtxt(
-						"%s/nuDens_nd_%d%d_re.dat"%(folder, i+1, j+1))
-					self.rho[i, j, 1] = np.loadtxt(
-						"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
+			if rho:
+				self.rho[i, i, 0] = np.loadtxt(
+					"%s/nuDens_diag%d.dat"%(folder, i+1))
+				if full:
+					for j in range(i+1, self.nnu):
+						self.rho[i, j, 0] = np.loadtxt(
+							"%s/nuDens_nd_%d%d_re.dat"%(folder, i+1, j+1))
+						self.rho[i, j, 1] = np.loadtxt(
+							"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
 		self.printTableLine()
-		if plots:
+		if rho and plots:
 			self.doAllPlots()
 
 	def interpolateRhoIJ(self, i1, i2, y, ri=0):
@@ -146,7 +147,7 @@ class NuDensRun():
 				deltastr=deltastr,
 				))
 		else:
-			print("{lab:<35s} not finished, currently on x={x:}".format(
+			print("{lab:<35s} \t\t\t\tnot finished, currently on x={x:}".format(
 				lab=self.label,
 				x=self.zdat[-1],
 				))

@@ -3,8 +3,38 @@ import os
 import argparse
 import ast
 import glob
+import re
 import numpy as np
+from scipy.interpolate import interpn
 import prepareIni
+import matplotlib
+matplotlib.use("agg")
+import matplotlib.pyplot as plt
+from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, NuDensRun
+
+
+cmap=matplotlib.cm.get_cmap('CMRmap')
+labels = {
+	"dm41": r"$\Delta m^2_{41}$ [eV$^2$]",
+	"ssq14": r"$\sin^2\theta_{14}$",
+	"ssq24": r"$\sin^2\theta_{24}$",
+	"ssq34": r"$\sin^2\theta_{34}$",
+	}
+indexes = {"dm41": 0, "ssq14": 1, "ssq24": 2, "ssq34": 3}
+
+
+class Namespace:
+	def __init__(self, **kwargs):
+		self.__dict__.update(kwargs)
+
+
+def safegetattr(obj, attr, default):
+	try:
+		value = getattr(obj, attr)
+	except AttributeError:
+		return default
+	else:
+		return value
 
 
 def setParser():
@@ -22,6 +52,29 @@ def setParser():
 	parser_plot = subparsers.add_parser(
 		'plot',
 		help='plot some output'
+		)
+	parser_plot.add_argument(
+		'--Neff_active',
+		type=float,
+		default=3.044,
+		help='reference value of Neff when only active neutrinos are considered',
+		)
+	parser_plot.add_argument(
+		'--par_x',
+		choices=["ssq14", "ssq24", "ssq34"],
+		default="ssq24",
+		help='parameter for the x axis',
+		)
+	parser_plot.add_argument(
+		'--par_y',
+		choices=["dm41", "ssq14", "ssq24", "ssq34"],
+		default="dm41",
+		help='parameter for the y axis',
+		)
+	parser_plot.add_argument(
+		'--title',
+		default="",
+		help='title for the plot',
 		)
 	parser_plot.set_defaults(func=call_plot)
 
@@ -139,19 +192,76 @@ def write_grid_cfg(args):
 
 def read_grid_cfg(gridname):
 	with open("grids/%s/params.cfg"%args.gridname) as _f:
-		lines = _f.read()
-		# for a in ["dm41", "ssq14", "ssq24", "ssq34"]:
-			# _f.write("%s: min=%s, max=%s, N=%s\n"%(
-				# a,
-				# getattr(args, "%s_min"%a),
-				# getattr(args, "%s_max"%a),
-				# getattr(args, "%s_N"%a),
-				# ))
+		text = _f.readlines()
+	values = {}
+	for a in ["dm41", "ssq14", "ssq24", "ssq34"]:
+		for l in text:
+			res = re.match("%s: min=([0-9\.e\+\-]+), max=([0-9\.e\+\-]+), N=([0-9]+)\n"%a, l)
+			if res:
+				try:
+					values["%s_min"%a] = float(res.group(1))
+					values["%s_max"%a] = float(res.group(2))
+					values["%s_N"%a] = int(res.group(3))
+				except (IndexError, TypeError, ValueError):
+					print("cannot read line! %s"%l)
+	return values, fillGrid(Namespace(**values))
+
+
+def contourplotsimple(grid, values, points,
+		px=(2, "ssq24"), py=(0, "dm41"), p3=(1, "ssq14", 0.), p4=(3, "ssq34", 0.), fname=None,
+		levels=[0., 0.1, 0.3, 0.5, 0.7, 0.9],
+		title=None,
+		xlab=None, ylab=None,
+		xlim=None, ylim=None,
+		):
+	Nx = values["%s_N"%px[1]]
+	xv = np.logspace(
+		np.log10(values["%s_min"%px[1]]),
+		np.log10(values["%s_max"%px[1]]),
+		Nx)
+	Ny = values["%s_N"%py[1]]
+	yv = np.logspace(
+		np.log10(values["%s_min"%py[1]]),
+		np.log10(values["%s_max"%py[1]]),
+		Ny)
+	zv = points.reshape((Nx, Ny))
+	fig = plt.Figure(figsize=(6,4))
+	cf = plt.contourf(xv, yv, zv, levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'), extend="max")
+	cf.cmap.set_over(cmap(0.95))
+	cbar = plt.colorbar(cf)
+	cbar.ax.set_ylabel(r"$\Delta N_{\rm eff}$")
+	if title is not None:
+		plt.title(title)
+	ax=plt.gca()
+	ax.tick_params("both", which="both", direction="out",
+		left=True, right=True, top=True, bottom=True)
+	ax.tick_params("both", which="major", direction="out", length=8)
+	plt.xscale("log")
+	plt.yscale("log")
+	if xlab is not None:
+		plt.xlabel(xlab)
+	if ylab is not None:
+		plt.ylabel(ylab)
+	if xlim is not None:
+		plt.xlim(xlim)
+	if ylim is not None:
+		plt.ylim(ylim)
+	plt.tight_layout()
+	if fname is not None:
+		plt.savefig(fname)
+	plt.close()
 
 
 def call_plot(args):
-	params = readgrid.cfg(args.gridname)
-	print("plot")
+	mixings, fullgrid, fullobjects = call_read(args)
+	points = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
+	points = np.asarray(points)
+	contourplotsimple(fullgrid, mixings, points,
+		fname="grids/%s/plots/%s_%s.pdf"%(args.gridname, args.par_x, args.par_y),
+		px=(indexes[args.par_x], args.par_x),
+		py=(indexes[args.par_y], args.par_y),
+		xlab=labels[args.par_x], ylab=labels[args.par_y], title=args.title,
+		)
 
 
 def call_prepare(args):
@@ -159,6 +269,8 @@ def call_prepare(args):
 		os.makedirs("grids/%s/ini/"%args.gridname)
 	if not os.path.exists("grids/%s/OUT/"%args.gridname):
 		os.makedirs("grids/%s/OUT/"%args.gridname)
+	if not os.path.exists("grids/%s/plots/"%args.gridname):
+		os.makedirs("grids/%s/plots/"%args.gridname)
 	files = list(glob.iglob("grids/%s/ini/*.ini"%args.gridname))
 	list(map(lambda x: os.remove(x), files))
 	for a in ["dm41", "ssq14", "ssq24", "ssq34"]:
@@ -203,8 +315,22 @@ def call_prepare(args):
 
 
 def call_read(args):
-	params = readgrid.cfg(args.gridname)
-	print("read")
+	values, grid = read_grid_cfg(args.gridname)
+	objects = []
+	for dm41, ssq14, ssq24, ssq34 in grid:
+		lab = (r"dm41=%s$ "%dm41
+			+ r"ssq14=%s$ "%ssq14
+			+ r"ssq24=%s$ "%ssq24
+			+ r"ssq34=%s$ "%ssq34
+			)
+		folder = "grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, ssq14, ssq24, ssq34)
+		obj = None
+		try:
+			obj = NuDensRun(folder, label=lab, nnu=4, rho=False)
+		except (IOError, IndexError):
+			print("no %s"%lab)
+		objects.append(obj)
+	return values, grid, objects
 
 
 def call_run(args):
