@@ -59,28 +59,28 @@ module sg_interpolate
 		real(dl) :: p,qn,sig,un,u(NMAX)
 
 		if (yp1.gt..99e30) then
-		   y2(1)=0.
-		   u(1)=0.
+			y2(1)=0.
+			u(1)=0.
 		else
-		   y2(1)=-0.5
-		   u(1)=(3./(x(2)-x(1)))*((y(2)-y(1))/(x(2)-x(1))-yp1)
+			y2(1)=-0.5
+			u(1)=(3./(x(2)-x(1)))*((y(2)-y(1))/(x(2)-x(1))-yp1)
 		endif
 		do i=2,n-1
-		   sig=(x(i)-x(i-1))/(x(i+1)-x(i-1))
-		   p=sig*y2(i-1)+2.
-		   y2(i)=(sig-1.)/p
-		   u(i)=(6.*((y(i+1)-y(i))/(x(i+1)-x(i))-(y(i)-y(i-1))/(x(i)-x(i-1)))/(x(i+1)-x(i-1))-sig*u(i-1))/p
-		 end do
+			sig=(x(i)-x(i-1))/(x(i+1)-x(i-1))
+			p=sig*y2(i-1)+2.
+			y2(i)=(sig-1.)/p
+			u(i)=(6.*((y(i+1)-y(i))/(x(i+1)-x(i))-(y(i)-y(i-1))/(x(i)-x(i-1)))/(x(i+1)-x(i-1))-sig*u(i-1))/p
+		end do
 		if (ypn.gt..99e30) then
-		  qn=0.
-		  un=0.
+			qn=0.
+			un=0.
 		else
-		  qn=0.5
-		  un=(3./(x(n)-x(n-1)))*(ypn-(y(n)-y(n-1))/(x(n)-x(n-1)))
+			qn=0.5
+			un=(3./(x(n)-x(n-1)))*(ypn-(y(n)-y(n-1))/(x(n)-x(n-1)))
 		endif
 		y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+1.)
 		do k=n-1,1,-1
-		  y2(k)=y2(k)*y2(k+1)+u(k)
+			y2(k)=y2(k)*y2(k+1)+u(k)
 		end do
 	end subroutine spline
 
@@ -96,12 +96,12 @@ module sg_interpolate
 		klo=1
 		khi=n
 		do while (khi-klo.gt.1)
-		   k=(khi+klo)/2
-		   if(xa(k).gt.x)then
-			  khi=k
-		   else
-			  klo=k
-		   endif
+			k=(khi+klo)/2
+			if(xa(k).gt.x)then
+				khi=k
+			else
+				klo=k
+			endif
 		end do
 		h=xa(khi)-xa(klo)
 !		if (h.eq.0.) call criticalError('bad xa input in splint')
@@ -200,7 +200,7 @@ module utilities
 		end if
 	end subroutine openFile
 
-	subroutine writeCheckpoints(n,x,vars)
+	subroutine writeCheckpoints(n, x, vars)
 		integer :: n
 		real(dl) :: x
 		real(dl), dimension(n), intent(in) :: vars
@@ -223,7 +223,7 @@ module utilities
 		call rename(trim(outputFolder)//"/checkpoint.chk_tmp",trim(outputFolder)//"/checkpoint.chk")
 	end subroutine writeCheckpoints
 
-	subroutine readCheckpoints(n,x,vars,p)
+	subroutine readCheckpoints(n, x, vars, p)
 		integer, intent(out) :: n
 		real(dl), intent(out) :: x
 		real(dl), dimension(:), allocatable, intent(out) :: vars
@@ -248,13 +248,12 @@ module utilities
 		call addToLog("[ckpt] ...done!")
 	end subroutine readCheckpoints
 
-	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-	pure function rombint_re(obj,f,a,b,tol, maxit)
+	pure function rombint_re(obj, f, a, b, tol, maxit)
 		use Precision
-	!  Rombint returns the integral from a to b of using Romberg integration.
-	!  The method converges provided that f(x) is continuous in (a,b).
-	!  f must be real(dl) and must be declared external in the calling
-	!  routine.  tol indicates the desired relative accuracy in the integral.
+		!  Rombint returns the integral from a to b of using Romberg integration.
+		!  The method converges provided that f(x) is continuous in (a,b).
+		!  f must be real(dl) and must be declared external in the calling
+		!  routine.  tol indicates the desired relative accuracy in the integral.
 		implicit none
 
 		interface
@@ -268,121 +267,108 @@ module utilities
 		integer, parameter :: MAXJ=5
 		dimension g(MAXJ+1)
 		real(dl), intent(in) :: obj
-!		real(dl), intent(in) :: f
-!		external f
 		real(dl) :: rombint_re
 		real(dl), intent(in) :: a,b,tol
 		integer :: nint, i, k, jmax, j
 		real(dl) :: h, gmax, error, g, g0, g1, fourj
 
-			if (present(maxit)) then
-				MaxIter = maxit
-			else
-				MAXITER=20
-			end if
-			h=0.5d0*(b-a)
-			gmax=h*(f(obj,a)+f(obj,b))
-			g(1)=gmax
-			nint=1
-			error=1.0d20
-			i=0
-	10        i=i+1
-			  if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
-				go to 40
-	!  Calculate next trapezoidal rule approximation to integral.
-			  g0=0._dl
-				do 20 k=1,nint
-				g0=g0+f(obj,a+(k+k-1)*h)
-	20        continue
-			  g0=0.5d0*g(1)+h*g0
-			  h=0.5d0*h
-			  nint=nint+nint
-			  jmax=min(i,MAXJ)
-			  fourj=1._dl
-				do 30 j=1,jmax
-	!  Use Richardson extrapolation.
-				fourj=4._dl*fourj
-				g1=g0+(g0-g(j))/(fourj-1._dl)
-				g(j)=g0
-				g0=g1
-	30        continue
-			  if (abs(g0).gt.tol) then
-				error=1._dl-gmax/g0
-			  else
-				error=gmax
-			  end if
-			  gmax=g0
-			  g(jmax+1)=g0
-			go to 10
-	40      rombint_re=g0
-!			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
-!			  write(*,*) 'Warning: Rombint failed to converge; '
-!			  write (*,*)'integral, error, tol:', rombint_re,error, tol
-!			end if
+		if (present(maxit)) then
+			MaxIter = maxit
+		else
+			MAXITER=20
+		end if
+		h=0.5d0*(b-a)
+		gmax=h*(f(obj,a)+f(obj,b))
+		g(1)=gmax
+		nint=1
+		error=1.0d20
+		i=0
+10      i=i+1
+		if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
+			go to 40
+		g0=0._dl
+		do 20 k=1,nint
+			g0=g0+f(obj,a+(k+k-1)*h)
+20      continue
+		g0=0.5d0*g(1)+h*g0
+		h=0.5d0*h
+		nint=nint+nint
+		jmax=min(i,MAXJ)
+		fourj=1._dl
+		do 30 j=1,jmax
+			fourj=4._dl*fourj
+			g1=g0+(g0-g(j))/(fourj-1._dl)
+			g(j)=g0
+			g0=g1
+30      continue
+		if (abs(g0).gt.tol) then
+			error=1._dl-gmax/g0
+		else
+			error=gmax
+		end if
+		gmax=g0
+		g(jmax+1)=g0
+		go to 10
+40      rombint_re=g0
 	end function rombint_re
 
-	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	function rombint_vec(obj,f,a,b,tol, maxit)
-			use Precision
-	!  Rombint returns the integral from a to b of using Romberg integration.
-	!  The method converges provided that f(x) is continuous in (a,b).
-	!  f must be real(dl) and must be declared external in the calling
-	!  routine.  tol indicates the desired relative accuracy in the integral.
-			implicit none
-			integer, intent(in), optional :: maxit
-			integer :: MAXITER=20
-			integer, parameter :: MAXJ=5
-			dimension g(MAXJ+1)
-			real(dl), dimension(:), intent(in) :: obj
-			real(dl) f
-			external f
-			real(dl) :: rombint_vec
-			real(dl), intent(in) :: a,b,tol
-			integer :: nint, i, k, jmax, j
-			real(dl) :: h, gmax, error, g, g0, g1, fourj
+		use Precision
+		!  Rombint returns the integral from a to b of using Romberg integration.
+		!  The method converges provided that f(x) is continuous in (a,b).
+		!  f must be real(dl) and must be declared external in the calling
+		!  routine.  tol indicates the desired relative accuracy in the integral.
+		implicit none
+		integer, intent(in), optional :: maxit
+		integer :: MAXITER=20
+		integer, parameter :: MAXJ=5
+		dimension g(MAXJ+1)
+		real(dl), dimension(:), intent(in) :: obj
+		real(dl) f
+		external f
+		real(dl) :: rombint_vec
+		real(dl), intent(in) :: a,b,tol
+		integer :: nint, i, k, jmax, j
+		real(dl) :: h, gmax, error, g, g0, g1, fourj
 
-			if (present(maxit)) then
-				MaxIter = maxit
-			end if
-			h=0.5d0*(b-a)
-			gmax=h*(f(obj,a)+f(obj,b))
-			g(1)=gmax
-			nint=1
-			error=1.0d20
-			i=0
-	10        i=i+1
-			  if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
-				go to 40
-	!  Calculate next trapezoidal rule approximation to integral.
-			  g0=0._dl
-				do 20 k=1,nint
-				g0=g0+f(obj,a+(k+k-1)*h)
-	20        continue
-			  g0=0.5d0*g(1)+h*g0
-			  h=0.5d0*h
-			  nint=nint+nint
-			  jmax=min(i,MAXJ)
-			  fourj=1._dl
-				do 30 j=1,jmax
-	!  Use Richardson extrapolation.
-				fourj=4._dl*fourj
-				g1=g0+(g0-g(j))/(fourj-1._dl)
-				g(j)=g0
-				g0=g1
-	30        continue
-			  if (abs(g0).gt.tol) then
-				error=1._dl-gmax/g0
-			  else
-				error=gmax
-			  end if
-			  gmax=g0
-			  g(jmax+1)=g0
-			go to 10
-	40      rombint_vec=g0
-			if (i.gt.MAXITER.and.abs(error).gt.tol)  then
-			  write(*,*) 'Warning: Rombint failed to converge; '
-			  write (*,*)'integral, error, tol:', rombint_vec,error, tol
-			end if
+		if (present(maxit)) then
+			MaxIter = maxit
+		end if
+		h=0.5d0*(b-a)
+		gmax=h*(f(obj,a)+f(obj,b))
+		g(1)=gmax
+		nint=1
+		error=1.0d20
+		i=0
+10      i=i+1
+		if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
+			go to 40
+		!  Calculate next trapezoidal rule approximation to integral.
+		g0=0._dl
+		do 20 k=1,nint
+			g0=g0+f(obj,a+(k+k-1)*h)
+20      continue
+		g0=0.5d0*g(1)+h*g0
+		h=0.5d0*h
+		nint=nint+nint
+		jmax=min(i,MAXJ)
+		fourj=1._dl
+		do 30 j=1,jmax
+			!  Use Richardson extrapolation.
+			fourj=4._dl*fourj
+			g1=g0+(g0-g(j))/(fourj-1._dl)
+			g(j)=g0
+			g0=g1
+30      continue
+		if (abs(g0).gt.tol) then
+			error=1._dl-gmax/g0
+		else
+			error=gmax
+		end if
+		gmax=g0
+		g(jmax+1)=g0
+		go to 10
+40      rombint_vec=g0
 	end function rombint_vec
 
 	!Newton-Cotes method:

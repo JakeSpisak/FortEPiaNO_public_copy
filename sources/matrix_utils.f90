@@ -231,7 +231,7 @@ module ndMatrices
 		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
 
 		call CommAntiComm(mat1, mat2, outmat, 1)
-	end subroutine antiCommutator
+	end subroutine AntiCommutator
 
 	pure subroutine CommAntiComm(mat1, mat2, outmat, s)
 		!use the sign s to switch between commutator and anticommutator
@@ -246,7 +246,7 @@ module ndMatrices
 
 		allocate(outMat(d,d))
 		outMat = matmul(mat1, mat2) + s * matmul(mat2, mat1)
-	end subroutine
+	end subroutine CommAntiComm
 
 	subroutine printMat(m)
 		real(dl), dimension(:,:), allocatable, intent(in) :: m

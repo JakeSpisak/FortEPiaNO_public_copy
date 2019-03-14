@@ -473,7 +473,7 @@ enddo                                                   !SG-PF
 			do ix=1, flavorNumber
 				der(m) = der(m) + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 			end do
-			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m))!/z_in)
+			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m))
 		end do
 		call params%initialize(Ny, y_arr, der)
 		tmp = rombint_spli(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)

@@ -17,3 +17,4 @@ bin/
 output*
 gmon.out
 *callgrind*
+.gitpub/

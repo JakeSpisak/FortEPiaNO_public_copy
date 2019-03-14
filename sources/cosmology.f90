@@ -77,7 +77,7 @@ module ndCosmology
 			muonDensityFull = 0.d0
 		else
 			muonDensityFull = rombint_vec(vec, integr_rho_mu, fe_l, fe_u, toler_ed, maxiter)
-			muonDensityFull = muonDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
+			muonDensityFull = muonDensityFull / PISQD2
 		end if
 	end function muonDensityFull
 

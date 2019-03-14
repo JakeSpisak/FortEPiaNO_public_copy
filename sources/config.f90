@@ -28,7 +28,6 @@ module ndConfig
 
 	subroutine setMassMatrix()
 		integer :: nf
-		integer :: ix
 		real(dl), dimension(:), allocatable :: mv
 		real(dl), dimension(:,:), allocatable :: m1
 		
@@ -68,8 +67,6 @@ module ndConfig
 		integer :: nf
 		real(dl), dimension(:,:), allocatable :: m1, m2, m3, m4
 		character(len=1) :: nfstr
-		integer :: ix
-		real(dl) :: tmp
 		
 		nf = flavorNumber
 		write(nfstr,"(I1)") nf

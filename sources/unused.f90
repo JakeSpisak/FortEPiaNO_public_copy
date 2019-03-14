@@ -157,3 +157,16 @@
 			- f2 * (1.d0 - f4) * (t3 + t4)
 		F_ab_sc_mp = su(i,j)
 	end function F_ab_sc_mp
+
+	pure function dme2_e_i2(vec, k) !not used
+	!doi:10.1016/S0370-2693(02)01622-2 eq.12 second integral
+		real(dl) :: dme2_e_i2
+		real(dl), intent(in) :: k
+		real(dl), dimension(3), intent(in) :: vec
+		real(dl) :: m, T, p, Ekm
+		m=vec(1)
+		T=vec(2)
+		p=vec(3)
+		Ekm = E_k_m(k,m)
+		dme2_e_i2 = k/Ekm * fermiDirac(Ekm/T)*log(abs((p+k)/(p-k)))
+	end function dme2_e_i2
