@@ -96,6 +96,23 @@ def setParser():
 		default="",
 		help='title for the plot',
 		)
+	parser_plot.add_argument(
+		'--bestfit_x',
+		type=float,
+		default=-1,
+		help='position of the best-fit in x. Set to negative to ignore',
+		)
+	parser_plot.add_argument(
+		'--bestfit_y',
+		type=float,
+		default=-1,
+		help='position of the best-fit in y. Set to negative to ignore',
+		)
+	parser_plot.add_argument(
+		'--bestfit_upper',
+		action="store_true",
+		help='The angle specified in the bestfit is only an upper limit',
+		)
 	parser_plot.set_defaults(func=call_plot)
 
 	parser_prepare = subparsers.add_parser(
@@ -322,12 +339,15 @@ def contourplot(xv, yv, values, points,
 		title=None,
 		xlab=None, ylab=None,
 		xlim=None, ylim=None,
+		bfx=-1, bfy=-1, bfup=False,
 		):
 	zv = points.reshape((len(xv), len(yv)))
 	fig = plt.Figure(figsize=(6,4))
 	cf = plt.contourf(xv, yv, zv, levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'), extend="max")
 	cf.cmap.set_over(cmap(0.95))
 	cbar = plt.colorbar(cf)
+	if bfx>0 and bfy>0:
+		plt.plot(bfx, bfy, color="g", marker=r"$\leftarrow$" if bfup else "*", markersize=10)
 	cbar.ax.set_ylabel(r"$\Delta N_{\rm eff}$")
 	if title is not None:
 		plt.title(title)
@@ -390,6 +410,7 @@ def call_plot(args):
 		xv, yv, mixings, smallpoints,
 		fname="grids/%s/plots/%s_%s.pdf"%(args.gridname, args.par_x, args.par_y),
 		xlab=xlab, ylab=ylab, title=args.title,
+		bfx=args.bestfit_x, bfy=args.bestfit_y, bfup=args.bestfit_upper,
 		)
 
 
