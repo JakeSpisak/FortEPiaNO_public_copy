@@ -59,7 +59,7 @@ module ndConfig
 		call tripleProdMat(mixMat, m1, mixMatInv, nuMassesMat)
 		write(*,*) "masses:"
 		call printVec(mv, maxFlavorNumber)
-		write(*,*) "matrix:"
+		write(*,*) "rotated mass matrix:"
 		call printMat(nuMassesMat)
 		deallocate(mv,m1)
 	end subroutine setMassMatrix
@@ -101,6 +101,8 @@ module ndConfig
 		
 		mixMat=m3
 		call inverseMat(mixMat, mixMatInv)
+		write(*,*) "mixing matrix:"
+		call printMat(mixMat)
 		deallocate(m1,m2,m3,m4)
 	end subroutine setMixingMatrix
 

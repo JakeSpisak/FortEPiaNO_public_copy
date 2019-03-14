@@ -256,7 +256,9 @@ module ndMatrices
 
 		s = shape(m)
 		write (frmt,"('(',I4,'(E14.6))')") s(2)
-		write (*,frmt) m(:,:)
+		do i=1, s(1)
+			write (*,frmt) m(i,:)
+		end do
 	end subroutine printMat
 
 	subroutine printVec(vec,n)
