@@ -88,6 +88,11 @@ def setParser():
 		help='title for the plot',
 		)
 	parser_plot.add_argument(
+		'--filename',
+		default="",
+		help='name of the file where to save the plot',
+		)
+	parser_plot.add_argument(
 		'--bestfit_x',
 		type=float,
 		default=-1,
@@ -286,6 +291,7 @@ def call_plot(args):
 			cgrid["%s_max"%a] = mixings["%s_max"%a]
 			cgrid["%s_pts"%a] = mixings["%s_pts"%a]
 		else:
+			print("fixing %s to %s"%(a, mixings["%s_pts"%a][int(getattr(args, "fix_%s"%a))]))
 			cgrid["%s_N"%a] = 1
 			cgrid["%s_min"%a] = mixings["%s_pts"%a][int(getattr(args, "fix_%s"%a))]
 			cgrid["%s_max"%a] = mixings["%s_pts"%a][int(getattr(args, "fix_%s"%a))]
@@ -301,7 +307,8 @@ def call_plot(args):
 	smallpoints = np.asarray(smallpoints)
 	contourplot(
 		xv, yv, mixings, smallpoints,
-		fname="grids/%s/plots/%s_%s.pdf"%(args.gridname, args.par_x, args.par_y),
+		fname="grids/%s/plots/%s_%s.pdf"%(args.gridname, args.par_x, args.par_y)
+			if args.filename == "" else "grids/%s/plots/"%(args.gridname, args.filename),
 		xlab=labels[args.par_x], ylab=labels[args.par_y], title=args.title,
 		bfx=args.bestfit_x, bfy=args.bestfit_y, bfup=args.bestfit_upper,
 		)
