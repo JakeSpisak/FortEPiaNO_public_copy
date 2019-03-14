@@ -16,11 +16,11 @@ from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, N
 cmap=matplotlib.cm.get_cmap('CMRmap')
 labels = {
 	"dm41": r"$\Delta m^2_{41}$ [eV$^2$]",
-	"ssq14": r"$\sin^2\theta_{14}$",
-	"ssq24": r"$\sin^2\theta_{24}$",
-	"ssq34": r"$\sin^2\theta_{34}$",
+	"Ue4sq": r"$|U_{e4}|^2$",
+	"Um4sq": r"$|U_{\mu4}|^2$",
+	"Ut4sq": r"$|U_{\tau4}|^2$",
 	}
-indexes = {"dm41": 0, "ssq14": 1, "ssq24": 2, "ssq34": 3}
+indexes = {"dm41": 0, "Ue4sq": 1, "Um4sq": 2, "Ut4sq": 3}
 
 
 class Namespace:
@@ -61,36 +61,27 @@ def setParser():
 		)
 	parser_plot.add_argument(
 		'--par_x',
-		choices=["ssq14", "ssq24", "ssq34"],
-		default="ssq24",
+		choices=["Ue4sq", "Um4sq", "Ut4sq"],
+		default="Um4sq",
 		help='parameter for the x axis',
 		)
 	parser_plot.add_argument(
 		'--par_y',
-		choices=["dm41", "ssq14", "ssq24", "ssq34"],
+		choices=["dm41", "Ue4sq", "Um4sq", "Ut4sq"],
 		default="dm41",
 		help='parameter for the y axis',
 		)
-	parser_plot.add_argument(
-		'--fix_dm41',
-		default=False,
-		help='when requesting a subplot, fix dm41 to the given index (not value!)',
-		)
-	parser_plot.add_argument(
-		'--fix_ssq14',
-		default=0,
-		help='when requesting a subplot, fix ssq14 to the given index (not value!)',
-		)
-	parser_plot.add_argument(
-		'--fix_ssq24',
-		default=False,
-		help='when requesting a subplot, fix ssq24 to the given index (not value!)',
-		)
-	parser_plot.add_argument(
-		'--fix_ssq34',
-		default=0,
-		help='when requesting a subplot, fix ssq34 to the given index (not value!)',
-		)
+	for a, v in [
+			["dm41", False],
+			["Ue4sq", 0],
+			["Um4sq", False],
+			["Ut4sq", 0],
+			]:
+		parser_plot.add_argument(
+			'--fix_%s'%a,
+			default=v,
+			help='when requesting a subplot, fix %s to the given index (not value!)'%a,
+			)
 	parser_plot.add_argument(
 		'--title',
 		default="",
@@ -149,92 +140,35 @@ def setParser():
 		default=1e-5,
 		help='tolerance for DLSODA',
 		)
+	for a, l, mi, ma, n in [
+			["dm41", r"\Delta m^2_{41}", 1e-2, 1e2, 5],
+			["Ue4sq", r"|U_{e4}|^2", 1e-6, 0.1, 6],
+			["Um4sq", r"|U_{\mu4}|^2", 1e-6, 0.1, 6],
+			["Ut4sq", r"|U_{\tau4}|^2", 1e-6, 0.1, 6],
+			]:
+		parser_prepare.add_argument(
+			'--%s_min'%a,
+			type=float,
+			default=mi,
+			help=r'minimum value of %s'%a,
+			)
+		parser_prepare.add_argument(
+			'--%s_max'%a,
+			type=float,
+			default=ma,
+			help=r'maximum value of %s'%a,
+			)
+		parser_prepare.add_argument(
+			'--%s_N'%a,
+			type=int,
+			default=n,
+			help=r'number of points in %s'%a,
+			)
 	parser_prepare.add_argument(
-		'--dm41_min',
-		type=float,
-		default=1e-2,
-		help='minimum value of Delta m^2_{41}',
-		)
-	parser_prepare.add_argument(
-		'--dm41_max',
-		type=float,
-		default=1e2,
-		help='maximum value of Delta m^2_{41}',
-		)
-	parser_prepare.add_argument(
-		'--dm41_N',
-		type=int,
-		default=5,
-		help='number of points in Delta m^2_{41}',
-		)
-	parser_prepare.add_argument(
-		'--ssq14_min',
-		type=float,
-		default=1e-4,
-		help='minimum value of sin^2 theta_{14}',
-		)
-	parser_prepare.add_argument(
-		'--ssq14_max',
-		type=float,
-		default=1,
-		help='maximum value of sin^2 theta_{14}',
-		)
-	parser_prepare.add_argument(
-		'--ssq14_N',
-		type=int,
-		default=5,
-		help='number of points in sin^2 theta_{14}',
-		)
-	parser_prepare.add_argument(
-		'--ssq24_min',
-		type=float,
-		default=1e-4,
-		help='minimum value of sin^2 theta_{24}',
-		)
-	parser_prepare.add_argument(
-		'--ssq24_max',
-		type=float,
-		default=1,
-		help='maximum value of sin^2 theta_{24}',
-		)
-	parser_prepare.add_argument(
-		'--ssq24_N',
-		type=int,
-		default=5,
-		help='number of points in sin^2 theta_{24}',
-		)
-	parser_prepare.add_argument(
-		'--ssq34_min',
-		type=float,
-		default=1e-4,
-		help='minimum value of sin^2 theta_{34}',
-		)
-	parser_prepare.add_argument(
-		'--ssq34_max',
-		type=float,
-		default=1,
-		help='maximum value of sin^2 theta_{34}',
-		)
-	parser_prepare.add_argument(
-		'--ssq34_N',
-		type=int,
-		default=5,
-		help='number of points in sin^2 theta_{34}',
-		)
-	parser_prepare.add_argument(
-		'--sinsq2th14',
-		action="store_true",
-		help='use sin^2theta14 instead of sin^2(2theta14)',
-		)
-	parser_prepare.add_argument(
-		'--sinsq2th24',
-		action="store_true",
-		help='use sin^2theta24 instead of sin^2(2theta24)',
-		)
-	parser_prepare.add_argument(
-		'--sinsq2th34',
-		action="store_true",
-		help='use sin^2theta34 instead of sin^2(2theta34)',
+		'--ordering',
+		choices=["NO", "IO"],
+		default="NO",
+		help='define the mass ordering for the three active neutrinos'
 		)
 	parser_prepare.set_defaults(func=call_prepare)
 
@@ -255,37 +189,28 @@ def setParser():
 def fillGrid(args):
 	return 10**(np.mgrid[
 		np.log10(args.dm41_min):np.log10(args.dm41_max):args.dm41_N*1j,
-		np.log10(args.ssq14_min):np.log10(args.ssq14_max):args.ssq14_N*1j,
-		np.log10(args.ssq24_min):np.log10(args.ssq24_max):args.ssq24_N*1j,
-		np.log10(args.ssq34_min):np.log10(args.ssq34_max):args.ssq34_N*1j,
-		]).reshape(4, args.dm41_N*args.ssq14_N*args.ssq24_N*args.ssq34_N).T
+		np.log10(args.Ue4sq_min):np.log10(args.Ue4sq_max):args.Ue4sq_N*1j,
+		np.log10(args.Um4sq_min):np.log10(args.Um4sq_max):args.Um4sq_N*1j,
+		np.log10(args.Ut4sq_min):np.log10(args.Ut4sq_max):args.Ut4sq_N*1j,
+		]).reshape(4, args.dm41_N*args.Ue4sq_N*args.Um4sq_N*args.Ut4sq_N).T
 
 
 def write_grid_cfg(args):
 	with open("grids/%s/params.cfg"%args.gridname, "w") as _f:
-		for a in ["dm41", "ssq14", "ssq24", "ssq34"]:
-			if "ssq" in a:
-				_f.write("%s: min=%s, max=%s, N=%s, ssq2th=%s\n"%(
-					a,
-					getattr(args, "%s_min"%a),
-					getattr(args, "%s_max"%a),
-					getattr(args, "%s_N"%a),
-					getattr(args, a.replace("ssq", "sinsq2th")),
-					))
-			else:
-				_f.write("%s: min=%s, max=%s, N=%s\n"%(
-					a,
-					getattr(args, "%s_min"%a),
-					getattr(args, "%s_max"%a),
-					getattr(args, "%s_N"%a),
-					))
+		for a in ["dm41", "Ue4sq", "Um4sq", "Ut4sq"]:
+			_f.write("%s: min=%s, max=%s, N=%s\n"%(
+				a,
+				getattr(args, "%s_min"%a),
+				getattr(args, "%s_max"%a),
+				getattr(args, "%s_N"%a),
+				))
 
 
 def read_grid_cfg(gridname):
 	with open("grids/%s/params.cfg"%args.gridname) as _f:
 		text = _f.readlines()
 	values = {}
-	for a in ["dm41", "ssq14", "ssq24", "ssq34"]:
+	for a in ["dm41", "Ue4sq", "Um4sq", "Ut4sq"]:
 		for l in text:
 			res = re.match("%s: min=([0-9\.e\+\-]+), max=([0-9\.e\+\-]+), N=([0-9]+)\n"%a, l)
 			if res:
@@ -306,30 +231,6 @@ def read_grid_cfg(gridname):
 							np.log10(values["%s_min"%a]),
 							np.log10(values["%s_max"%a]),
 							values["%s_N"%a])
-			else:
-				res = re.match("%s: min=([0-9\.e\+\-]+), max=([0-9\.e\+\-]+), N=([0-9]+), ssq2th=(True|False)\n"%a, l)
-				if res:
-					try:
-						values["%s_min"%a] = float(res.group(1))
-						values["%s_max"%a] = float(res.group(2))
-						values["%s_N"%a] = int(res.group(3))
-						values[a.replace("ssq", "sinsq2th")] = ast.literal_eval(res.group(4))
-					except (IndexError, TypeError, ValueError):
-						print("cannot read line! %s"%l)
-					else:
-						if values["%s_min"%a] == 0 or values["%s_max"%a] == 0:
-							values["%s_pts"%a] = np.linspace(
-								values["%s_min"%a],
-								values["%s_max"%a],
-								values["%s_N"%a])
-						else:
-							values["%s_pts"%a] = np.logspace(
-								np.log10(values["%s_min"%a]),
-								np.log10(values["%s_max"%a]),
-								values["%s_N"%a])
-	for a in ["ssq14", "ssq24", "ssq34"]:
-		if a.replace("ssq", "sinsq2th") not in values.keys():
-			values[a.replace("ssq", "sinsq2th")] = False
 	return values, fillGrid(Namespace(**values))
 
 
@@ -341,7 +242,7 @@ def contourplot(xv, yv, values, points,
 		xlim=None, ylim=None,
 		bfx=-1, bfy=-1, bfup=False,
 		):
-	zv = points.reshape((len(xv), len(yv)))
+	zv = points.reshape((len(yv), len(xv)))
 	fig = plt.Figure(figsize=(6,4))
 	cf = plt.contourf(xv, yv, zv, levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'), extend="max")
 	cf.cmap.set_over(cmap(0.95))
@@ -398,18 +299,10 @@ def call_plot(args):
 			if (p1==n1 and p2==n2 and p3==n3 and p4==n4):
 				smallpoints.append(pt)
 	smallpoints = np.asarray(smallpoints)
-	if "ssq" in args.par_x and mixings[args.par_x.replace("ssq", "sinsq2th")]:
-		xlab = labels[args.par_x].replace(r"\theta", r"2\theta")
-	else:
-		xlab = labels[args.par_x]
-	if "ssq" in args.par_y and mixings[args.par_y.replace("ssq", "sinsq2th")]:
-		ylab = labels[args.par_y].replace(r"\theta", r"2\theta")
-	else:
-		ylab = labels[args.par_y]
 	contourplot(
 		xv, yv, mixings, smallpoints,
 		fname="grids/%s/plots/%s_%s.pdf"%(args.gridname, args.par_x, args.par_y),
-		xlab=xlab, ylab=ylab, title=args.title,
+		xlab=labels[args.par_x], ylab=labels[args.par_y], title=args.title,
 		bfx=args.bestfit_x, bfy=args.bestfit_y, bfup=args.bestfit_upper,
 		)
 
@@ -423,7 +316,7 @@ def call_prepare(args):
 		os.makedirs("grids/%s/plots/"%args.gridname)
 	files = list(glob.iglob("grids/%s/ini/*.ini"%args.gridname))
 	list(map(lambda x: os.remove(x), files))
-	for a in ["dm41", "ssq14", "ssq24", "ssq34"]:
+	for a in ["dm41", "Ue4sq", "Um4sq", "Ut4sq"]:
 		if getattr(args, "%s_N"%a) == 1:
 			pmin = getattr(args, "%s_min"%a)
 			pmax = getattr(args, "%s_max"%a)
@@ -439,16 +332,13 @@ def call_prepare(args):
 			setattr(args, "%s_max"%a, getattr(args, "%s_min"%a))
 	write_grid_cfg(args)
 	grid = fillGrid(args)
-	for dm41, ssq14, ssq24, ssq34 in grid:
-		if args.sinsq2th14:
-			ssq14 = 0.5*(1.-np.sqrt(1.-ssq14))
-		if args.sinsq2th24:
-			ssq24 = 0.5*(1.-np.sqrt(1.-ssq24))
-		if args.sinsq2th34:
-			ssq34 = 0.5*(1.-np.sqrt(1.-ssq34))
+	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
+		ssq14 = Ue4sq
+		ssq24 = Um4sq/(1.-Ue4sq)
+		ssq34 = Ut4sq/(1.-Ue4sq-Um4sq)
 		prep = [
-			"grids/%s/ini/%s_%s_%s_%s.ini"%(args.gridname, dm41, ssq14, ssq24, ssq34),
-			"grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, ssq14, ssq24, ssq34),
+			"grids/%s/ini/%s_%s_%s_%s.ini"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq),
+			"grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq),
 			"3+1",
 			"damping",
 			"--dlsoda_rtol=%s"%args.tolerance,
@@ -463,29 +353,26 @@ def call_prepare(args):
 			"--th14=%s"%ssq14,
 			"--th24=%s"%ssq24,
 			"--th34=%s"%ssq34,
+			"--ordering=%s"%args.ordering,
 			]
 		parser = prepareIni.setParser()
 		rargs = parser.parse_args(prep)
 		values = prepareIni.getIniValues(rargs)
 		prepareIni.writeIni(rargs.inifile, values)
+	print("\nTotal number of points: %s"%len(grid))
 
 
 def call_read(args):
 	values, grid = read_grid_cfg(args.gridname)
 	objects = []
-	for dm41, ssq14, ssq24, ssq34 in grid:
+	print("\nTotal number of points: %s"%len(grid))
+	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
 		lab = (r"dm41=%s "%dm41
-			+ r"ssq14=%s "%ssq14
-			+ r"ssq24=%s "%ssq24
-			+ r"ssq34=%s "%ssq34
+			+ r"Ue4sq=%s "%Ue4sq
+			+ r"Um4sq=%s "%Um4sq
+			+ r"Ut4sq=%s "%Ut4sq
 			)
-		if values["sinsq2th14"]:
-			ssq14 = 0.5*(1.-np.sqrt(1.-ssq14))
-		if values["sinsq2th24"]:
-			ssq24 = 0.5*(1.-np.sqrt(1.-ssq24))
-		if values["sinsq2th34"]:
-			ssq34 = 0.5*(1.-np.sqrt(1.-ssq34))
-		folder = "grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, ssq14, ssq24, ssq34)
+		folder = "grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
 		obj = None
 		try:
 			obj = NuDensRun(folder, label=lab, nnu=4, rho=False)
@@ -505,6 +392,7 @@ def call_run(args):
 				f.split(os.sep)[-1].replace(".ini", ""),
 				f,
 				))
+	print("\nTotal number of runs: %s"%len(files))
 
 
 if __name__=='__main__':
