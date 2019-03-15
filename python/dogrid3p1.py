@@ -6,10 +6,12 @@ import glob
 import re
 import numpy as np
 from scipy.interpolate import interpn
-import prepareIni
+import shutil
+import subprocess
 import matplotlib
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
+import prepareIni
 from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, NuDensRun
 
 
@@ -186,6 +188,24 @@ def setParser():
 	parser_run = subparsers.add_parser(
 		'run',
 		help='submit the jobs in the grid'
+		)
+	parser_run.add_argument(
+		'-f',
+		'--failed_only',
+		action="store_true",
+		help='resubmit only failed or incomplete runs',
+		)
+	parser_run.add_argument(
+		'-r',
+		'--remove_existing',
+		action="store_true",
+		help='remove the folder before resubmitting the failed run',
+		)
+	parser_run.add_argument(
+		'--expected_lines',
+		type=int,
+		default=2000,
+		help=r'number of expected lines (values in x) in output',
 		)
 	parser_run.set_defaults(func=call_run)
 	return parser
@@ -390,11 +410,19 @@ def call_read(args):
 
 
 def call_run(args):
-	files = list(glob.iglob("grids/%s/ini/*.ini"%args.gridname))
 	print("submitting the grid %s"%args.gridname)
+	if args.failed_only:
+		files = []
+		for f in list(glob.iglob("grids/%s/OUT/*/z.dat"%args.gridname)):
+			if "%s"%args.expected_lines not in subprocess.check_output(['wc', '-l', f]).decode("utf-8"):
+				if args.remove_existing:
+					shutil.rmtree(f.replace("z.dat", ""), ignore_errors=True)
+				files.append(f.replace("OUT", "ini").replace("/z.dat", ".ini"))
+	else:
+		files = list(glob.iglob("grids/%s/ini/*.ini"%args.gridname))
 	for f in files:
 		os.system(
-			"clusterlauncher -N %s_%s -n 1 --openmp -q short-seq bin/nuDens.exe %s"%(
+			"clusterlauncher -N %s_%s -n 1 --openmp -q short-seq -w 6:00:00 bin/nuDens.exe %s"%(
 				args.gridname,
 				f.split(os.sep)[-1].replace(".ini", ""),
 				f,
