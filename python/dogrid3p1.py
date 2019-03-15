@@ -21,6 +21,12 @@ labels = {
 	"Ue4sq": r"$|U_{e4}|^2$",
 	"Um4sq": r"$|U_{\mu4}|^2$",
 	"Ut4sq": r"$|U_{\tau4}|^2$",
+	"sinsqth14": r"$\sin^2\theta_{14}$",
+	"sinsqth24": r"$\sin^2\theta_{24}$",
+	"sinsqth34": r"$\sin^2\theta_{34}$",
+	"sinsq2th_ee": r"$\sin^22\theta_{ee}$",
+	"sinsq2th_mumu": r"$\sin^22\theta_{\mu\mu}$",
+	"sinsq2th_emu": r"$\sin^22\theta_{e\mu}$",
 	}
 indexes = {"dm41": 0, "Ue4sq": 1, "Um4sq": 2, "Ut4sq": 3}
 
@@ -63,13 +69,13 @@ def setParser():
 		)
 	parser_plot.add_argument(
 		'--par_x',
-		choices=["Ue4sq", "Um4sq", "Ut4sq"],
+		choices=["Ue4sq", "Um4sq", "Ut4sq", "sinsqth14", "sinsqth24", "sinsqth34", "sinsq2th_ee", "sinsq2th_mumu", "sinsq2th_emu"],
 		default="Um4sq",
 		help='parameter for the x axis',
 		)
 	parser_plot.add_argument(
 		'--par_y',
-		choices=["dm41", "Ue4sq", "Um4sq", "Ut4sq"],
+		choices=["dm41", "Ue4sq", "Um4sq", "Ut4sq", "sinsqth14", "sinsqth24", "sinsqth34", "sinsq2th_ee", "sinsq2th_mumu", "sinsq2th_emu"],
 		default="dm41",
 		help='parameter for the y axis',
 		)
@@ -110,6 +116,11 @@ def setParser():
 		'--bestfit_upper',
 		action="store_true",
 		help='The angle specified in the bestfit is only an upper limit',
+		)
+	parser_plot.add_argument(
+		'--lsn_contours',
+		action="store_true",
+		help='Plot contours from global fit',
 		)
 	parser_plot.set_defaults(func=call_plot)
 
@@ -266,17 +277,30 @@ def contourplot(xv, yv, values, points,
 		xlab=None, ylab=None,
 		xlim=None, ylim=None,
 		bfx=-1, bfy=-1, bfup=False,
+		lsn_contours=[], lsn_contours_convssq2th=True,
 		):
-	zv = points.reshape((len(yv), len(xv)))
+	try:
+		zv = points.reshape((len(yv), len(xv)))
+	except ValueError:
+		print("You probably have to check the params you are using "
+			+ "and what you fix, as the shapes of the arrays don't match.\n"
+			+ "x:%s, y:%s, z:%s"%(xv.shape, yv.shape, points.shape))
+		return
 	fig = plt.Figure(figsize=(6,4))
 	cf = plt.contourf(xv, yv, zv, levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'), extend="max")
 	cf.cmap.set_over(cmap(0.95))
+	for fn in lsn_contours:
+		data = np.loadtxt(fn)
+		if lsn_contours_convssq2th:
+			plt.plot((1.-np.sqrt(1.-data[:,0]))*0.5, data[:,1], '-k')
+		else:
+			plt.plot(data[:,0], data[:,1], '-k')
 	cbar = plt.colorbar(cf)
 	if bfx>0 and bfy>0:
 		plt.plot(bfx, bfy, color="g", marker=r"$\leftarrow$" if bfup else "*", markersize=10)
 	cbar.ax.set_ylabel(r"$\Delta N_{\rm eff}$")
 	if title is not None:
-		plt.title(title)
+		plt.title(title, y=1.02)
 	ax=plt.gca()
 	ax.tick_params("both", which="both", direction="out",
 		left=True, right=True, top=True, bottom=True)
@@ -298,11 +322,40 @@ def contourplot(xv, yv, values, points,
 
 
 def call_plot(args):
+	def convert_grid(convert_x, convert_y, pts):
+		outpts = np.column_stack((pts, np.zeros(np.shape(pts)[0])))
+		outpts = np.column_stack((outpts, np.zeros(np.shape(pts)[0])))
+		cva = [convert_x, convert_y]
+		if "sinsqth14" in cva:
+			ix = cva.index("sinsqth14")
+			outpts[:, 4+ix] = pts[:,1]
+		if "sinsqth24" in cva:
+			ix = cva.index("sinsqth24")
+			outpts[:, 4+ix] = pts[:,2]/(1-pts[:,1])
+		if "sinsqth34" in cva:
+			ix = cva.index("sinsqth34")
+			outpts[:, 4+ix] = pts[:,3]/(1-pts[:,1]-pts[:,2])
+		if "sinsq2th_ee" in cva:
+			ix = cva.index("sinsq2th_ee")
+			outpts[:, 4+ix] = 4.*pts[:,1]*(1.-pts[:,1])
+		if "sinsq2th_mumu" in cva:
+			ix = cva.index("sinsq2th_mumu")
+			outpts[:, 4+ix] = 4.*pts[:,2]*(1.-pts[:,2])
+		if "sinsq2th_emu" in cva:
+			ix = cva.index("sinsq2th_emu")
+			outpts[:, 4+ix] = 4.*pts[:,1]*pts[:,2]
+		return outpts
 	mixings, fullgrid, fullobjects = call_read(args)
 	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
 	fullpoints = np.asarray(fullpoints)
 	cgrid = {}
+	if args.par_x == args.par_y:
+		print("Cannot plot the same variable in the two axis! %s, %s"%(args.par_x, args.par_y))
+		return
+	fullgrid = convert_grid(args.par_x, args.par_y, fullgrid)
 	for a in indexes.keys():
+		if getattr(args, "fix_%s"%a) == "False":
+			setattr(args, "fix_%s"%a, False)
 		if args.par_x == a or args.par_y == a:
 			setattr(args, "fix_%s"%a, False)
 		if mixings["%s_N"%a] > 1 and getattr(args, "fix_%s"%a) is False:
@@ -317,21 +370,43 @@ def call_plot(args):
 			cgrid["%s_max"%a] = mixings["%s_pts"%a][int(getattr(args, "fix_%s"%a))]
 			cgrid["%s_pts"%a] = np.asarray([mixings["%s_pts"%a][int(getattr(args, "fix_%s"%a))]])
 	smallgrid = fillGrid(Namespace(**cgrid))
-	xv = mixings["%s_pts"%args.par_x]
-	yv = mixings["%s_pts"%args.par_y]
+	smallgrid = convert_grid(args.par_x, args.par_y, smallgrid)
 	smallpoints = []
-	for [p1, p2, p3, p4], pt in zip(fullgrid, fullpoints):
-		for n1, n2, n3, n4 in smallgrid:
-			if (p1==n1 and p2==n2 and p3==n3 and p4==n4):
+	for fgv, pt in zip(fullgrid, fullpoints):
+		for ngv in smallgrid:
+			if list(fgv) == list(ngv):
 				smallpoints.append(pt)
 	smallpoints = np.asarray(smallpoints)
+	if "sinsq" in args.par_x:
+		xv = np.unique(smallgrid[:,4])
+	else:
+		xv = mixings["%s_pts"%args.par_x]
+	if "sinsq" in args.par_y:
+		xv = np.unique(smallgrid[:,5])
+	else:
+		yv = mixings["%s_pts"%args.par_y]
+	if args.lsn_contours:
+		if args.par_y == "dm41"
+				and args.par_x in ["Ue4sq", "sinsqth14", "sinsq2th_ee"]):
+			lsn_contours = [
+				"/home/gariazzo/data/lsn/globalfit/1801.06469/fig4b-contours/cnt-9973-%d.dat"%i
+				for i in [1,2,3]]
+			lsn_contours_convssq2th = args.par_x in ["Ue4sq", "sinsqth14"]
+	else:
+		lsn_contours = []
+		lsn_contours_convssq2th = False
 	contourplot(
 		xv, yv, mixings, smallpoints,
 		fname="grids/%s/plots/%s_%s.pdf"%(args.gridname, args.par_x, args.par_y)
 			if args.filename == "" else "grids/%s/plots/"%(args.gridname, args.filename),
-		xlab=labels[args.par_x], ylab=labels[args.par_y], title=args.title,
+		xlab=labels[args.par_x], ylab=labels[args.par_y],
+		title=args.title,
 		bfx=args.bestfit_x, bfy=args.bestfit_y, bfup=args.bestfit_upper,
+		lsn_contours=lsn_contours,
+		lsn_contours_convssq2th=lsn_contours_convssq2th,
 		)
+	print("\nDone!\n\n")
+	return
 
 
 def call_prepare(args):
@@ -413,7 +488,7 @@ def call_read(args):
 			except AttributeError:
 				missing += 1
 		objects.append(obj)
-	print("\nMissing or incomplete points: %s\n\n"%missing)
+	print("\nMissing or incomplete points: %s\n"%missing)
 	return values, grid, objects
 
 
