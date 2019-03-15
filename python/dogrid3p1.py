@@ -386,7 +386,7 @@ def call_plot(args):
 	else:
 		yv = mixings["%s_pts"%args.par_y]
 	if args.lsn_contours:
-		if args.par_y == "dm41"
+		if (args.par_y == "dm41"
 				and args.par_x in ["Ue4sq", "sinsqth14", "sinsq2th_ee"]):
 			lsn_contours = [
 				"/home/gariazzo/data/lsn/globalfit/1801.06469/fig4b-contours/cnt-9973-%d.dat"%i
