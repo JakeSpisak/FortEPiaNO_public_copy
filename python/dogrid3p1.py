@@ -64,7 +64,7 @@ def setParser():
 	parser_plot.add_argument(
 		'--Neff_active',
 		type=float,
-		default=3.044,
+		default=3.043,
 		help='reference value of Neff when only active neutrinos are considered',
 		)
 	parser_plot.add_argument(
@@ -315,7 +315,7 @@ def contourplot(xv, yv, values, points,
 		plt.xlim(xlim)
 	if ylim is not None:
 		plt.ylim(ylim)
-	plt.tight_layout()
+	plt.tight_layout(rect=(-0.03, -0.05, 1.05, 1.02))
 	if fname is not None:
 		plt.savefig(fname)
 	plt.close()
