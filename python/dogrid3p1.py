@@ -392,6 +392,7 @@ def call_prepare(args):
 def call_read(args):
 	values, grid = read_grid_cfg(args.gridname)
 	objects = []
+	missing = 0
 	print("\nTotal number of points: %s"%len(grid))
 	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
 		lab = (r"dm41=%s "%dm41
@@ -405,7 +406,14 @@ def call_read(args):
 			obj = NuDensRun(folder, label=lab, nnu=4, rho=False)
 		except (IOError, IndexError):
 			print("no %s"%lab)
+			missing += 1
+		else:
+			try:
+				obj.Neff
+			except AttributeError:
+				missing += 1
 		objects.append(obj)
+	print("\nMissing or incomplete points: %s\n\n"%missing)
 	return values, grid, objects
 
 
