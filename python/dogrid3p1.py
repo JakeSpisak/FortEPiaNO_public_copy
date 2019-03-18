@@ -213,6 +213,20 @@ def setParser():
 		help='remove the folder before resubmitting the failed run',
 		)
 	parser_run.add_argument(
+		'-s',
+		'--first-index',
+		type=int,
+		default=0,
+		help='starting index for the runs to submit (if there are a lot of runs)',
+		)
+	parser_run.add_argument(
+		'-t',
+		'--last-index',
+		type=int,
+		default=1000,
+		help='ending index for the runs to submit (if there are a lot of runs)',
+		)
+	parser_run.add_argument(
 		'--expected_lines',
 		type=int,
 		default=2000,
@@ -398,7 +412,7 @@ def call_plot(args):
 	contourplot(
 		xv, yv, mixings, smallpoints,
 		fname="grids/%s/plots/%s_%s.pdf"%(args.gridname, args.par_x, args.par_y)
-			if args.filename == "" else "grids/%s/plots/"%(args.gridname, args.filename),
+			if args.filename == "" else "grids/%s/plots/%s"%(args.gridname, args.filename),
 		xlab=labels[args.par_x], ylab=labels[args.par_y],
 		title=args.title,
 		bfx=args.bestfit_x, bfy=args.bestfit_y, bfup=args.bestfit_upper,
@@ -503,14 +517,17 @@ def call_run(args):
 				files.append(f.replace("OUT", "ini").replace("/z.dat", ".ini"))
 	else:
 		files = list(glob.iglob("grids/%s/ini/*.ini"%args.gridname))
-	for f in files:
-		os.system(
-			"clusterlauncher -N %s_%s -n 1 --openmp -q short-seq -w 6:00:00 bin/nuDens.exe %s"%(
-				args.gridname,
-				f.split(os.sep)[-1].replace(".ini", ""),
-				f,
-				))
-	print("\nTotal number of runs: %s"%len(files))
+	current = 0
+	for i, f in enumerate(sorted(files)):
+		if i >= args.first_index and i < args.last_index:
+			current += 1
+			os.system(
+				"clusterlauncher -N %s_%s -n 1 --openmp -q short-seq -w 6:00:00 bin/nuDens.exe %s"%(
+					args.gridname,
+					f.split(os.sep)[-1].replace(".ini", ""),
+					f,
+					))
+	print("\nTotal number of runs: %s, submitted: %s"%(len(files), current))
 
 
 if __name__=='__main__':
