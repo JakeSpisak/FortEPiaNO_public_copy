@@ -1,21 +1,30 @@
 # FLAGS
 BUILD_DIR ?= build
 EXECNAME ?= nuDens.exe
-# use e.g. with USER_DEFINED=-DTESTSPEED=1 and EXECNAME=nuDens_speed.exe
-USER_DEFINED ?= 
+# define TESTSPEED=1 to compute the time required for the first 1000 derivatives
+TESTSPEED ?=
+# define FULL_F_AB=1 to compute full matrix product in F_AB functions (by default assumes diagonal G matrices)
+FULL_F_AB ?=
 
 ifortErr = $(shell which ifort >/dev/null; echo $$?)
 ifeq "$(ifortErr)" "0"
 #ifort
 F90=ifort
-  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -openmp -parallel -par-report1 -no-prec-div $(USER_DEFINED)
-DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all $(USER_DEFINED)
+  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -openmp -parallel -par-report1 -no-prec-div
+DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all
 
 else
 #gfortran
 F90=gfortran
-F90FLAGS=-cpp -O3 -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -ffast-math -ffree-line-length-none -fopenmp $(USER_DEFINED)
-DEBUGFLAGS=-O0 -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all $(USER_DEFINED)
+  F90FLAGS=-O3 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -ffast-math -ffree-line-length-none -fopenmp
+DEBUGFLAGS=-O0 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
+endif
+
+ifeq ($(TESTSPEED), 1)
+	F90FLAGS += -DTESTSPEED=1
+endif
+ifeq ($(FULL_F_AB), 1)
+	F90FLAGS += -DFULLFAB=1
 endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
