@@ -28,14 +28,14 @@ def setParser():
 		'--ordering',
 		choices=["NO", "IO"],
 		default="NO",
-		help='define the mass ordering for the three active neutrinos'
+		help='define the mass ordering for the three active neutrinos (not used if you explicitely give the mixing parameters, only if you select default values by Valencia, Bari or NuFit global fit)'
 		)
 	parser.add_argument(
 		'--default_active',
 		nargs=1,
-		choices=["VLC", "None"],
+		choices=["Bari", "NuFit", "VLC", "None"],
 		default="VLC",
-		help='define the mixing parameters for the active neutrinos as obtained from the Valencia global fit'
+		help='define the mixing parameters for the active neutrinos as obtained from the Valencia global fit (doi:10.1016/j.physletb.2018.06.019, default), Bari group (doi:10.1016/j.ppnp.2018.05.005) or NuFit analysis (doi:10.1007/JHEP01(2019)106)'
 		)
 	parser.add_argument(
 		'--default_sterile',
@@ -60,7 +60,7 @@ def setParser():
 		'--dm31',
 		type=float,
 		default=0.,
-		help=r'define $|\Delta m^2_{31}|$'
+		help=r'define $\Delta m^2_{31}$ (pass negative value for inverted ordering)'
 		)
 	parser.add_argument(
 		'--dm41',
@@ -183,7 +183,6 @@ def setParser():
 def oscParams(args):
 	osc = {}
 	osc["use_sinsq"] = "T" if args.use_sinsq else "F"
-	osc["ordering"] = "T"
 	if args.numodel in ["3p1", "3+1"]:
 		osc["nnu"] = 4
 		osc["sterile"] = [False, False, False, True]
@@ -212,27 +211,42 @@ def oscParams(args):
 			osc["nnu"] = 3
 			osc["sterile"] = [False, False, False]
 			osc["factors"] = [1, 1, 1]
-		if args.numodel in ["3p1", "3+1", "3p0", "3+0", "3nu", "3"] \
-				and args.default_active == "VLC":
-			if args.ordering.lower() in ["no", "nh", "normal"]:
-				osc["ordering"] = "T"
+		if args.numodel in ["3p1", "3+1", "3p0", "3+0", "3nu", "3"]:
+			if args.default_active == "VLC":
 				osc["dm21"] = 7.55e-05
-				osc["dm31"] = 0.00250
 				osc["th12"] = 0.32
-				osc["th13"] = 0.0216
-				osc["th23"] = 0.547
-			else:
-				osc["ordering"] = "F"
-				osc["dm21"] = 7.55e-05
-				osc["dm31"] = 0.00242
-				osc["th12"] = 0.32
-				osc["th13"] = 0.0222
-				osc["th23"] = 0.551
+				if args.ordering.lower() in ["no", "nh", "normal"]:
+					osc["dm31"] = 0.00250
+					osc["th13"] = 0.0216
+					osc["th23"] = 0.547
+				else:
+					osc["dm31"] = -0.00242
+					osc["th13"] = 0.0222
+					osc["th23"] = 0.551
+			elif args.default_active == "Bari":
+				osc["dm21"] = 7.34e-05
+				if args.ordering.lower() in ["no", "nh", "normal"]:
+					osc["dm31"] = 2.455e-3 + 0.5*(osc["dm21"])
+					osc["th12"] = 0.304
+					osc["th13"] = 0.0214
+					osc["th23"] = 0.551
+				else:
+					osc["dm31"] = -2.441e-3 + 0.5*(osc["dm21"])
+					osc["th12"] = 0.303
+					osc["th13"] = 0.0218
+					osc["th23"] = 0.557
+			elif args.default_active == "NuFit":
+				osc["dm21"] = 7.39e-05
+				osc["th12"] = 0.31
+				if args.ordering.lower() in ["no", "nh", "normal"]:
+					osc["dm31"] = 0.002525
+					osc["th13"] = 0.0224
+					osc["th23"] = 0.582
+				else:
+					osc["dm31"] = -0.002512 + osc["dm21"]
+					osc["th13"] = 0.02263
+					osc["th23"] = 0.582
 		else:
-			if args.ordering.lower() in ["no", "nh", "normal"]:
-				osc["ordering"] = "T"
-			else:
-				osc["ordering"] = "F"
 			osc["dm21"] = args.dm21
 			osc["dm31"] = args.dm31
 			osc["th12"] = args.th12
@@ -290,18 +304,16 @@ flavorNumber = {nnu:}
 {factors:}
 {sterile:}
 
-massOrdering = {ordering:}
-
 givesinsq = {use_sinsq:}
 theta12= {th12:}
-dm12 = {dm21:}
+dm21 = {dm21:}
 theta13 = {th13:}
 theta23 = {th23:}
 dm31 = {dm31:}
 theta14 = {th14:}
 theta24 = {th24:}
 theta34 = {th34:}
-dm14 = {dm41:}
+dm41 = {dm41:}
 
 collision_offdiag = {coll_offdiag:}
 dme2_temperature_corr = T
