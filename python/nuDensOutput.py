@@ -188,11 +188,11 @@ class NuDensRun():
 	def plotRhoDiag(self, inu, iy, ls, lc="k"):
 		plt.plot(
 			*stripRepeated(self.rho[inu, inu, 0], 0, iy),
-			label="%s %d"%(self.label, inu+1), ls=ls, c=lc
+			label="%s i=%d"%(self.label, inu+1), ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho/\rho_{eq}-1$")
+		plt.ylabel(r"$\rho_{ii}/\rho_{eq}-1$")
 
 	def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True):
 		if not self.full:
@@ -200,12 +200,12 @@ class NuDensRun():
 			return
 		plt.plot(
 			*stripRepeated(self.rho[i1, i2, 0], 0, iy),
-			ls="-", c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1)
+			ls="-", c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1)
 			)
 		if im:
 			plt.plot(
 				*stripRepeated(self.rho[i1, i2, 1], 0, iy),
-				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
+				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1)
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
@@ -218,29 +218,32 @@ class NuDensRun():
 		dijrex, dijrey = stripRepeated(self.rho[i1, i2, 0], 0, iy)
 		plt.plot(
 			dijrex, np.gradient(dijrey, dijrex),
-			ls="-", c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1)
+			ls="-", c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1)
 			)
 		if im:
 			dijimx, dijimy = stripRepeated(self.rho[i1, i2, 1], 0, iy)
 			plt.plot(
 				dijimx, np.gradient(dijimy, dijimx),
-				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
+				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1)
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$d\rho_{ij}/dt$")
 
-	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k"):
+	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k", p1=0):
 		ylabel = r"$\rho_{ij}^{\rm fin}(y)$"
 		if iy is None:
 			iy = ix
-			ylabel = r"$\rho_{ij}^{\rm fin}(y)/\rho_{eq}-1$"
+			if p1 == 1:
+				ylabel = r"$\rho_{ij}^{\rm fin}(y)/\rho_{eq}$"
+			else:
+				ylabel = r"$\rho_{ij}^{\rm fin}(y)/\rho_{eq}-1$"
 		if ri not in [0, 1]:
 			ri = 0
 		plt.plot(
-			self.yv, self.rho[ix, iy, ri][-1, 1:],
+			self.yv, self.rho[ix, iy, ri][-1, 1:]+p1,
 			ls=ls, c=lc,
-			label="%s %d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im")
+			label="%s ij=%d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im")
 			)
 		plt.xlabel("$y$")
 		plt.ylabel(ylabel)
@@ -255,19 +258,20 @@ class NuDensRun():
 		plt.plot(
 			*self.interpolateRhoIJ_x(i1, i2, x, ri),
 			ls=ls, c=lc,
-			label="%s %d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x)
+			label="%s ij=%d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x)
 			)
 		plt.xlabel("$y$")
 		plt.ylabel(ylabel)
 
-	def plotRhoDiagY(self, inu, y, ls, lc="k"):
+	def plotRhoDiagY(self, inu, y, ls, lc="k", p1=0):
+		x, y = self.interpolateRhoIJ(inu, inu, y, ri=0)
 		plt.plot(
-			*self.interpolateRhoIJ(inu, inu, y, ri=0),
-			label="%s %d"%(self.label, inu+1), ls=ls, c=lc
+			x, np.asarray(y)+p1,
+			label="%s i=%d"%(self.label, inu+1), ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho/\rho_{eq}-1$")
+		plt.ylabel(r"$\rho_{ii}/\rho_{eq}-1$")
 
 	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True):
 		if not self.full:
@@ -275,12 +279,12 @@ class NuDensRun():
 			return
 		plt.plot(
 			*self.interpolateRhoIJ(i1, i2, y, ri=0),
-			ls=ls, c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1)
+			ls=ls, c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1)
 			)
 		if im:
 			plt.plot(
 				*self.interpolateRhoIJ(i1, i2, y, ri=1),
-				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
+				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1)
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")

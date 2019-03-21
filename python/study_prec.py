@@ -44,7 +44,7 @@ finalizePlot(
 	ylab=r"$N_{\rm eff}$",
 	xlim=(16, 104),
 	ylim=yran,
-	title="3 neutrinos, normal ordering, VLC 2018 best-fit",
+	# title="3 neutrinos, normal ordering, VLC 2018 best-fit",
 	)
 
 print("\n\n3+1")
@@ -60,7 +60,7 @@ finalizePlot(
 	ylab=r"$N_{\rm eff}$",
 	xlim=(12, 73),
 	ylim=yran,
-	title="3 (NO, VLC 2018) + 1 (Delta=1.29, Ue4=0.01, Um4=Ut4=0) neutrinos",
+	# title="3 (NO, VLC 2018) + 1 (Delta=1.29, Ue4=0.01, Um4=Ut4=0) neutrinos",
 	lloc="lower right",
 	)
 
@@ -68,9 +68,9 @@ print("\n\n3+1 xy")
 fig = plt.Figure(figsize=(6,4))
 yran = (4.02, 4.08)
 for ix, xin in enumerate([1e-3, 9e-4, 8e-4, 5e-4]):
-	plt.plot(0, 0, color='k', marker=markers[ix], linestyle='none', label="xin=%s"%xin)
+	plt.plot(0, 0, color='k', marker=markers[ix], linestyle='none', label=r"$x_{\rm in}$=%s"%xin)
 for iy, nyl in enumerate([2, 3, 4]):
-	plt.plot(0, 0, color=colors[iy], marker="o", linestyle='none', label="Nylog=%s"%nyl)
+	plt.plot(0, 0, color=colors[iy], marker="o", linestyle='none', label=r"$N_y^{\rm log}$=%s"%nyl)
 for iy, nyl in enumerate([2, 3, 4]):
 	for ix, xin in enumerate([1e-3, 9e-4, 8e-4, 5e-4]):
 		rlab = "Nylog=%s, xin=%s"%(nyl, xin)
@@ -83,6 +83,6 @@ finalizePlot(
 	ylab=r"$N_{\rm eff}$",
 	xlim=(17, 38),
 	ylim=yran,
-	title="3 (NO, VLC 2018) + 1 (Delta=1.29, Ue4=0.01, Um4=Ut4=0) neutrinos",
+	# title="3 (NO, VLC 2018) + 1 (Delta=1.29, Ue4=0.01, Um4=Ut4=0) neutrinos",
 	lloc="lower right", legcol=2,
 	)
