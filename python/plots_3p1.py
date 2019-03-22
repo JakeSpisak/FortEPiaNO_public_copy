@@ -7,6 +7,25 @@ from nuDensOutput import colors, styles, finalizePlot, stripRepeated, NuDensRun
 
 a3nu = NuDensRun("grids/full_no/OUT/3nu/", label="3nu")
 as3p1 = NuDensRun("OUT/prec_3p1/30_hp_4_0.0005/", nnu=4, label=r"3+1")
+# grids/full_no/OUT/1.0_0.001_0.001_0.001/
+# grids/full_no/OUT/1.0_0.0001_0.0001_0.0001/
+
+for iy, y in enumerate([1, 5, 10]):
+	plt.plot([1e3, 2e3], [-10, -11], ls='-', color=colors[iy], label="y=%s"%y)
+for i in [0, 3]:
+	plt.plot([1e3, 2e3], [-10, -11], ls=styles[i], color="k", label="i=%d"%i)
+for iy, y in enumerate([1, 5, 10]):
+	for i in [0, 3]:
+		as3p1.plotRhoDiagY(i, y, styles[i], lc=colors[iy], p1=1, label="")
+finalizePlot(
+	"plots/3p1/rho_diag_y.pdf",
+	xlab="$x$",
+	ylab=r"$\rho_{ii}/\rho_{eq}$",
+	xlim=(5e-4, 30),
+	ylim=(-0.05, 1.05),
+	xscale="log",
+	lloc="lower right", legcol=2,
+	)
 
 for i in range(3):
 	a3nu.plotRhoDiagY(i, 5, styles[i], lc=colors[3],p1=1)

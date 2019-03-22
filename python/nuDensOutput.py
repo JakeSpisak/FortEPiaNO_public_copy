@@ -263,15 +263,16 @@ class NuDensRun():
 		plt.xlabel("$y$")
 		plt.ylabel(ylabel)
 
-	def plotRhoDiagY(self, inu, y, ls, lc="k", p1=0):
+	def plotRhoDiagY(self, inu, y, ls, lc="k", p1=0, label=None):
 		x, y = self.interpolateRhoIJ(inu, inu, y, ri=0)
+		lab = label if label is not None else "%s i=%d"%(self.label, inu+1)
 		plt.plot(
 			x, np.asarray(y)+p1,
-			label="%s i=%d"%(self.label, inu+1), ls=ls, c=lc
+			label=lab, ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ii}/\rho_{eq}-1$")
+		plt.ylabel(r"$\rho_{ii}/\rho_{eq}%s$"%("-1" if p1 == 0 else ""))
 
 	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True):
 		if not self.full:
