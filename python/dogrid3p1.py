@@ -11,10 +11,13 @@ import subprocess
 import matplotlib
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
+import ternary
+import ternary.helpers
 import prepareIni
 from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, NuDensRun
 
 
+Neff_default = 3.043
 cmap=matplotlib.cm.get_cmap('CMRmap')
 labels = {
 	"dm41": r"$\Delta m^2_{41}$ [eV$^2$]",
@@ -64,7 +67,7 @@ def setParser():
 	parser_plot.add_argument(
 		'--Neff_active',
 		type=float,
-		default=3.043,
+		default=Neff_default,
 		help='reference value of Neff when only active neutrinos are considered',
 		)
 	parser_plot.add_argument(
@@ -233,6 +236,35 @@ def setParser():
 		help=r'number of expected lines (values in x) in output',
 		)
 	parser_run.set_defaults(func=call_run)
+
+	parser_ternary = subparsers.add_parser(
+		'ternary',
+		help='do a ternary plot'
+		)
+	parser_ternary.add_argument(
+		'--Neff_active',
+		type=float,
+		default=Neff_default,
+		help='reference value of Neff when only active neutrinos are considered',
+		)
+	parser_ternary.add_argument(
+		'--fix_dm41',
+		type=int,
+		default=0,
+		help='fix dm41 to the given index (not value!)',
+		)
+	parser_ternary.add_argument(
+		'--filename',
+		default="",
+		help='name of the file where to save the plot',
+		)
+	parser_ternary.add_argument(
+		'--style',
+		choices=["heatmap", "scatter"],
+		default="heatmap",
+		help='which type of plot to use to show Delta Neff',
+		)
+	parser_ternary.set_defaults(func=call_ternary)
 	return parser
 
 
@@ -528,6 +560,140 @@ def call_run(args):
 					f,
 					))
 	print("\nTotal number of runs: %s, submitted: %s"%(len(files), current))
+
+
+def call_ternary(args):
+	# prepare the grid points
+	mixings, fullgrid, fullobjects = call_read(args)
+	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
+	fullpoints = np.asarray(fullpoints)
+	if (mixings["Ue4sq_N"] != mixings["Um4sq_N"]
+			or mixings["Ue4sq_N"] != mixings["Ut4sq_N"]
+			or mixings["Ue4sq_N"] < 2):
+		print("Invalid grid for ternary plot: must have the same number of points (>1)for all the mixing matrix elements")
+		return
+	cgrid = mixings.copy()
+	if args.fix_dm41 >= mixings["dm41_N"]:
+		print("dm41 cannot be larger than the number of grid points in dm41!")
+		return
+	print("fixing dm41 to %s"%(mixings["dm41_pts"][args.fix_dm41]))
+	cgrid["dm41_N"] = 1
+	cgrid["dm41_min"] = mixings["dm41_pts"][args.fix_dm41]
+	cgrid["dm41_max"] = mixings["dm41_pts"][args.fix_dm41]
+	cgrid["dm41_pts"] = np.asarray([mixings["dm41_pts"][args.fix_dm41]])
+	smallgrid = fillGrid(Namespace(**cgrid))
+	smallpoints = []
+	for fgv, pt in zip(fullgrid, fullpoints):
+		for ngv in smallgrid:
+			if list(fgv) == list(ngv):
+				smallpoints.append(pt)
+	smallpoints = np.asarray(smallpoints).reshape(
+		(mixings["Ue4sq_N"], mixings["Um4sq_N"], mixings["Ut4sq_N"]))
+
+	# prepare the ternary figure
+	vmin = 0.
+	vmax = 1.
+	norm = plt.Normalize(vmin=vmin, vmax=vmax)
+	scale = mixings["Ue4sq_N"] - 1
+	figure, tax = ternary.figure(scale=scale)
+	figure.set_size_inches(7.5, 5)
+	tax.gridlines(multiple=1, linewidth=1, linestyle=":",
+		horizontal_kwargs={"color": "k", "linestyle": ":",},
+		left_kwargs={"color": "k", "linestyle": "--",},
+		right_kwargs={"color": "k", "linestyle": "-.",},
+		)
+	tax.boundary(linewidth=2.0)
+	colmap = matplotlib.cm.get_cmap('gnuplot') #tab10, Dark2, Set1, CMRmap
+
+	# call the heatmap
+	if args.style == "heatmap":
+		def function(p):
+			"""Compute the value of Delta Neff for the simplex points."""
+			return smallpoints[
+				int(p[0]*(mixings["Ue4sq_N"]-1)),
+				int(p[1]*(mixings["Um4sq_N"]-1)),
+				int(p[2]*(mixings["Ut4sq_N"]-1)),
+				]
+		tax.heatmapf(function,
+			boundary=True, style="t",
+			colorbar=False,
+			cmap=colmap,
+			vmin=vmin, vmax=vmax,
+			)
+	elif args.style == "scatter":
+		pts = []
+		cs = []
+		for pt in ternary.helpers.simplex_iterator(5):
+			pts.append(pt)
+			cs.append(smallpoints[
+				int(pt[0]),
+				int(pt[1]),
+				int(pt[2]),
+				])
+		tax.scatter(pts, s=200, c=cs, marker='o',
+			cmap=colmap, norm=norm, vmin=vmin, vmax=vmax, alpha=0.9)
+
+	#fix tick labels:
+	tfontsize = 10
+	locations = np.arange(0, scale + 1)
+	offset = 0.15
+	ticks = [v for v in mixings["Ue4sq_pts"]]
+	tick_formats = "%.0e"
+	ax = tax.get_axes()
+	for a in ['r', 'l', 'b']:
+		for index, i in enumerate(locations):
+			if a == 'r':
+				loc1 = (scale - i, i, 0)
+				loc2 = (scale - i + offset, i, 0)
+				text_location = (scale - i + 1.6 * offset, i - 0.5 * offset, 0)
+				tick = ticks[index]
+				ha = "left"
+			elif a == 'l':
+				loc1 = (0, i, 0)
+				loc2 = (-offset, i + offset, 0)
+				text_location = (-offset, i + 0.5 * offset, 0)
+				tick = ticks[-(index+1)]
+				ha = "right"
+			elif a == 'b':
+				loc1 = (i, 0, 0)
+				loc2 = (i, -offset, 0)
+				text_location = (i + 0.5 * offset, - 0.35, 0)
+				tick = ticks[index]
+				ha = "center"
+			ternary.line(ax, loc1, loc2, color='k')
+			x, y = ternary.project_point(text_location)
+			ax.text(x, y, "$10^{%d}$"%np.log10(tick), horizontalalignment=ha,
+					color='k', fontsize=tfontsize)
+
+	# axis labels and colorbar
+	tax.clear_matplotlib_ticks()
+	tax.get_axes().axis('off')
+	fontsize = 14
+	offset = 0.15
+	tax.set_title(
+		r"$\Delta m^2_{41} = %g$ eV$^2$"%mixings["dm41_pts"][args.fix_dm41],
+		pad=10,
+		)
+	tax.bottom_axis_label(r"$|U_{e4}|^2$", fontsize=fontsize, offset=0.)
+	tax.left_axis_label(r"$|U_{\mu4}|^2$", fontsize=fontsize, offset=offset)
+	tax.right_axis_label(r"$|U_{\tau4}|^2$", fontsize=fontsize, offset=offset)
+	sm = plt.cm.ScalarMappable(cmap=colmap, norm=norm)
+	sm._A = []
+	cb = plt.colorbar(sm, extend="both", ticks=[0.1, 0.3, 0.5, 0.7, 0.9])
+	cb.set_label(r"$\Delta N_{\rm eff}$", fontsize=fontsize)
+	plt.tight_layout(rect=(-0.02, -0.02, 1.07, 1.02))
+
+	# save and exit
+	tax.savefig(
+		"grids/%s/plots/ternary_%s_dm41_%s.pdf"%(
+				args.gridname,
+				"s" if args.style == "scatter" else "h",
+				mixings["dm41_pts"][args.fix_dm41])
+			if args.filename == ""
+			else "grids/%s/plots/%s"%(args.gridname, args.filename)
+		)
+	print("\nDone!\n\n")
+	return
 
 
 if __name__=='__main__':
