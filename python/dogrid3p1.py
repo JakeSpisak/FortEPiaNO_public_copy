@@ -156,6 +156,11 @@ def setParser():
 		help='initial value in x',
 		)
 	parser_prepare.add_argument(
+		'--ternary',
+		action="store_true",
+		help='activate if you want the grid for ternary plots on the angles [will save a lot of calculations, as it scales with (N+2)(N+1)/2 instead of N^3 for the Ui4sq]',
+		)
+	parser_prepare.add_argument(
 		'--tolerance',
 		type=float,
 		default=1e-5,
@@ -269,12 +274,25 @@ def setParser():
 
 
 def fillGrid(args):
-	return 10**(np.mgrid[
-		np.log10(args.dm41_min):np.log10(args.dm41_max):args.dm41_N*1j,
-		np.log10(args.Ue4sq_min):np.log10(args.Ue4sq_max):args.Ue4sq_N*1j,
-		np.log10(args.Um4sq_min):np.log10(args.Um4sq_max):args.Um4sq_N*1j,
-		np.log10(args.Ut4sq_min):np.log10(args.Ut4sq_max):args.Ut4sq_N*1j,
-		]).reshape(4, args.dm41_N*args.Ue4sq_N*args.Um4sq_N*args.Ut4sq_N).T
+	if hasattr(args, "ternary") and args.ternary:
+		pts=[]
+		minv = np.log10(args.Ue4sq_min)
+		maxv = np.log10(args.Ue4sq_max)
+		basescale = maxv-minv
+		n = args.Ue4sq_N
+		N=int(n/basescale)
+		frac=1./N
+		for dm41 in np.logspace(np.log10(args.dm41_min), np.log10(args.dm41_max), args.dm41_N):
+			for pt in ternary.helpers.simplex_iterator(n):
+				pts.append([dm41, 10**(frac*(pt[0]-n-N)),10**(frac*(pt[1]-n-N)),10**(frac*(pt[2]-n-N))])
+		return np.asarray(pts)
+	else:
+		return 10**(np.mgrid[
+			np.log10(args.dm41_min):np.log10(args.dm41_max):args.dm41_N*1j,
+			np.log10(args.Ue4sq_min):np.log10(args.Ue4sq_max):args.Ue4sq_N*1j,
+			np.log10(args.Um4sq_min):np.log10(args.Um4sq_max):args.Um4sq_N*1j,
+			np.log10(args.Ut4sq_min):np.log10(args.Ut4sq_max):args.Ut4sq_N*1j,
+			]).reshape(4, args.dm41_N*args.Ue4sq_N*args.Um4sq_N*args.Ut4sq_N).T
 
 
 def write_grid_cfg(args):
@@ -286,12 +304,17 @@ def write_grid_cfg(args):
 				getattr(args, "%s_max"%a),
 				getattr(args, "%s_N"%a),
 				))
+		if hasattr(args, "ternary") and args.ternary:
+			_f.write("ternary\n")
 
 
 def read_grid_cfg(gridname):
 	with open("grids/%s/params.cfg"%args.gridname) as _f:
 		text = _f.readlines()
-	values = {}
+	values = {"ternary": False}
+	for l in text:
+		if "ternary" in l:
+			values["ternary"] = True
 	for a in ["dm41", "Ue4sq", "Um4sq", "Ut4sq"]:
 		for l in text:
 			res = re.match("%s: min=([0-9\.e\+\-]+), max=([0-9\.e\+\-]+), N=([0-9]+)\n"%a, l)
@@ -307,12 +330,12 @@ def read_grid_cfg(gridname):
 						values["%s_pts"%a] = np.linspace(
 							values["%s_min"%a],
 							values["%s_max"%a],
-							values["%s_N"%a])
+							values["%s_N"%a] + (1 if values["ternary"] else 0))
 					else:
 						values["%s_pts"%a] = np.logspace(
 							np.log10(values["%s_min"%a]),
 							np.log10(values["%s_max"%a]),
-							values["%s_N"%a])
+							values["%s_N"%a] + (1 if values["ternary"] else 0))
 	return values, fillGrid(Namespace(**values))
 
 
@@ -478,6 +501,11 @@ def call_prepare(args):
 						(np.log10(pmin) + np.log10(pmax))
 					))
 			setattr(args, "%s_max"%a, getattr(args, "%s_min"%a))
+	if args.ternary:
+		for a in ["Um4sq", "Ut4sq"]:
+			setattr(args, "%s_min"%a, args.Ue4sq_min)
+			setattr(args, "%s_max"%a, args.Ue4sq_max)
+			setattr(args, "%s_N"%a, args.Ue4sq_N)
 	write_grid_cfg(args)
 	grid = fillGrid(args)
 	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
@@ -587,14 +615,15 @@ def call_ternary(args):
 		for ngv in smallgrid:
 			if list(fgv) == list(ngv):
 				smallpoints.append(pt)
-	smallpoints = np.asarray(smallpoints).reshape(
-		(mixings["Ue4sq_N"], mixings["Um4sq_N"], mixings["Ut4sq_N"]))
+	if not mixings["ternary"]:
+		smallpoints = np.asarray(smallpoints).reshape(
+			(mixings["Ue4sq_N"], mixings["Um4sq_N"], mixings["Ut4sq_N"]))
 
 	# prepare the ternary figure
 	vmin = 0.
 	vmax = 1.
 	norm = plt.Normalize(vmin=vmin, vmax=vmax)
-	scale = mixings["Ue4sq_N"] - 1
+	scale = mixings["Ue4sq_N"] - (0 if mixings["ternary"] else 1)
 	figure, tax = ternary.figure(scale=scale)
 	figure.set_size_inches(7.5, 5)
 	tax.gridlines(multiple=1, linewidth=1, linestyle=":",
@@ -606,32 +635,49 @@ def call_ternary(args):
 	colmap = matplotlib.cm.get_cmap('gnuplot') #tab10, Dark2, Set1, CMRmap
 
 	# call the heatmap
-	if args.style == "heatmap":
-		def function(p):
-			"""Compute the value of Delta Neff for the simplex points."""
-			return smallpoints[
-				int(p[0]*(mixings["Ue4sq_N"]-1)),
-				int(p[1]*(mixings["Um4sq_N"]-1)),
-				int(p[2]*(mixings["Ut4sq_N"]-1)),
-				]
-		tax.heatmapf(function,
-			boundary=True, style="t",
-			colorbar=False,
-			cmap=colmap,
-			vmin=vmin, vmax=vmax,
-			)
-	elif args.style == "scatter":
-		pts = []
-		cs = []
-		for pt in ternary.helpers.simplex_iterator(5):
-			pts.append(pt)
-			cs.append(smallpoints[
-				int(pt[0]),
-				int(pt[1]),
-				int(pt[2]),
-				])
-		tax.scatter(pts, s=200, c=cs, marker='o',
-			cmap=colmap, norm=norm, vmin=vmin, vmax=vmax, alpha=0.9)
+	if not mixings["ternary"]:
+		if args.style == "heatmap":
+			def function(p):
+				"""Compute the value of Delta Neff for the simplex points."""
+				return smallpoints[
+					int(p[0]*(mixings["Ue4sq_N"]-1)),
+					int(p[1]*(mixings["Um4sq_N"]-1)),
+					int(p[2]*(mixings["Ut4sq_N"]-1)),
+					]
+			tax.heatmapf(function,
+				boundary=True, style="t",
+				colorbar=False,
+				cmap=colmap,
+				vmin=vmin, vmax=vmax,
+				)
+		elif args.style == "scatter":
+			pts = []
+			cs = []
+			for pt in ternary.helpers.simplex_iterator(5):
+				pts.append(pt)
+				cs.append(smallpoints[
+					int(pt[0]),
+					int(pt[1]),
+					int(pt[2]),
+					])
+			tax.scatter(pts, s=200, c=cs, marker='o',
+				cmap=colmap, norm=norm, vmin=vmin, vmax=vmax, alpha=0.9)
+	else:
+		if args.style == "heatmap":
+			data = dict()
+			for n, [i, j, k] in enumerate(ternary.helpers.simplex_iterator(mixings["Ue4sq_N"])):
+				data[(i, j)] = smallpoints[n]
+			tax.heatmap(data,
+				style="t",
+				colorbar=False,
+				cmap=colmap,
+				vmin=vmin,
+				vmax=vmax,
+				)
+		elif args.style == "scatter":
+			tax.scatter(ternary.helpers.simplex_iterator(mixings["Ue4sq_N"]),
+				s=200, c=smallpoints, marker='o',
+				cmap=colmap, norm=norm, vmin=vmin, vmax=vmax, alpha=0.9)
 
 	#fix tick labels:
 	tfontsize = 10
