@@ -350,10 +350,13 @@ class NuDensRun():
 				"%s/drho_offdiag.pdf"%self.folder,
 				)
 
-	def integrateRhoFin_yn(self, ix, n, eq=False):
+	def integrateRhoFin_yn(self, ix, n, eq=False, show=False):
 		"""Compute the integral
-		Int_0^Inf dy y^2 f(y)/Pi^2
+		Int_0^Inf dy y^n f(y)/Pi^2
 		for the requested eigenstate
 		"""
 		fy = interp1d(self.yv, self.rho[ix, ix, 0][-1, 1:] if not eq else [0. for y in self.yv])
-		return quad(lambda y: y**n * (1.+fy(y))/(np.exp(y)+1), 0.01, 20)[0]/np.pi**2
+		res = quad(lambda y: y**n * (1.+fy(y))/(np.exp(y)+1), 0.01, 20)
+		if show:
+			print(res)
+		return res[0]/np.pi**2
