@@ -433,7 +433,7 @@ module ndEquations
 			end do
 		end if
 		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
-		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)
+		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1
 
 		do i=1, totFiles
 			close(units(i))
@@ -479,7 +479,7 @@ module ndEquations
 		iwork(6)=99999999
 		jt=2
 
-		nuDensVec(ntot)=z_in
+		nuDensVec(ntot)=z_in - 1.d0
 		call densMat_2_vec(nuDensVec)
 
 		call readCheckpoints(nchk, xchk, ychk, chk)
@@ -526,7 +526,7 @@ module ndEquations
 			call saveRelevantInfo(xend, nuDensVec)
 			xstart=xend
 		end do
-		write(tmpstring,"('x_end =',"//dblfmt//",' - z_end =',"//dblfmt//")") xend, nuDensVec(ntot)
+		write(tmpstring,"('x_end =',"//dblfmt//",' - z_end =',"//dblfmt//")") xend, nuDensVec(ntot)+1.d0
 
 		call date_and_time(VALUES=values)
 		call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
@@ -534,7 +534,7 @@ module ndEquations
 			'("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2,' &
 			//"' - DLSODA end after ',"//dblfmt//",' derivatives - " &
 			//"xend =',"//dblfmt//",' - T =',"//dblfmt//")") &
-			values(3), values(2), values(1), values(5),values(6),values(7), deriv_counter, xend, nuDensVec(ntot)
+			values(3), values(2), values(1), values(5),values(6),values(7), deriv_counter, xend, nuDensVec(ntot)+1.d0
 		close(timefileu)
 
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
@@ -594,7 +594,7 @@ module ndEquations
 		call printVerbose(trim(tmpstr), 1+int(mod(deriv_counter, Nprintderivs)))
 
 		call allocateCmplxMat(mat)
-		z = vars(n)
+		z = vars(n) + 1.d0
 		call vec_2_densMat(vars)
 		do m=1, Ny
 			call derivative(x, z, m, mat, n, ydot)
@@ -629,7 +629,7 @@ module ndEquations
 		real(dl) :: ndeq, tmp, z
 		integer :: ix
 
-		z = nuDensVec(ntot)
+		z = nuDensVec(ntot) + 1.d0
 		call openFile(9876, trim(outputFolder)//"/resume.dat", .true.)
 		write(*,"('final z = ',F11.8)") z
 		write(9876,"('final z = ',F11.8)") z
