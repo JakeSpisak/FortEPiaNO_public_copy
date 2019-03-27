@@ -175,7 +175,7 @@ module ndConfig
 		
 		!nu density matrix
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
-		ntot = Ny*(flavNumSqu) + 1 !independent elements in nuDensity(y) + z
+		ntot = Ny*(flavNumSqu) + 2 !independent elements in nuDensity(y) + w,z
 		allocate(nuDensVec(ntot))
 		if(trim(outputFolder).ne."")&
 			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)
@@ -309,6 +309,13 @@ module ndConfig
 				else
 					sterile(ix) = read_ini_logical(trim(tmparg), .true.)
 				end if
+			end do
+			tot_factor_active_nu = 0.d0
+			tot_factor_nu = 0.d0
+			do ix=1, flavorNumber
+				tot_factor_nu = tot_factor_nu + nuFactor(ix)
+				if (.not. sterile(ix)) &
+					tot_factor_active_nu = tot_factor_active_nu + nuFactor(ix)
 			end do
 			write (tmparg, &
 				"('[config] using ',I1,' neutrinos, counting as ',*(E10.3))") flavorNumber, nuFactor

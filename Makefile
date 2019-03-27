@@ -5,8 +5,14 @@ EXECNAME ?= nuDens.exe
 TESTSPEED ?=
 # define FULL_F_AB=1 to compute full matrix product in F_AB functions (by default assumes diagonal G matrices)
 FULL_F_AB ?=
+F90 ?= ifort
 
-ifortErr = $(shell which ifort >/dev/null; echo $$?)
+ifeq ("$(F90)","gfortran")
+ifortErr=1
+else
+ifortErr=$(shell which ifort >/dev/null; echo $$?)
+endif
+
 ifeq "$(ifortErr)" "0"
 #ifort
 F90=ifort
@@ -78,7 +84,7 @@ nudens_debug: directories objects Makefile
 	$(F90) -o bin/nuDens_debug.exe $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
 
 tests: directories objects Makefile $(BUILD_DIR)/tests.o
-	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/tests.o $(DEBUGFLAGS)
+	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/tests.o $(FFLAGS)
 
 clean: 
 	rm -rf bin/* $(BUILD_DIR)*/ build*/

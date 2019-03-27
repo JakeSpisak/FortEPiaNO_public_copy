@@ -60,6 +60,7 @@ end subroutine assert_double_rel_verb
 
 program tests
 	use precision
+	use variables
 	use ndConfig
 	use ndErrors
 	use ndEquations
@@ -94,6 +95,7 @@ program tests
 	call do_test_drho_dx
 	call do_test_collision_terms
 	call do_test_damping_factors
+	call do_test_zin
 
 	write(*,*) ""
 	write(*,*) ""
@@ -150,6 +152,8 @@ program tests
 			nuFactor(ix) = 1.d0
 			sterile(ix) = .false.
 		end do
+		tot_factor_active_nu = 3.0
+		tot_factor_nu = 0.d0
 		theta12      = 0.5840d0
 		dm21         = 7.53d-05
 		if (flavorNumber .gt. 2) then
@@ -158,7 +162,7 @@ program tests
 			dm31         = 0.0025153d0
 			deltaCP13    = 0.d0
 		end if
-		call zin_solver
+		z_in=1.0000575
 		call setMixingMatrix()
 		call setMassMatrix()
 		call init_matrices
@@ -368,7 +372,7 @@ program tests
 		end do
 
 		write(*,*) ""
-		write(*,"(a)") "Cosmology (36 tests)"
+		write(*,"(a)") "Cosmology (35 tests)"
 		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06102d0, 1d-4)
 		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.48762d0, 1d-4)
 		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377464d0, 1d-4)
@@ -393,42 +397,41 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 1", nuDensityLin(1.d0, 1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensLin test 1", nuDensityLin(1), 0.575727d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 2", nuDensityLin(1.076d0, 1), 0.5d0*1.54346d0, 1d-4)
+		call assert_double_rel("nuDensLin test 2", nuDensityLin(1), 0.5d0*1.54346d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 3", nuDensityLin(1.32d0, 1), 0.5d0*3.49577d0, 2d-4)
+		call assert_double_rel("nuDensLin test 3", nuDensityLin(1), 0.5d0*3.49577d0, 2d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 4", nuDensityLin(1.37d0, 2), 0.5d0*2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDensLin test 4", nuDensityLin(2), 0.5d0*2.d0*4.05629d0, 5d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 5", nuDensityLin(1.003d0, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuDensLin test 5", nuDensityLin(3), 0.5d0*3.d0*1.16533d0, 1d-4)
 
 		call assert_double_rel("nuDensLinEq test 1", nuDensityLinEq(1.d0), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDensLinEq test 2", nuDensityLinEq(1.37d0), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensLinEq test 2", nuDensityLinEq(1.37d0), 2.02814d0, 5d-4)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double_rel("allNuDensLin test 1", allNuDensity(1.d0), 6*0.575727d0, 1d-3)
-		call assert_double_rel("allNuDensLin test 2", allNuDensity(1.276d0), 6*0.575727d0, 1d-3)
+		call assert_double_rel("allNuDensLin test 1", allNuDensity(), 6*0.575727d0, 1d-3)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
@@ -444,31 +447,31 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double_rel("Neff test 1", Neff_from_rho_z(zid), 3.0d0, 1d-5)
+		call assert_double_rel("Neff test 1", Neff_from_rho_z(1.d0, zid), 3.0d0, 1d-5)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double_rel("Neff test 2", Neff_from_rho_z(1.39975d0), 3.011d0, 1d-4)
+		call assert_double_rel("Neff test 2", Neff_from_rho_z(1.d0, 1.39975d0), 3.011d0, 1d-4)
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 1) = 1.2d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(2, 2) = 1.d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double_rel("Neff test 3", Neff_from_rho_z(zid), 3.2d0, 1d-5)
+		call assert_double_rel("Neff test 3", Neff_from_rho_z(1.d0, zid), 3.2d0, 1d-5)
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 1) = 1.00920d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(2, 2) = 1.00392d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.00392d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double("Neff test 4", Neff_from_rho_z(1.397843d0), 3.045d0, 1d-3)
+		call assert_double("Neff test 4", Neff_from_rho_z(1.d0, 1.397843d0), 3.045d0, 1d-3)
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 1) = 1.00699d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(2, 2) = 1.00511d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.00519d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double("Neff test 5", Neff_from_rho_z(1.39779d0), 3.045d0, 1d-3)
+		call assert_double("Neff test 5", Neff_from_rho_z(1.d0, 1.39779d0), 3.045d0, 1d-3)
 
 		call assert_double("muonDensF test 1", muonDensityFull(1.d0, 1.d0), 0.d0, 1d-15)
 		call assert_double_rel("muonDensF test 2", muonDensityFull(0.1d0, 1.32d0), 0.000146007d0, 1d-4)
@@ -535,10 +538,12 @@ program tests
 	end subroutine do_tests_JKYG
 
 	subroutine do_tests_dzodx
-		integer, parameter :: n=901
-		real(dl), dimension(n) :: ydot
+		integer :: n
+		real(dl), dimension(:), allocatable :: ydot
 		integer :: m
 
+		n=ntot
+		allocate(ydot(n))
 		ydot = 0.d0
 		do m=1, Ny
 			ydot((m-1)*flavNumSqu + 1) = cos(0.02d0*y_arr(m))
@@ -554,12 +559,16 @@ program tests
 		call dz_o_dx(6.d0, 1.2d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 4d-6)
 
-		call dz_o_dx_lin(0.01d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 1", ydot(n), -0.1751102d0, 4d-6)
-		call dz_o_dx_lin(1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 2", ydot(n), -0.0946571d0, 3d-6)
-		call dz_o_dx_lin(6.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 3", ydot(n), -0.15262978d0, 2d-6)
+		call dz_o_dx_lin(0.01d0, 1.2d0, 1.d0, ydot, n)
+		call assert_double_rel("dz_o_dx_lin test 1a", ydot(n), -0.1751102d0, 4d-6)
+		call assert_double_rel("dz_o_dx_lin test 1b", ydot(n-1), -0.10615d0, 4d-6)
+		call dz_o_dx_lin(1.1d0, 1.1d0, 1.1d0, ydot, n)
+		call assert_double_rel("dz_o_dx_lin test 2a", ydot(n), -0.0946571d0, 3d-6)
+		call assert_double_rel("dz_o_dx_lin test 2b", ydot(n-1), -0.137812d0, 3d-6)
+		call dz_o_dx_lin(6.d0, 1.d0, 1.2d0, ydot, n)
+		call assert_double_rel("dz_o_dx_lin test 3a", ydot(n), -0.15262978d0, 2d-6)
+		call assert_double_rel("dz_o_dx_lin test 3b", ydot(n-1), -0.183428d0, 2d-6)
+		deallocate(ydot)
 	end subroutine do_tests_dzodx
 
 	subroutine do_tests_dme2
@@ -2382,6 +2391,27 @@ program tests
 		end do
 		collision_offdiag = 1
 	end subroutine do_test_damping_factors
+
+	subroutine do_test_zin
+		write(*,*)
+		write(*,"(a)") "z_in solver (4 tests)"
+		dme2_temperature_corr = .false.
+		x_in=0.05d0
+		z_in=0.d0
+		call zin_solver
+		call assert_double("z_in test 1", z_in-1.d0, 0.575d-04, 1d-6)
+		x_in=1d-3
+		call zin_solver
+		call assert_double("z_in test 2", z_in-1.d0, 2.3d-8, 1d-9)
+		dme2_temperature_corr = .true.
+		x_in=0.05d0
+		z_in=0.d0
+		call zin_solver
+		call assert_double("z_in test 1", z_in-1.d0, 0.56d-04, 1d-6)
+		x_in=1d-3
+		call zin_solver
+		call assert_double("z_in test 2", z_in-1.d0, 7.7d-8, 1d-9)
+	end subroutine do_test_zin
 
 	subroutine do_timing_tests
 		timing_tests = .true.
