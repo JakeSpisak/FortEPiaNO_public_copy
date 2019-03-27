@@ -406,7 +406,7 @@ module ndEquations
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
 			call openFile(units(k), trim(fname),firstWrite)
 			do iy=1, nY
-				tmpvec(iy)=nuDensMatVec(iy)%re(k, k)
+				tmpvec(iy)=nuDensMatVecFD(iy)%re(k, k)
 			end do
 			write(units(k), '(*('//dblfmt//'))') x, tmpvec
 		end do
@@ -417,7 +417,7 @@ module ndEquations
 					call openFile(units(k), trim(fname),firstWrite)
 					tmpvec=0
 					do iy=1, nY
-						tmpvec(iy)=nuDensMatVec(iy)%re(i,j)
+						tmpvec(iy)=nuDensMatVecFD(iy)%re(i,j)
 					end do
 					write(units(k), '(*('//dblfmt//'))') x, tmpvec
 					k=k+1
@@ -426,7 +426,7 @@ module ndEquations
 					call openFile(units(k), trim(fname),firstWrite)
 					tmpvec=0
 					do iy=1, nY
-						tmpvec(iy)=nuDensMatVec(iy)%im(i,j)
+						tmpvec(iy)=nuDensMatVecFD(iy)%im(i,j)
 					end do
 					write(units(k), '(*('//dblfmt//'))') x, tmpvec
 					k=k+1
