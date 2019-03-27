@@ -5,20 +5,34 @@ import ast
 import glob
 import re
 import numpy as np
-from scipy.interpolate import interpn
 import shutil
 import subprocess
-import matplotlib
-matplotlib.use("agg")
-import matplotlib.pyplot as plt
-import ternary
-import ternary.helpers
+try:
+	from scipy.interpolate import interpn
+	import matplotlib
+	matplotlib.use("agg")
+	import matplotlib.pyplot as plt
+except ImportError:
+	print("missing modules, many things will not work")
+else:
+	cmap=matplotlib.cm.get_cmap('CMRmap')
+try:
+	import ternary
+	import ternary.helpers
+except ImportError:
+	print("ternary is not available, some functions are disabled")
+	tern = False
+	ternary = None
+else:
+	tern = True
 import prepareIni
-from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, NuDensRun
+try:
+	from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, NuDensRun
+except ImportError:
+	print("missing modules, many things will not work")
 
 
 Neff_default = 3.043
-cmap=matplotlib.cm.get_cmap('CMRmap')
 labels = {
 	"dm41": r"$\Delta m^2_{41}$ [eV$^2$]",
 	"Ue4sq": r"$|U_{e4}|^2$",
@@ -274,7 +288,7 @@ def setParser():
 
 
 def fillGrid(args):
-	if hasattr(args, "ternary") and args.ternary:
+	if tern and hasattr(args, "ternary") and args.ternary:
 		pts=[]
 		minv = np.log10(args.Ue4sq_min)
 		maxv = np.log10(args.Ue4sq_max)
@@ -591,6 +605,9 @@ def call_run(args):
 
 
 def call_ternary(args):
+	if not tern:
+		print("ternary not available. Exiting.")
+		return
 	# prepare the grid points
 	mixings, fullgrid, fullobjects = call_read(args)
 	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
