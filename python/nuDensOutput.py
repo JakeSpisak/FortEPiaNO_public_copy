@@ -192,7 +192,7 @@ class NuDensRun():
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ii}/\rho_{eq}-1$")
+		plt.ylabel(r"$\rho_{ii}$")
 
 	def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True):
 		if not self.full:
@@ -230,18 +230,14 @@ class NuDensRun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$d\rho_{ij}/dt$")
 
-	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k", p1=0):
+	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k"):
 		ylabel = r"$\rho_{ij}^{\rm fin}(y)$"
 		if iy is None:
 			iy = ix
-			if p1 == 1:
-				ylabel = r"$\rho_{ij}^{\rm fin}(y)/\rho_{eq}$"
-			else:
-				ylabel = r"$\rho_{ij}^{\rm fin}(y)/\rho_{eq}-1$"
 		if ri not in [0, 1]:
 			ri = 0
 		plt.plot(
-			self.yv, self.rho[ix, iy, ri][-1, 1:]+p1,
+			self.yv, self.rho[ix, iy, ri][-1, 1:],
 			ls=ls, c=lc,
 			label="%s ij=%d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im")
 			)
@@ -252,7 +248,6 @@ class NuDensRun():
 		ylabel = r"$\rho_{ij}(y)$"
 		if i2 is None:
 			i2 = i1
-			ylabel = r"$\rho_{ij}(y)/\rho_{eq}-1$"
 		if ri not in [0, 1]:
 			ri = 0
 		plt.plot(
@@ -263,16 +258,16 @@ class NuDensRun():
 		plt.xlabel("$y$")
 		plt.ylabel(ylabel)
 
-	def plotRhoDiagY(self, inu, y, ls, lc="k", p1=0, label=None):
+	def plotRhoDiagY(self, inu, y, ls, lc="k", label=None):
 		x, y = self.interpolateRhoIJ(inu, inu, y, ri=0)
 		lab = label if label is not None else "%s i=%d"%(self.label, inu+1)
 		plt.plot(
-			x, np.asarray(y)+p1,
+			x, np.asarray(y),
 			label=lab, ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ii}/\rho_{eq}%s$"%("-1" if p1 == 0 else ""))
+		plt.ylabel(r"$\rho_{ii}$")
 
 	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True):
 		if not self.full:
@@ -325,7 +320,7 @@ class NuDensRun():
 		finalizePlot(
 			"%s/rho_diag.pdf"%self.folder,
 			xlab="$x$",
-			ylab=r"$\rho/\rho_{eq}-1$",
+			ylab=r"$\rho$",
 			xscale="log",
 			)
 
@@ -350,13 +345,13 @@ class NuDensRun():
 				"%s/drho_offdiag.pdf"%self.folder,
 				)
 
-	def integrateRhoFin_yn(self, ix, n, eq=False, show=False):
+	def integrateRhoFin_yn(self, ix, n, show=False):
 		"""Compute the integral
 		Int_0^Inf dy y^n f(y)/Pi^2
 		for the requested eigenstate
 		"""
-		fy = interp1d(self.yv, self.rho[ix, ix, 0][-1, 1:] if not eq else [0. for y in self.yv])
-		res = quad(lambda y: y**n * (1.+fy(y))/(np.exp(y)+1), 0.01, 20)
+		fy = interp1d(self.yv, self.rho[ix, ix, 0][-1, 1:])
+		res = quad(lambda y: y**n * fy(y), 0.01, 20)
 		if show:
 			print(res)
 		return res[0]/np.pi**2
