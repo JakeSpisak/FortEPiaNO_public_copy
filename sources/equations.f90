@@ -287,7 +287,9 @@ module ndEquations
 		real(dl), dimension(:), allocatable :: rwork, atol, cvec
 		integer, dimension(:), allocatable :: iwork
 
-		call addToLog("[zin] Computation of z_in started. ")
+		xvh = 1d-6
+		write(tmpstring,"('[zin] Computation of z_in started, x_in=',E10.3,', x_end=',E10.3,'.')") xvh, x_in
+		call addToLog(tmpstring)
 		n=1
 
 		itol=2
@@ -305,8 +307,7 @@ module ndEquations
 		iwork(6)=99999999
 		jt=2
 
-		cvec(1) = 0.d0
-		xvh = 1d-6
+		cvec(n) = 0.d0
 
 		call dlsoda(dz_o_dx_eq_lin,n,cvec,xvh,x_in,&
 					itol,rtol,atol,itask,istate, &
@@ -318,8 +319,8 @@ module ndEquations
 		end if
 
 		write(tmpstring,"('[zin] ended with z_in-1 =',E16.9,'.')") cvec(n)
-		z_in = cvec(n) + 1.d0
 		call addToLog(trim(tmpstring))
+		z_in = cvec(n) + 1.d0
 	end subroutine zin_solver
 
 	subroutine drhoy_dx_fullMat(matrix, x, z, iy, Fre, Fim)

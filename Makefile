@@ -5,8 +5,14 @@ EXECNAME ?= nuDens.exe
 TESTSPEED ?=
 # define FULL_F_AB=1 to compute full matrix product in F_AB functions (by default assumes diagonal G matrices)
 FULL_F_AB ?=
+F90 ?= ifort
 
-ifortErr = $(shell which ifort >/dev/null; echo $$?)
+ifeq ("$(F90)","gfortran")
+ifortErr=1
+else
+ifortErr=$(shell which ifort >/dev/null; echo $$?)
+endif
+
 ifeq "$(ifortErr)" "0"
 #ifort
 F90=ifort

@@ -95,6 +95,7 @@ program tests
 	call do_test_drho_dx
 	call do_test_collision_terms
 	call do_test_damping_factors
+	call do_test_zin
 
 	write(*,*) ""
 	write(*,*) ""
@@ -151,6 +152,8 @@ program tests
 			nuFactor(ix) = 1.d0
 			sterile(ix) = .false.
 		end do
+		tot_factor_active_nu = 3.0
+		tot_factor_nu = 0.d0
 		theta12      = 0.5840d0
 		dm21         = 7.53d-05
 		if (flavorNumber .gt. 2) then
@@ -159,7 +162,7 @@ program tests
 			dm31         = 0.0025153d0
 			deltaCP13    = 0.d0
 		end if
-		call zin_solver
+		z_in=1.0000575
 		call setMixingMatrix()
 		call setMassMatrix()
 		call init_matrices
@@ -421,7 +424,7 @@ program tests
 		call assert_double_rel("nuDensLin test 5", nuDensityLin(3), 0.5d0*3.d0*1.16533d0, 1d-4)
 
 		call assert_double_rel("nuDensLinEq test 1", nuDensityLinEq(1.d0), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDensLinEq test 2", nuDensityLinEq(1.37d0), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensLinEq test 2", nuDensityLinEq(1.37d0), 2.02814d0, 5d-4)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
@@ -558,13 +561,13 @@ program tests
 
 		call dz_o_dx_lin(0.01d0, 1.2d0, 1.d0, ydot, n)
 		call assert_double_rel("dz_o_dx_lin test 1a", ydot(n), -0.1751102d0, 4d-6)
-		call assert_double_rel("dz_o_dx_lin test 1b", ydot(n-1), -0.1751102d0, 4d-6)
+		call assert_double_rel("dz_o_dx_lin test 1b", ydot(n-1), -0.10615d0, 4d-6)
 		call dz_o_dx_lin(1.1d0, 1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx_lin test 2a", ydot(n), -0.0946571d0, 3d-6)
-		call assert_double_rel("dz_o_dx_lin test 2b", ydot(n-1), -0.0946571d0, 3d-6)
+		call assert_double_rel("dz_o_dx_lin test 2b", ydot(n-1), -0.137812d0, 3d-6)
 		call dz_o_dx_lin(6.d0, 1.d0, 1.2d0, ydot, n)
 		call assert_double_rel("dz_o_dx_lin test 3a", ydot(n), -0.15262978d0, 2d-6)
-		call assert_double_rel("dz_o_dx_lin test 3b", ydot(n-1), -0.15262978d0, 2d-6)
+		call assert_double_rel("dz_o_dx_lin test 3b", ydot(n-1), -0.183428d0, 2d-6)
 		deallocate(ydot)
 	end subroutine do_tests_dzodx
 
@@ -2388,6 +2391,27 @@ program tests
 		end do
 		collision_offdiag = 1
 	end subroutine do_test_damping_factors
+
+	subroutine do_test_zin
+		write(*,*)
+		write(*,"(a)") "z_in solver (4 tests)"
+		dme2_temperature_corr = .false.
+		x_in=0.05d0
+		z_in=0.d0
+		call zin_solver
+		call assert_double("z_in test 1", z_in-1.d0, 0.575d-04, 1d-6)
+		x_in=1d-3
+		call zin_solver
+		call assert_double("z_in test 2", z_in-1.d0, 2.3d-8, 1d-9)
+		dme2_temperature_corr = .true.
+		x_in=0.05d0
+		z_in=0.d0
+		call zin_solver
+		call assert_double("z_in test 1", z_in-1.d0, 0.56d-04, 1d-6)
+		x_in=1d-3
+		call zin_solver
+		call assert_double("z_in test 2", z_in-1.d0, 7.7d-8, 1d-9)
+	end subroutine do_test_zin
 
 	subroutine do_timing_tests
 		timing_tests = .true.
