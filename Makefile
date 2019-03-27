@@ -78,7 +78,7 @@ nudens_debug: directories objects Makefile
 	$(F90) -o bin/nuDens_debug.exe $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
 
 tests: directories objects Makefile $(BUILD_DIR)/tests.o
-	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/tests.o $(DEBUGFLAGS)
+	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/tests.o $(FFLAGS)
 
 clean: 
 	rm -rf bin/* $(BUILD_DIR)*/ build*/

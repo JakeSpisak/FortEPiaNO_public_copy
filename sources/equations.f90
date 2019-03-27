@@ -250,7 +250,7 @@ module ndEquations
 			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))
 		end do
 		tmp = integral_linearized_1d(Ny, dy_arr, fy_arr)
-		ydot(n-1) = coeff_dw_dx * tmp / w**3
+		ydot(n-1) = coeff_dw_dx * tmp / w**3 / tot_factor_active_nu
 		coeffs = dzodxcoef_interp_func(x/z)
 		ydot(n) = coeffs(1) - coeffs(2) * tmp/ z**3
 	end subroutine dz_o_dx_lin
@@ -322,7 +322,7 @@ module ndEquations
 		call addToLog(trim(tmpstring))
 	end subroutine zin_solver
 
-	subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, Fre, Fim)
+	subroutine drhoy_dx_fullMat(matrix, x, z, iy, Fre, Fim)
 		interface
 			pure real(dl) function Fre(a, b, o)
 				use variables
@@ -338,7 +338,7 @@ module ndEquations
 			end function
 		end interface
 		type(cmplxMatNN), intent(out) :: matrix
-		real(dl) :: w, x, y, z, overallNorm, fd, cf
+		real(dl) :: x, y, z, overallNorm, fd, cf
 		integer :: iy, ix
 		type(coll_args) :: collArgs
 		type(cmplxMatNN), save :: comm
@@ -544,15 +544,15 @@ module ndEquations
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
 
-	subroutine derivative (x, w, z, m, mat, n, ydot)
+	subroutine derivative (x, z, m, mat, n, ydot)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
-		real(dl), intent(in) :: w, x, z
+		real(dl), intent(in) :: x, z
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
 		integer :: i, j, k, s
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x, w, z, m, coll_nue_3_int_re, coll_nue_3_int_im)
+		call drhoy_dx_fullMat(mat, x, z, m, coll_nue_3_int_re, coll_nue_3_int_im)
 		s=(m-1)*flavNumSqu
 		do i=1, flavorNumber
 			ydot(s+i) = mat%re(i,i)
@@ -602,7 +602,7 @@ module ndEquations
 		z = vars(n) + 1.d0
 		call vec_2_densMat(vars)
 		do m=1, Ny
-			call derivative(x, w, z, m, mat, n, ydot)
+			call derivative(x, z, m, mat, n, ydot)
 		end do
 
 		call dz_o_dx_lin(x, w, z, ydot, ntot)
@@ -650,7 +650,7 @@ module ndEquations
 			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 		end do
 		tmp = Neff_from_rho_z(1.d0, z)
-		write(*,"('Neff    = ',F9.6)") tmp, Neff_from_rho_z(w, z)
+		write(*,"('Neff    = ',F9.6)") tmp
 		write(9876,"('Neff    = ',F9.6)") tmp
 		close(9876)
 	end subroutine finalresults

@@ -486,7 +486,7 @@ enddo                                                   !SG-PF
 	subroutine test_dzodx_speed
 		real(dl), dimension(:), allocatable :: fd_vec, fd_x
 		integer :: ix, iflag, interp_nfd
-		real(dl) :: x,z
+		real(dl) :: w,x,z
 		real(8) :: timer1
 		integer, parameter :: n=901
 		real(dl), dimension(n) :: ydot
@@ -503,14 +503,17 @@ enddo                                                   !SG-PF
 		call random_seed()
 		call random_number(x)
 		call random_number(z)
+		call random_number(w)
 		call tic(timer1)
 		do ix=1, 1000000
 			call random_number(x)
 			call random_number(z)
+			call random_number(w)
 			x=(x_fin-x_in)*x + x_in
 			z=0.4d0*z + z_in
+			w=0.4d0*w + z_in
 			call dz_o_dx(x, z, ydot, n)
-			call dz_o_dx_lin(x, z, ydot, n)
+			call dz_o_dx_lin(x, w, z, ydot, n)
 		end do
 		call toc(timer1, "<reset>")
 
@@ -528,9 +531,11 @@ enddo                                                   !SG-PF
 		do ix=1, 1000000
 			call random_number(x)
 			call random_number(z)
+			call random_number(w)
 			x=(x_fin-x_in)*x + x_in
 			z=0.4d0*z + z_in
-			call dz_o_dx_lin(x, z, ydot, n)
+			w=0.4d0*w + z_in
+			call dz_o_dx_lin(x, w, z, ydot, n)
 		end do
 		call toc(timer1, "<linearized>")
 
@@ -693,7 +698,7 @@ enddo                                                   !SG-PF
 			call random_number(x)
 			x=10.d0**(x/6.d0)
 			t1 = nuDensity(x, 1)
-			t1 = nuDensityLin(x, 1)
+			t1 = nuDensityLin(1)
 		end do
 		call toc(timer1, "<reset>")
 
@@ -709,7 +714,7 @@ enddo                                                   !SG-PF
 		do ix=1, 1000000
 			call random_number(x)
 			x=10.d0**(x/6.d0)
-			t1 = nuDensityLin(x, 1)
+			t1 = nuDensityLin(1)
 		end do
 		call toc(timer1, "<linearized>")
 

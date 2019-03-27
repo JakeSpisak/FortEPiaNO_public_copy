@@ -93,6 +93,7 @@ module variables
 	end type coll_args
 
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
+	real(dl) :: tot_factor_active_nu, tot_factor_nu
 	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeff

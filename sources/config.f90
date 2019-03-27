@@ -310,6 +310,13 @@ module ndConfig
 					sterile(ix) = read_ini_logical(trim(tmparg), .true.)
 				end if
 			end do
+			tot_factor_active_nu = 0.d0
+			tot_factor_nu = 0.d0
+			do ix=1, flavorNumber
+				tot_factor_nu = tot_factor_nu + nuFactor(ix)
+				if (.not. sterile(ix)) &
+					tot_factor_active_nu = tot_factor_active_nu + nuFactor(ix)
+			end do
 			write (tmparg, &
 				"('[config] using ',I1,' neutrinos, counting as ',*(E10.3))") flavorNumber, nuFactor
 			write(tmpstr,"(A,', of which they are steriles:',*(L2))") trim(tmparg), sterile
@@ -318,7 +325,7 @@ module ndConfig
 			dm21 = read_ini_real('dm21', i_dm21)
 			if (flavorNumber .gt. 2) then
 				dm31 = read_ini_real('dm31', i_dm31)
-				deltaCP13 = read_ini_real('deltaCP13', i_deltaCP13)
+				deltaCP13 = 0.d0!read_ini_real('deltaCP13', i_deltaCP13)
 			end if
 			if (flavorNumber .gt. 3) then
 				dm41 = read_ini_real('dm41', zero)
