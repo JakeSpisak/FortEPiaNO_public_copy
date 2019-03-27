@@ -11,10 +11,13 @@ import subprocess
 import matplotlib
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
+import ternary
+import ternary.helpers
 import prepareIni
 from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, NuDensRun
 
 
+Neff_default = 3.043
 cmap=matplotlib.cm.get_cmap('CMRmap')
 labels = {
 	"dm41": r"$\Delta m^2_{41}$ [eV$^2$]",
@@ -64,7 +67,7 @@ def setParser():
 	parser_plot.add_argument(
 		'--Neff_active',
 		type=float,
-		default=3.043,
+		default=Neff_default,
 		help='reference value of Neff when only active neutrinos are considered',
 		)
 	parser_plot.add_argument(
@@ -153,6 +156,11 @@ def setParser():
 		help='initial value in x',
 		)
 	parser_prepare.add_argument(
+		'--ternary',
+		action="store_true",
+		help='activate if you want the grid for ternary plots on the angles [will save a lot of calculations, as it scales with (N+2)(N+1)/2 instead of N^3 for the Ui4sq]',
+		)
+	parser_prepare.add_argument(
 		'--tolerance',
 		type=float,
 		default=1e-5,
@@ -233,16 +241,58 @@ def setParser():
 		help=r'number of expected lines (values in x) in output',
 		)
 	parser_run.set_defaults(func=call_run)
+
+	parser_ternary = subparsers.add_parser(
+		'ternary',
+		help='do a ternary plot'
+		)
+	parser_ternary.add_argument(
+		'--Neff_active',
+		type=float,
+		default=Neff_default,
+		help='reference value of Neff when only active neutrinos are considered',
+		)
+	parser_ternary.add_argument(
+		'--fix_dm41',
+		type=int,
+		default=0,
+		help='fix dm41 to the given index (not value!)',
+		)
+	parser_ternary.add_argument(
+		'--filename',
+		default="",
+		help='name of the file where to save the plot',
+		)
+	parser_ternary.add_argument(
+		'--style',
+		choices=["heatmap", "scatter"],
+		default="heatmap",
+		help='which type of plot to use to show Delta Neff',
+		)
+	parser_ternary.set_defaults(func=call_ternary)
 	return parser
 
 
 def fillGrid(args):
-	return 10**(np.mgrid[
-		np.log10(args.dm41_min):np.log10(args.dm41_max):args.dm41_N*1j,
-		np.log10(args.Ue4sq_min):np.log10(args.Ue4sq_max):args.Ue4sq_N*1j,
-		np.log10(args.Um4sq_min):np.log10(args.Um4sq_max):args.Um4sq_N*1j,
-		np.log10(args.Ut4sq_min):np.log10(args.Ut4sq_max):args.Ut4sq_N*1j,
-		]).reshape(4, args.dm41_N*args.Ue4sq_N*args.Um4sq_N*args.Ut4sq_N).T
+	if hasattr(args, "ternary") and args.ternary:
+		pts=[]
+		minv = np.log10(args.Ue4sq_min)
+		maxv = np.log10(args.Ue4sq_max)
+		basescale = maxv-minv
+		n = args.Ue4sq_N
+		N=int(n/basescale)
+		frac=1./N
+		for dm41 in np.logspace(np.log10(args.dm41_min), np.log10(args.dm41_max), args.dm41_N):
+			for pt in ternary.helpers.simplex_iterator(n):
+				pts.append([dm41, 10**(frac*(pt[0]-n-N)),10**(frac*(pt[1]-n-N)),10**(frac*(pt[2]-n-N))])
+		return np.asarray(pts)
+	else:
+		return 10**(np.mgrid[
+			np.log10(args.dm41_min):np.log10(args.dm41_max):args.dm41_N*1j,
+			np.log10(args.Ue4sq_min):np.log10(args.Ue4sq_max):args.Ue4sq_N*1j,
+			np.log10(args.Um4sq_min):np.log10(args.Um4sq_max):args.Um4sq_N*1j,
+			np.log10(args.Ut4sq_min):np.log10(args.Ut4sq_max):args.Ut4sq_N*1j,
+			]).reshape(4, args.dm41_N*args.Ue4sq_N*args.Um4sq_N*args.Ut4sq_N).T
 
 
 def write_grid_cfg(args):
@@ -254,12 +304,17 @@ def write_grid_cfg(args):
 				getattr(args, "%s_max"%a),
 				getattr(args, "%s_N"%a),
 				))
+		if hasattr(args, "ternary") and args.ternary:
+			_f.write("ternary\n")
 
 
 def read_grid_cfg(gridname):
 	with open("grids/%s/params.cfg"%args.gridname) as _f:
 		text = _f.readlines()
-	values = {}
+	values = {"ternary": False}
+	for l in text:
+		if "ternary" in l:
+			values["ternary"] = True
 	for a in ["dm41", "Ue4sq", "Um4sq", "Ut4sq"]:
 		for l in text:
 			res = re.match("%s: min=([0-9\.e\+\-]+), max=([0-9\.e\+\-]+), N=([0-9]+)\n"%a, l)
@@ -275,12 +330,12 @@ def read_grid_cfg(gridname):
 						values["%s_pts"%a] = np.linspace(
 							values["%s_min"%a],
 							values["%s_max"%a],
-							values["%s_N"%a])
+							values["%s_N"%a] + (1 if values["ternary"] else 0))
 					else:
 						values["%s_pts"%a] = np.logspace(
 							np.log10(values["%s_min"%a]),
 							np.log10(values["%s_max"%a]),
-							values["%s_N"%a])
+							values["%s_N"%a] + (1 if values["ternary"] else 0))
 	return values, fillGrid(Namespace(**values))
 
 
@@ -446,6 +501,11 @@ def call_prepare(args):
 						(np.log10(pmin) + np.log10(pmax))
 					))
 			setattr(args, "%s_max"%a, getattr(args, "%s_min"%a))
+	if args.ternary:
+		for a in ["Um4sq", "Ut4sq"]:
+			setattr(args, "%s_min"%a, args.Ue4sq_min)
+			setattr(args, "%s_max"%a, args.Ue4sq_max)
+			setattr(args, "%s_N"%a, args.Ue4sq_N)
 	write_grid_cfg(args)
 	grid = fillGrid(args)
 	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
@@ -528,6 +588,158 @@ def call_run(args):
 					f,
 					))
 	print("\nTotal number of runs: %s, submitted: %s"%(len(files), current))
+
+
+def call_ternary(args):
+	# prepare the grid points
+	mixings, fullgrid, fullobjects = call_read(args)
+	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
+	fullpoints = np.asarray(fullpoints)
+	if (mixings["Ue4sq_N"] != mixings["Um4sq_N"]
+			or mixings["Ue4sq_N"] != mixings["Ut4sq_N"]
+			or mixings["Ue4sq_N"] < 2):
+		print("Invalid grid for ternary plot: must have the same number of points (>1)for all the mixing matrix elements")
+		return
+	cgrid = mixings.copy()
+	if args.fix_dm41 >= mixings["dm41_N"]:
+		print("dm41 cannot be larger than the number of grid points in dm41!")
+		return
+	print("fixing dm41 to %s"%(mixings["dm41_pts"][args.fix_dm41]))
+	cgrid["dm41_N"] = 1
+	cgrid["dm41_min"] = mixings["dm41_pts"][args.fix_dm41]
+	cgrid["dm41_max"] = mixings["dm41_pts"][args.fix_dm41]
+	cgrid["dm41_pts"] = np.asarray([mixings["dm41_pts"][args.fix_dm41]])
+	smallgrid = fillGrid(Namespace(**cgrid))
+	smallpoints = []
+	for fgv, pt in zip(fullgrid, fullpoints):
+		for ngv in smallgrid:
+			if list(fgv) == list(ngv):
+				smallpoints.append(pt)
+	if not mixings["ternary"]:
+		smallpoints = np.asarray(smallpoints).reshape(
+			(mixings["Ue4sq_N"], mixings["Um4sq_N"], mixings["Ut4sq_N"]))
+
+	# prepare the ternary figure
+	vmin = 0.
+	vmax = 1.
+	norm = plt.Normalize(vmin=vmin, vmax=vmax)
+	scale = mixings["Ue4sq_N"] - (0 if mixings["ternary"] else 1)
+	figure, tax = ternary.figure(scale=scale)
+	figure.set_size_inches(7.5, 5)
+	tax.gridlines(multiple=1, linewidth=1, linestyle=":",
+		horizontal_kwargs={"color": "k", "linestyle": ":",},
+		left_kwargs={"color": "k", "linestyle": "--",},
+		right_kwargs={"color": "k", "linestyle": "-.",},
+		)
+	tax.boundary(linewidth=2.0)
+	colmap = matplotlib.cm.get_cmap('gnuplot') #tab10, Dark2, Set1, CMRmap
+
+	# call the heatmap
+	if not mixings["ternary"]:
+		if args.style == "heatmap":
+			def function(p):
+				"""Compute the value of Delta Neff for the simplex points."""
+				return smallpoints[
+					int(p[0]*(mixings["Ue4sq_N"]-1)),
+					int(p[1]*(mixings["Um4sq_N"]-1)),
+					int(p[2]*(mixings["Ut4sq_N"]-1)),
+					]
+			tax.heatmapf(function,
+				boundary=True, style="t",
+				colorbar=False,
+				cmap=colmap,
+				vmin=vmin, vmax=vmax,
+				)
+		elif args.style == "scatter":
+			pts = []
+			cs = []
+			for pt in ternary.helpers.simplex_iterator(5):
+				pts.append(pt)
+				cs.append(smallpoints[
+					int(pt[0]),
+					int(pt[1]),
+					int(pt[2]),
+					])
+			tax.scatter(pts, s=200, c=cs, marker='o',
+				cmap=colmap, norm=norm, vmin=vmin, vmax=vmax, alpha=0.9)
+	else:
+		if args.style == "heatmap":
+			data = dict()
+			for n, [i, j, k] in enumerate(ternary.helpers.simplex_iterator(mixings["Ue4sq_N"])):
+				data[(i, j)] = smallpoints[n]
+			tax.heatmap(data,
+				style="t",
+				colorbar=False,
+				cmap=colmap,
+				vmin=vmin,
+				vmax=vmax,
+				)
+		elif args.style == "scatter":
+			tax.scatter(ternary.helpers.simplex_iterator(mixings["Ue4sq_N"]),
+				s=200, c=smallpoints, marker='o',
+				cmap=colmap, norm=norm, vmin=vmin, vmax=vmax, alpha=0.9)
+
+	#fix tick labels:
+	tfontsize = 10
+	locations = np.arange(0, scale + 1)
+	offset = 0.15
+	ticks = [v for v in mixings["Ue4sq_pts"]]
+	tick_formats = "%.0e"
+	ax = tax.get_axes()
+	for a in ['r', 'l', 'b']:
+		for index, i in enumerate(locations):
+			if a == 'r':
+				loc1 = (scale - i, i, 0)
+				loc2 = (scale - i + offset, i, 0)
+				text_location = (scale - i + 1.6 * offset, i - 0.5 * offset, 0)
+				tick = ticks[index]
+				ha = "left"
+			elif a == 'l':
+				loc1 = (0, i, 0)
+				loc2 = (-offset, i + offset, 0)
+				text_location = (-offset, i + 0.5 * offset, 0)
+				tick = ticks[-(index+1)]
+				ha = "right"
+			elif a == 'b':
+				loc1 = (i, 0, 0)
+				loc2 = (i, -offset, 0)
+				text_location = (i + 0.5 * offset, - 0.35, 0)
+				tick = ticks[index]
+				ha = "center"
+			ternary.line(ax, loc1, loc2, color='k')
+			x, y = ternary.project_point(text_location)
+			ax.text(x, y, "$10^{%d}$"%np.log10(tick), horizontalalignment=ha,
+					color='k', fontsize=tfontsize)
+
+	# axis labels and colorbar
+	tax.clear_matplotlib_ticks()
+	tax.get_axes().axis('off')
+	fontsize = 14
+	offset = 0.15
+	tax.set_title(
+		r"$\Delta m^2_{41} = %g$ eV$^2$"%mixings["dm41_pts"][args.fix_dm41],
+		pad=10,
+		)
+	tax.bottom_axis_label(r"$|U_{e4}|^2$", fontsize=fontsize, offset=0.)
+	tax.left_axis_label(r"$|U_{\mu4}|^2$", fontsize=fontsize, offset=offset)
+	tax.right_axis_label(r"$|U_{\tau4}|^2$", fontsize=fontsize, offset=offset)
+	sm = plt.cm.ScalarMappable(cmap=colmap, norm=norm)
+	sm._A = []
+	cb = plt.colorbar(sm, extend="both", ticks=[0.1, 0.3, 0.5, 0.7, 0.9])
+	cb.set_label(r"$\Delta N_{\rm eff}$", fontsize=fontsize)
+	plt.tight_layout(rect=(-0.02, -0.02, 1.07, 1.02))
+
+	# save and exit
+	tax.savefig(
+		"grids/%s/plots/ternary_%s_dm41_%s.pdf"%(
+				args.gridname,
+				"s" if args.style == "scatter" else "h",
+				mixings["dm41_pts"][args.fix_dm41])
+			if args.filename == ""
+			else "grids/%s/plots/%s"%(args.gridname, args.filename)
+		)
+	print("\nDone!\n\n")
+	return
 
 
 if __name__=='__main__':
