@@ -435,7 +435,11 @@ module ndEquations
 			end do
 		end if
 		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
-		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1, vec(ntot-1)+1
+		if (save_w_evolution) then
+			write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0, vec(ntot-1)+1.d0
+		else
+			write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0
+		end if
 
 		do i=1, totFiles
 			close(units(i))
@@ -638,8 +642,10 @@ module ndEquations
 		w = nuDensVec(ntot-1) + 1.d0
 		z = nuDensVec(ntot) + 1.d0
 		call openFile(9876, trim(outputFolder)//"/resume.dat", .true.)
-		write(*,"('final w = ',F11.8)") w
-		write(9876,"('final w = ',F11.8)") w
+		if (save_w_evolution) then
+			write(*,"('final w = ',F11.8)") w
+			write(9876,"('final w = ',F11.8)") w
+		end if
 		write(*,"('final z = ',F11.8)") z
 		write(9876,"('final z = ',F11.8)") z
 		!since it was never taken into account, w must not be used here to get the delta_rho,

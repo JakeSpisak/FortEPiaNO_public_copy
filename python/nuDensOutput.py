@@ -90,13 +90,14 @@ class NuDensRun():
 		if self.hasResume:
 			self.Neff = float(
 				re.match("Neff[ =]*([-\d.]*)", self.resume[-1]).group(1))
-			zlineindex = 1
 			try:
 				self.wfin = float(
 					re.match("final w[ =]*([-\d.]*)", self.resume[0]).group(1))
 			except AttributeError:
-				print("old format, no w")
+				print("final w is not in resume.dat")
 				zlineindex=0
+			else:
+				zlineindex = 1
 			self.zfin = float(
 				re.match("final z[ =]*([-\d.]*)", self.resume[zlineindex]).group(1))
 		self.deltarhofin = []
@@ -180,6 +181,11 @@ class NuDensRun():
 		plt.ylabel(r"$z$")
 
 	def plotW(self, ls="-", lc="k"):
+		try:
+			self.zdat[0, 2]
+		except IndexError:
+			print("w is not in z.dat")
+			return
 		plt.plot(
 			*stripRepeated(self.zdat, 0, 2),
 			label=self.label, ls=ls, c=lc

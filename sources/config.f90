@@ -291,6 +291,7 @@ module ndConfig
 			!settings for collisional
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
+			save_w_evolution = read_ini_logical("save_w_evolution",.true.)
 			
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then

@@ -163,6 +163,7 @@ program tests
 			deltaCP13    = 0.d0
 		end if
 		z_in=1.0000575
+		save_w_evolution = .true.
 		call setMixingMatrix()
 		call setMassMatrix()
 		call init_matrices
