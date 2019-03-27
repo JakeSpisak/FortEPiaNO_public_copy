@@ -37,11 +37,11 @@ module constants
 	integer,  parameter :: maxflavorNumber = 4
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2018: M. Tanabashi et al. (Particle Data Group), Phys.Rev.D, 98, 030001 (2018).
-	real(dl), parameter :: i_theta12 = 0.587
-	real(dl), parameter :: i_theta13 = 0.1461
-	real(dl), parameter :: i_theta23 = 0.702
-	real(dl), parameter :: i_dm12 = 7.53e-05
-	real(dl), parameter :: i_dm23 = 0.00244
+	real(dl), parameter :: i_theta12 = 0.297
+	real(dl), parameter :: i_theta13 = 0.0215
+	real(dl), parameter :: i_theta23 = 0.425
+	real(dl), parameter :: i_dm21 = 7.37e-05
+	real(dl), parameter :: i_dm31 = 0.00256
 	real(dl), parameter :: i_deltaCP13 = 0.
 
 	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
@@ -71,12 +71,12 @@ module variables
 	logical :: dme2_temperature_corr
 
 	!variables that will be read from config file
-	logical :: massOrdering, giveSinSq
+	logical :: giveSinSq
 	integer :: flavorNumber, flavNumSqu
 	real(dl) :: m_lightest
-	real(dl) :: theta12, dm12
-	real(dl) :: theta13, theta23, dm23, deltaCP13
-	real(dl) :: theta14, theta24, theta34, dm14
+	real(dl) :: theta12, dm21
+	real(dl) :: theta13, theta23, dm31, deltaCP13
+	real(dl) :: theta14, theta24, theta34, dm41
 
 	!complex matrix, it will host the neutrino density matrix.
 	!Intended to have the relative shape correction with respect to the FD in the diagonal

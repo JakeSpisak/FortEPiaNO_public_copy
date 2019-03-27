@@ -34,25 +34,18 @@ module ndConfig
 		nf = flavorNumber
 		allocate(mv(nf), m1(nf,nf))
 		
-		if (nf .eq. 2) then
-			mv(1) = m_lightest*m_lightest
-			mv(2) = mv(2) + dm12
+		if (nf .ge. 2) then
+			mv(1) = 0.d0
+			mv(2) = mv(1) + dm21
 		end if
 		
 		if (nf .gt. 2) then
-			if (massOrdering) then
-				mv(1) = m_lightest*m_lightest
-				mv(2) = mv(1) + dm12
-				mv(3) = mv(2) + dm23
-			else
-				mv(3) = m_lightest*m_lightest
-				mv(2) = mv(3) + dm23
-				mv(1) = mv(2) - dm12
-			end if
+			mv(3) = mv(1) + dm31
 		end if
 		if (nf.gt.3) then
-			mv(4) = mv(1) + dm14
+			mv(4) = mv(1) + dm41
 		end if
+		mv = mv - (minval(mv)-m_lightest*m_lightest)
 		
 		call createDiagMat(m1, nf, mv)
 		call tripleProdMat(mixMat, m1, mixMatInv, nuMassesMat)
@@ -293,8 +286,7 @@ module ndConfig
 			
 			!read mixing parameters and create matrices
 			m_lightest   = read_ini_real('m_lightest', 0.0d0)
-			massOrdering = read_ini_logical('massOrdering', .true.)
-			giveSinSq = read_ini_logical('givesinsq', .false.)
+			giveSinSq = read_ini_logical('givesinsq', .true.)
 
 			!settings for collisional
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
@@ -323,35 +315,35 @@ module ndConfig
 			write(tmpstr,"(A,', of which they are steriles:',*(L2))") trim(tmparg), sterile
 			call addToLog(trim(tmpstr))
 			
+			dm21 = read_ini_real('dm21', i_dm21)
+			if (flavorNumber .gt. 2) then
+				dm31 = read_ini_real('dm31', i_dm31)
+				deltaCP13 = 0.d0!read_ini_real('deltaCP13', i_deltaCP13)
+			end if
+			if (flavorNumber .gt. 3) then
+				dm41 = read_ini_real('dm41', zero)
+			end if
 			if (giveSinSq) then
-				theta12      = asin(sqrt(read_ini_real('theta12', i_theta12)))
-				dm12         = read_ini_real('dm12', i_dm12)
+				theta12 = asin(sqrt(read_ini_real('theta12', i_theta12)))
 				if (flavorNumber .gt. 2) then
-					theta13      = asin(sqrt(read_ini_real('theta13', i_theta13)))
-					theta23      = asin(sqrt(read_ini_real('theta23', i_theta23)))
-					dm23         = read_ini_real('dm23', i_dm23)
-					deltaCP13    = read_ini_real('deltaCP13', i_deltaCP13)
+					theta13 = asin(sqrt(read_ini_real('theta13', i_theta13)))
+					theta23 = asin(sqrt(read_ini_real('theta23', i_theta23)))
 				end if
 				if (flavorNumber .gt. 3) then
-					theta14      = asin(sqrt(read_ini_real('theta14', zero)))
-					theta24      = asin(sqrt(read_ini_real('theta24', zero)))
-					theta34      = asin(sqrt(read_ini_real('theta34', zero)))
-					dm14         = read_ini_real('dm14', zero)
+					theta14 = asin(sqrt(read_ini_real('theta14', zero)))
+					theta24 = asin(sqrt(read_ini_real('theta24', zero)))
+					theta34 = asin(sqrt(read_ini_real('theta34', zero)))
 				end if
 			else
-				theta12      = read_ini_real('theta12', i_theta12)
-				dm12         = read_ini_real('dm12', i_dm12)
+				theta12 = read_ini_real('theta12', asin(sqrt(i_theta12)))
 				if (flavorNumber .gt. 2) then
-					theta13      = read_ini_real('theta13', i_theta13)
-					theta23      = read_ini_real('theta23', i_theta23)
-					dm23         = read_ini_real('dm23', i_dm23)
-					deltaCP13    = read_ini_real('deltaCP13', i_deltaCP13)
+					theta13 = read_ini_real('theta13', asin(sqrt(i_theta13)))
+					theta23 = read_ini_real('theta23', asin(sqrt(i_theta23)))
 				end if
 				if (flavorNumber .gt. 3) then
-					theta14      = read_ini_real('theta14', zero)
-					theta24      = read_ini_real('theta24', zero)
-					theta34      = read_ini_real('theta34', zero)
-					dm14         = read_ini_real('dm14', zero)
+					theta14 = read_ini_real('theta14', zero)
+					theta24 = read_ini_real('theta24', zero)
+					theta34 = read_ini_real('theta34', zero)
 				end if
 			end if
 			xcutsCollInt(1, 2) = read_ini_real('xcut_12', 0.d0)

@@ -264,7 +264,8 @@ module ndEquations
 		real(dl), dimension(2) :: coeffs
 		real(dl), dimension(2) :: g12
 
-		z = vars(n)
+		!here it is correct to have the +1, otherwise the precision may be not sufficient to get z_in for very early x_in
+		z = vars(n)+1.d0
 		xoz=x/z
 
 		j      = J_funcFull(xoz)
@@ -303,8 +304,8 @@ module ndEquations
 		iwork(6)=99999999
 		jt=2
 
-		cvec(1) = 1.d0
-		xvh = 0.0001d0
+		cvec(1) = 0.d0
+		xvh = 1d-6
 
 		call dlsoda(dz_o_dx_eq_lin,n,cvec,xvh,x_in,&
 					itol,rtol,atol,itask,istate, &
@@ -315,8 +316,8 @@ module ndEquations
 			call criticalError('[zin] istate='//istchar)
 		end if
 
-		write(tmpstring,"('[zin] ended with z_in =',E16.9,'.')") cvec(n)
-		z_in = cvec(n)
+		write(tmpstring,"('[zin] ended with z_in-1 =',E16.9,'.')") cvec(n)
+		z_in = cvec(n) + 1.d0
 		call addToLog(trim(tmpstring))
 	end subroutine zin_solver
 
@@ -404,7 +405,7 @@ module ndEquations
 			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
 			call openFile(units(k), trim(fname),firstWrite)
 			do iy=1, nY
-				tmpvec(iy)=nuDensMatVec(iy)%re(k, k)
+				tmpvec(iy)=nuDensMatVecFD(iy)%re(k, k)
 			end do
 			write(units(k), '(*('//dblfmt//'))') x, tmpvec
 		end do
@@ -415,7 +416,7 @@ module ndEquations
 					call openFile(units(k), trim(fname),firstWrite)
 					tmpvec=0
 					do iy=1, nY
-						tmpvec(iy)=nuDensMatVec(iy)%re(i,j)
+						tmpvec(iy)=nuDensMatVecFD(iy)%re(i,j)
 					end do
 					write(units(k), '(*('//dblfmt//'))') x, tmpvec
 					k=k+1
@@ -424,7 +425,7 @@ module ndEquations
 					call openFile(units(k), trim(fname),firstWrite)
 					tmpvec=0
 					do iy=1, nY
-						tmpvec(iy)=nuDensMatVec(iy)%im(i,j)
+						tmpvec(iy)=nuDensMatVecFD(iy)%im(i,j)
 					end do
 					write(units(k), '(*('//dblfmt//'))') x, tmpvec
 					k=k+1
@@ -433,8 +434,6 @@ module ndEquations
 		end if
 		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
 		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)
-		call openFile(units(k+1), trim(outputFolder)//'/Neff.dat', firstWrite)
-		write(units(k+1), '(*('//dblfmt//'))') x, Neff_from_rho_z(vec(ntot))
 
 		do i=1, totFiles
 			close(units(i))
@@ -627,19 +626,20 @@ module ndEquations
 	end function Neff_from_rho_z
 
 	subroutine finalresults
-		real(dl) :: ndeq, tmp
+		real(dl) :: ndeq, tmp, z
 		integer :: ix
 
+		z = nuDensVec(ntot)
 		call openFile(9876, trim(outputFolder)//"/resume.dat", .true.)
-		write(*,"('final z = ',F11.8)") nuDensVec(ntot)
-		write(9876,"('final z = ',F11.8)") nuDensVec(ntot)
-		ndeq=nuDensityLinEq(nuDensVec(ntot))
+		write(*,"('final z = ',F11.8)") z
+		write(9876,"('final z = ',F11.8)") z
+		ndeq=nuDensityLinEq(z)
 		do ix=1, flavorNumber
-			tmp = (nuDensityLin(nuDensVec(ntot), ix) - ndeq)*nuFactor(ix)/ndeq
+			tmp = (nuDensityLin(z, ix) - ndeq)*nuFactor(ix)/ndeq
 			write(*,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 		end do
-		tmp = Neff_from_rho_z(nuDensVec(ntot))
+		tmp = Neff_from_rho_z(z)
 		write(*,"('Neff    = ',F9.6)") tmp
 		write(9876,"('Neff    = ',F9.6)") tmp
 		close(9876)

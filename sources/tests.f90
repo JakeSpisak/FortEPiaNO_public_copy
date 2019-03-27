@@ -141,7 +141,6 @@ program tests
 		end do
 		dy_arr(Ny) = 0.d0
 		m_lightest   = 0.0d0
-		massOrdering = .true.
 		collision_offdiag = 1
 		dme2_temperature_corr = .true.
 		flavorNumber = 3
@@ -151,13 +150,13 @@ program tests
 			nuFactor(ix) = 1.d0
 			sterile(ix) = .false.
 		end do
-		theta12      = i_theta12
-		dm12         = i_dm12
+		theta12      = 0.5840d0
+		dm21         = 7.53d-05
 		if (flavorNumber .gt. 2) then
-			theta13      = i_theta13
-			theta23      = i_theta23
-			dm23         = i_dm23
-			deltaCP13    = i_deltaCP13
+			theta13      = 0.1485d0
+			theta23      = 0.7954d0
+			dm31         = 0.0025153d0
+			deltaCP13    = 0.d0
 		end if
 		call zin_solver
 		call setMixingMatrix()

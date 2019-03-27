@@ -131,6 +131,9 @@ module ndInteractions
 		integer, intent(in) :: a, b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
+#ifdef FULLFAB
+		integer :: l, m
+#endif
 
 !		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 !			call criticalError("[F_ab_ann_re] a and b must be either 1(=L) or 2(=R)")
@@ -139,6 +142,34 @@ module ndInteractions
 		t1b=0.d0
 		t2a=0.d0
 		t2b=0.d0
+#ifdef FULLFAB
+		do k=1, flavorNumber
+		do l=1, flavorNumber
+		do m=1, flavorNumber
+			!Ga (1-rho2) Gb (1-rho1)
+			t1a = t1a + GLR_vec(a,i,l) * GLR_vec(b,k,m) * ( &
+				(idMat(l,k)-n2%re(l,k))*(idMat(m,j)-n1%re(m,j)) - &
+				(-n2%im(l,k))*(-n1%im(m,j))&	!idMat has im=0
+				)
+			!(1-rho1) Gb (1-rho2) Ga
+			t1b = t1b + GLR_vec(a,m,j) * GLR_vec(b,l,k) * ( &
+				(idMat(i,l)-n1%re(i,l))*(idMat(k,m)-n2%re(k,m)) - &
+				(-n1%im(i,l))*(-n2%im(k,m))&
+				)
+			!rho1 Gb rho2 Ga
+			t2a = t2a + GLR_vec(a,m,j) * GLR_vec(b,l,k) * ( &
+				(n1%re(i,l))*(n2%re(k,m)) - &
+				(n1%im(i,l))*(n2%im(k,m))&
+				)
+			!Ga Rho2 Gb rho1
+			t2b = t2b + GLR_vec(a,i,l) * GLR_vec(b,k,m) * ( &
+				(n2%re(l,k))*(n1%re(m,j)) - &
+				(n2%im(l,k))*(n1%im(m,j))&
+				)
+		end do
+		end do
+		end do
+#else
 		do k=1, flavorNumber
 			!Ga (1-rho2) Gb (1-rho1)
 			t1a = t1a + GLR_vec(b,k,k) * ( &
@@ -161,10 +192,13 @@ module ndInteractions
 				(n2%im(i,k))*(n1%im(k,j))&
 				)
 		end do
-		F_ab_ann_re = f3 * f4 * &
-				(t1a * GLR_vec(a,i,i) + t1b * GLR_vec(a,j,j))&
-			- (1.d0 - f3) * (1.d0 - f4) * &
-				(t2a * GLR_vec(a,j,j) + t2b * GLR_vec(a,i,i))
+		t1a = t1a * GLR_vec(a,i,i)
+		t1b = t1b * GLR_vec(a,j,j)
+		t2a = t2a * GLR_vec(a,j,j)
+		t2b = t2b * GLR_vec(a,i,i)
+#endif
+		F_ab_ann_re = f3 * f4 * (t1a + t1b)&
+			- (1.d0 - f3) * (1.d0 - f4) * (t2a + t2b)
 	end function F_ab_ann_re
 
 	pure function F_ab_ann_im(n1, n2, f3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
@@ -175,6 +209,9 @@ module ndInteractions
 		integer, intent(in) :: a, b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
+#ifdef FULLFAB
+		integer :: l, m
+#endif
 
 !		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 !			call criticalError("[F_ab_ann_im] a and b must be either 1(=L) or 2(=R)")
@@ -183,6 +220,34 @@ module ndInteractions
 		t1b=0.d0
 		t2a=0.d0
 		t2b=0.d0
+#ifdef FULLFAB
+		do k=1, flavorNumber
+		do l=1, flavorNumber
+		do m=1, flavorNumber
+			!Ga (1-rho2) Gb (1-rho1)
+			t1a = t1a + GLR_vec(a,i,l) * GLR_vec(b,k,m) * ( &
+				(-n2%im(l,k))*(idMat(m,j)-n1%re(m,j)) + &
+				(idMat(l,k)-n2%re(l,k))*(-n1%im(m,j))&
+				)
+			!(1-rho1) Gb (1-rho2) Ga
+			t1b = t1b + GLR_vec(a,m,j) * GLR_vec(b,l,k) * ( &
+				(-n1%im(i,l))*(idMat(k,m)-n2%re(k,m)) + &
+				(idMat(i,l)-n1%re(i,l))*(-n2%im(k,m))&
+				)
+			!rho1 Gb rho2 Ga
+			t2a = t2a + GLR_vec(a,m,j) * GLR_vec(b,l,k) * ( &
+				(n1%im(i,l))*(n2%re(k,m)) + &
+				(n1%re(i,l))*(n2%im(k,m))&
+				)
+			!Ga Rho2 Gb rho1
+			t2b = t2b + GLR_vec(a,i,l) * GLR_vec(b,k,m) * ( &
+				(n2%im(l,k))*(n1%re(m,j)) + &
+				(n2%re(l,k))*(n1%im(m,j))&
+				)
+		end do
+		end do
+		end do
+#else
 		do k=1, flavorNumber
 			!Ga (1-rho2) Gb (1-rho1)
 			t1a = t1a + GLR_vec(b,k,k) * ( &
@@ -205,10 +270,13 @@ module ndInteractions
 				(n2%re(i,k))*(n1%im(k,j))&
 				)
 		end do
-		F_ab_ann_im = f3 * f4 * &
-				(t1a * GLR_vec(a,i,i) + t1b * GLR_vec(a,j,j))&
-			- (1.d0 - f3) * (1.d0 - f4) * &
-				(t2a * GLR_vec(a,j,j) + t2b * GLR_vec(a,i,i))
+		t1a = t1a * GLR_vec(a,i,i)
+		t1b = t1b * GLR_vec(a,j,j)
+		t2a = t2a * GLR_vec(a,j,j)
+		t2b = t2b * GLR_vec(a,i,i)
+#endif
+		F_ab_ann_im = f3 * f4 * (t1a + t1b)&
+			- (1.d0 - f3) * (1.d0 - f4) * (t2a + t2b)
 	end function F_ab_ann_im
 
 	pure function F_ab_sc_re (n1, f2, n3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
@@ -219,6 +287,9 @@ module ndInteractions
 		integer, intent(in) :: a, b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
+#ifdef FULLFAB
+		integer :: l, m
+#endif
 
 !		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 !			call criticalError("[F_ab_sc_re] a and b must be either 1(=L) or 2(=R)")
@@ -227,6 +298,34 @@ module ndInteractions
 		t1b=0.d0
 		t2a=0.d0
 		t2b=0.d0
+#ifdef FULLFAB
+		do k=1, flavorNumber
+		do l=1, flavorNumber
+		do m=1, flavorNumber
+			!Ga rho3 Gb (1-rho1)
+			t1a = t1a + GLR_vec(a,i,l) * GLR_vec(b,k,m) * ( &
+				(n3%re(l,k))*(idMat(m,j)-n1%re(m,j)) - &
+				(n3%im(l,k))*(-n1%im(m,j))&	!idMat has im=0
+				)
+			!(1-rho1) Gb rho3 Ga
+			t1b = t1b + GLR_vec(a,m,j) * GLR_vec(b,l,k) * ( &
+				(idMat(i,l)-n1%re(i,l))*(n3%re(k,m)) - &
+				(-n1%im(i,l))*(n3%im(k,m))&
+				)
+			!rho1 Gb (1-rho3) Ga
+			t2a = t2a + GLR_vec(a,m,j) * GLR_vec(b,l,k) * ( &
+				(n1%re(i,l))*(idMat(k,m)-n3%re(k,m)) - &
+				(n1%im(i,l))*(-n3%im(k,m))&
+				)
+			!Ga (1-rho3) Gb rho1
+			t2b = t2b + GLR_vec(a,i,l) * GLR_vec(b,k,m) * ( &
+				(idMat(l,k)-n3%re(l,k))*(n1%re(m,j)) - &
+				(-n3%im(l,k))*(n1%im(m,j))&
+				)
+		end do
+		end do
+		end do
+#else
 		do k=1, flavorNumber
 			!Ga rho3 Gb (1-rho1)
 			t1a = t1a + GLR_vec(b,k,k) * ( &
@@ -249,10 +348,13 @@ module ndInteractions
 				(-n3%im(i,k))*(n1%im(k,j))&
 				)
 		end do
-		F_ab_sc_re = (1.d0 - f2) * f4 * &
-				((t1a) * GLR_vec(a,i,i) + (t1b) * GLR_vec(a,j,j))&
-			- f2 * (1.d0 - f4) * &
-				((t2a) * GLR_vec(a,j,j) + (t2b) * GLR_vec(a,i,i))
+		t1a = t1a * GLR_vec(a,i,i)
+		t1b = t1b * GLR_vec(a,j,j)
+		t2a = t2a * GLR_vec(a,j,j)
+		t2b = t2b * GLR_vec(a,i,i)
+#endif
+		F_ab_sc_re = (1.d0 - f2) * f4 * (t1a + t1b)&
+			- f2 * (1.d0 - f4) * (t2a + t2b)
 	end function F_ab_sc_re
 
 	pure function F_ab_sc_im (n1, f2, n3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
@@ -263,6 +365,9 @@ module ndInteractions
 		integer, intent(in) :: a, b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
+#ifdef FULLFAB
+		integer :: l, m
+#endif
 
 !		if ((a.ne.1 .and. a.ne.2) .or. (b.ne.1 .and. b.ne.2)) &
 !			call criticalError("[F_ab_sc_im] a and b must be either 1(=L) or 2(=R)")
@@ -271,6 +376,34 @@ module ndInteractions
 		t1b=0.d0
 		t2a=0.d0
 		t2b=0.d0
+#ifdef FULLFAB
+		do k=1, flavorNumber
+		do l=1, flavorNumber
+		do m=1, flavorNumber
+			!Ga rho3 Gb (1-rho1)
+			t1a = t1a + GLR_vec(a,i,l) * GLR_vec(b,k,m) * ( &
+				(n3%im(l,k))*(idMat(m,j)-n1%re(m,j)) + &
+				(n3%re(l,k))*(-n1%im(m,j))&
+				)
+			!(1-rho1) Gb rho3 Ga
+			t1b = t1b + GLR_vec(a,m,j) * GLR_vec(b,l,k) * ( &
+				(-n1%im(i,l))*(n3%re(k,m)) + &
+				(idMat(i,l)-n1%re(i,l))*(n3%im(k,m))&
+				)
+			!rho1 Gb (1-rho3) Ga
+			t2a = t2a + GLR_vec(a,m,j) * GLR_vec(b,l,k) * ( &
+				(n1%im(i,l))*(idMat(k,m)-n3%re(k,m)) + &
+				(n1%re(i,l))*(-n3%im(k,m))&
+				)
+			!Ga (1-rho3) Gb rho1
+			t2b = t2b + GLR_vec(a,i,l) * GLR_vec(b,k,m) * ( &
+				(-n3%im(l,k))*(n1%re(m,j)) + &
+				(idMat(l,k)-n3%re(l,k))*(n1%im(m,j))&
+				)
+		end do
+		end do
+		end do
+#else
 		do k=1, flavorNumber
 			!Ga rho3 Gb (1-rho1)
 			t1a = t1a + GLR_vec(b,k,k) * ( &
@@ -293,10 +426,13 @@ module ndInteractions
 				(idMat(i,k)-n3%re(i,k))*(n1%im(k,j))&
 				)
 		end do
-		F_ab_sc_im = (1.d0 - f2) * f4 * &
-				((t1a) * GLR_vec(a,i,i) + (t1b) * GLR_vec(a,j,j))&
-			- f2 * (1.d0 - f4) * &
-				((t2a) * GLR_vec(a,j,j) + (t2b) * GLR_vec(a,i,i))
+		t1a = t1a * GLR_vec(a,i,i)
+		t1b = t1b * GLR_vec(a,j,j)
+		t2a = t2a * GLR_vec(a,j,j)
+		t2b = t2b * GLR_vec(a,i,i)
+#endif
+		F_ab_sc_im = (1.d0 - f2) * f4 * (t1a + t1b)&
+			- f2 * (1.d0 - f4) * (t2a + t2b)
 	end function F_ab_sc_im
 
 	elemental function D1_full(y1, y2, y3, y4)
