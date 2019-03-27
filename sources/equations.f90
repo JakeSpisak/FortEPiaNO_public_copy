@@ -232,10 +232,10 @@ module ndEquations
 		call dzodx_B_interp%evaluate(o,0,dzodxcoef_interp_func(2),iflag)
 	end function dzodxcoef_interp_func
 
-	subroutine dz_o_dx_lin(x,z, ydot, n)
+	subroutine dz_o_dx_lin(x, w, z, ydot, n)
 		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		!Newton-Cotes integral without need of interpolation
-		real(dl), intent(in) :: x, z
+		real(dl), intent(in) :: w, x, z
 		integer, intent(in) :: n
 		real(dl), dimension(n), intent(inout) :: ydot
 		real(dl) :: tmp
@@ -250,12 +250,14 @@ module ndEquations
 			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))
 		end do
 		tmp = integral_linearized_1d(Ny, dy_arr, fy_arr)
+		ydot(n-1) = coeff_dw_dx * tmp / w**3
 		coeffs = dzodxcoef_interp_func(x/z)
 		ydot(n) = coeffs(1) - coeffs(2) * tmp/ z**3
 	end subroutine dz_o_dx_lin
 
 	subroutine dz_o_dx_eq_lin(n, x, vars, ydot)
-		!eq 17 from doi:10.1016/S0370-2693(02)01622-2 at equilibrium, needed for initial z
+		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
+		! at equilibrium (i.e. no contribution from neutrino distortions), needed for initial z
 		integer, intent(in) :: n
 		real(dl), intent(in) :: x
 		real(dl), dimension(n), intent(in) :: vars
@@ -320,7 +322,7 @@ module ndEquations
 		call addToLog(trim(tmpstring))
 	end subroutine zin_solver
 
-	subroutine drhoy_dx_fullMat(matrix, x, z, iy, Fre, Fim)
+	subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, Fre, Fim)
 		interface
 			pure real(dl) function Fre(a, b, o)
 				use variables
@@ -336,7 +338,7 @@ module ndEquations
 			end function
 		end interface
 		type(cmplxMatNN), intent(out) :: matrix
-		real(dl) :: x, y, z, overallNorm, fd, cf
+		real(dl) :: w, x, y, z, overallNorm, fd, cf
 		integer :: iy, ix
 		type(coll_args) :: collArgs
 		type(cmplxMatNN), save :: comm
@@ -345,7 +347,6 @@ module ndEquations
 		call allocateCmplxMat(matrix)
 
 		y = nuDensMatVecFD(iy)%y
-		fd = fermiDirac(y)
 
 		collArgs%x = x
 		collArgs%z = z
@@ -377,6 +378,7 @@ module ndEquations
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
+		fd = fermiDirac(y)
 		do ix=1, flavorNumber
 			matrix%re(ix,ix) = matrix%re(ix,ix) / fd
 			matrix%im(ix,ix) = 0.d0
@@ -432,7 +434,7 @@ module ndEquations
 			end do
 		end if
 		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
-		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1
+		write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1, vec(ntot-1)+1
 
 		do i=1, totFiles
 			close(units(i))
@@ -478,8 +480,9 @@ module ndEquations
 		iwork(6)=99999999
 		jt=2
 
-		nuDensVec(ntot)=z_in - 1.d0
 		call densMat_2_vec(nuDensVec)
+		nuDensVec(ntot-1) = z_in - 1.d0 !neutrino temperature start at same value as photon temperature
+		nuDensVec(ntot) = z_in - 1.d0
 
 		call readCheckpoints(nchk, xchk, ychk, chk)
 
@@ -490,8 +493,8 @@ module ndEquations
 			firstWrite=.false.
 			firstPoint=.true.
 			ix_in=1 + int((log10(xchk)-logx_in)/(logx_fin-logx_in)*(Nx-1))
-			write(tmpstring,"('ntot =',I4,' - x =',"//dblfmt//",' (i=',I4,') - z =',"//dblfmt//")") &
-				nchk, xchk, ix_in, ychk(ntot)
+			write(tmpstring,"('ntot =',I4,' - x =',"//dblfmt//",' (i=',I4,') - w =',"//dblfmt//",' - z =',"//dblfmt//")") &
+				nchk, xchk, ix_in, ychk(ntot-1)+1.d0, ychk(ntot)+1.d0
 			call addToLog("[ckpt] ##### Checkpoint file found. Will start from there. #####")
 			call addToLog(trim(tmpstring))
 		else
@@ -525,29 +528,31 @@ module ndEquations
 			call saveRelevantInfo(xend, nuDensVec)
 			xstart=xend
 		end do
-		write(tmpstring,"('x_end =',"//dblfmt//",' - z_end =',"//dblfmt//")") xend, nuDensVec(ntot)+1.d0
+		write(tmpstring,"('x_end =',"//dblfmt//",' - w_end =',"//dblfmt//",' - z_end =',"//dblfmt//")") &
+			xend, nuDensVec(ntot-1)+1.d0, nuDensVec(ntot)+1.d0
 
 		call date_and_time(VALUES=values)
 		call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
 		write(timefileu, &
 			'("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2,' &
 			//"' - DLSODA end after ',"//dblfmt//",' derivatives - " &
-			//"xend =',"//dblfmt//",' - T =',"//dblfmt//")") &
-			values(3), values(2), values(1), values(5),values(6),values(7), deriv_counter, xend, nuDensVec(ntot)+1.d0
+			//"xend =',"//dblfmt//",' - w =',"//dblfmt//",' - z =',"//dblfmt//")") &
+			values(3), values(2), values(1), values(5),values(6),values(7), deriv_counter, xend, &
+			nuDensVec(ntot-1)+1.d0, nuDensVec(ntot)+1.d0
 		close(timefileu)
 
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
 
-	subroutine derivative (x, z, m, mat, n, ydot)
+	subroutine derivative (x, w, z, m, mat, n, ydot)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
-		real(dl), intent(in) :: x, z
+		real(dl), intent(in) :: w, x, z
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
 		integer :: i, j, k, s
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x, z, m, coll_nue_3_int_re, coll_nue_3_int_im)
+		call drhoy_dx_fullMat(mat, x, w, z, m, coll_nue_3_int_re, coll_nue_3_int_im)
 		s=(m-1)*flavNumSqu
 		do i=1, flavorNumber
 			ydot(s+i) = mat%re(i,i)
@@ -569,7 +574,7 @@ module ndEquations
 !		needs allocation and interpolation of density matrix
 		type(cmplxMatNN) :: mat
 		integer :: n, m
-		real(dl) :: x, z
+		real(dl) :: x, w, z
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
 		character(len=100) :: tmpstr
@@ -593,13 +598,14 @@ module ndEquations
 		call printVerbose(trim(tmpstr), 1+int(mod(deriv_counter, Nprintderivs)))
 
 		call allocateCmplxMat(mat)
-		z = vars(n) + 1
+		w = vars(n-1) + 1.d0
+		z = vars(n) + 1.d0
 		call vec_2_densMat(vars)
 		do m=1, Ny
-			call derivative(x, z, m, mat, n, ydot)
+			call derivative(x, w, z, m, mat, n, ydot)
 		end do
 
-		call dz_o_dx_lin(x,z, ydot, ntot)
+		call dz_o_dx_lin(x, w, z, ydot, ntot)
 
 		call densMat_2_vec(nuDensVec)
 	end subroutine derivatives
@@ -608,9 +614,9 @@ module ndEquations
 		!necessary for dlsoda but not needed
 	end subroutine jdum
 
-	function Neff_from_rho_z(z)
+	function Neff_from_rho_z(w, z)
 		real(dl) :: Neff_from_rho_z
-		real(dl), intent(in) :: z
+		real(dl), intent(in) :: w, z
 		real(dl) :: rhototnu, ndeq, totf
 		integer :: ix
 
@@ -618,28 +624,33 @@ module ndEquations
 		do ix=1, flavorNumber
 			if(.not.sterile(ix)) totf = totf + nuFactor(ix)
 		end do
-		ndeq=nuDensityLinEq(z)
-		rhototnu = (allNuDensity(z) - totf*ndeq)/ndeq
-		Neff_from_rho_z = (zid/z)**4 * &
+		ndeq=nuDensityLinEq(w)
+		rhototnu = (allNuDensity() - totf*ndeq)/ndeq
+		Neff_from_rho_z = (w*zid/z)**4 * &
 			(3.d0 + rhototnu)
 	end function Neff_from_rho_z
 
 	subroutine finalresults
-		real(dl) :: ndeq, tmp, z
+		real(dl) :: ndeq, tmp, w, z
 		integer :: ix
 
+		w = nuDensVec(ntot-1) + 1.d0
 		z = nuDensVec(ntot) + 1.d0
 		call openFile(9876, trim(outputFolder)//"/resume.dat", .true.)
+		write(*,"('final w = ',F11.8)") w
+		write(9876,"('final w = ',F11.8)") w
 		write(*,"('final z = ',F11.8)") z
 		write(9876,"('final z = ',F11.8)") z
-		ndeq=nuDensityLinEq(z)
+		!since it was never taken into account, w must not be used here to get the delta_rho,
+		!otherwise the result is not referring to the same quantity
+		ndeq=nuDensityLinEq(1.d0)
 		do ix=1, flavorNumber
-			tmp = (nuDensityLin(z, ix) - ndeq)*nuFactor(ix)/ndeq
+			tmp = (nuDensityLin(ix) - ndeq)*nuFactor(ix)/ndeq
 			write(*,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 		end do
-		tmp = Neff_from_rho_z(z)
-		write(*,"('Neff    = ',F9.6)") tmp
+		tmp = Neff_from_rho_z(1.d0, z)
+		write(*,"('Neff    = ',F9.6)") tmp, Neff_from_rho_z(w, z)
 		write(9876,"('Neff    = ',F9.6)") tmp
 		close(9876)
 	end subroutine finalresults

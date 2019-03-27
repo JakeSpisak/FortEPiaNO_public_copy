@@ -175,7 +175,7 @@ module ndConfig
 		
 		!nu density matrix
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
-		ntot = Ny*(flavNumSqu) + 1 !independent elements in nuDensity(y) + z
+		ntot = Ny*(flavNumSqu) + 2 !independent elements in nuDensity(y) + w,z
 		allocate(nuDensVec(ntot))
 		if(trim(outputFolder).ne."")&
 			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)

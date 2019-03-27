@@ -90,14 +90,21 @@ class NuDensRun():
 		if self.hasResume:
 			self.Neff = float(
 				re.match("Neff[ =]*([-\d.]*)", self.resume[-1]).group(1))
+			zlineindex = 1
+			try:
+				self.wfin = float(
+					re.match("final w[ =]*([-\d.]*)", self.resume[0]).group(1))
+			except AttributeError:
+				print("old format, no w")
+				zlineindex=0
 			self.zfin = float(
-				re.match("final z[ =]*([-\d.]*)", self.resume[0]).group(1))
+				re.match("final z[ =]*([-\d.]*)", self.resume[zlineindex]).group(1))
 		self.deltarhofin = []
 		for i in range(self.nnu):
 			if self.hasResume:
 				self.deltarhofin.append(
 					float(
-						re.match("dRho_%s[ =]*([-\d.]*)"%(i+1), self.resume[i+1])
+						re.match("dRho_%s[ =]*([-\d.]*)"%(i+1), self.resume[i+1+zlineindex])
 							.group(1)
 						)
 					)
@@ -171,6 +178,15 @@ class NuDensRun():
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$z$")
+
+	def plotW(self, ls="-", lc="k"):
+		plt.plot(
+			*stripRepeated(self.zdat, 0, 2),
+			label=self.label, ls=ls, c=lc
+			)
+		plt.xscale("log")
+		plt.xlabel("$x$")
+		plt.ylabel(r"$w$")
 
 	def plotDeltaZ(self, ref, ls="-", lc="k"):
 		mex, mey = stripRepeated(self.zdat, 0, 1)

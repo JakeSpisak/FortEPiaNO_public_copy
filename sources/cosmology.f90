@@ -18,7 +18,7 @@ module ndCosmology
 		radDensity = photonDensity(z) + &
 			electronDensity(x,z) + &
 			muonDensity(x,z) + &
-			allNuDensity(z)
+			allNuDensity()
 	end function
 
 	elemental function photonDensity(z)
@@ -147,9 +147,8 @@ module ndCosmology
 		call addToLog("[cosmo] ...done!")
 	end subroutine init_interp_ElDensity
 
-	function nuDensityLin(z, iFl)
+	function nuDensityLin(iFl)
 		real(dl) :: nuDensityLin, y
-		real(dl), intent(in) :: z
 		integer, intent(in) :: iFl
 		integer :: ix
 
@@ -160,26 +159,25 @@ module ndCosmology
 		nuDensityLin = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQ
 	end function nuDensityLin
 
-	function allNuDensity(z)
+	function allNuDensity()
 		real(dl) :: allNuDensity
-		real(dl), intent(in) :: z
 		integer :: ix
 
 		allNuDensity = 0.d0
 		do ix=1, flavorNumber
-			allNuDensity = allNuDensity + nuDensityLin(z,ix)*nuFactor(ix)
+			allNuDensity = allNuDensity + nuDensityLin(ix)*nuFactor(ix)
 		end do
 		allNuDensity = allNuDensity
 	end function allNuDensity
 
-	function nuDensityLinEq(z)
+	function nuDensityLinEq(w)
 		real(dl) :: nuDensityLinEq, y
-		real(dl), intent(in) :: z
+		real(dl), intent(in) :: w
 		integer :: ix
 
 		do ix=1, Ny
 			y = y_arr(ix)
-			fy_arr(ix) = y*y*y * fermiDirac(y)
+			fy_arr(ix) = y*y*y * fermiDirac(y/w)
 		end do
 		nuDensityLinEq = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQ
 	end function nuDensityLinEq

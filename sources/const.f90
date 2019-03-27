@@ -48,6 +48,7 @@ module constants
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
 	real(dl), parameter :: overallFactor = planck_mass / sqrt(PIx8D3)
 	real(dl), parameter :: dampTermFactor = -7.d0*PISQ*PISQ/135.d0
+	real(dl), parameter :: coeff_dw_dx = -30.d0/(7.d0*PISQ*PISQ)
 
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
 
