@@ -344,12 +344,12 @@ def read_grid_cfg(gridname):
 						values["%s_pts"%a] = np.linspace(
 							values["%s_min"%a],
 							values["%s_max"%a],
-							values["%s_N"%a] + (1 if values["ternary"] else 0))
+							values["%s_N"%a] + (1 if (values["ternary"] and a != "dm41") else 0))
 					else:
 						values["%s_pts"%a] = np.logspace(
 							np.log10(values["%s_min"%a]),
 							np.log10(values["%s_max"%a]),
-							values["%s_N"%a] + (1 if values["ternary"] else 0))
+							values["%s_N"%a] + (1 if (values["ternary"] and a != "dm41") else 0))
 	return values, fillGrid(Namespace(**values))
 
 
@@ -701,7 +701,6 @@ def call_ternary(args):
 	locations = np.arange(0, scale + 1)
 	offset = 0.15
 	ticks = [v for v in mixings["Ue4sq_pts"]]
-	tick_formats = "%.0e"
 	ax = tax.get_axes()
 	for a in ['r', 'l', 'b']:
 		for index, i in enumerate(locations):
@@ -711,22 +710,31 @@ def call_ternary(args):
 				text_location = (scale - i + 1.6 * offset, i - 0.5 * offset, 0)
 				tick = ticks[index]
 				ha = "left"
+				ro = 0
 			elif a == 'l':
 				loc1 = (0, i, 0)
 				loc2 = (-offset, i + offset, 0)
 				text_location = (-offset, i + 0.5 * offset, 0)
 				tick = ticks[-(index+1)]
 				ha = "right"
+				ro = 0
 			elif a == 'b':
 				loc1 = (i, 0, 0)
 				loc2 = (i, -offset, 0)
-				text_location = (i + 0.5 * offset, - 0.35, 0)
+				text_location = (i + 0.5 * offset, - 0.35 - 0.035*scale, 0)
 				tick = ticks[index]
 				ha = "center"
+				ro = 0#60
 			ternary.line(ax, loc1, loc2, color='k')
 			x, y = ternary.project_point(text_location)
-			ax.text(x, y, "$10^{%d}$"%np.log10(tick), horizontalalignment=ha,
-					color='k', fontsize=tfontsize)
+			regex = re.match("([0-9.]{3})e([0-9\-]+)", "%.1e"%tick)
+			base = float(regex.group(1))
+			expon = float(regex.group(2))
+			# ticklab = "%.1e"%tick
+			ticklab = r"$10^{%.0d}$"%(expon)
+			if ("%f"%base).startswith("1.0"):
+				ax.text(x, y, ticklab, horizontalalignment=ha,
+					color='k', fontsize=tfontsize, rotation=ro)
 
 	# axis labels and colorbar
 	tax.clear_matplotlib_ticks()

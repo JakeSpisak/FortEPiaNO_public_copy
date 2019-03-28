@@ -171,16 +171,16 @@ class NuDensRun():
 		plt.xlabel("$y$")
 		plt.ylabel(r"$y^2 f(y)$")
 
-	def plotZ(self, ls="-", lc="k"):
+	def plotZ(self, ls="-", lc="k", lab=None):
 		plt.plot(
 			*stripRepeated(self.zdat, 0, 1),
-			label=self.label, ls=ls, c=lc
+			label=self.label if lab is None else lab, ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$z$")
 
-	def plotW(self, ls="-", lc="k"):
+	def plotW(self, ls="-", lc="k", lab=None):
 		try:
 			self.zdat[0, 2]
 		except IndexError:
@@ -188,7 +188,7 @@ class NuDensRun():
 			return
 		plt.plot(
 			*stripRepeated(self.zdat, 0, 2),
-			label=self.label, ls=ls, c=lc
+			label=self.label if lab is None else lab, ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
