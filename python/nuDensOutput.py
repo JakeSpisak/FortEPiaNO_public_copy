@@ -25,12 +25,14 @@ def finalizePlot(fname,
 		xlim=None,
 		ylim=None,
 		legcol=1,
+		legend=True,
 		):
 	plt.title(title)
 	ax=plt.gca()
 	ax.tick_params("both", which="both", direction="out",
 		left=True, right=True, top=True, bottom=True)
-	plt.legend(loc=lloc, ncol=legcol)
+	if legend:
+		plt.legend(loc=lloc, ncol=legcol)
 	if xlab is not None:
 		plt.xlabel(xlab)
 	if ylab is not None:
@@ -122,7 +124,7 @@ class NuDensRun():
 		if rho and plots:
 			self.doAllPlots()
 
-	def interpolateRhoIJ(self, i1, i2, y, ri=0):
+	def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False):
 		xv = []
 		yv = []
 		prevy = 0
@@ -131,16 +133,18 @@ class NuDensRun():
 			cy = fy(y)
 			if cy != prevy:
 				prevy = cy
-				yv.append(prevy)
+				yv.append(prevy * (y**2 if y2 else 1.))
 				xv.append(x)
 		xv.append(x)
 		yv.append(cy)
 		return xv, yv
 
-	def interpolateRhoIJ_x(self, i1, i2, x, ri=0):
+	def interpolateRhoIJ_x(self, i1, i2, x, ri=0,y2=False):
 		ov = []
 		for i, y in enumerate(self.yv):
-			fx = interp1d(self.rho[i1, i2, ri][:, 0], self.rho[i1, i2, ri][:, i])
+			fx = interp1d(
+				self.rho[i1, i2, ri][:, 0],
+				self.rho[i1, i2, ri][:, i] * (y**2 if y2 else 1.))
 			ov.append(fx(x))
 		return self.yv, ov
 
@@ -161,10 +165,10 @@ class NuDensRun():
 				x=self.zdat[-1],
 				))
 
-	def plotFD(self, ls="-", lc="k"):
+	def plotFD(self, ls="-", lc="k", lab=None):
 		plt.plot(
 			self.yv, self.fd,
-			label=self.label, ls=ls, marker=".", c=lc
+			label=self.label if lab is None else lab, ls=ls, marker=".", c=lc
 			)
 		plt.xscale("log")
 		plt.yscale("log")
@@ -252,76 +256,77 @@ class NuDensRun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$d\rho_{ij}/dt$")
 
-	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k"):
-		ylabel = r"$\rho_{ij}^{\rm fin}(y)$"
+	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k", y2=False, lab=None):
 		if iy is None:
 			iy = ix
 		if ri not in [0, 1]:
 			ri = 0
+		label = "%s ij=%d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im") \
+			if lab is None else lab
+		fyv = self.yv**2*self.rho[ix, iy, ri][-1, 1:] if y2 else self.rho[ix, iy, ri][-1, 1:]
 		plt.plot(
-			self.yv, self.rho[ix, iy, ri][-1, 1:],
+			self.yv, fyv,
 			ls=ls, c=lc,
-			label="%s ij=%d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im")
+			label=label,
 			)
 		plt.xlabel("$y$")
-		plt.ylabel(ylabel)
+		plt.ylabel(r"$%s\rho_{ij}^{\rm fin}(y)$"%("y^2" if y2 else ""))
 
-	def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k"):
-		ylabel = r"$\rho_{ij}(y)$"
+	def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k", y2=False):
 		if i2 is None:
 			i2 = i1
 		if ri not in [0, 1]:
 			ri = 0
 		plt.plot(
-			*self.interpolateRhoIJ_x(i1, i2, x, ri),
+			*self.interpolateRhoIJ_x(i1, i2, x, ri, y2=y2),
 			ls=ls, c=lc,
 			label="%s ij=%d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x)
 			)
 		plt.xlabel("$y$")
-		plt.ylabel(ylabel)
+		plt.ylabel(r"$%s\rho_{ij}(y)$"%("y^2" if y2 else ""))
 
-	def plotRhoDiagY(self, inu, y, ls, lc="k", label=None):
-		x, y = self.interpolateRhoIJ(inu, inu, y, ri=0)
-		lab = label if label is not None else "%s i=%d"%(self.label, inu+1)
+	def plotRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False):
+		x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0)
+		label = lab if lab is not None else "%s i=%d"%(self.label, inu+1)
 		plt.plot(
-			x, np.asarray(y),
-			label=lab, ls=ls, c=lc
+			x, np.asarray(yv) * (y**2 if y2 else 1.),
+			label=label, ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ii}$")
+		plt.ylabel(r"$%s\rho_{ii}$"%("y^2" if y2 else ""))
 
-	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True):
+	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None):
 		if not self.full:
 			print("no offdiagonal loaded")
 			return
 		plt.plot(
 			*self.interpolateRhoIJ(i1, i2, y, ri=0),
-			ls=ls, c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1)
+			ls=ls, c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1) if lab is None else lab
 			)
 		if im:
 			plt.plot(
 				*self.interpolateRhoIJ(i1, i2, y, ri=1),
-				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1)
+				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1) if lab is None else lab
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho_{ij}$")
 
-	def plotdRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True):
+	def plotdRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None):
 		if not self.full:
 			print("no offdiagonal loaded")
 			return
 		dijrex, dijrey = self.interpolateRhoIJ(i1, i2, y, ri=0)
 		plt.plot(
 			dijrex, np.gradient(dijrey, dijrex),
-			ls=ls, c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1)
+			ls=ls, c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1) if lab is None else lab
 			)
 		if im:
 			dijimx, dijimy = self.interpolateRhoIJ(i1, i2, y, ri=1)
 			plt.plot(
 				dijimx, np.gradient(dijimy, dijimx),
-				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1)
+				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1) if lab is None else lab
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
