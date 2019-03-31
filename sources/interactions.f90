@@ -863,6 +863,7 @@ module ndInteractions
 	end function coll_nue_3_int_im
 
 	function integrate_coll_int_3(f, obj)
+		use omp_lib
 		interface
 			pure real(dl) function f(a, b, o)
 				use variables
@@ -875,14 +876,24 @@ module ndInteractions
 		type(coll_args), intent(in) :: obj
 		integer :: ia, ib
 		real(dl), dimension(:,:), allocatable :: fy2_arr
+		real(dl), dimension(:), allocatable :: tmpfy2
 
 		allocate(fy2_arr(Ny, Ny))
+		fy2_arr = 0.d0
 
+		!$omp parallel shared(fy2_arr) private(tmpfy2, ia, ib)
+		allocate(tmpfy2(Ny))
+		tmpfy2 = 0
+		!$omp do
 		do ia=1, Ny
 			do ib=1, Ny
-				fy2_arr(ia,ib) = f(ia, y_arr(ib), obj)
+				tmpfy2(ib) = f(ia, y_arr(ib), obj)
 			end do
+			fy2_arr(ia, :) = tmpfy2
 		end do
+		!$omp end do
+		deallocate(tmpfy2)
+		!$omp end parallel
 		integrate_coll_int_3 = integral_linearized_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
 		deallocate(fy2_arr)
 	end function integrate_coll_int_3

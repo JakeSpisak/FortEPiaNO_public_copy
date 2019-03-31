@@ -242,6 +242,7 @@ module ndEquations
 		real(dl), dimension(2) :: coeffs
 		integer :: ix, m
 
+		!$omp parallel do shared(fy_arr) private(tmp, m, ix)
 		do m=1, Ny
 			tmp = 0.d0
 			do ix=1, flavorNumber
@@ -249,6 +250,7 @@ module ndEquations
 			end do
 			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))
 		end do
+		!$omp end parallel do
 		tmp = integral_linearized_1d(Ny, dy_arr, fy_arr)
 		ydot(n-1) = coeff_dw_dx * tmp / w**3 / tot_factor_active_nu
 		coeffs = dzodxcoef_interp_func(x/z)
