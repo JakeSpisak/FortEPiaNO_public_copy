@@ -16,14 +16,14 @@ endif
 ifeq "$(ifortErr)" "0"
 #ifort
 F90=ifort
-  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -openmp -parallel -par-report1 -no-prec-div
+  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -openmp -parallel -par-report1 -no-prec-div
 DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all
 
 else
 #gfortran
 F90=gfortran
   F90FLAGS=-O3 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -ffast-math -ffree-line-length-none -fopenmp
-DEBUGFLAGS=-O0 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
+DEBUGFLAGS=-O0 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -p -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
 endif
 
 ifeq ($(TESTSPEED), 1)

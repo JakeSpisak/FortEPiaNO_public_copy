@@ -13,25 +13,18 @@ module ndEquations
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
 
-	type collTerm
-		type(cmplxMatNN) :: mat
-		real(dl) :: x,y,z
-		logical :: f5
-	end type collTerm
-	type(collTerm) :: lastColl
-
 	real(dl), parameter :: upper = 1.d2
 
 	real(dl) :: deriv_counter
 
 	contains
 
-	subroutine updateLeptonDensities(x,y,z)
-		real(dl), intent(in) :: x,y,z
+	subroutine updateLeptonDensities(x,z)
+		real(dl), intent(in) :: x,z
 		real(dl) :: ldf
 
 		leptonDensities=0.d0
-		ldf = leptDensFactor * y / x**6
+		ldf = leptDensFactor / x**6
 		leptonDensities(1,1) = ldf * electronDensity(x,z)
 		leptonDensities(2,2) = ldf * muonDensity(x,z)
 	end subroutine updateLeptonDensities
@@ -325,69 +318,6 @@ module ndEquations
 		z_in = cvec(n) + 1.d0
 	end subroutine zin_solver
 
-	subroutine drhoy_dx_fullMat(matrix, x, z, iy, Fre, Fim)
-		interface
-			pure real(dl) function Fre(a, b, o)
-				use variables
-				integer, intent(in) :: a
-				real(dl), intent(in) :: b
-				type(coll_args), intent(in) :: o
-			end function
-			pure real(dl) function Fim(a, b, o)
-				use variables
-				integer, intent(in) :: a
-				real(dl), intent(in) :: b
-				type(coll_args), intent(in) :: o
-			end function
-		end interface
-		type(cmplxMatNN), intent(out) :: matrix
-		real(dl) :: x, y, z, overallNorm, fd, cf
-		integer :: iy, ix
-		type(coll_args) :: collArgs
-		type(cmplxMatNN), save :: comm
-
-		call allocateCmplxMat(comm)
-		call allocateCmplxMat(matrix)
-
-		y = nuDensMatVecFD(iy)%y
-
-		collArgs%x = x
-		collArgs%z = z
-		collArgs%y1 = y
-		collArgs%dme2 = dme2_electron(x, 0.d0, z)
-		collArgs%iy = iy
-
-		overallNorm = overallFactor / sqrt(radDensity(x,z))
-		call updateLeptonDensities(x,y,z)
-		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:)
-
-		!switch imaginary and real parts because of the "-i" factor
-		call Commutator(matrix%re, nuDensMatVecFD(iy)%re, comm%im)
-		call Commutator(matrix%re, nuDensMatVecFD(iy)%im, comm%re)
-
-		!matrix is now redefined
-		cf = x**2/m_e_cub
-		matrix%im = - comm%im * cf
-		matrix%re = comm%re * cf
-
-		if (x .ne. lastColl%x .or. y .ne. lastColl%y .or. z .ne. lastColl%z .or. lastColl%f5) then
-			lastColl%mat = get_collision_terms(collArgs, Fre, Fim)
-			lastColl%x = x
-			lastColl%y = y
-			lastColl%z = z
-		end if
-		matrix%re = matrix%re + lastColl%mat%re
-		matrix%im = matrix%im + lastColl%mat%im
-
-		matrix%re = matrix%re * overallNorm
-		matrix%im = matrix%im * overallNorm
-		fd = fermiDirac(y)
-		do ix=1, flavorNumber
-			matrix%re(ix,ix) = matrix%re(ix,ix) / fd
-			matrix%im(ix,ix) = 0.d0
-		end do
-	end subroutine drhoy_dx_fullMat
-
 	subroutine saveRelevantInfo(x, vec)
 		real(dl) :: x
 		real(dl), dimension(:) :: vec
@@ -551,25 +481,83 @@ module ndEquations
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
 
-	subroutine derivative (x, z, m, mat, n, ydot)
+	pure subroutine drhoy_dx_fullMat(matrix, x, z, iy, dme2, sqrtraddens, Fre, Fim)
+		interface
+			pure real(dl) function Fre(a, b, o)
+				use variables
+				integer, intent(in) :: a
+				real(dl), intent(in) :: b
+				type(coll_args), intent(in) :: o
+			end function
+			pure real(dl) function Fim(a, b, o)
+				use variables
+				integer, intent(in) :: a
+				real(dl), intent(in) :: b
+				type(coll_args), intent(in) :: o
+			end function
+		end interface
+		type(cmplxMatNN), intent(out) :: matrix
+		real(dl), intent(in) :: x, z, dme2, sqrtraddens
+		integer, intent(in) :: iy
+		real(dl) :: y, overallNorm, fd, cf
+		integer :: ix
+		type(coll_args) :: collArgs
+		type(cmplxMatNN) :: tmpmat
+
+		call allocateCmplxMat(tmpmat)
+		call allocateCmplxMat(matrix)
+
+		y = nuDensMatVecFD(iy)%y
+
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%y1 = y
+		collArgs%dme2 = dme2
+		collArgs%iy = iy
+
+		overallNorm = overallFactor / sqrtraddens
+		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:) * y
+
+		!switch imaginary and real parts because of the "-i" factor
+		call Commutator(matrix%re, nuDensMatVecFD(iy)%re, tmpmat%im)
+		call Commutator(matrix%re, nuDensMatVecFD(iy)%im, tmpmat%re)
+
+		!matrix is now redefined
+		cf = x**2/m_e_cub
+		matrix%im = - tmpmat%im * cf
+		matrix%re = tmpmat%re * cf
+
+		tmpmat = get_collision_terms(collArgs, Fre, Fim)
+		matrix%re = matrix%re + tmpmat%re
+		matrix%im = matrix%im + tmpmat%im
+
+		matrix%re = matrix%re * overallNorm
+		matrix%im = matrix%im * overallNorm
+		fd = fermiDirac(y)
+		do ix=1, flavorNumber
+			matrix%re(ix,ix) = matrix%re(ix,ix) / fd
+			matrix%im(ix,ix) = 0.d0
+		end do
+	end subroutine drhoy_dx_fullMat
+
+	pure subroutine derivative (x, z, m, dme2, sqrtraddens, n, ydot)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
-		real(dl), intent(in) :: x, z
+		real(dl), intent(in) :: x, z, dme2, sqrtraddens
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
-		integer :: i, j, k, s
+		integer :: i, j, k
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x, z, m, coll_nue_3_int_re, coll_nue_3_int_im)
-		s=(m-1)*flavNumSqu
+		call drhoy_dx_fullMat(mat, x, z, m, dme2, sqrtraddens, coll_nue_3_int_re, coll_nue_3_int_im)
 		do i=1, flavorNumber
-			ydot(s+i) = mat%re(i,i)
+			ydot(i) = mat%re(i,i)
 		end do
 		k=flavorNumber+1
 		if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 			do i=1, flavorNumber-1
 				do j=i+1, flavorNumber
-					ydot(s+k) = mat%re(i,j)
-					ydot(s+k+1) = mat%im(i,j)
+					ydot(k) = mat%re(i,j)
+					ydot(k+1) = mat%im(i,j)
 					k=k+2
 				end do
 			end do
@@ -579,20 +567,21 @@ module ndEquations
 	subroutine derivatives(n, x, vars, ydot)
 !		compute all the rho derivatives (drho/dx for all y, dz/dx)
 !		needs allocation and interpolation of density matrix
-		type(cmplxMatNN) :: mat
-		integer :: n, m
-		real(dl) :: x, w, z
+		integer, intent(in) :: n
+		real(dl), intent(in) :: x
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
+		real(dl) :: w, z, dme2, sqrtraddens
 		character(len=100) :: tmpstr
 		logical :: file_exist
-		integer :: stat
+		integer :: tstat, m, s
 		real(8) :: timer1
+		real(dl), dimension(:), allocatable :: tmpvec
 
 		inquire(file="terminate", exist=file_exist)
 		if (file_exist) then
-			open(unit=1234, iostat=stat, file="terminate", status='old')
-			if (stat == 0) close(1234, status='delete')
+			open(unit=1234, iostat=tstat, file="terminate", status='old')
+			if (tstat == 0) close(1234, status='delete')
 			call criticalError("Termination request received")
 		end if
 
@@ -604,13 +593,26 @@ module ndEquations
 		write (tmpstr, "('[eq] Calling derivatives (',"//dblfmt//",' x=',"//dblfmt//",')')") deriv_counter,x
 		call printVerbose(trim(tmpstr), 1+int(mod(deriv_counter, Nprintderivs)))
 
-		call allocateCmplxMat(mat)
 		w = vars(n-1) + 1.d0
 		z = vars(n) + 1.d0
 		call vec_2_densMat(vars)
+
+		dme2 = dme2_electron(x, 0.d0, z)
+		sqrtraddens = sqrt(radDensity(x,z))
+		call updateLeptonDensities(x,z)
+
+		!$omp parallel shared(ydot, x, z, dme2, sqrtraddens, flavNumSqu) private(m, s, tmpvec)
+		allocate(tmpvec(flavNumSqu))
+		tmpvec = 0
+		!$omp do schedule(dynamic)
 		do m=1, Ny
-			call derivative(x, z, m, mat, n, ydot)
+			call derivative(x, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
+			s=(m-1)*flavNumSqu
+			ydot(s+1:s+flavNumSqu) = tmpvec(:)
 		end do
+		!$omp end do
+		deallocate(tmpvec)
+		!$omp end parallel
 
 		call dz_o_dx_lin(x, w, z, ydot, ntot)
 
