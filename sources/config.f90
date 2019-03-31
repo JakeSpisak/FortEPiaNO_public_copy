@@ -98,6 +98,7 @@ module ndConfig
 
 	subroutine setDampingFactorCoeffs
 		real(dl) :: nue_nux, nue_nus, numu_nutau, nux_nus
+		dampTermMatrixCoeff = 0.d0
 		!numbers from McKellar:1992ja
 		!nu_e - nu_X
 		nue_nux = &

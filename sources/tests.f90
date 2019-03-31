@@ -333,9 +333,9 @@ program tests
 		end do
 
 		leptonDensities=0.d0
-		call updateLeptonDensities(0.076d0, 1.22d0, 1.32d0)
-		m(1,:) = (/-0.0026760938, 0., 0./)
-		m(2,:) = (/0.,-2.58816e-6,0./)
+		call updateLeptonDensities(0.076d0, 1.32d0)
+		m(1,:) = (/-0.0026760938/1.22, 0., 0./)
+		m(2,:) = (/0.,-2.58816e-6/1.22,0./)
 		m(3,:) = (/0.,0.,0./)
 		do i=1,3
 			do j=1,3
@@ -347,8 +347,8 @@ program tests
 				end if
 			end do
 		end do
-		call updateLeptonDensities(2.d1, 0.22d0, 1.2d0)
-		m(1,:) = (/-1.7572758d-23, 0.d0, 0.d0/)
+		call updateLeptonDensities(2.d1, 1.2d0)
+		m(1,:) = (/-1.7572758d-23/0.22d0, 0.d0, 0.d0/)
 		m(2,:) = (/0.,0.,0./)
 		m(3,:) = (/0.,0.,0./)
 		do i=1,3
@@ -2050,7 +2050,7 @@ program tests
 	end subroutine test_speed_coll_int
 
 	subroutine do_test_drho_dx
-		real(dl) :: x,z,fd
+		real(dl) :: x,z,fd, dme2, sqrtraddens
 		type(cmplxMatNN) :: res, outp
 		character(len=300) :: tmparg
 		integer :: i, j, iy
@@ -2064,6 +2064,8 @@ program tests
 		call allocateCmplxMat(res)
 		x = 0.06d0
 		z = 1.23d0
+		dme2 = 0.1d0
+		call updateLeptonDensities(x,z)
 		iy = 12 !2.231111111111111
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
@@ -2074,6 +2076,7 @@ program tests
 			nuDensMatVecFD(i)%im(2, :) = (/0.02, 0.0, 0.1/)
 			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
 		end do
+		sqrtraddens = sqrt(radDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
 		res%re(1,:) = (/605.541d0/fd, 15531.6d0, 73346.3d0/)
@@ -2082,7 +2085,7 @@ program tests
 		res%im(1,:) = (/0., 8489.27, 30142.1/)
 		res%im(2,:) = (/-8489.27, 0., -865.415/)
 		res%im(3,:) = (/-30142.1, 865.415, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
+		call drhoy_dx_fullMat(outp, x, z, iy, dme2, sqrtraddens, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx a ',2I1)") i,j
@@ -2099,7 +2102,6 @@ program tests
 			end do
 		end do
 
-		lastColl%f5 = .true.
 		fd = fermiDirac(y_arr(iy))
 		res%re(1,:) = (/1394.47d0/fd, 16320.5d0, 74135.2d0/)
 		res%re(2,:) = (/16320.5d0, -1864.85d0/fd, 184.352d0/)
@@ -2107,7 +2109,7 @@ program tests
 		res%im(1,:) = (/0., 9278.19, 30931./)
 		res%im(2,:) = (/-9278.19, 0., -76.52251/)
 		res%im(3,:) = (/-30931., 76.52251, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint1, fakecollint1)
+		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint1, fakecollint1)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx b ',2I1)") i,j
@@ -2126,6 +2128,7 @@ program tests
 
 		x = 1.76d0
 		z = 1.31d0
+		call updateLeptonDensities(x,z)
 		iy = 34 !6.67333333333333
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
@@ -2136,8 +2139,8 @@ program tests
 			nuDensMatVecFD(i)%im(2, :) = (/0.02, 0.0, 0.1/)
 			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
 		end do
+		sqrtraddens = sqrt(radDensity(x,z))
 
-		lastColl%f5 = .true.
 		fd = fermiDirac(y_arr(iy))
 		res%re(1,:) = (/164543.d0/fd, 346799.d0, 481933.d0/)
 		res%re(2,:) = (/346799.d0, -721106.d0/fd, -83688.4d0/)
@@ -2145,7 +2148,7 @@ program tests
 		res%im(1,:) = (/0., 369988., 411122./)
 		res%im(2,:) = (/-369988., 0., 6601.2/)
 		res%im(3,:) = (/-411122., -6601.2, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, fakecollint0, fakecollint0)
+		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint0, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx c ',2I1)") i,j
@@ -2168,7 +2171,7 @@ program tests
 		res%im(1,:) = (/0., 370138., 411272./)
 		res%im(2,:) = (/-370138., 0., 6751.29/)
 		res%im(3,:) = (/-411272., -6751.29, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, fakecollinty, fakecollinty)
+		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollinty, fakecollinty)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx d ',2I1)") i,j
@@ -2355,6 +2358,7 @@ program tests
 			nuDensMatVecFD(iy)%im(4,:) = (/-0.1d0, 0.2d0, -0.5d0, 0.d0/)
 		end do
 		!3+1
+		sterile = .false.
 		sterile(4) = .true.
 		call setDampingFactorCoeffs
 		tmpmatA(1,:) = (/-0.928646, -3.06453, -2.38791/)
