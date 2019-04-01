@@ -212,8 +212,9 @@ module ndConfig
 	end subroutine init_matrices
 
 	subroutine initConfig()
+		use omp_lib
 		character(len=300) :: tmparg, tmpstr
-		integer :: ix
+		integer :: ix, num_threads
 		logical :: file_exist
 		
 		if (verbose>0) write(*,*) '[config] init configuration'
@@ -239,6 +240,10 @@ module ndConfig
 			end if
 			call addToLog("[config] Writing to: "//trim(outputFolder)//"/...")
 			call system('mkdir -p '//trim(outputFolder))
+
+			num_threads = read_ini_int("num_threads", 0)
+			if (num_threads .gt.0) &
+				CALL OMP_SET_NUM_THREADS(num_threads)
 			
 			verbose = read_ini_int('verbose', verbose)
 			Nprintderivs = read_ini_real('Nprintderivs', Nprintderivs)
