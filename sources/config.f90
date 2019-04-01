@@ -178,7 +178,7 @@ module ndConfig
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
 		ntot = Ny*(flavNumSqu) + 2 !independent elements in nuDensity(y) + w,z
 		allocate(nuDensVec(ntot))
-		if(trim(outputFolder).ne."")&
+		if(save_fd .and. trim(outputFolder).ne."")&
 			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)
 		do ix=1, Ny
 			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
@@ -189,7 +189,7 @@ module ndConfig
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdme = fermiDirac(y_arr(ix)/z_in)
 			fdm = fermiDirac(y_arr(ix))
-			if(trim(outputFolder).ne."")&
+			if(save_fd .and. trim(outputFolder).ne."")&
 				write(3154, multidblfmt) y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
 			nuDensMatVec(ix)%re(1,1) = 0.d0
 			if (flavorNumber.gt.1 .and. sterile(2)) &
@@ -205,7 +205,7 @@ module ndConfig
 				nuDensMatVec(ix)%re(iy,iy) = nuDensMatVecFD(ix)%re(iy,iy)/fdm - 1.d0
 			end do
 		end do
-		if(trim(outputFolder).ne."")&
+		if(save_fd .and. trim(outputFolder).ne."")&
 			close(3154)
 		
 		deallocate(diag_el)
@@ -297,6 +297,11 @@ module ndConfig
 			!settings for collisional
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
+
+			!settings for saving files
+			save_fd = read_ini_logical("save_fd",.true.)
+			save_nuDens_evolution = read_ini_logical("save_nuDens_evolution",.true.)
+			save_z_evolution = read_ini_logical("save_z_evolution",.true.)
 			save_w_evolution = read_ini_logical("save_w_evolution",.true.)
 			
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)

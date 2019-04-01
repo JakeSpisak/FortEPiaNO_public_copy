@@ -70,7 +70,7 @@ module variables
 
 	integer :: collision_offdiag
 	logical :: dme2_temperature_corr
-	logical :: save_w_evolution
+	logical :: save_fd, save_nuDens_evolution, save_w_evolution, save_z_evolution
 
 	!variables that will be read from config file
 	logical :: giveSinSq

@@ -164,6 +164,7 @@ program tests
 		end if
 		z_in=1.0000575
 		save_w_evolution = .true.
+		save_nuDens_evolution = .true.
 		call setMixingMatrix()
 		call setMassMatrix()
 		call init_matrices

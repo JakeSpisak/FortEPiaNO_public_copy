@@ -248,6 +248,12 @@ module utilities
 		call addToLog("[ckpt] ...done!")
 	end subroutine readCheckpoints
 
+	subroutine deleteCheckpoints
+		integer :: fstat
+		open(file=trim(outputFolder)//"/checkpoint.chk", unit=8643, iostat=fstat, status='old')
+		if (fstat == 0) close(8643, status='delete')
+	end subroutine deleteCheckpoints
+
 	pure function rombint_re(obj, f, a, b, tol, maxit)
 		use Precision
 		!  Rombint returns the integral from a to b of using Romberg integration.

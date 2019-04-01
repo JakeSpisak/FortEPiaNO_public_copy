@@ -335,42 +335,46 @@ module ndEquations
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=', x
 		call addToLog(trim(fname))!not a filename but the above string
 
-		do k=1, flavorNumber
-			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
-			call openFile(units(k), trim(fname),firstWrite)
-			do iy=1, nY
-				tmpvec(iy)=nuDensMatVecFD(iy)%re(k, k)
-			end do
-			write(units(k), '(*('//dblfmt//'))') x, tmpvec
-		end do
-		if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
-			do i=1, flavorNumber-1
-				do j=i+1, flavorNumber
-					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_re.dat'
-					call openFile(units(k), trim(fname),firstWrite)
-					tmpvec=0
-					do iy=1, nY
-						tmpvec(iy)=nuDensMatVecFD(iy)%re(i,j)
-					end do
-					write(units(k), '(*('//dblfmt//'))') x, tmpvec
-					k=k+1
-
-					write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_im.dat'
-					call openFile(units(k), trim(fname),firstWrite)
-					tmpvec=0
-					do iy=1, nY
-						tmpvec(iy)=nuDensMatVecFD(iy)%im(i,j)
-					end do
-					write(units(k), '(*('//dblfmt//'))') x, tmpvec
-					k=k+1
+		if (save_nuDens_evolution) then
+			do k=1, flavorNumber
+				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
+				call openFile(units(k), trim(fname),firstWrite)
+				do iy=1, nY
+					tmpvec(iy)=nuDensMatVecFD(iy)%re(k, k)
 				end do
+				write(units(k), '(*('//dblfmt//'))') x, tmpvec
 			end do
+			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_re.dat'
+						call openFile(units(k), trim(fname),firstWrite)
+						tmpvec=0
+						do iy=1, nY
+							tmpvec(iy)=nuDensMatVecFD(iy)%re(i,j)
+						end do
+						write(units(k), '(*('//dblfmt//'))') x, tmpvec
+						k=k+1
+
+						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_im.dat'
+						call openFile(units(k), trim(fname),firstWrite)
+						tmpvec=0
+						do iy=1, nY
+							tmpvec(iy)=nuDensMatVecFD(iy)%im(i,j)
+						end do
+						write(units(k), '(*('//dblfmt//'))') x, tmpvec
+						k=k+1
+					end do
+				end do
+			end if
 		end if
-		call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
-		if (save_w_evolution) then
-			write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0, vec(ntot-1)+1.d0
-		else
-			write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0
+		if (save_z_evolution) then
+			call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
+			if (save_w_evolution) then
+				write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0, vec(ntot-1)+1.d0
+			else
+				write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0
+			end if
 		end if
 
 		do i=1, totFiles
@@ -477,6 +481,8 @@ module ndEquations
 			values(3), values(2), values(1), values(5),values(6),values(7), deriv_counter, xend, &
 			nuDensVec(ntot-1)+1.d0, nuDensVec(ntot)+1.d0
 		close(timefileu)
+
+		call deleteCheckpoints
 
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
@@ -604,7 +610,7 @@ module ndEquations
 		!$omp parallel shared(ydot, x, z, dme2, sqrtraddens, flavNumSqu) private(m, s, tmpvec)
 		allocate(tmpvec(flavNumSqu))
 		tmpvec = 0
-		!$omp do schedule(dynamic)
+		!$omp do schedule(static)
 		do m=1, Ny
 			call derivative(x, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
 			s=(m-1)*flavNumSqu
