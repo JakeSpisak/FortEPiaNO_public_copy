@@ -419,7 +419,7 @@ def contourplot(xv, yv, values, points,
 	plt.close()
 
 
-def call_plot(args):
+def call_plot(args, gridContent=None):
 	def convert_grid(convert_x, convert_y, pts):
 		outpts = np.column_stack((pts, np.zeros(np.shape(pts)[0])))
 		outpts = np.column_stack((outpts, np.zeros(np.shape(pts)[0])))
@@ -443,7 +443,11 @@ def call_plot(args):
 			ix = cva.index("sinsq2th_emu")
 			outpts[:, 4+ix] = 4.*pts[:,1]*pts[:,2]
 		return outpts
-	mixings, fullgrid, fullobjects = call_read(args)
+	# prepare the grid points
+	if gridContent:
+		mixings, fullgrid, fullobjects = gridContent
+	else:
+		mixings, fullgrid, fullobjects = call_read(args)
 	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
 	fullpoints = np.asarray(fullpoints)
 	cgrid = {}
@@ -508,6 +512,9 @@ def call_plot(args):
 
 
 def call_prepare(args):
+	if args.gridname in ["plot", "ternary"]:
+		print("Sorry, I cannot let you name your grid 'plot' or 'ternary', otherwise I will have problems in the future.")
+		return
 	if not os.path.exists("grids/%s/ini/"%args.gridname):
 		os.makedirs("grids/%s/ini/"%args.gridname)
 	if not os.path.exists("grids/%s/OUT/"%args.gridname):
@@ -622,12 +629,15 @@ def call_run(args):
 	print("\nTotal number of runs: %s, submitted: %s"%(len(files), current))
 
 
-def call_ternary(args):
+def call_ternary(args, gridContent=None):
 	if not tern:
 		print("ternary not available. Exiting.")
 		return
 	# prepare the grid points
-	mixings, fullgrid, fullobjects = call_read(args)
+	if gridContent:
+		mixings, fullgrid, fullobjects = gridContent
+	else:
+		mixings, fullgrid, fullobjects = call_read(args)
 	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
 	fullpoints = np.asarray(fullpoints)
 	if (mixings["Ue4sq_N"] != mixings["Um4sq_N"]
@@ -787,6 +797,23 @@ def call_ternary(args):
 
 if __name__=='__main__':
 	parser = setParser()
-	args = parser.parse_args(sys.argv[1:])
-	print(args)
-	args.func(args)
+	argsList = sys.argv[1:]
+	if (argsList.count("plot") > 1
+			or argsList.count("ternary") > 1
+			or (argsList.count("plot") > 0 and argsList.count("ternary") > 0)):
+		if any([x in argsList for x in ["set", "run", "read"]]):
+			print("multiple sub-commands can only be used for plotting ('plot' or 'ternary')")
+			exit(1)
+		if argsList[0] in ["plot", "ternary"]:
+			args = parser.parse_args(["read"])
+		args = parser.parse_args([argsList[0], "read"])
+		gridContent = call_read(args)
+		idx = [i for i, x in enumerate(argsList) if x == "plot" or x == "ternary"] + [len(argsList)]
+		for i in range(len(idx)-1):
+			args = parser.parse_args([argsList[0]] + argsList[idx[i]:idx[i+1]])
+			print(args)
+			args.func(args, gridContent)
+	else:
+		args = parser.parse_args(argsList)
+		print(args)
+		args.func(args)
