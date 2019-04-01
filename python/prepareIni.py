@@ -177,6 +177,21 @@ def setParser():
 		default=1e-6,
 		help='relative tolerance for DLSODA',
 		)
+	parser.add_argument(
+		'--save_fd',
+		action="store_true",
+		help='enable saving the y grid and the corresponding Fermi-Dirac to fd.dat',
+		)
+	parser.add_argument(
+		'--save_nuDens',
+		action="store_true",
+		help='enable saving the evolution of the full neutrino density matrix',
+		)
+	parser.add_argument(
+		'--save_z',
+		action="store_true",
+		help='enable saving the evolution of the photon temperature z',
+		)
 	return parser
 
 
@@ -294,6 +309,9 @@ def getIniValues(args):
 	values["dlsoda_rtol"] = args.dlsoda_rtol
 	values["folder"] = args.outputfolder
 	values["Nprintderivs"] = args.verbose_deriv_freq
+	values["save_fd"] = "T" if args.save_fd else "F"
+	values["save_nuDens"] = "T" if args.save_nuDens else "F"
+	values["save_z"] = "T" if args.save_z else "F"
 	return values
 
 
@@ -328,12 +346,18 @@ y_min = {y_min:}
 y_cen = {y_cen:}
 y_max = {y_max:}
 
+outputFolder = {folder:}
 checkpoint = T
-verbose = {verbose:}
-Nprintderivs = {Nprintderivs:}
+
+save_fd = {save_fd:}
+save_nuDens_evolution = {save_nuDens:}
+save_z_evolution = {save_z:}
+
 dlsoda_atol = {dlsoda_atol:}
 dlsoda_rtol = {dlsoda_rtol:}
-outputFolder = {folder:}
+
+verbose = {verbose:}
+Nprintderivs = {Nprintderivs:}
 """.format(**values)
 	print("Writing to %s"%filename)
 	if not os.path.exists(os.path.dirname(os.path.abspath(filename))):

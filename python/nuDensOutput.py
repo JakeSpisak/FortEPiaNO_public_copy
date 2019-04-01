@@ -1,5 +1,6 @@
 """Functions and classes that read the output and help to do plots"""
 
+import os
 import re
 import matplotlib.pyplot as plt
 import numpy as np
@@ -73,10 +74,21 @@ class NuDensRun():
 		self.folder = folder
 		self.full = full
 		self.label = label
-		fdy = np.loadtxt("%s/fd.dat"%folder)
-		self.yv = fdy[:,0]
-		self.fd = fdy[:,1]
-		self.zdat = np.loadtxt("%s/z.dat"%folder)
+		if not os.path.exists(folder):
+			print("non-existing folder: %s"%folder)
+			return
+		try:
+			fdy = np.loadtxt("%s/fd.dat"%folder)
+		except OSError:
+			self.yv = np.nan
+			self.fd = np.nan
+		else:
+			self.yv = fdy[:,0]
+			self.fd = fdy[:,1]
+		try:
+			self.zdat = np.loadtxt("%s/z.dat"%folder)
+		except OSError:
+			self.zdat = np.asarray([[np.nan, np.nan]])
 		self.nnu = nnu
 		self.rho = np.asarray([
 			[[None, None] for i in range(nnu)] for j in range(nnu)
@@ -112,14 +124,26 @@ class NuDensRun():
 						)
 					)
 			if rho:
-				self.rho[i, i, 0] = np.loadtxt(
-					"%s/nuDens_diag%d.dat"%(folder, i+1))
+				try:
+					self.rho[i, i, 0] = np.loadtxt(
+						"%s/nuDens_diag%d.dat"%(folder, i+1))
+				except OSError:
+					self.rho[i, i, 0] = np.nan
+					rho = False
 				if full:
 					for j in range(i+1, self.nnu):
-						self.rho[i, j, 0] = np.loadtxt(
-							"%s/nuDens_nd_%d%d_re.dat"%(folder, i+1, j+1))
-						self.rho[i, j, 1] = np.loadtxt(
-							"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
+						try:
+							self.rho[i, j, 0] = np.loadtxt(
+								"%s/nuDens_nd_%d%d_re.dat"%(folder, i+1, j+1))
+						except OSError:
+							self.rho[i, j, 0] = np.nan
+							rho = False
+						try:
+							self.rho[i, j, 1] = np.loadtxt(
+								"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
+						except OSError:
+							self.rho[i, j, 1] = np.nan
+							rho = False
 		self.printTableLine()
 		if rho and plots:
 			self.doAllPlots()

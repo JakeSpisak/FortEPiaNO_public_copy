@@ -164,6 +164,21 @@ def setParser():
 		help='number of log-spaced points in 0.01 < y < 1',
 		)
 	parser_prepare.add_argument(
+		'--save_fd',
+		action="store_true",
+		help='enable saving the y grid and the corresponding Fermi-Dirac to fd.dat',
+		)
+	parser_prepare.add_argument(
+		'--save_nuDens',
+		action="store_true",
+		help='enable saving the evolution of the full neutrino density matrix',
+		)
+	parser_prepare.add_argument(
+		'--save_z',
+		action="store_true",
+		help='enable saving the evolution of the photon temperature z',
+		)
+	parser_prepare.add_argument(
 		'--x_in',
 		type=float,
 		default=5e-4,
@@ -545,6 +560,9 @@ def call_prepare(args):
 			"--th34=%s"%ssq34,
 			"--ordering=%s"%args.ordering,
 			]
+		for s in ["save_fd", "save_nuDens", "save_z"]:
+			if getattr(args, s):
+				prep.append("--%s"%s)
 		parser = prepareIni.setParser()
 		rargs = parser.parse_args(prep)
 		values = prepareIni.getIniValues(rargs)
