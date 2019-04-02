@@ -160,7 +160,6 @@ program tests
 			theta13      = 0.1485d0
 			theta23      = 0.7954d0
 			dm31         = 0.0025153d0
-			deltaCP13    = 0.d0
 		end if
 		z_in=1.0000575
 		save_w_evolution = .true.

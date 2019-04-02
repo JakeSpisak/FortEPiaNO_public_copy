@@ -42,7 +42,6 @@ module constants
 	real(dl), parameter :: i_theta23 = 0.425
 	real(dl), parameter :: i_dm21 = 7.37e-05
 	real(dl), parameter :: i_dm31 = 0.00256
-	real(dl), parameter :: i_deltaCP13 = 0.
 
 	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
@@ -75,9 +74,8 @@ module variables
 	!variables that will be read from config file
 	logical :: giveSinSq
 	integer :: flavorNumber, flavNumSqu
-	real(dl) :: m_lightest
 	real(dl) :: theta12, dm21
-	real(dl) :: theta13, theta23, dm31, deltaCP13
+	real(dl) :: theta13, theta23, dm31
 	real(dl) :: theta14, theta24, theta34, dm41
 
 	!complex matrix, it will host the neutrino density matrix.

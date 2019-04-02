@@ -45,7 +45,7 @@ module ndConfig
 		if (nf.gt.3) then
 			mv(4) = mv(1) + dm41
 		end if
-		mv = mv - (minval(mv)-m_lightest*m_lightest)
+		mv = mv - minval(mv)
 		
 		call createDiagMat(m1, nf, mv)
 		call tripleProdMat(mixMat, m1, mixMatInv, nuMassesMat)
@@ -291,7 +291,6 @@ module ndConfig
 			call zin_solver
 			
 			!read mixing parameters and create matrices
-			m_lightest   = read_ini_real('m_lightest', 0.0d0)
 			giveSinSq = read_ini_logical('givesinsq', .true.)
 
 			!settings for collisional
@@ -337,7 +336,6 @@ module ndConfig
 			dm21 = read_ini_real('dm21', i_dm21)
 			if (flavorNumber .gt. 2) then
 				dm31 = read_ini_real('dm31', i_dm31)
-				deltaCP13 = 0.d0!read_ini_real('deltaCP13', i_deltaCP13)
 			end if
 			if (flavorNumber .gt. 3) then
 				dm41 = read_ini_real('dm41', zero)
