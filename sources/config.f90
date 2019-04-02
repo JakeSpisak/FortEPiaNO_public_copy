@@ -80,7 +80,10 @@ module ndConfig
 	end subroutine setMixingMatrix
 
 	subroutine setDampingFactorCoeffs
+		integer :: ix, iy
 		real(dl) :: nue_nux, nue_nus, numu_nutau, nux_nus
+		character(len=300) :: tmpstr
+
 		dampTermMatrixCoeff = 0.d0
 		!numbers from McKellar:1992ja
 		!nu_e - nu_X
@@ -118,11 +121,18 @@ module ndConfig
 				dampTermMatrixCoeff(2, 3) = numu_nutau
 			end if
 		end if
-		if (flavorNumber .ge. 4) then
-			dampTermMatrixCoeff(1, 4) = nue_nus
-			dampTermMatrixCoeff(2, 4) = nux_nus
-			dampTermMatrixCoeff(3, 4) = nux_nus
-		end if
+		do ix=4, flavorNumber
+			write(tmpstr,"('damping_',2I1,'_zero')") 1, ix
+			if (.not. read_ini_logical(trim(tmpstr), .false.)) &
+				dampTermMatrixCoeff(1, ix) = nue_nus
+			do iy=2, ix-1
+				write(tmpstr,"('damping_',2I1,'_zero')") iy, ix
+				if (.not. read_ini_logical(trim(tmpstr), .false.)) &
+					dampTermMatrixCoeff(iy, ix) = nux_nus
+			end do
+		end do
+		write(*,*)"Damping factors:"
+		call printMat(dampTermMatrixCoeff)
 	end subroutine setDampingFactorCoeffs
 
 	subroutine init_matrices
@@ -179,8 +189,10 @@ module ndConfig
 				nuDensMatVec(ix)%re(2,2) = -1.d0
 			if (flavorNumber.gt.2 .and. sterile(3)) &
 				nuDensMatVec(ix)%re(3,3) = -1.d0
-			if (flavorNumber.gt.3) &
-				nuDensMatVec(ix)%re(4,4) = -1.d0
+			do iy=2, flavorNumber
+				if (sterile(iy)) &
+					nuDensMatVec(ix)%re(iy,iy) = -1.d0
+			end do
 			nuDensMatVecFD(ix)%re = nuDensMatVec(ix)%re
 			nuDensMatVecFD(ix)%im = nuDensMatVec(ix)%im
 			do iy=1, flavorNumber
