@@ -142,7 +142,6 @@ program tests
 			dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 		end do
 		dy_arr(Ny) = 0.d0
-		m_lightest   = 0.0d0
 		collision_offdiag = 1
 		dme2_temperature_corr = .true.
 		flavorNumber = 3
@@ -154,12 +153,13 @@ program tests
 		end do
 		tot_factor_active_nu = 3.0
 		tot_factor_nu = 0.d0
-		theta12      = 0.5840d0
-		dm21         = 7.53d-05
+		mixingAngles(1,2) = 0.5840d0
+		massSplittings(1) = 0.d0
+		massSplittings(2) = 7.53d-05
 		if (flavorNumber .gt. 2) then
-			theta13      = 0.1485d0
-			theta23      = 0.7954d0
-			dm31         = 0.0025153d0
+			mixingAngles(1,3) = 0.1485d0
+			mixingAngles(2,3) = 0.7954d0
+			massSplittings(3) = 0.0025153d0
 		end if
 		z_in=1.0000575
 		save_w_evolution = .true.

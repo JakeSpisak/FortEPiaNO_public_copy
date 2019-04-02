@@ -23,30 +23,26 @@ module ndConfig
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		allocate(dampTermMatrixCoeff(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
-		allocate(xcutsCollInt(nf,nf))
+		allocate(massSplittings(nf))
+		allocate(mixingAngles(nf,nf))
 	end subroutine allocateStuff
 
 	subroutine setMassMatrix()
-		integer :: nf
+		integer :: i, nf
 		real(dl), dimension(:), allocatable :: mv
 		real(dl), dimension(:,:), allocatable :: m1
-		
+
 		nf = flavorNumber
 		allocate(mv(nf), m1(nf,nf))
-		
+
 		if (nf .ge. 2) then
 			mv(1) = 0.d0
-			mv(2) = mv(1) + dm21
-		end if
-		
-		if (nf .gt. 2) then
-			mv(3) = mv(1) + dm31
-		end if
-		if (nf.gt.3) then
-			mv(4) = mv(1) + dm41
+			do i=2, nf
+				mv(i) = mv(1) + massSplittings(i)
+			end do
 		end if
 		mv = mv - minval(mv)
-		
+
 		call createDiagMat(m1, nf, mv)
 		call tripleProdMat(mixMat, m1, mixMatInv, nuMassesMat)
 		write(*,*) "masses:"
@@ -55,45 +51,32 @@ module ndConfig
 		call printMat(nuMassesMat)
 		deallocate(mv,m1)
 	end subroutine setMassMatrix
-	
+
 	subroutine setMixingMatrix()
-		integer :: nf
-		real(dl), dimension(:,:), allocatable :: m1, m2, m3, m4
+		integer :: nf, i, j
+		real(dl), dimension(:,:), allocatable :: m1, m2
 		character(len=1) :: nfstr
-		
+
 		nf = flavorNumber
 		write(nfstr,"(I1)") nf
-		
+
 		if (verbose.gt.1) &
 			call addToLog("[config] creating mixing matrix, using "//nfstr//" flavors")
-		allocate(m1(nf,nf), m2(nf,nf), m3(nf,nf), m4(nf,nf))
+		allocate(m1(nf,nf), m2(nf,nf))
+
+		call createIdentityMat(m1, nf)
+		do i = flavorNumber, 2, -1
+			do j = i-1, 1, -1
+				call createRotMat(m2, nf, j, i, mixingAngles(j,i))
+				m1 = matmul(m1, m2)
+			end do
+		end do
 		
-		if (nf.gt.3) then
-			call createRotMat(m1, nf, 3, 4, theta34)
-			call createRotMat(m2, nf, 2, 4, theta24)
-			call createRotMat(m3, nf, 1, 4, theta14)
-			call tripleProdMat(m1, m2, m3, m4)
-			m1=m4
-		else
-			call createIdentityMat(m1, nf)
-		end if
-		if (nf.gt.2) then
-			call createRotMat(m2, nf, 2, 3, theta23)
-			call createRotMat(m3, nf, 1, 3, theta13)
-			call tripleProdMat(m1, m2, m3, m4)
-			m1=m4
-		else
-			call createRotMat(m1, nf, 1, 2, 0.0d0)
-		end if
-		
-		call createRotMat(m2, nf, 1, 2, theta12)
-		m3 = matmul(m1, m2)
-		
-		mixMat=m3
+		mixMat=m1
 		call inverseMat(mixMat, mixMatInv)
 		write(*,*) "mixing matrix:"
 		call printMat(mixMat)
-		deallocate(m1,m2,m3,m4)
+		deallocate(m1,m2)
 	end subroutine setMixingMatrix
 
 	subroutine setDampingFactorCoeffs
@@ -146,9 +129,9 @@ module ndConfig
 		real(dl), dimension(:), allocatable :: diag_el
 		integer :: ix, iy
 		real(dl) :: fdm, fdme
-		
+
 		allocate(diag_el(flavorNumber))
-		
+
 		!GL
 		diag_el = sin2thW - 0.5d0
 		diag_el(1) = sin2thW + 0.5d0
@@ -157,7 +140,7 @@ module ndConfig
 		end do
 		call createDiagMat(GL_mat, flavorNumber, diag_el)
 		GLR_vec(1,:,:) = GL_mat
-		
+
 		!GR
 		diag_el = sin2thW
 		do ix=1, flavorNumber
@@ -167,13 +150,13 @@ module ndConfig
 		GLR_vec(2,:,:) = GR_mat
 
 		call setDampingFactorCoeffs
-		
+
 		!lepton densities
 		leptonDensities = 0.d0
 
 		!identity (Matrix complex)
 		call createIdentityMat(idMat, flavorNumber)
-		
+
 		!nu density matrix
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
 		ntot = Ny*(flavNumSqu) + 2 !independent elements in nuDensity(y) + w,z
@@ -207,19 +190,19 @@ module ndConfig
 		end do
 		if(save_fd .and. trim(outputFolder).ne."")&
 			close(3154)
-		
+
 		deallocate(diag_el)
 	end subroutine init_matrices
 
 	subroutine initConfig()
 		use omp_lib
 		character(len=300) :: tmparg, tmpstr
-		integer :: ix, num_threads
+		integer :: ix, iy, num_threads
 		logical :: file_exist
-		
+
 		if (verbose>0) write(*,*) '[config] init configuration'
 		num_args = command_argument_count()
-		
+
 		allocate(args(num_args))
 		do ixa = 1, num_args
 			call get_command_argument(ixa,args(ixa))
@@ -244,7 +227,7 @@ module ndConfig
 			num_threads = read_ini_int("num_threads", 0)
 			if (num_threads .gt.0) &
 				CALL OMP_SET_NUM_THREADS(num_threads)
-			
+
 			verbose = read_ini_int('verbose', verbose)
 			Nprintderivs = read_ini_real('Nprintderivs', Nprintderivs)
 			checkpoint = read_ini_logical('checkpoint', .true.)
@@ -255,7 +238,7 @@ module ndConfig
 			toler_jkyg = read_ini_real('tolerance_jkyg', 1.d-7)
 			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-6)
 			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-6)
-			
+
 			interp_nx = read_ini_int('interp_nx', interp_nx0)
 			interp_nz = read_ini_int('interp_nz', interp_nz0)
 			interp_nxz = read_ini_int('interp_nxz', interp_nxz0)
@@ -267,7 +250,7 @@ module ndConfig
 			Nylog = read_ini_int('Nylog',7)
 			allocate(x_arr(Nx), y_arr(Ny))
 			allocate(dy_arr(Ny), fy_arr(Ny))
-			
+
 			x_in    = read_ini_real('x_in', 0.01d0)
 			x_fin   = read_ini_real('x_fin', 40.d0)
 			logx_in  = log10(x_in)
@@ -289,7 +272,7 @@ module ndConfig
 			dy_arr(Ny) = 0.d0
 
 			call zin_solver
-			
+
 			!read mixing parameters and create matrices
 			giveSinSq = read_ini_logical('givesinsq', .true.)
 
@@ -302,7 +285,7 @@ module ndConfig
 			save_nuDens_evolution = read_ini_logical("save_nuDens_evolution",.true.)
 			save_z_evolution = read_ini_logical("save_z_evolution",.true.)
 			save_w_evolution = read_ini_logical("save_w_evolution",.true.)
-			
+
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 				flavNumSqu = flavorNumber**2
@@ -310,7 +293,7 @@ module ndConfig
 				flavNumSqu = flavorNumber
 			end if
 			call allocateStuff
-			
+
 			do ix=1, flavorNumber
 				write(tmparg,"('nuFactor',I1)") ix
 				nuFactor(ix) = read_ini_real(trim(tmparg), 1.d0)
@@ -332,50 +315,46 @@ module ndConfig
 				"('[config] using ',I1,' neutrinos, counting as ',*(E10.3))") flavorNumber, nuFactor
 			write(tmpstr,"(A,', of which they are steriles:',*(L2))") trim(tmparg), sterile
 			call addToLog(trim(tmpstr))
-			
-			dm21 = read_ini_real('dm21', i_dm21)
-			if (flavorNumber .gt. 2) then
-				dm31 = read_ini_real('dm31', i_dm31)
-			end if
-			if (flavorNumber .gt. 3) then
-				dm41 = read_ini_real('dm41', zero)
-			end if
-			if (giveSinSq) then
-				theta12 = asin(sqrt(read_ini_real('theta12', i_theta12)))
-				if (flavorNumber .gt. 2) then
-					theta13 = asin(sqrt(read_ini_real('theta13', i_theta13)))
-					theta23 = asin(sqrt(read_ini_real('theta23', i_theta23)))
-				end if
-				if (flavorNumber .gt. 3) then
-					theta14 = asin(sqrt(read_ini_real('theta14', zero)))
-					theta24 = asin(sqrt(read_ini_real('theta24', zero)))
-					theta34 = asin(sqrt(read_ini_real('theta34', zero)))
-				end if
-			else
-				theta12 = read_ini_real('theta12', asin(sqrt(i_theta12)))
-				if (flavorNumber .gt. 2) then
-					theta13 = read_ini_real('theta13', asin(sqrt(i_theta13)))
-					theta23 = read_ini_real('theta23', asin(sqrt(i_theta23)))
-				end if
-				if (flavorNumber .gt. 3) then
-					theta14 = read_ini_real('theta14', zero)
-					theta24 = read_ini_real('theta24', zero)
-					theta34 = read_ini_real('theta34', zero)
-				end if
-			end if
-			xcutsCollInt(1, 2) = read_ini_real('xcut_12', 0.d0)
-			if (flavorNumber .gt. 2) then
-				xcutsCollInt(1, 3) = read_ini_real('xcut_13', 0.d0)
-				xcutsCollInt(2, 3) = read_ini_real('xcut_23', 0.d0)
-			end if
-			if (flavorNumber .gt. 3) then
-				xcutsCollInt(1, 4) = read_ini_real('xcut_14', 0.d0)
-				xcutsCollInt(2, 4) = read_ini_real('xcut_24', 0.d0)
-				xcutsCollInt(3, 4) = read_ini_real('xcut_34', 0.d0)
-			end if
+
 			if (flavorNumber .gt. maxflavorNumber) then
-				call error("[config] WARNING: only up to 4 neutrino flavors are supported. Using N=4")
+				write(tmpstr,"('[config] WARNING: only up to ',I1,' neutrino flavors are supported. Using N=',I1)") maxflavorNumber, maxflavorNumber
+				call error(tmpstr)
 				flavorNumber = maxflavorNumber
+			end if
+
+			massSplittings = 0.d0
+			massSplittings(2) = read_ini_real('dm21', i_dm21)
+			if (flavorNumber .gt. 2) then
+				massSplittings(3) = read_ini_real('dm31', i_dm31)
+			end if
+			do ix = 4, flavorNumber
+				write(tmpstr,"('dm',I1,'1')") ix
+				massSplittings(ix) = read_ini_real(trim(tmpstr), zero)
+			end do
+			if (giveSinSq) then
+				mixingAngles(1,2) = asin(sqrt(read_ini_real('theta12', i_theta12)))
+				if (flavorNumber .gt. 2) then
+					mixingAngles(1,3) = asin(sqrt(read_ini_real('theta13', i_theta13)))
+					mixingAngles(2,3) = asin(sqrt(read_ini_real('theta23', i_theta23)))
+				end if
+				do ix=4, flavorNumber
+					do iy=1, ix-1
+						write(tmpstr,"('theta',2I1)") iy, ix
+						mixingAngles(iy, ix) = asin(sqrt(read_ini_real(trim(tmpstr), zero)))
+					end do
+				end do
+			else
+				mixingAngles(1,2) = read_ini_real('theta12', asin(sqrt(i_theta12)))
+				if (flavorNumber .gt. 2) then
+					mixingAngles(1,3) = read_ini_real('theta13', asin(sqrt(i_theta13)))
+					mixingAngles(2,3) = read_ini_real('theta23', asin(sqrt(i_theta23)))
+				end if
+				do ix=4, flavorNumber
+					do iy=1, ix-1
+						write(tmpstr,"('theta',2I1)") iy, ix
+						mixingAngles(iy, ix) = read_ini_real(trim(tmpstr), zero)
+					end do
+				end do
 			end if
 
 			call setMixingMatrix()
@@ -384,7 +363,7 @@ module ndConfig
 			write(tmpstr,"('[config] Using Ny=',I3,' and Nylog=',I3)") Ny, Nylog
 			call addToLog(trim(tmpstr))
 			call init_matrices
-			
+
 			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
 			interp_xvec = logspace(logx_in, logx_fin, interp_nx)
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)

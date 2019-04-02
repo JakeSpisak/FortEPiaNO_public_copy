@@ -34,7 +34,7 @@ module constants
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 
-	integer,  parameter :: maxflavorNumber = 4
+	integer,  parameter :: maxflavorNumber = 6
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2018: M. Tanabashi et al. (Particle Data Group), Phys.Rev.D, 98, 030001 (2018).
 	real(dl), parameter :: i_theta12 = 0.297
@@ -74,9 +74,6 @@ module variables
 	!variables that will be read from config file
 	logical :: giveSinSq
 	integer :: flavorNumber, flavNumSqu
-	real(dl) :: theta12, dm21
-	real(dl) :: theta13, theta23, dm31
-	real(dl) :: theta14, theta24, theta34, dm41
 
 	!complex matrix, it will host the neutrino density matrix.
 	!Intended to have the relative shape correction with respect to the FD in the diagonal
@@ -99,7 +96,8 @@ module variables
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
 	real(dl), dimension(:,:), allocatable :: idMat
-	real(dl), dimension(:,:), allocatable :: xcutsCollInt
+	real(dl), dimension(:), allocatable :: massSplittings
+	real(dl), dimension(:,:), allocatable :: mixingAngles
 
 	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec, nuDensMatVecFD
 	real(dl), dimension(:), allocatable :: nuDensVec

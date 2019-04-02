@@ -32,7 +32,7 @@ module ndstuff
 		deallocate(nuMassesMat, leptonDensities)
 		deallocate(dampTermMatrixCoeff)
 		deallocate(GL_mat, GR_mat, GLR_vec)
-		deallocate(xcutsCollInt)
+		deallocate(mixingAngles, massSplittings)
 	end subroutine deallocateStuff
 
 	pure subroutine deallocateCmplxMat(m)
