@@ -12,8 +12,8 @@ try:
 except NameError:
 	FileNotFoundError = IOError
 
-colors = ["r", "g", "b", "k", "c", "m", "y", "#99ff33", "#ff9933"]
-styles = ["-", "--", ":", "-."]
+colors = ["r", "g", "b", "k", "c", "m", "y", "#99ff33", "#ff9933"] *4
+styles = ["-", "--", ":", "-."] *2
 markers = [".", "+", "x", "^", "*", "h", "D"]
 
 def finalizePlot(fname,
@@ -342,16 +342,22 @@ class NuDensRun():
 			print("no offdiagonal loaded")
 			return
 		dijrex, dijrey = self.interpolateRhoIJ(i1, i2, y, ri=0)
-		plt.plot(
-			dijrex, np.gradient(dijrey, dijrex),
-			ls=ls, c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1) if lab is None else lab
-			)
+		try:
+			plt.plot(
+				dijrex, np.gradient(dijrey, dijrex),
+				ls=ls, c=lc, label="%s %d%d re"%(self.label, i1+1, i2+1) if lab is None else lab
+				)
+		except IndexError:
+			pass
 		if im:
 			dijimx, dijimy = self.interpolateRhoIJ(i1, i2, y, ri=1)
-			plt.plot(
-				dijimx, np.gradient(dijimy, dijimx),
-				ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1) if lab is None else lab
-				)
+			try:
+				plt.plot(
+					dijimx, np.gradient(dijimy, dijimx),
+					ls=":", c=lc, label="%s %d%d im"%(self.label, i1+1, i2+1) if lab is None else lab
+					)
+			except IndexError:
+				pass
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$d\rho_{ij}/dt$")
@@ -373,12 +379,15 @@ class NuDensRun():
 			xlab="$x$",
 			ylab=r"$\rho$",
 			xscale="log",
+			yscale="log",
 			)
 
 		for i in range(self.nnu):
 			self.plotRhoFin(i, ls=styles[i], lc=colors[i])
 		finalizePlot(
 			"%s/rhofin_diag.pdf"%self.folder,
+			xscale="linear",
+			yscale="log",
 			)
 
 		if self.full:
