@@ -410,8 +410,8 @@ class NuDensRun():
 		Int_0^Inf dy y^n f(y)/Pi^2
 		for the requested eigenstate
 		"""
-		fy = interp1d(self.yv, self.rho[ix, ix, 0][-1, 1:])
-		res = quad(lambda y: y**n * fy(y), 0.01, 20)
+		fy = interp1d(self.yv, self.rho[ix, ix, 0][-1, 1:]*(np.exp(self.yv)+1))
+		res = quad(lambda y: y**n * fy(y)/(np.exp(y)+1), 0.01, 20)
 		if show:
 			print(res)
 		return res[0]/np.pi**2
