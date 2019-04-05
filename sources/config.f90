@@ -121,16 +121,25 @@ module ndConfig
 				dampTermMatrixCoeff(2, 3) = numu_nutau
 			end if
 		end if
-		do ix=4, flavorNumber
-			write(tmpstr,"('damping_',2I1,'_zero')") 1, ix
-			if (.not. read_ini_logical(trim(tmpstr), .false.)) &
-				dampTermMatrixCoeff(1, ix) = nue_nus
-			do iy=2, ix-1
-				write(tmpstr,"('damping_',2I1,'_zero')") iy, ix
+		if (damping_read_zero) then
+			do ix=4, flavorNumber
+				write(tmpstr,"('damping_',2I1,'_zero')") 1, ix
 				if (.not. read_ini_logical(trim(tmpstr), .false.)) &
-					dampTermMatrixCoeff(iy, ix) = nux_nus
+					dampTermMatrixCoeff(1, ix) = nue_nus
+				do iy=2, ix-1
+					write(tmpstr,"('damping_',2I1,'_zero')") iy, ix
+					if (.not. read_ini_logical(trim(tmpstr), .false.)) &
+						dampTermMatrixCoeff(iy, ix) = nux_nus
+				end do
 			end do
-		end do
+		else
+			do ix=4, flavorNumber
+				dampTermMatrixCoeff(1, ix) = nue_nus
+				do iy=2, ix-1
+					dampTermMatrixCoeff(iy, ix) = nux_nus
+				end do
+			end do
+		end if
 		write(*,*)"Damping factors:"
 		call printMat(dampTermMatrixCoeff)
 	end subroutine setDampingFactorCoeffs
@@ -290,10 +299,12 @@ module ndConfig
 
 			!settings for collisional
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
+			damping_read_zero = .true.
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 
 			!settings for saving files
 			save_fd = read_ini_logical("save_fd",.true.)
+			save_Neff = read_ini_logical("save_Neff",.true.)
 			save_nuDens_evolution = read_ini_logical("save_nuDens_evolution",.true.)
 			save_z_evolution = read_ini_logical("save_z_evolution",.true.)
 			save_w_evolution = read_ini_logical("save_w_evolution",.true.)

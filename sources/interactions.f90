@@ -279,7 +279,7 @@ module ndInteractions
 			- (1.d0 - f3) * (1.d0 - f4) * (t2a + t2b)
 	end function F_ab_ann_im
 
-	pure function F_ab_sc_re (n1, f2, n3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
+	pure function F_ab_sc_re (n1, n3, f2, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
 	!doi:10.1088/1475-7516/2016/07/051 eq. 2.10
 		real(dl) :: F_ab_sc_re
 		type(cmplxMatNN), intent(in) :: n1, n3
@@ -357,7 +357,7 @@ module ndInteractions
 			- f2 * (1.d0 - f4) * (t2a + t2b)
 	end function F_ab_sc_re
 
-	pure function F_ab_sc_im (n1, f2, n3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
+	pure function F_ab_sc_im (n1, n3, f2, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
 	!doi:10.1088/1475-7516/2016/07/051 eq. 2.10
 		real(dl) :: F_ab_sc_im
 		type(cmplxMatNN), intent(in) :: n1, n3
@@ -617,7 +617,7 @@ module ndInteractions
 		PI1_12_full = y1 * y2 * D1_full(y1, y2, y3, y4) - D2_full(y1, y2, y3, y4)
 	end function PI1_12_full
 
-	elemental function PI1_13_full(y1, y2, y3, y4) !(y1,y3)
+	elemental function PI1_13_full(y1, y2, y3, y4) !(y1, y3)
 		real(dl) :: PI1_13_full
 		real(dl), intent(in) :: y1, y2, y3, y4
 
@@ -665,16 +665,24 @@ module ndInteractions
 			- e3 * e4 * D2_full(y1, y2, y3, y4))
 	end function PI2_ne_f
 
-	pure function coll_nue_3_ann_int_re(iy2, y4, obj)
+	pure function coll_nue_3_ann_int(iy2, y4, obj, F_ab)
 		!annihilation
+		interface!use interface to switch between real and imaginary part for the F_ab
+			pure real(dl) function F_ab(n1, n2, f3, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n2
+				real(dl), intent(in) :: f3, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+		end interface
 		integer, intent(in) :: iy2
 		real(dl), intent(in) :: y4
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_ann_int_re
+		real(dl) :: coll_nue_3_ann_int
 		real(dl), dimension(2) :: pi2_vec
 		real(dl) :: y2, y3, f3, f4, E3, E4, dme2, t1, t2
 
-		coll_nue_3_ann_int_re = 0.d0
+		coll_nue_3_ann_int = 0.d0
 
 		dme2 = obj%dme2
 		y2 = y_arr(iy2)
@@ -695,29 +703,37 @@ module ndInteractions
 			f3 = fermiDirac(E3 / obj%z)
 			f4 = fermiDirac(E4 / obj%z)
 			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
-			coll_nue_3_ann_int_re = coll_nue_3_ann_int_re + &
+			coll_nue_3_ann_int = coll_nue_3_ann_int + &
 				y3/E3 * &
 				y4/E4 * &
 				( &
-					pi2_vec(1) * F_ab_ann_re(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2) &
-					+ pi2_vec(2) * F_ab_ann_re(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2) &
+					pi2_vec(1) * F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2) &
+					+ pi2_vec(2) * F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2) &
 					+ (obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_ann_re(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 1, obj%ix1,obj%ix2) &
-						+ F_ab_ann_re(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
+						F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 1, obj%ix1,obj%ix2) &
+						+ F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
-	end function coll_nue_3_ann_int_re
+	end function coll_nue_3_ann_int
 
-	pure function coll_nue_3_sc_int_re(iy3, y2, obj)
+	pure function coll_nue_3_sc_int(iy3, y2, obj, F_ab)
 		!scattering, summing positron and electrons
+		interface!use interface to switch between real and imaginary part for the F_ab
+			pure real(dl) function F_ab(n1, n3, f2, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n3
+				real(dl), intent(in) :: f2, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+		end interface
 		integer, intent(in) :: iy3
 		real(dl), intent(in) :: y2
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_sc_int_re
+		real(dl) :: coll_nue_3_sc_int
 		real(dl), dimension(2) :: pi2_vec
 		real(dl) :: y3, y4, f2, f4, E2, E4, dme2, t1, t2
 
-		coll_nue_3_sc_int_re = 0.d0
+		coll_nue_3_sc_int = 0.d0
 
 		dme2 = obj%dme2
 		E2 = Ebare_i_dme(obj%x,y2, dme2)
@@ -738,135 +754,76 @@ module ndInteractions
 			f2 = fermiDirac(E2 / obj%z)
 			f4 = fermiDirac(E4 / obj%z)
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
-			coll_nue_3_sc_int_re = coll_nue_3_sc_int_re + &
+			coll_nue_3_sc_int = coll_nue_3_sc_int + &
 				y2/E2 * &
 				y4/E4 * &
 				( &
 					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nuDensMatVecFD(iy3),f4, 1, 1, obj%ix1,obj%ix2) &
-						+ F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nuDensMatVecFD(iy3),f4, 2, 2, obj%ix1,obj%ix2) &
+						F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy3),f2,f4, 1, 1, obj%ix1,obj%ix2) &
+						+ F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy3),f2,f4, 2, 2, obj%ix1,obj%ix2) &
 					) &
 					- 2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nuDensMatVecFD(iy3),f4, 2, 1, obj%ix1,obj%ix2) &
-						+ F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nuDensMatVecFD(iy3),f4, 1, 2, obj%ix1,obj%ix2) ) &
+						F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy3),f2,f4, 2, 1, obj%ix1,obj%ix2) &
+						+ F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy3),f2,f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
-	end function coll_nue_3_sc_int_re
+	end function coll_nue_3_sc_int
 
-	pure function coll_nue_3_int_re(iy, yx, obj)
+	pure function coll_nue_3_int(iy, yx, obj, F_ab_ann, F_ab_sc)
+		interface
+			pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n2
+				real(dl), intent(in) :: f3, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+			pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n3
+				real(dl), intent(in) :: f2, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+		end interface
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_int_re
-		coll_nue_3_int_re = &
-			coll_nue_3_sc_int_re(iy, yx, obj) &
-				+ coll_nue_3_ann_int_re(iy, yx, obj)
-	end function coll_nue_3_int_re
+		real(dl) :: coll_nue_3_int
+		coll_nue_3_int = &
+			coll_nue_3_sc_int(iy, yx, obj, F_ab_sc) &
+			+ coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
+	end function coll_nue_3_int
 
-	pure function coll_nue_3_ann_int_im(iy2, y4, obj)
-		!annihilation
-		integer, intent(in) :: iy2
-		real(dl), intent(in) :: y4
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_ann_int_im
-		real(dl), dimension(2) :: pi2_vec
-		real(dl) :: y2, y3, f3, f4, E3, E4, dme2, t1, t2
-
-		coll_nue_3_ann_int_im = 0.d0
-
-		dme2 = obj%dme2
-		y2 = y_arr(iy2)
-		E4 = Ebare_i_dme(obj%x,y4, dme2)
-
-		E3 = obj%y1 + y2 - E4
-		t1 = E3*E3
-		t2 = obj%x*obj%x + dme2
-		if (t1<t2) then
-			y3 = -1.d0
-		else
-			y3 = sqrt(t1 - t2)
-		endif
-		if (.not.(y3.lt.0.d0 &
-				.or. obj%y1.gt.y3+y2+y4 &
-				.or. y2.gt.obj%y1+y3+y4 &
-				.or. y3.gt.obj%y1+y2+y4 &
-				.or. y4.gt.obj%y1+y2+y3)) then
-			f3 = fermiDirac(E3 / obj%z)
-			f4 = fermiDirac(E4 / obj%z)
-			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
-			coll_nue_3_ann_int_im = coll_nue_3_ann_int_im + &
-				y3/E3 * &
-				y4/E4 * &
-				( &
-					pi2_vec(1) * F_ab_ann_im(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2) &
-					+ pi2_vec(2) * F_ab_ann_im(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2) &
-					+ (obj%x*obj%x + dme2) * PI1_12_full(obj%y1, y2, y3, y4) * ( &
-						F_ab_ann_im(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 1, obj%ix1,obj%ix2) &
-						+ F_ab_ann_im(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
-				)
-		end if
-	end function coll_nue_3_ann_int_im
-
-	pure function coll_nue_3_sc_int_im(iy3, y2, obj)
-		!scattering, summing positron and electrons
-		integer, intent(in) :: iy3
-		real(dl), intent(in) :: y2
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_sc_int_im
-		real(dl), dimension(2) :: pi2_vec
-		real(dl) :: y3, y4, f2, f4, E2, E4, dme2, t1, t2
-
-		coll_nue_3_sc_int_im = 0.d0
-
-		dme2 = obj%dme2
-		E2 = Ebare_i_dme(obj%x,y2, dme2)
-		y3 = y_arr(iy3)
-		E4 = obj%y1 + E2 - y3
-		t1 = E4*E4
-		t2 = obj%x*obj%x + dme2
-		if (t1<t2) then
-			y4 = -1.d0
-		else
-			y4 = sqrt(t1 - t2)
-		endif
-		if (.not.(y4.lt.0.d0 &
-				.or. obj%y1.gt.y2+y3+y4 &
-				.or. y2.gt.obj%y1+y3+y4 &
-				.or. y3.gt.obj%y1+y2+y4 &
-				.or. y4.gt.obj%y1+y2+y3)) then
-			f2 = fermiDirac(E2 / obj%z)
-			f4 = fermiDirac(E4 / obj%z)
-			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
-			coll_nue_3_sc_int_im = coll_nue_3_sc_int_im + &
-				y2/E2 * &
-				y4/E4 * &
-				( &
-					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nuDensMatVecFD(iy3),f4, 1, 1, obj%ix1,obj%ix2) &
-						+ F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nuDensMatVecFD(iy3),f4, 2, 2, obj%ix1,obj%ix2) &
-					) &
-					- 2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nuDensMatVecFD(iy3),f4, 2, 1, obj%ix1,obj%ix2) &
-						+ F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nuDensMatVecFD(iy3),f4, 1, 2, obj%ix1,obj%ix2) ) &
-				)
-		end if
-	end function coll_nue_3_sc_int_im
-
-	pure function coll_nue_3_int_im(iy, yx, obj)
-		integer, intent(in) :: iy
-		real(dl), intent(in) :: yx
-		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_int_im
-		coll_nue_3_int_im = &
-			coll_nue_3_sc_int_im(iy, yx, obj) &
-				+ coll_nue_3_ann_int_im(iy, yx, obj)
-	end function coll_nue_3_int_im
-
-	pure function integrate_coll_int_3(f, obj)
+	pure function integrate_coll_int_3(f, obj, F_ab_ann, F_ab_sc)
 		use omp_lib
 		interface
-			pure real(dl) function f(a, b, o)
+			pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
 				use variables
+				type(cmplxMatNN), intent(in) :: n1, n2
+				real(dl), intent(in) :: f3, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+			pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n3
+				real(dl), intent(in) :: f2, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+			pure real(dl) function f(a, b, o, F_ab_ann, F_ab_sc)
+				use variables
+				interface
+					pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
+						use variables
+						type(cmplxMatNN), intent(in) :: n1, n2
+						real(dl), intent(in) :: f3, f4
+						integer, intent(in) :: a, b, i, j
+					end function
+					pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
+						use variables
+						type(cmplxMatNN), intent(in) :: n1, n3
+						real(dl), intent(in) :: f2, f4
+						integer, intent(in) :: a, b, i, j
+					end function
+				end interface
 				integer, intent(in) :: a
 				real(dl), intent(in) :: b
 				type(coll_args), intent(in) :: o
@@ -882,23 +839,31 @@ module ndInteractions
 		fy2_arr = 0.d0
 		do ia=1, Ny
 			do ib=1, Ny
-				fy2_arr(ia, ib) = f(ia, y_arr(ib), obj)
+				fy2_arr(ia, ib) = f(ia, y_arr(ib), obj, F_ab_ann, F_ab_sc)
 			end do
 		end do
 		integrate_coll_int_3 = integral_linearized_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
 		deallocate(fy2_arr)
 	end function integrate_coll_int_3
 
-	pure function get_collision_terms(collArgsIn, Fre, Fim)
+	pure function get_collision_terms(collArgsIn, Fint)
 		interface
-			pure real(dl) function Fre(a, b, o)
+			pure real(dl) function Fint(a, b, o, F_ab_ann, F_ab_sc)
 				use variables
-				integer, intent(in) :: a
-				real(dl), intent(in) :: b
-				type(coll_args), intent(in) :: o
-			end function
-			pure real(dl) function Fim(a, b, o)
-				use variables
+				interface
+					pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
+						use variables
+						type(cmplxMatNN), intent(in) :: n1, n2
+						real(dl), intent(in) :: f3, f4
+						integer, intent(in) :: a, b, i, j
+					end function
+					pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
+						use variables
+						type(cmplxMatNN), intent(in) :: n1, n3
+						real(dl), intent(in) :: f2, f4
+						integer, intent(in) :: a, b, i, j
+					end function
+				end interface
 				integer, intent(in) :: a
 				real(dl), intent(in) :: b
 				type(coll_args), intent(in) :: o
@@ -935,13 +900,13 @@ module ndInteractions
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			if (.not.sterile(i)) then
-				get_collision_terms%re(i,i) = integrate_coll_int_3(Fre, collArgs)
+				get_collision_terms%re(i,i) = integrate_coll_int_3(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
 			end if
 			if (collision_offdiag.eq.1) then
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
-					get_collision_terms%re(i,j) = integrate_coll_int_3(Fre, collArgs)
-					get_collision_terms%im(i,j) = integrate_coll_int_3(Fim, collArgs)
+					get_collision_terms%re(i,j) = integrate_coll_int_3(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
+					get_collision_terms%im(i,j) = integrate_coll_int_3(Fint, collArgs, F_ab_ann_im, F_ab_sc_im)
 				end do
 			else if (collision_offdiag.eq.2) then
 				do j=i+1, flavorNumber

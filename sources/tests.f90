@@ -143,6 +143,7 @@ program tests
 		end do
 		dy_arr(Ny) = 0.d0
 		collision_offdiag = 1
+		damping_read_zero = .false.
 		dme2_temperature_corr = .true.
 		flavorNumber = 3
 		flavNumSqu = flavorNumber**2
@@ -854,60 +855,60 @@ program tests
 		tmparr = (/-0.00259399, -0.00259399, -0.00259399/)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 2,2, ix, ix), tmparr(ix), 1d-7)
-			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 2,2, ix, ix), 0.d0, 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 2,2, ix, iy), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 2,2, iy, ix), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
 		!FLLeq[0.1, 0.2, 0.3, 0.4]={{-0.0259319, 0., 0.}, {0., -0.00350124, 0.}, {0., 0., -0.00350124}}
 		tmparr = (/-0.0259319, -0.00350124, -0.00350124/)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 1,1, ix, ix), tmparr(ix), 1d-7)
-			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 1,1, ix, ix), 0.d0, 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 1,1, ix, iy), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 1,1, iy, ix), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
 		!FRLeq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
 		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 2,1, ix, ix), tmparr(ix), 1d-7)
-			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 2,1, ix, ix), 0.d0, 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 2,1, ix, iy), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 2,1, iy, ix), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
 		!FLReq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
 		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 1,2, ix, ix), tmparr(ix), 1d-7)
-			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 1,2, ix, ix), 0.d0, 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 1,2, ix, iy), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 1,2, iy, ix), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
 
@@ -919,60 +920,60 @@ program tests
 		tmparr = (/0.00129054, 0.00129054, 0.00129054/)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 2,2, ix, ix), tmparr(ix), 1d-7)
-			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 2,2, ix, ix), 0.d0, 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 2,2, ix, iy), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 2,2, iy, ix), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
 		!FLLeq[0.4, 0.2, 0.3, 0.1]={{0.0129014, 0., 0.}, {0., 0.00174191, 0.}, {0., 0., 0.00174191}}
 		tmparr = (/0.0129014, 0.00174191, 0.00174191/)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 1,1, ix, ix), tmparr(ix), 1d-7)
-			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 1,1, ix, ix), 0.d0, 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 1,1, ix, iy), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 1,1, iy, ix), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
 		!FRLeq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
 		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 2,1, ix, ix), tmparr(ix), 1d-7)
-			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 2,1, ix, ix), 0.d0, 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 2,1, ix, iy), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 2,1, iy, ix), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
 		!FLReq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
 		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 1,2, ix, ix), tmparr(ix), 1d-7)
-			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 1,2, ix, ix), 0.d0, 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 1,2, ix, iy), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f3, 1,2, iy, ix), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f3, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
 		call deallocateCmplxMat(nA)
@@ -1081,15 +1082,15 @@ program tests
 				do ix=1, flavorNumber
 					iy=ix
 					write(tmparg,"('F_sc',2I1,' test 1 empty rho ',2I1)") a, b, ix, iy
-					call assert_double(trim(tmparg)//" re", F_ab_sc_re(nA, f1, nB, f2, a, b, ix, iy), 0.0d0, 1d-7)
-					call assert_double(trim(tmparg)//" im", F_ab_sc_im(nA, f1, nB, f2, a, b, ix, iy), 0.0d0, 1d-7)
+					call assert_double(trim(tmparg)//" re", F_ab_sc_re(nA, nB, f1, f2, a, b, ix, iy), 0.0d0, 1d-7)
+					call assert_double(trim(tmparg)//" im", F_ab_sc_im(nA, nB, f1, f2, a, b, ix, iy), 0.0d0, 1d-7)
 					do iy=ix+1, flavorNumber
 						write(tmparg,"('F_sc',2I1,' test 1 empty rho ',2I1)") a, b, ix, iy
-						call assert_double(trim(tmparg)//" re", F_ab_sc_re(nA, f1, nB, f2, a, b, ix, iy), 0.0d0, 1d-7)
-						call assert_double(trim(tmparg)//" im", F_ab_sc_im(nA, f1, nB, f2, a, b, ix, iy), 0.0d0, 1d-7)
+						call assert_double(trim(tmparg)//" re", F_ab_sc_re(nA, nB, f1, f2, a, b, ix, iy), 0.0d0, 1d-7)
+						call assert_double(trim(tmparg)//" im", F_ab_sc_im(nA, nB, f1, f2, a, b, ix, iy), 0.0d0, 1d-7)
 						write(tmparg,"('F_sc',2I1,' test 1 empty rho ',2I1)") a, b, iy, ix
-						call assert_double(trim(tmparg)//" re", F_ab_sc_re(nA, f1, nB, f2, a, b, iy, ix), 0.0d0, 1d-7)
-						call assert_double(trim(tmparg)//" im", F_ab_sc_im(nA, f1, nB, f2, a, b, iy, ix), 0.0d0, 1d-7)
+						call assert_double(trim(tmparg)//" re", F_ab_sc_re(nA, nB, f1, f2, a, b, iy, ix), 0.0d0, 1d-7)
+						call assert_double(trim(tmparg)//" im", F_ab_sc_im(nA, nB, f1, f2, a, b, iy, ix), 0.0d0, 1d-7)
 					end do
 				end do
 			end do
@@ -1099,15 +1100,15 @@ program tests
 				do ix=1, flavorNumber
 					iy=ix
 					write(tmparg,"('F_sc',2I1,' test 1 empty rho ',2I1)") a, b, ix, iy
-					call assert_double(trim(tmparg)//" re", F_ab_sc_re(nB, f2, nA, f3, a, b, ix, iy), 0.0d0, 1d-7)
-					call assert_double(trim(tmparg)//" im", F_ab_sc_im(nB, f2, nA, f3, a, b, ix, iy), 0.0d0, 1d-7)
+					call assert_double(trim(tmparg)//" re", F_ab_sc_re(nB, nA, f2, f3, a, b, ix, iy), 0.0d0, 1d-7)
+					call assert_double(trim(tmparg)//" im", F_ab_sc_im(nB, nA, f2, f3, a, b, ix, iy), 0.0d0, 1d-7)
 					do iy=ix+1, flavorNumber
 						write(tmparg,"('F_sc',2I1,' test 1 empty rho ',2I1)") a, b, ix, iy
-						call assert_double(trim(tmparg)//" re", F_ab_sc_re(nB, f2, nA, f3, a, b, ix, iy), 0.0d0, 1d-7)
-						call assert_double(trim(tmparg)//" im", F_ab_sc_im(nB, f2, nA, f3, a, b, ix, iy), 0.0d0, 1d-7)
+						call assert_double(trim(tmparg)//" re", F_ab_sc_re(nB, nA, f2, f3, a, b, ix, iy), 0.0d0, 1d-7)
+						call assert_double(trim(tmparg)//" im", F_ab_sc_im(nB, nA, f2, f3, a, b, ix, iy), 0.0d0, 1d-7)
 						write(tmparg,"('F_sc',2I1,' test 1 empty rho ',2I1)") a, b, iy, ix
-						call assert_double(trim(tmparg)//" re", F_ab_sc_re(nB, f2, nA, f3, a, b, iy, ix), 0.0d0, 1d-7)
-						call assert_double(trim(tmparg)//" im", F_ab_sc_im(nB, f2, nA, f3, a, b, iy, ix), 0.0d0, 1d-7)
+						call assert_double(trim(tmparg)//" re", F_ab_sc_re(nB, nA, f2, f3, a, b, iy, ix), 0.0d0, 1d-7)
+						call assert_double(trim(tmparg)//" im", F_ab_sc_im(nB, nA, f2, f3, a, b, iy, ix), 0.0d0, 1d-7)
 					end do
 				end do
 			end do
@@ -1255,8 +1256,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc22 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
 			end do
 		end do
 		!LL
@@ -1269,8 +1270,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc11 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
 			end do
 		end do
 		!LR
@@ -1283,8 +1284,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc12 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
 			end do
 		end do
 		!RL
@@ -1297,8 +1298,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc21 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, f1, nB, f2, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, f1, nB, f2, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
 			end do
 		end do
 		!second series
@@ -1312,8 +1313,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc22 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, f2, nA, f3, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, f2, nA, f3, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
 			end do
 		end do
 		!LL
@@ -1326,8 +1327,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc11 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, f2, nA, f3, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, f2, nA, f3, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
 			end do
 		end do
 		!LR
@@ -1340,8 +1341,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc12 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, f2, nA, f3, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, f2, nA, f3, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
 			end do
 		end do
 		!RL
@@ -1354,8 +1355,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_sc21 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, f2, nA, f3, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, f2, nA, f3, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
+				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
 			end do
 		end do
 
@@ -1398,8 +1399,8 @@ program tests
 		do ix=1, flavorNumber
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
-				call assert_double_rel(trim(tmparg)//"re", F_ab_sc_re(nA, 0.1d0, nB, 0.7d0, 1,1, ix,iy), tmpmatA(ix,iy), 1d-5)
-				r2 = F_ab_sc_im(nA, 0.1d0, nB, 0.7d0, 1,1, ix,iy)
+				call assert_double_rel(trim(tmparg)//"re", F_ab_sc_re(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy), tmpmatA(ix,iy), 1d-5)
+				r2 = F_ab_sc_im(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy)
 				if (abs(tmpmatB(ix,iy)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7)
 				else
@@ -1469,7 +1470,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
+			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 fake "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1483,7 +1484,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_ann_int_re(21, 3.d0, collArgs)
+			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 fake "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1503,7 +1504,7 @@ program tests
 		collArgs%ix2 = 1
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_sc_int_re(i, y_arr(j), collArgs)
+				fy2_arr(i,j) = coll_nue_3_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
 		write(*,*) ""
@@ -1516,7 +1517,7 @@ program tests
 		close(987)
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_ann_int_re(i, y_arr(j), collArgs)
+				fy2_arr(i,j) = coll_nue_3_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
 			end do
 		end do
 		call openFile(987, "test_ann3_re.dat", .true.)
@@ -1531,7 +1532,7 @@ program tests
 		tmparrA = (/1d-6, 1d-6, 1d-6/)
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
-		res2=coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
+		res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 		call assert_double("test coll sc 3 sing 1", res2, tmparrS(1), tmparrA(1))
 		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 		call assert_double("test coll sc 4 sing 1", res1, tmparrS(1), tmparrA(1))
@@ -1539,7 +1540,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
+			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 sing "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 sing "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1557,7 +1558,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs)
+			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1572,7 +1573,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_ann_int_re(21, 3.d0, collArgs)
+			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1590,7 +1591,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
+			res2 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -1615,7 +1616,7 @@ program tests
 		collArgs%ix2 = 3
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_sc_int_re(i, y_arr(j), collArgs)
+				fy2_arr(i,j) = coll_nue_3_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
 		call openFile(987, "test_sc3b_re.dat", .true.)
@@ -1626,7 +1627,7 @@ program tests
 		close(987)
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_ann_int_re(i, y_arr(j), collArgs)
+				fy2_arr(i,j) = coll_nue_3_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
 			end do
 		end do
 		call openFile(987, "test_ann3b_re.dat", .true.)
@@ -1643,7 +1644,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i+3
-			res2=coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
+			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1662,7 +1663,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs)
+			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1677,7 +1678,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i+3
-			res2=coll_nue_3_ann_int_re(21, 3.d0, collArgs)
+			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1696,7 +1697,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
+			res2 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -1743,8 +1744,8 @@ program tests
 				write(tmparg,"('coll sc integrand full ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
-				res1 = coll_nue_3_sc_int_re(21, 5.2d0, collArgs)
-				res2 = coll_nue_3_sc_int_im(21, 5.2d0, collArgs)
+				res1 = coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+				res2 = coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_im)
 				call assert_double_rel(trim(tmparg)//"re", res1, tmpmatA(i,j), tmparrA(i))
 				if (i.eq.j) then
 					call assert_double(trim(tmparg)//"im", res2, tmpmatB(i,j), 1d-7)
@@ -1767,8 +1768,8 @@ program tests
 				write(tmparg,"('coll ann integrand full ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
-				res1 = coll_nue_3_ann_int_re(21, 3.d0, collArgs)
-				res2 = coll_nue_3_ann_int_im(21, 3.d0, collArgs)
+				res1 = coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+				res2 = coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_im)
 				call assert_double_rel(trim(tmparg)//"re", res1, tmpmatA(i,j), tmparrA(i))
 				if (i.eq.j) then
 					call assert_double(trim(tmparg)//"im", res2, tmpmatB(i,j), 1d-7)
@@ -1836,12 +1837,12 @@ program tests
 		tmpmatA(1,:) = (/348548, 348548, 348548/)
 		tmpmatA(2,:) = (/348548, 348548, 348548/)
 		tmpmatA(3,:) = (/348548, 348548, 348548/)
-		tmpmatB(1,:) = (/0., 0.26128, 0.26128/)
-		tmpmatB(2,:) = (/-0.26128, 0., 0.26128/)
-		tmpmatB(3,:) = (/-0.26128, -0.26128, 0./)
+		tmpmatB(1,:) = (/0., 348548., 348548./)
+		tmpmatB(2,:) = (/-348548., 0., 348548./)
+		tmpmatB(3,:) = (/-348548., -348548., 0./)
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts = get_collision_terms(collArgs, fakecollinty)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -1895,7 +1896,6 @@ program tests
 		collArgs%ix1=1
 		collArgs%ix2=1
 !		print *,collArgs
-!		write(*,multidblfmt) integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs),integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
 		tmpmatA(1,:) = (/-149.474, 0., 0./)
 		tmpmatA(2,:) = (/0., -38.1733, 0./)
 		tmpmatA(3,:) = (/0., 0., -38.1733/)
@@ -1904,7 +1904,7 @@ program tests
 		tmpmatB(3,:) = (/0., 0., 0./)
 		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
 		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
-		cts = get_collision_terms(collArgs, coll_nue_3_int_re, coll_nue_3_int_im)
+		cts = get_collision_terms(collArgs, coll_nue_3_int)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 !		write(*,multidblfmt)cts
@@ -1970,7 +1970,7 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs)
+			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sc re semilin>")
 		call tic(timer1)
@@ -1993,7 +1993,7 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
+			res2 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<ann re semilin>")
 		call tic(timer1)
@@ -2016,9 +2016,9 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs)
-			res2 = integrate_coll_int_3(coll_nue_3_int_re, collArgs)
+			res1 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_3(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<reset>")
 		call tic(timer1)
@@ -2029,8 +2029,8 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_coll_int_3(coll_nue_3_ann_int_re, collArgs)
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_re, collArgs)
+			res1 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sep ann, sc>")
 		call tic(timer1)
@@ -2041,7 +2041,7 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_3(coll_nue_3_int_re, collArgs)
+			res2 = integrate_coll_int_3(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sum ann+sc>")
 		
@@ -2085,7 +2085,7 @@ program tests
 		res%im(1,:) = (/0., 8489.27, 30142.1/)
 		res%im(2,:) = (/-8489.27, 0., -865.415/)
 		res%im(3,:) = (/-30142.1, 865.415, 0./)
-		call drhoy_dx_fullMat(outp, x, z, iy, dme2, sqrtraddens, fakecollint0, fakecollint0)
+		call drhoy_dx_fullMat(outp, x, z, iy, dme2, sqrtraddens, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx a ',2I1)") i,j
@@ -2109,7 +2109,7 @@ program tests
 		res%im(1,:) = (/0., 9278.19, 30931./)
 		res%im(2,:) = (/-9278.19, 0., -76.52251/)
 		res%im(3,:) = (/-30931., 76.52251, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint1, fakecollint1)
+		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint1)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx b ',2I1)") i,j
@@ -2148,7 +2148,7 @@ program tests
 		res%im(1,:) = (/0., 369988., 411122./)
 		res%im(2,:) = (/-369988., 0., 6601.2/)
 		res%im(3,:) = (/-411122., -6601.2, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint0, fakecollint0)
+		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx c ',2I1)") i,j
@@ -2171,7 +2171,7 @@ program tests
 		res%im(1,:) = (/0., 370138., 411272./)
 		res%im(2,:) = (/-370138., 0., 6751.29/)
 		res%im(3,:) = (/-411272., -6751.29, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollinty, fakecollinty)
+		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollinty)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx d ',2I1)") i,j
@@ -2240,7 +2240,7 @@ program tests
 		tmpmatB(3,:) = (/0., 0., 0./)
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts = get_collision_terms(collArgs, fakecollinty)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2266,7 +2266,7 @@ program tests
 		tmpmatB(3,:) = (/0., 0., 0./)
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts = get_collision_terms(collArgs, fakecollinty)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2296,7 +2296,7 @@ program tests
 		tmpmatB(3,:) = (/0., 0., 0./)
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts = get_collision_terms(collArgs, fakecollinty)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2322,7 +2322,7 @@ program tests
 		tmpmatB(3,:) = (/0., 0., 0./)
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts = get_collision_terms(collArgs, fakecollinty)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2369,7 +2369,7 @@ program tests
 		tmpmatB(3,:) = (/0., 0., -0.0827898/)
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty, fakecollint1)
+		cts = get_collision_terms(collArgs, fakecollinty)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber

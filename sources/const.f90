@@ -68,8 +68,9 @@ module variables
 	logical :: checkpoint = .false.
 
 	integer :: collision_offdiag
+	logical :: damping_read_zero
 	logical :: dme2_temperature_corr
-	logical :: save_fd, save_nuDens_evolution, save_w_evolution, save_z_evolution
+	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 
 	!variables that will be read from config file
 	logical :: giveSinSq

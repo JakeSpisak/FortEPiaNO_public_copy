@@ -1229,12 +1229,12 @@ enddo                                                   !SG-PF
 				y4/E4 * &
 				( &
 					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nB,f4, 1, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nB,f4, 2, 2, obj%ix1,obj%ix2) &
+						F_ab_sc_re(nuDensMatVecFD(obj%iy),nB,f2,f4, 1, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_re(nuDensMatVecFD(obj%iy),nB,f2,f4, 2, 2, obj%ix1,obj%ix2) &
 					) - &
 					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( & !F_sc^RL and F_sc^LR
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nB,f4, 2, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_re(nuDensMatVecFD(obj%iy),f2,nB,f4, 1, 2, obj%ix1,obj%ix2) ) &
+						F_ab_sc_re(nuDensMatVecFD(obj%iy),nB,f2,f4, 2, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_re(nuDensMatVecFD(obj%iy),nB,f2,f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
 	end function coll_nue_4_sc_int_re
@@ -1299,12 +1299,12 @@ enddo                                                   !SG-PF
 				y4/E4 * &
 				( &
 					( pi2_vec(1) * pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nX,f4, 1, 1, obj%ix1,obj%ix2) + &
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nX,f4, 2, 2, obj%ix1,obj%ix2) &
+						F_ab_sc_im(nuDensMatVecFD(obj%iy),nX,f2,f4, 1, 1, obj%ix1,obj%ix2) + &
+						F_ab_sc_im(nuDensMatVecFD(obj%iy),nX,f2,f4, 2, 2, obj%ix1,obj%ix2) &
 					) - &
 					2.d0 * (obj%x*obj%x + dme2) * PI1_13_full(obj%y1, y2, y3, y4) * ( &!F_sc^RL and F_sc^LR
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nX,f4, 2,1, obj%ix1,obj%ix2) + &
-						F_ab_sc_im(nuDensMatVecFD(obj%iy),f2,nX,f4, 1,2, obj%ix1,obj%ix2) ) &
+						F_ab_sc_im(nuDensMatVecFD(obj%iy),nX,f2,f4, 2,1, obj%ix1,obj%ix2) + &
+						F_ab_sc_im(nuDensMatVecFD(obj%iy),nX,f2,f4, 1,2, obj%ix1,obj%ix2) ) &
 				)
 		end if
 
@@ -1347,6 +1347,50 @@ enddo                                                   !SG-PF
 				)
 		end if
 	end function coll_nue_int_im
+
+	pure function coll_nue_3_ann_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
+		interface
+			pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n2
+				real(dl), intent(in) :: f3, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+			pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n3
+				real(dl), intent(in) :: f2, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+		end interface
+		integer, intent(in) :: iy
+		real(dl), intent(in) :: yx
+		type(coll_args), intent(in) :: obj
+		real(dl) :: coll_nue_3_ann_int_w
+		coll_nue_3_ann_int_w = coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
+	end function coll_nue_3_ann_int_w
+
+	pure function coll_nue_3_sc_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
+		interface
+			pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n2
+				real(dl), intent(in) :: f3, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+			pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
+				use variables
+				type(cmplxMatNN), intent(in) :: n1, n3
+				real(dl), intent(in) :: f2, f4
+				integer, intent(in) :: a, b, i, j
+			end function
+		end interface
+		integer, intent(in) :: iy
+		real(dl), intent(in) :: yx
+		type(coll_args), intent(in) :: obj
+		real(dl) :: coll_nue_3_sc_int_w
+		coll_nue_3_sc_int_w = coll_nue_3_sc_int(iy, yx, obj, F_ab_sc)
+	end function coll_nue_3_sc_int_w
 
 	pure SUBROUTINE region(ndim,x,j,c,d)
 		use precision

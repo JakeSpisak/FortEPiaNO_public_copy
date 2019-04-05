@@ -319,10 +319,11 @@ module ndEquations
 	end subroutine zin_solver
 
 	subroutine saveRelevantInfo(x, vec)
-		real(dl) :: x
-		real(dl), dimension(:) :: vec
+		real(dl), intent(in) :: x
+		real(dl), dimension(:), intent(in) :: vec
 		real(dl), dimension(:), allocatable :: tmpvec
 		integer :: k, i, j, iy, totFiles
+		real(dl) :: neff
 		integer, dimension(:), allocatable :: units
 		character(len=200) :: fname
 
@@ -335,6 +336,7 @@ module ndEquations
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=', x
 		call addToLog(trim(fname))!not a filename but the above string
 
+		k = 1
 		if (save_nuDens_evolution) then
 			do k=1, flavorNumber
 				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
@@ -375,6 +377,12 @@ module ndEquations
 			else
 				write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0
 			end if
+		end if
+		if (save_Neff) then
+			neff = allNuDensity()/photonDensity(vec(ntot)+1.d0)
+			call openFile(units(k+1), trim(outputFolder)//'/Neff.dat', firstWrite)
+			write(units(k+1), '(*('//dblfmt//'))') &
+				x, 8.d0/7.d0*neff, 8.d0/7.d0*zid**4*neff
 		end if
 
 		do i=1, totFiles
@@ -487,16 +495,24 @@ module ndEquations
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
 
-	pure subroutine drhoy_dx_fullMat(matrix, x, z, iy, dme2, sqrtraddens, Fre, Fim)
+	pure subroutine drhoy_dx_fullMat(matrix, x, z, iy, dme2, sqrtraddens, Fint)
 		interface
-			pure real(dl) function Fre(a, b, o)
+			pure real(dl) function Fint(a, b, o, F_ab_ann, F_ab_sc)
 				use variables
-				integer, intent(in) :: a
-				real(dl), intent(in) :: b
-				type(coll_args), intent(in) :: o
-			end function
-			pure real(dl) function Fim(a, b, o)
-				use variables
+				interface
+					pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
+						use variables
+						type(cmplxMatNN), intent(in) :: n1, n2
+						real(dl), intent(in) :: f3, f4
+						integer, intent(in) :: a, b, i, j
+					end function
+					pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
+						use variables
+						type(cmplxMatNN), intent(in) :: n1, n3
+						real(dl), intent(in) :: f2, f4
+						integer, intent(in) :: a, b, i, j
+					end function
+				end interface
 				integer, intent(in) :: a
 				real(dl), intent(in) :: b
 				type(coll_args), intent(in) :: o
@@ -533,7 +549,7 @@ module ndEquations
 		matrix%im = - tmpmat%im * cf
 		matrix%re = tmpmat%re * cf
 
-		tmpmat = get_collision_terms(collArgs, Fre, Fim)
+		tmpmat = get_collision_terms(collArgs, Fint)
 		matrix%re = matrix%re + tmpmat%re
 		matrix%im = matrix%im + tmpmat%im
 
@@ -554,7 +570,7 @@ module ndEquations
 		integer :: i, j, k
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x, z, m, dme2, sqrtraddens, coll_nue_3_int_re, coll_nue_3_int_im)
+		call drhoy_dx_fullMat(mat, x, z, m, dme2, sqrtraddens, coll_nue_3_int)
 		do i=1, flavorNumber
 			ydot(i) = mat%re(i,i)
 		end do
