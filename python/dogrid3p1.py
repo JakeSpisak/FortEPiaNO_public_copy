@@ -79,9 +79,9 @@ def setParser():
 		help='plot some output'
 		)
 	parser_plot.add_argument(
-		'--Neff_active',
+		'--Neff_ref',
 		type=float,
-		default=Neff_default,
+		default=0.,
 		help='reference value of Neff when only active neutrinos are considered',
 		)
 	parser_plot.add_argument(
@@ -167,6 +167,11 @@ def setParser():
 		'--save_fd',
 		action="store_true",
 		help='enable saving the y grid and the corresponding Fermi-Dirac to fd.dat',
+		)
+	parser_prepare.add_argument(
+		'--save_Neff',
+		action="store_true",
+		help='enable saving the evolution of Neff',
 		)
 	parser_prepare.add_argument(
 		'--save_nuDens',
@@ -276,9 +281,9 @@ def setParser():
 		help='do a ternary plot'
 		)
 	parser_ternary.add_argument(
-		'--Neff_active',
+		'--Neff_ref',
 		type=float,
-		default=Neff_default,
+		default=0.,
 		help='reference value of Neff when only active neutrinos are considered',
 		)
 	parser_ternary.add_argument(
@@ -370,7 +375,7 @@ def read_grid_cfg(gridname):
 
 def contourplot(xv, yv, values, points,
 		fname=None,
-		levels=[0., 0.1, 0.3, 0.5, 0.7, 0.9],
+		levels=[3., 3.1, 3.3, 3.5, 3.7, 3.9],
 		title=None,
 		xlab=None, ylab=None,
 		xlim=None, ylim=None,
@@ -385,8 +390,11 @@ def contourplot(xv, yv, values, points,
 			+ "x:%s, y:%s, z:%s"%(xv.shape, yv.shape, points.shape))
 		return
 	fig = plt.Figure(figsize=(6,4))
-	cf = plt.contourf(xv, yv, zv, levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'), extend="max")
+	cf = plt.contourf(xv, yv, zv,
+		levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'),
+		extend="both")
 	cf.cmap.set_over(cmap(0.95))
+	cf.cmap.set_under(cmap(0.05))
 	for fn in lsn_contours:
 		data = np.loadtxt(fn)
 		if lsn_contours_convssq2th:
@@ -396,7 +404,7 @@ def contourplot(xv, yv, values, points,
 	cbar = plt.colorbar(cf)
 	if bfx>0 and bfy>0:
 		plt.plot(bfx, bfy, color="g", marker=r"$\leftarrow$" if bfup else "*", markersize=10)
-	cbar.ax.set_ylabel(r"$\Delta N_{\rm eff}$")
+	cbar.ax.set_ylabel(r"$N_{\rm eff}$")
 	if title is not None:
 		plt.title(title, y=1.02)
 	ax=plt.gca()
@@ -448,7 +456,7 @@ def call_plot(args, gridContent=None):
 		mixings, fullgrid, fullobjects = gridContent
 	else:
 		mixings, fullgrid, fullobjects = call_read(args)
-	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
+	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_ref, fullobjects))
 	fullpoints = np.asarray(fullpoints)
 	cgrid = {}
 	if args.par_x == args.par_y:
@@ -567,7 +575,7 @@ def call_prepare(args):
 			"--th34=%s"%ssq34,
 			"--ordering=%s"%args.ordering,
 			]
-		for s in ["save_fd", "save_nuDens", "save_z"]:
+		for s in ["save_fd", "save_Neff", "save_nuDens", "save_z"]:
 			if getattr(args, s):
 				prep.append("--%s"%s)
 		parser = prepareIni.setParser()
@@ -638,7 +646,7 @@ def call_ternary(args, gridContent=None):
 		mixings, fullgrid, fullobjects = gridContent
 	else:
 		mixings, fullgrid, fullobjects = call_read(args)
-	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_active, fullobjects))
+	fullpoints = list(map(lambda x: safegetattr(x, "Neff", 0.)-args.Neff_ref, fullobjects))
 	fullpoints = np.asarray(fullpoints)
 	if (mixings["Ue4sq_N"] != mixings["Um4sq_N"]
 			or mixings["Ue4sq_N"] != mixings["Ut4sq_N"]
@@ -665,8 +673,8 @@ def call_ternary(args, gridContent=None):
 			(mixings["Ue4sq_N"], mixings["Um4sq_N"], mixings["Ut4sq_N"]))
 
 	# prepare the ternary figure
-	vmin = 0.
-	vmax = 1.
+	vmin = 3.
+	vmax = 4.
 	norm = plt.Normalize(vmin=vmin, vmax=vmax)
 	scale = mixings["Ue4sq_N"] - (0 if mixings["ternary"] else 1)
 	figure, tax = ternary.figure(scale=scale)
@@ -778,8 +786,8 @@ def call_ternary(args, gridContent=None):
 	tax.right_axis_label(r"$|U_{\tau4}|^2$", fontsize=fontsize, offset=offset)
 	sm = plt.cm.ScalarMappable(cmap=colmap, norm=norm)
 	sm._A = []
-	cb = plt.colorbar(sm, extend="both", ticks=[0.1, 0.3, 0.5, 0.7, 0.9])
-	cb.set_label(r"$\Delta N_{\rm eff}$", fontsize=fontsize)
+	cb = plt.colorbar(sm, extend="both", ticks=[3.1, 3.3, 3.5, 3.7, 3.9])
+	cb.set_label(r"$N_{\rm eff}$", fontsize=fontsize)
 	plt.tight_layout(rect=(-0.02, -0.02, 1.07, 1.02))
 
 	# save and exit

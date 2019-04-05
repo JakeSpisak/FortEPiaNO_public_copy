@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
+from matplotlib.ticker import AutoMinorLocator
 
 try:
 	FileNotFoundError
@@ -15,6 +16,8 @@ except NameError:
 colors = ["r", "g", "b", "k", "c", "m", "y", "#99ff33", "#ff9933"] *4
 styles = ["-", "--", ":", "-."] *2
 markers = [".", "+", "x", "^", "*", "h", "D"]
+
+PISQD15 = np.pi**2/15.
 
 def finalizePlot(fname,
 		lloc="best",
@@ -27,11 +30,14 @@ def finalizePlot(fname,
 		ylim=None,
 		legcol=1,
 		legend=True,
+		x_T=None,
+		Neff_axes=False,
 		):
 	plt.title(title)
 	ax=plt.gca()
-	ax.tick_params("both", which="both", direction="out",
-		left=True, right=True, top=True, bottom=True)
+	if not Neff_axes:
+		ax.tick_params("both", which="both", direction="out",
+			left=True, right=True, top=True, bottom=True)
 	if legend:
 		plt.legend(loc=lloc, ncol=legcol)
 	if xlab is not None:
@@ -46,6 +52,26 @@ def finalizePlot(fname,
 		plt.xlim(xlim)
 	if ylim is not None:
 		plt.ylim(ylim)
+	if x_T:
+		lims = ax.get_xlim()
+		ax.set_xscale("log")
+		ax.set_xlabel("$x$")
+		ax1=ax.twiny()
+		ax1.set_xlim([0.5109989461/lims[0], 0.5109989461/lims[1]])
+		ax1.set_xscale("log")
+		ax1.set_xlabel("$T$ [MeV]")
+	if Neff_axes:
+		ax.set_ylabel(r"$N_{\rm eff}^{\rm in}$")
+		lims = ax.get_ylim()
+		ax1=ax.twinx()
+		ax.tick_params("both", which="both", direction="out",
+			left=True, right=False, labelleft=True, labelright=False)
+		ax1.tick_params("both", which="both", direction="out",
+			left=False, right=True, labelleft=False, labelright=True)
+		ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}$")
+		ax1.set_ylim(np.asarray(lims)*(11./4)**(4./3))
+		minorLocatorX = AutoMinorLocator(2)
+		ax1.yaxis.set_minor_locator(minorLocatorX)
 	plt.tight_layout()
 	plt.savefig(fname)
 	plt.close()
@@ -88,7 +114,11 @@ class NuDensRun():
 		try:
 			self.zdat = np.loadtxt("%s/z.dat"%folder)
 		except OSError:
-			self.zdat = np.asarray([[np.nan, np.nan]])
+			self.zdat = np.asarray([[np.nan, np.nan, np.nan]])
+		try:
+			self.Neffdat = np.loadtxt("%s/Neff.dat"%folder)
+		except OSError:
+			self.Neffdat = np.asarray([[np.nan, np.nan, np.nan]])
 		self.nnu = nnu
 		self.rho = np.asarray([
 			[[None, None] for i in range(nnu)] for j in range(nnu)
@@ -362,6 +392,33 @@ class NuDensRun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$d\rho_{ij}/dt$")
 
+	def plotNeff(self, lc="k", ls="-", im=True, lab=None, xlims=[0.5, 4.5], axes=True):
+		if not np.isnan(self.Neffdat[0,0]):
+			data = self.Neffdat
+		else:
+			data = []
+			for ix, [x, z] in enumerate(self.zdat[:, 0:2]):
+				rhogamma = PISQD15 * z**4
+				rhonu = np.sum([self.integrateRho_yn(inu, 3, ix=ix) for inu in range(self.nnu)])
+				data.append([x, 8./7.*rhonu/rhogamma, 8./7.*rhonu/rhogamma*(11./4.)**(4./3.)])
+			data = np.asarray(data)
+			print(os.path.join(self.folder, "Neff.dat"))
+			np.savetxt(os.path.join(self.folder, "Neff.dat"), data, fmt="%.7e")
+		plt.plot(
+			*stripRepeated(data, 0, 1),
+			ls=ls, c=lc, label=self.label if lab is None else lab
+			)
+		plt.xscale("log")
+		plt.xlabel("$x$")
+		if axes:
+			ax=plt.gca()
+			ax.set_ylim(xlims)
+			lims = ax.get_ylim()
+			ax1=ax.twinx()
+			ax.set_ylabel(r"$N_{\rm eff}^{\rm in}$")
+			ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}$")
+			ax1.set_ylim(np.asarray(lims)*(11./4)**(4./3))
+
 	def doAllPlots(self, yref=5., color="k"):
 		plt.close()
 		self.plotZ(lc=color)
@@ -405,12 +462,12 @@ class NuDensRun():
 				"%s/drho_offdiag.pdf"%self.folder,
 				)
 
-	def integrateRhoFin_yn(self, ix, n, show=False):
+	def integrateRho_yn(self, inu, n, ix=-1, show=False):
 		"""Compute the integral
 		Int_0^Inf dy y^n f(y)/Pi^2
-		for the requested eigenstate
+		for the requested eigenstate at the given x
 		"""
-		fy = interp1d(self.yv, self.rho[ix, ix, 0][-1, 1:]*(np.exp(self.yv)+1))
+		fy = interp1d(self.yv, self.rho[inu, inu, 0][ix, 1:]*(np.exp(self.yv)+1))
 		res = quad(lambda y: y**n * fy(y)/(np.exp(y)+1), 0.01, 20)
 		if show:
 			print(res)

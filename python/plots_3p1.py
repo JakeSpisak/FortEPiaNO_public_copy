@@ -15,6 +15,24 @@ Um4l = NuDensRun("OUT/3p1/40_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-4}
 Ut4h = NuDensRun("OUT/3p1/40_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
 Ut4l = NuDensRun("OUT/3p1/40_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
 
+# plot Neff with three different choices for the angles
+fig = plt.Figure(figsize=(6,4))
+for ir, r in enumerate([
+		Ue4h, Um4h, Ut4h, None, Ut4l, a3nu]):
+	if r is not None:
+		print("Neff for %s"%r.label)
+		r.plotNeff(lc=colors[ir], ls='-', axes=False)
+finalizePlot(
+	"plots/3p1/Neff.pdf",
+	xlim=[1e-3, 35],
+	ylim=[0.5, 4.5],
+	xlab="$x$",
+	legend=True,
+	lloc="lower left",
+	x_T=True,
+	Neff_axes=True,
+	)
+
 # rho diagonal for different y, only one run
 for iy, y in enumerate([0.1, 2, 5]):
 	plt.plot(np.nan, ls='-', color=colors[iy], label="y=%s"%y)
@@ -31,7 +49,9 @@ finalizePlot(
 	ylim=(1e-5, 1.),
 	xscale="log",
 	yscale="log",
-	lloc="lower right", legcol=2,
+	lloc="lower right",
+	legcol=2,
+	x_T=True,
 	)
 
 # evolution of rho(y=5) for different cases
@@ -53,7 +73,9 @@ finalizePlot(
 	ylim=(1e-3, 0.3),
 	xscale="log",
 	yscale="log",
-	lloc="lower right", legcol=2,
+	lloc="lower right",
+	x_T=True,
+	legcol=2,
 	)
 
 # plots of z and w for some cases
@@ -68,7 +90,9 @@ finalizePlot(
 	xlim=[1e-3, 35],
 	xlab="$x$",
 	ylab=r"$w,z$",
-	xscale="log", legcol=2,
+	xscale="log",
+	x_T=True,
+	legcol=2,
 	)
 
 # offdiagonal rho and drho/dx for two cases
@@ -95,6 +119,7 @@ for ol, fn in [
 	finalizePlot(
 		"plots/3p1/rho_offdiag_%s.pdf"%fn,
 		legend=False,
+		x_T=True,
 		)
 
 	for i in range(4):
@@ -117,6 +142,7 @@ for ol, fn in [
 	finalizePlot(
 		"plots/3p1/rho_doffdiag_%s.pdf"%fn,
 		legend=False,
+		x_T=True,
 		)
 
 # final rho for some cases
@@ -140,7 +166,8 @@ for fn, cl, ol in [
 		ylim=[1e-4, 1],
 		ylab=r"$y^2\rho_{ii}^{\rm fin}(y)$",
 		xscale="linear",
-		yscale="log", legcol=2,
+		yscale="log",
+		legcol=2,
 		)
 
 # plot z and w with three different choices for the angles
@@ -163,6 +190,7 @@ finalizePlot(
 	ylab=r"$w,z$",
 	xscale="log",
 	legend=False,
+	x_T=True,
 	)
 
 # evolution of rho(y=5) for different cases
@@ -187,6 +215,7 @@ finalizePlot(
 	xscale="log",
 	yscale="log",
 	legend=False,
+	x_T=True,
 	)
 
 # # offdiagonal rho and drho/dx for two cases
@@ -212,14 +241,34 @@ for ol, fn in [
 					pass
 	finalizePlot(
 		"plots/3p1/rho_offdiag_%s.pdf"%fn,
+		xlim=(1e-3, 30),
 		legend=False,
 		lloc="lower right", legcol=3,
+		x_T=True,
 		)
 
 print("IO:")
-Ue4h = NuDensRun("OUT/3p1/40i_1_0.01_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-2}$")
-Ue4l = NuDensRun("OUT/3p1/40i_1_0.001_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-3}$")
-Um4h = NuDensRun("OUT/3p1/40i_1_0_0.01_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-2}$")
-Um4l = NuDensRun("OUT/3p1/40i_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-4}$")
-Ut4h = NuDensRun("OUT/3p1/40i_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
-Ut4l = NuDensRun("OUT/3p1/40i_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
+Ue4ih = NuDensRun("OUT/3p1/40i_1_0.01_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-2}$")
+Ue4il = NuDensRun("OUT/3p1/40i_1_0.001_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-3}$")
+Um4ih = NuDensRun("OUT/3p1/40i_1_0_0.01_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-2}$")
+Um4il = NuDensRun("OUT/3p1/40i_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-4}$")
+Ut4ih = NuDensRun("OUT/3p1/40i_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
+Ut4il = NuDensRun("OUT/3p1/40i_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
+
+# plot Neff with three different choices for the angles
+fig = plt.Figure(figsize=(6,4))
+for ir, r in enumerate([
+		Ue4h, Um4h, Ut4h, Ue4ih, Um4ih, Ut4ih]):
+	if r is not None:
+		print("Neff for %s"%r.label)
+		r.plotNeff(lc=colors[ir], ls='-', axes=False)
+finalizePlot(
+	"plots/3p1/Neff_ord.pdf",
+	xlim=[1e-3, 35],
+	ylim=[0.5, 4.5],
+	xlab="$x$",
+	legend=True,
+	lloc="lower left",
+	x_T=True,
+	Neff_axes=True,
+	)

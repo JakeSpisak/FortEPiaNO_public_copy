@@ -183,6 +183,11 @@ def setParser():
 		help='enable saving the y grid and the corresponding Fermi-Dirac to fd.dat',
 		)
 	parser.add_argument(
+		'--save_Neff',
+		action="store_true",
+		help='enable saving the evolution of Neff',
+		)
+	parser.add_argument(
 		'--save_nuDens',
 		action="store_true",
 		help='enable saving the evolution of the full neutrino density matrix',
@@ -310,6 +315,7 @@ def getIniValues(args):
 	values["folder"] = args.outputfolder
 	values["Nprintderivs"] = args.verbose_deriv_freq
 	values["save_fd"] = "T" if args.save_fd else "F"
+	values["save_Neff"] = "T" if args.save_Neff else "F"
 	values["save_nuDens"] = "T" if args.save_nuDens else "F"
 	values["save_z"] = "T" if args.save_z else "F"
 	return values
@@ -350,6 +356,7 @@ outputFolder = {folder:}
 checkpoint = T
 
 save_fd = {save_fd:}
+save_Neff = {save_Neff:}
 save_nuDens_evolution = {save_nuDens:}
 save_z_evolution = {save_z:}
 
