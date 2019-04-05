@@ -160,13 +160,13 @@ def setParser():
 	parser_prepare.add_argument(
 		'--y_cen',
 		type=float,
-		default=2,
+		default=1,
 		help='value of y where to switch between log and linear scale',
 		)
 	parser_prepare.add_argument(
 		'--Nylog',
 		type=int,
-		default=7,
+		default=5,
 		help='number of log-spaced points in 0.01 < y < 1',
 		)
 	parser_prepare.add_argument(
@@ -400,7 +400,7 @@ def contourplot(xv, yv, values, points,
 		levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'),
 		extend="both")
 	cf.cmap.set_over(cmap(0.95))
-	cf.cmap.set_under(cmap(0.05))
+	cf.cmap.set_under(cmap(0.0))
 	for fn in lsn_contours:
 		data = np.loadtxt(fn)
 		if lsn_contours_convssq2th:
@@ -635,7 +635,7 @@ def call_run(args):
 		if i >= args.first_index and i < args.last_index:
 			current += 1
 			os.system(
-				"clusterlauncher -N %s_%s -n 1 --openmp -q short-seq -w 6:00:00 bin/nuDens.exe %s"%(
+				"clusterlauncher -N %s_%s -n 1 --openmp -q short-seq -w 3:00:00 bin/nuDens.exe %s"%(
 					args.gridname,
 					f.split(os.sep)[-1].replace(".ini", ""),
 					f,
