@@ -148,7 +148,7 @@ def setParser():
 	parser_prepare.add_argument(
 		'--Nx',
 		type=int,
-		default=2000,
+		default=1000,
 		help='number of points in x where to save the output',
 		)
 	parser_prepare.add_argument(
@@ -158,9 +158,15 @@ def setParser():
 		help='number of momenta',
 		)
 	parser_prepare.add_argument(
+		'--y_cen',
+		type=float,
+		default=2,
+		help='value of y where to switch between log and linear scale',
+		)
+	parser_prepare.add_argument(
 		'--Nylog',
 		type=int,
-		default=4,
+		default=7,
 		help='number of log-spaced points in 0.01 < y < 1',
 		)
 	parser_prepare.add_argument(
@@ -201,7 +207,7 @@ def setParser():
 		help='tolerance for DLSODA',
 		)
 	for a, l, mi, ma, n in [
-			["dm41", r"\Delta m^2_{41}", 1e-2, 1e2, 5],
+			["dm41", r"\Delta m^2_{41}", 1e-5, 1e2, 8],
 			["Ue4sq", r"|U_{e4}|^2", 1e-6, 0.1, 6],
 			["Um4sq", r"|U_{\mu4}|^2", 1e-6, 0.1, 6],
 			["Ut4sq", r"|U_{\tau4}|^2", 1e-6, 0.1, 6],
@@ -566,7 +572,7 @@ def call_prepare(args):
 			"--Nx=%s"%args.Nx,
 			"--Ny=%s"%args.Ny,
 			"--Nylog=%s"%args.Nylog,
-			"--y_cen=1",
+			"--y_cen=%s"%args.y_cen,
 			"--x_in=%s"%args.x_in,
 			"--default_sterile=None",
 			"--dm41=%s"%dm41,
