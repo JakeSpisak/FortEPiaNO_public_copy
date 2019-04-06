@@ -107,9 +107,11 @@ module variables
 	!technical settings
 	integer :: verbose = 1
 	real(dl) :: Nprintderivs = 100.d0
+	logical :: use_gauss_laguerre
 	integer :: Nx, Ny, Nylog
 	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
+	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter
 	real(dl) :: toler, toler_dme2, toler_ed, toler_jkyg, dlsoda_atol, dlsoda_rtol

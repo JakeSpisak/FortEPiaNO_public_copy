@@ -412,4 +412,78 @@ module utilities
 		end do
 		integral_linearized_2d = integral_linearized_2d * 0.25d0
 	end function integral_linearized_2d
+
+	elemental function gammln(xx)
+		real(dl) :: gammln
+		real(dl), intent(in) :: xx
+		!Returns the value ln[Γ(xx)] for xx > 0.
+		integer j
+		real(dl) :: ser,tmp,x,y
+		!Internal arithmetic will be done in double precision, a nicety that you can omit if five-figure
+		!accuracy is good enough.
+		real(dl), parameter :: stp = 2.5066282746310005d0
+		real(dl), dimension(6), parameter :: cof = (/76.18009172947146d0,&
+		-86.50532032941677d0,24.01409824083091d0,&
+		-1.231739572450155d0,0.1208650973866179d-2,&
+		-0.5395239384953d-5/)
+
+		x=xx
+		y=x
+		tmp=x+5.5d0
+		tmp=(x+0.5d0)*log(tmp)-tmp
+		ser=1.000000000190015d0
+		do j=1,6
+			y=y+1.d0
+			ser=ser+cof(j)/y
+		enddo
+		gammln=tmp+log(stp*ser/x)
+		return
+	end function gammln
+
+	subroutine gaulag(x,w,n,alf)
+		integer, intent(in) :: n
+		real(dl), intent(in) :: alf
+		real(dl), intent(out), dimension(:), allocatable :: w, x
+		integer, parameter :: MAXIT=10
+		real(dl), parameter :: eps=1.d-9
+		! Increase EPS if you don't have this precision.
+		!Given alf , the parameter α of the Laguerre polynomials, this routine returns arrays x(1:n)
+		!and w(1:n) containing the abscissas and weights of the n-point Gauss-Laguerre quadrature
+		!formula. The smallest abscissa is returned in x(1), the largest in x(n) .
+		integer :: i,its,j
+		real(dl) :: ai, nd
+		real(dl) :: p1,p2,p3,pp,z,z1
+		nd = n
+		allocate(x(n), w(n))
+		do i=1,n	! Loop over the desired roots.
+			if(i.eq.1)then	! Initial guess for the smallest root.
+				z=(1.+alf)*(3.+.92*alf)/(1.+2.4*n+1.8*alf)
+			else if(i.eq.2)then	! Initial guess for the second root.
+				z=z+(15.+6.25*alf)/(1.+.9*alf+2.5*n)
+			else	! Initial guess for the other roots.
+				ai=i-2
+				z=z+((1.+2.55*ai)/(1.9*ai)+1.26*ai*alf/(1.+3.5*ai))*(z-x(i-2))/(1.+.3*alf)
+			endif
+			do its=1,MAXIT	! Refinement by Newton's method.
+				p1=1.d0
+				p2=0.d0
+				do j=1,n	! Loop up the recurrence relation to get the Laguerre polynomial evaluated at z.
+					p3=p2
+					p2=p1
+					p1=((2*j-1+alf-z)*p2-(j-1+alf)*p3)/j
+				enddo
+				!p1 is now the desired Laguerre polynomial. We next compute pp, its derivative, by
+				!a standard relation involving also p2, the polynomial of one lower order.
+				pp=(n*p1-(n+alf)*p2)/z
+				z1=z
+				z=z1-p1/pp ! Newton's formula.
+				if(abs(z-z1).le.EPS)goto 1
+			enddo
+			pause "too many iterations in gaulag"
+1			x(i)=z ! Store the root and the weight.
+			w(i)=-exp(gammln(alf+n)-gammln(nd))/(pp*n*p2)
+		enddo
+		return
+	end subroutine
+
 end module utilities

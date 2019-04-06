@@ -219,6 +219,7 @@ module ndConfig
 		use omp_lib
 		character(len=300) :: tmparg, tmpstr
 		integer :: ix, iy, num_threads
+		integer :: effective_Ny
 		logical :: file_exist
 
 		if (verbose>0) write(*,*) '[config] init configuration'
@@ -267,7 +268,11 @@ module ndConfig
 			interp_zmax = read_ini_real('interp_zmax', interp_zmax0)
 
 			Nx = read_ini_int('Nx',100)
+			use_gauss_laguerre = read_ini_logical('use_gauss_laguerre', .false.)
 			Ny = read_ini_int('Ny',100)
+			if (use_gauss_laguerre .and. Ny.gt.50) &
+				call criticalError("Ny>50 cannot be used with the Gauss-Laguerre method")
+
 			Nylog = read_ini_int('Nylog',7)
 			allocate(x_arr(Nx), y_arr(Ny))
 			allocate(dy_arr(Ny), fy_arr(Ny))
@@ -287,6 +292,25 @@ module ndConfig
 				y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
 			end if
 
+			do ix=1, 350
+				call gaulag(y_gl, w_gl, ix, 3.d0)
+				do iy=1, ix
+					if (y_gl(iy).gt.20.d0)then
+						effective_Ny = iy-1
+						exit
+					end if
+				end do
+				if (Ny.eq.effective_Ny) then
+					write(tmpstr, "(' [config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I2,' roots')") ix, effective_Ny
+					call addToLog(trim(tmpstr))
+					y_arr = y_gl(1:effective_Ny)
+					allocate(w_gl_arr(effective_Ny))
+					w_gl_arr = w_gl(1:effective_Ny)
+					deallocate(y_gl, w_gl)
+					exit
+				end if
+				deallocate(y_gl, w_gl)
+			end do
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 			end do
