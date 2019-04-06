@@ -215,11 +215,47 @@ module ndConfig
 		deallocate(diag_el)
 	end subroutine init_matrices
 
+	subroutine get_GLq_vectors(nreal, yv, wv, verb)
+		real(dl), dimension(:), allocatable, intent(out) :: yv, wv
+		integer, intent(in) :: nreal
+		logical, intent(in) :: verb
+		real(dl), dimension(:), allocatable :: tyv, twv
+		integer :: ix, iy, effective_Ny
+		character(len=300) :: tmpstr
+
+		do ix=1, 350
+			call gaulag(tyv, twv, ix, 3.d0)
+			do iy=1, ix
+				if (tyv(iy).gt.20.d0)then
+					effective_Ny = iy-1
+					exit
+				end if
+			end do
+			if (nreal .eq. effective_Ny) then
+				if (verb) then
+					write(tmpstr, "(' [config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I2,' roots')") ix, effective_Ny
+					call addToLog(trim(tmpstr))
+				end if
+				if (.not. allocated(yv)) &
+					allocate(yv(effective_Ny))
+				if (.not. allocated(wv)) &
+					allocate(wv(effective_Ny))
+				yv = tyv(1:effective_Ny)
+				wv = twv(1:effective_Ny)
+				do iy=1, nreal
+					wv(iy) = wv(iy)*exp(yv(iy))
+				end do
+				deallocate(tyv, twv)
+				return
+			end if
+			deallocate(tyv, twv)
+		end do
+	end subroutine get_GLq_vectors
+
 	subroutine initConfig()
 		use omp_lib
 		character(len=300) :: tmparg, tmpstr
 		integer :: ix, iy, num_threads
-		integer :: effective_Ny
 		logical :: file_exist
 
 		if (verbose>0) write(*,*) '[config] init configuration'
@@ -292,25 +328,8 @@ module ndConfig
 				y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
 			end if
 
-			do ix=1, 350
-				call gaulag(y_gl, w_gl, ix, 3.d0)
-				do iy=1, ix
-					if (y_gl(iy).gt.20.d0)then
-						effective_Ny = iy-1
-						exit
-					end if
-				end do
-				if (Ny.eq.effective_Ny) then
-					write(tmpstr, "(' [config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I2,' roots')") ix, effective_Ny
-					call addToLog(trim(tmpstr))
-					y_arr = y_gl(1:effective_Ny)
-					allocate(w_gl_arr(effective_Ny))
-					w_gl_arr = w_gl(1:effective_Ny)
-					deallocate(y_gl, w_gl)
-					exit
-				end if
-				deallocate(y_gl, w_gl)
-			end do
+			call get_GLq_vectors(Ny, y_arr, w_gl_arr, .true.)
+
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 			end do

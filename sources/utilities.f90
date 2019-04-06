@@ -486,4 +486,25 @@ module utilities
 		return
 	end subroutine
 
+	!Gauss-Laguerre quadrature: very effective for exponentially-suppressed functions
+	pure function integral_GL_1d(wx, f)
+		real(dl), dimension(:), allocatable, intent(in) :: wx, f
+		real(dl) :: integral_GL_1d
+
+		integral_GL_1d = sum(wx(:) * f(:))
+	end function integral_GL_1d
+
+	pure function integral_GL_2d(Nx, wx, wy, f)
+		real(dl), dimension(:), allocatable, intent(in) :: wx, wy
+		real(dl), dimension(:,:), allocatable, intent(in) :: f
+		integer, intent(in) :: Nx
+		real(dl) :: integral_GL_2d
+		integer :: ix
+
+		integral_GL_2d = 0.d0
+		do ix=1, Nx
+			integral_GL_2d = integral_GL_2d &
+				+ sum(wx(ix) * wy(:) * f(ix, :))
+		end do
+	end function integral_GL_2d
 end module utilities

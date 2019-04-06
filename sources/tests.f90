@@ -96,6 +96,7 @@ program tests
 	call do_test_collision_terms
 	call do_test_damping_factors
 	call do_test_zin
+	call do_test_GL
 
 	write(*,*) ""
 	write(*,*) ""
@@ -2396,6 +2397,57 @@ program tests
 		end do
 		collision_offdiag = 1
 	end subroutine do_test_damping_factors
+
+	subroutine do_test_GL
+		real(dl), dimension(:), allocatable :: xa, wa, fx1, dx, ya
+		real(dl), dimension(:,:), allocatable :: fx2a, fx2b
+		real(dl) :: inta, intb, tol
+		integer :: nx, ix, iy
+		character(len=300) :: tmparg
+
+		write(*,*) ""
+		write(*,"(a)") "Gauss-Laguerre quadrature (82 tests)"
+
+		do nx=50, 10, -1
+			call get_GLq_vectors(nx, xa, wa, .false.)
+
+			allocate(fx1(nx))
+			do ix=1,nx
+				fx1(ix) = fermiDirac(xa(ix))
+			end do
+			inta = integral_GL_1d(wa, fx1)
+			write(tmparg, "('test GL quadrature on Fermi-Dirac, nx=',I2)") nx
+			call assert_double_rel(trim(tmparg), inta, PISQ*PISQD15*7.d0/8.0, 1d-5)
+			deallocate(fx1)
+
+			allocate(fx2a(nx, nx), fx2b(nx, nx), ya(nx), dx(nx))
+			ya = loglinspace(0.01d0, 0.01d0, 20.d0, nx, 1)
+			do ix=1, nx-1
+				dx(ix) = ya(ix+1) - ya(ix)
+			end do
+			do ix=1,nx
+				do iy=1,nx
+					fx2a(ix, iy) = fermiDirac(xa(ix))*fermiDirac(xa(iy))/(xa(ix)**2 * xa(iy))
+					fx2b(ix, iy) = fermiDirac(ya(ix))*fermiDirac(ya(iy))*(ya(ix) * ya(iy)**2)
+				end do
+			end do
+			inta = integral_GL_2d(nx, wa, wa, fx2a)
+			intb = integral_linearized_2d(nx, nx, dx, dx, fx2b)
+			if (nx.gt.22) then
+				tol=1d-3
+			elseif (nx.gt.16) then
+				tol=3d-3
+			elseif (nx.gt.11) then
+				tol=1d-2
+			else
+				tol=3d-2
+			end if
+			write(tmparg, "('test GL quadrature 2D on Fermi-Dirac, nx=',I2)") nx
+			call assert_double_rel(trim(tmparg), inta, 1.4829783d0, tol)
+			print *,nx, inta, intb!, 1.4829783d0
+			deallocate(fx2a, fx2b, ya, dx)
+		end do
+	end subroutine do_test_GL
 
 	subroutine do_test_zin
 		write(*,*)
