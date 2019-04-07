@@ -138,6 +138,7 @@ program tests
 		y_max = 20.0d0
 		y_cen = 0.01d0
 		Nylog = 1
+		use_gauss_laguerre = .false.
 		y_arr = linspace(y_min, y_max, Ny)
 		do ix=1, Ny-1
 			dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
@@ -218,24 +219,24 @@ program tests
 		do ia=1, Ny
 			fy1_arr(ia) = 0.35d0*y_arr(ia) + 11.41d0
 		end do
-		call assert_double_rel("intLin1D 1", integral_linearized_1d(Ny, dy_arr, fy1_arr), 298.08588d0, 1d-7)
+		call assert_double_rel("intLin1D 1", integral_NC_1d(Ny, dy_arr, fy1_arr), 298.08588d0, 1d-7)
 		do ia=1, Ny
 			fy1_arr(ia) = 0.35d0/(exp(y_arr(ia))+1.d0) + 0.2d0
 		end do
-		call assert_double_rel("intLin1D 2", integral_linearized_1d(Ny, dy_arr, fy1_arr), 4.23886d0, 1d-4)
+		call assert_double_rel("intLin1D 2", integral_NC_1d(Ny, dy_arr, fy1_arr), 4.23886d0, 1d-4)
 
 		do ia=1, Ny
 			do ib=1, Ny
 				fy2_arr(ia,ib) = 0.35d0*y_arr(ia) - 1.96d0*y_arr(ib) + 11.41d0
 			end do
 		end do
-		call assert_double_rel("intLin2D 1", integral_linearized_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr), -1877.341249d0, 1d-7)
+		call assert_double_rel("intLin2D 1", integral_NC_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr), -1877.341249d0, 1d-7)
 		do ia=1, Ny
 			do ib=1, Ny
 				fy2_arr(ia,ib) = 0.35d0/(exp(y_arr(ia))+1.d0) + 1.96d0/(exp(y_arr(ib))+1.d0) + 0.2d0
 			end do
 		end do
-		call assert_double_rel("intLin2D 2", integral_linearized_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr), 111.967d0, 0.003d0)
+		call assert_double_rel("intLin2D 2", integral_NC_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr), 111.967d0, 0.003d0)
 
 		deallocate(fy1_arr)
 		deallocate(fy2_arr)
@@ -400,34 +401,34 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 1", nuDensityLin(1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensLin test 1", nuDensityNC(1), 0.575727d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 2", nuDensityLin(1), 0.5d0*1.54346d0, 1d-4)
+		call assert_double_rel("nuDensLin test 2", nuDensityNC(1), 0.5d0*1.54346d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 3", nuDensityLin(1), 0.5d0*3.49577d0, 2d-4)
+		call assert_double_rel("nuDensLin test 3", nuDensityNC(1), 0.5d0*3.49577d0, 2d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 4", nuDensityLin(2), 0.5d0*2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDensLin test 4", nuDensityNC(2), 0.5d0*2.d0*4.05629d0, 5d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 5", nuDensityLin(3), 0.5d0*3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuDensLin test 5", nuDensityNC(3), 0.5d0*3.d0*1.16533d0, 1d-4)
 
-		call assert_double_rel("nuDensLinEq test 1", nuDensityLinEq(1.d0), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDensLinEq test 2", nuDensityLinEq(1.37d0), 2.02814d0, 5d-4)
+		call assert_double_rel("nuDensLinEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensLinEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
@@ -1559,7 +1560,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1592,7 +1593,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -1664,7 +1665,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1698,7 +1699,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -1971,7 +1972,7 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sc re semilin>")
 		call tic(timer1)
@@ -1994,7 +1995,7 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<ann re semilin>")
 		call tic(timer1)
@@ -2017,9 +2018,9 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_3(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<reset>")
 		call tic(timer1)
@@ -2030,8 +2031,8 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_coll_int_3(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_3(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sep ann, sc>")
 		call tic(timer1)
@@ -2042,7 +2043,7 @@ program tests
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_3(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sum ann+sc>")
 		
@@ -2402,8 +2403,10 @@ program tests
 		real(dl), dimension(:), allocatable :: xa, wa, fx1, dx, ya
 		real(dl), dimension(:,:), allocatable :: fx2a, fx2b
 		real(dl) :: inta, intb, tol
-		integer :: nx, ix, iy
+		integer :: nix, nx, ix, iy
 		character(len=300) :: tmparg
+		real(dl), dimension(9,3) :: tmparrA, tmparrB, tmperrA, tmperrB
+		type(coll_args) :: collArgs
 
 		write(*,*) ""
 		write(*,"(a)") "Gauss-Laguerre quadrature (82 tests)"
@@ -2432,7 +2435,7 @@ program tests
 				end do
 			end do
 			inta = integral_GL_2d(nx, wa, wa, fx2a)
-			intb = integral_linearized_2d(nx, nx, dx, dx, fx2b)
+			intb = integral_NC_2d(nx, nx, dx, dx, fx2b)
 			if (nx.gt.22) then
 				tol=1d-3
 			elseif (nx.gt.16) then
@@ -2444,8 +2447,117 @@ program tests
 			end if
 			write(tmparg, "('test GL quadrature 2D on Fermi-Dirac, nx=',I2)") nx
 			call assert_double_rel(trim(tmparg), inta, 1.4829783d0, tol)
-			print *,nx, inta, intb!, 1.4829783d0
+!			print *,nx, inta, intb
 			deallocate(fx2a, fx2b, ya, dx)
+		end do
+
+		write(*,*) ""
+		write(*,"(a)") "Gauss-Laguerre quadrature of collision integrals (54 tests)"
+		collArgs%x = 0.05d0
+		collArgs%z = 1.06d0
+		collArgs%iy = 5
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = 0.1d0
+		tmparrA(:,:) = 0.d0
+		tmparrB(:,:) = 0.d0
+		do nix=1, 9
+			nx = nix*5+5
+			call get_GLq_vectors(nx, xa, wa, .false.)
+			collArgs%y1 = xa(collArgs%iy)
+			y_arr = loglinspace(y_min, collArgs%y1, y_max, Ny, 10)
+			do ix=1, Ny-1
+				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
+			end do
+
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re = 0.d0
+				nuDensMatVecFD(iy)%im = 0.d0
+			end do
+			do ix=1, flavorNumber
+				do iy=1, Ny
+					nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy))
+				end do
+				nuDensMatVecFD(collArgs%iy)%re(ix, ix) = 1.d0
+			end do
+
+			do ix=1, flavorNumber
+				collArgs%ix1 = ix
+				collArgs%ix2 = ix
+				tmparrA(nix,ix) = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			end do
+
+			do ix=1, flavorNumber
+				collArgs%ix1 = ix
+				collArgs%ix2 = ix
+				tmparrB(nix,ix) = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			end do
+		end do
+
+		!Ny=20
+		tmperrA(3,:) = (/0.3, 0.3, 0.2/)
+		tmperrB(3,:) = (/0.3d0, 0.15d0, 0.1d0/)
+		!Ny=25
+		tmperrA(4,:) = (/0.15, 0.11, 0.06/)
+		tmperrB(4,:) = (/0.08d0, 0.04d0, 0.04d0/)
+		!Ny=30
+		tmperrA(5,:) = (/0.1, 0.06, 0.01/)
+		tmperrB(5,:) = (/0.04d0, 0.03d0, 0.03d0/)
+		!Ny=35
+		tmperrA(6,:) = (/0.07, 0.03, 0.03/)
+		tmperrB(6,:) = (/0.03d0, 0.02d0, 0.02d0/)
+		!Ny=40
+		tmperrA(7,:) = (/0.06, 0.03, 0.03/)
+		tmperrB(7,:) = (/0.005d0, 0.002d0, 0.002d0/)
+		!Ny=45
+		tmperrA(8,:) = (/0.05, 0.025, 0.025/)
+		tmperrB(8,:) = (/0.025, 0.015, 0.015/)
+		!Ny=50
+		tmperrA(9,:) = (/0.05, 0.02, 0.025/)
+		tmperrB(9,:) = (/0.021, 0.013, 0.013/)
+		do nix=3, 9
+			nx = nix*5+5
+			Ny=nx
+			call get_GLq_vectors(Ny, y_arr, w_gl_arr, .false.)
+			do ix=1, Ny-1
+				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
+			end do
+			collArgs%y1 = y_arr(collArgs%iy)
+!			print*,Ny,y_arr(collArgs%iy)
+
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re = 0.d0
+				nuDensMatVecFD(iy)%im = 0.d0
+			end do
+			do ix=1, flavorNumber
+				do iy=1, Ny
+					nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy))
+				end do
+				nuDensMatVecFD(collArgs%iy)%re(ix, ix) = 1.d0
+			end do
+
+			write(*,*) ""
+			do ix=1, flavorNumber
+				collArgs%ix1 = ix
+				collArgs%ix2 = ix
+				inta = integrate_coll_int_GL(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				intb = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+!				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrA(nix,ix), (inta-tmparrA(nix,ix))/inta, (intb-tmparrA(nix,ix))/intb
+				write(tmparg,"('test coll sc GL, N=',I2,' - ',2I1)") Ny, ix, ix
+				call assert_double_rel_verb(trim(tmparg), inta, tmparrA(nix,ix), tmperrA(nix,ix))
+			end do
+
+			write(*,*) ""
+			do ix=1, flavorNumber
+				collArgs%ix1 = ix
+				collArgs%ix2 = ix
+				inta = integrate_coll_int_GL(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				intb = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+!				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrB(nix,ix), (inta-tmparrB(nix,ix))/inta, (intb-tmparrB(nix,ix))/intb
+				write(tmparg,"('test coll ann GL, N=',I2,' - ',2I1)") Ny, ix, ix
+				call assert_double_rel_verb(trim(tmparg), inta, tmparrB(nix,ix), tmperrB(nix,ix))
+			end do
 		end do
 	end subroutine do_test_GL
 
@@ -2460,14 +2572,14 @@ program tests
 		x_in=1d-3
 		call zin_solver
 		call assert_double("z_in test 2", z_in-1.d0, 2.3d-8, 1d-9)
-		dme2_temperature_corr = .true.
-		x_in=0.05d0
-		z_in=0.d0
-		call zin_solver
-		call assert_double("z_in test 1", z_in-1.d0, 0.56d-04, 1d-6)
-		x_in=1d-3
-		call zin_solver
-		call assert_double("z_in test 2", z_in-1.d0, 7.7d-8, 1d-9)
+!		dme2_temperature_corr = .true.
+!		x_in=0.05d0
+!		z_in=0.d0
+!		call zin_solver
+!		call assert_double("z_in test 1", z_in-1.d0, 0.56d-04, 1d-6)
+!		x_in=1d-3
+!		call zin_solver
+!		call assert_double("z_in test 2", z_in-1.d0, 7.7d-8, 1d-9)
 	end subroutine do_test_zin
 
 	subroutine do_timing_tests

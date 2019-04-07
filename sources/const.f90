@@ -139,3 +139,62 @@ module variables
 		end if
 	end subroutine allocateCmplxMat
 end module variables
+
+module ndInterfaces1
+	implicit None
+	interface
+		pure real(dl) function F_annihilation(n1, n2, f3, f4, a, b, i, j)
+			use precision
+			use variables
+			type(cmplxMatNN), intent(in) :: n1, n2
+			real(dl), intent(in) :: f3, f4
+			integer, intent(in) :: a, b, i, j
+		end function
+	end interface
+	interface
+		pure real(dl) function F_scattering(n1, n3, f2, f4, a, b, i, j)
+			use precision
+			use variables
+			type(cmplxMatNN), intent(in) :: n1, n3
+			real(dl), intent(in) :: f2, f4
+			integer, intent(in) :: a, b, i, j
+		end function
+	end interface
+	interface
+		pure real(dl) function nuDensity_integrator(iFl)
+			use precision
+			integer, intent(in) :: iFl
+		end function
+	end interface
+end module ndInterfaces1
+
+module ndInterfaces2
+	interface
+		pure real(dl) function collision_integrand(a, b, o, F_ab_ann, F_ab_sc)
+			use precision
+			use variables
+			use ndInterfaces1
+			procedure (F_annihilation) :: F_ab_ann
+			procedure (F_scattering) :: F_ab_sc
+			integer, intent(in) :: a
+			real(dl), intent(in) :: b
+			type(coll_args), intent(in) :: o
+		end function
+	end interface
+end module ndInterfaces2
+
+module ndInterfaces3
+	interface
+		pure real(dl) function collision_integrator(f, obj, F_ab_ann, F_ab_sc)
+			use precision
+			use variables
+			use ndInterfaces1
+			use ndInterfaces2
+			implicit None
+			procedure (F_annihilation) :: F_ab_ann
+			procedure (F_scattering) :: F_ab_sc
+			procedure (collision_integrand) :: f
+			type(coll_args), intent(in) :: obj
+		end function
+	end interface
+end module ndInterfaces3

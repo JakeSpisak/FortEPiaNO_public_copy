@@ -304,7 +304,7 @@ module ndConfig
 			interp_zmax = read_ini_real('interp_zmax', interp_zmax0)
 
 			Nx = read_ini_int('Nx',100)
-			use_gauss_laguerre = read_ini_logical('use_gauss_laguerre', .false.)
+			use_gauss_laguerre = read_ini_logical('use_gauss_laguerre', .true.)
 			Ny = read_ini_int('Ny',100)
 			if (use_gauss_laguerre .and. Ny.gt.50) &
 				call criticalError("Ny>50 cannot be used with the Gauss-Laguerre method")
@@ -328,7 +328,8 @@ module ndConfig
 				y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
 			end if
 
-			call get_GLq_vectors(Ny, y_arr, w_gl_arr, .true.)
+			if (use_gauss_laguerre) &
+				call get_GLq_vectors(Ny, y_arr, w_gl_arr, .true.)
 
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
