@@ -147,8 +147,8 @@ module ndCosmology
 		call addToLog("[cosmo] ...done!")
 	end subroutine init_interp_ElDensity
 
-	function nuDensityLin(iFl)
-		real(dl) :: nuDensityLin, y
+	function nuDensityNC(iFl)
+		real(dl) :: nuDensityNC, y
 		integer, intent(in) :: iFl
 		integer :: ix
 
@@ -156,29 +156,55 @@ module ndCosmology
 			y = y_arr(ix)
 			fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%re(iFl, iFl)
 		end do
-		nuDensityLin = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQ
-	end function nuDensityLin
+		nuDensityNC = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
+	end function nuDensityNC
+
+	function nuDensityGL(iFl)
+		real(dl) :: nuDensityGL
+		integer, intent(in) :: iFl
+		integer :: ix
+
+		do ix=1, Ny
+			fy_arr(ix) = nuDensMatVecFD(ix)%re(iFl, iFl)
+		end do
+		nuDensityGL = integral_GL_1d(w_gl_arr, fy_arr) / PISQ
+	end function nuDensityGL
 
 	function allNuDensity()
+		use ndInterfaces1
 		real(dl) :: allNuDensity
 		integer :: ix
+		procedure (nuDensity_integrator), pointer :: nuDensityInt
+
+		if (use_gauss_laguerre) then
+			nuDensityInt => nuDensityGL
+		else
+			nuDensityInt => nuDensityNC
+		end if
 
 		allNuDensity = 0.d0
 		do ix=1, flavorNumber
-			allNuDensity = allNuDensity + nuDensityLin(ix)*nuFactor(ix)
+			allNuDensity = allNuDensity + nuDensityInt(ix)*nuFactor(ix)
 		end do
 		allNuDensity = allNuDensity
 	end function allNuDensity
 
-	function nuDensityLinEq(w)
-		real(dl) :: nuDensityLinEq, y
+	function nuDensityEq(w)
+		real(dl) :: nuDensityEq, y
 		real(dl), intent(in) :: w
 		integer :: ix
 
-		do ix=1, Ny
-			y = y_arr(ix)
-			fy_arr(ix) = y*y*y * fermiDirac(y/w)
-		end do
-		nuDensityLinEq = integral_linearized_1d(Ny, dy_arr, fy_arr) / PISQ
-	end function nuDensityLinEq
+		if (use_gauss_laguerre) then
+			do ix=1, Ny
+				fy_arr(ix) = fermiDirac(y_arr(ix)/w)
+			end do
+			nuDensityEq = integral_GL_1d(w_gl_arr, fy_arr) / PISQ
+		else
+			do ix=1, Ny
+				y = y_arr(ix)
+				fy_arr(ix) = y*y*y * fermiDirac(y/w)
+			end do
+			nuDensityEq = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
+		end if
+	end function nuDensityEq
 end module

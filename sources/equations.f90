@@ -235,19 +235,32 @@ module ndEquations
 		real(dl), dimension(2) :: coeffs
 		integer :: ix, m
 
-		!$omp parallel do shared(fy_arr) private(tmp, m, ix)
-		do m=1, Ny
-			tmp = 0.d0
-			do ix=1, flavorNumber
-				tmp = tmp + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
+		if (use_gauss_laguerre) then
+			!$omp parallel do shared(fy_arr) private(tmp, m, ix)
+			do m=1, Ny
+				tmp = 0.d0
+				do ix=1, flavorNumber
+					tmp = tmp + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
+				end do
+				fy_arr(m) = tmp * fermiDirac(y_arr(m))
 			end do
-			fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))
-		end do
-		!$omp end parallel do
-		tmp = integral_linearized_1d(Ny, dy_arr, fy_arr)
+			!$omp end parallel do
+			tmp = integral_GL_1d(w_gl_arr, fy_arr)
+		else
+			!$omp parallel do shared(fy_arr) private(tmp, m, ix)
+			do m=1, Ny
+				tmp = 0.d0
+				do ix=1, flavorNumber
+					tmp = tmp + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
+				end do
+				fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))
+			end do
+			!$omp end parallel do
+			tmp = integral_NC_1d(Ny, dy_arr, fy_arr)
+		end if
 		ydot(n-1) = coeff_dw_dx * tmp / w**3 / tot_factor_active_nu
 		coeffs = dzodxcoef_interp_func(x/z)
-		ydot(n) = coeffs(1) - coeffs(2) * tmp/ z**3
+		ydot(n) = coeffs(1) - coeffs(2) * tmp / z**3
 	end subroutine dz_o_dx_lin
 
 	subroutine dz_o_dx_eq_lin(n, x, vars, ydot)
@@ -496,28 +509,8 @@ module ndEquations
 	end subroutine solver
 
 	pure subroutine drhoy_dx_fullMat(matrix, x, z, iy, dme2, sqrtraddens, Fint)
-		interface
-			pure real(dl) function Fint(a, b, o, F_ab_ann, F_ab_sc)
-				use variables
-				interface
-					pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
-						use variables
-						type(cmplxMatNN), intent(in) :: n1, n2
-						real(dl), intent(in) :: f3, f4
-						integer, intent(in) :: a, b, i, j
-					end function
-					pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
-						use variables
-						type(cmplxMatNN), intent(in) :: n1, n3
-						real(dl), intent(in) :: f2, f4
-						integer, intent(in) :: a, b, i, j
-					end function
-				end interface
-				integer, intent(in) :: a
-				real(dl), intent(in) :: b
-				type(coll_args), intent(in) :: o
-			end function
-		end interface
+		use ndInterfaces2
+		procedure (collision_integrand) :: Fint
 		type(cmplxMatNN), intent(out) :: matrix
 		real(dl), intent(in) :: x, z, dme2, sqrtraddens
 		integer, intent(in) :: iy
@@ -655,15 +648,23 @@ module ndEquations
 		do ix=1, flavorNumber
 			if(.not.sterile(ix)) totf = totf + nuFactor(ix)
 		end do
-		ndeq=nuDensityLinEq(w)
+		ndeq=nuDensityEq(w)
 		rhototnu = (allNuDensity() - totf*ndeq)/ndeq
 		Neff_from_rho_z = (w*zid/z)**4 * &
 			(3.d0 + rhototnu)
 	end function Neff_from_rho_z
 
 	subroutine finalresults
+		use ndInterfaces1
 		real(dl) :: ndeq, tmp, w, z
 		integer :: ix
+		procedure (nuDensity_integrator), pointer :: nuDensityInt
+
+		if (use_gauss_laguerre) then
+			nuDensityInt => nuDensityGL
+		else
+			nuDensityInt => nuDensityNC
+		end if
 
 		w = nuDensVec(ntot-1) + 1.d0
 		z = nuDensVec(ntot) + 1.d0
@@ -676,9 +677,9 @@ module ndEquations
 		write(9876,"('final z = ',F11.8)") z
 		!since it was never taken into account, w must not be used here to get the delta_rho,
 		!otherwise the result is not referring to the same quantity
-		ndeq=nuDensityLinEq(1.d0)
+		ndeq=nuDensityEq(1.d0)
 		do ix=1, flavorNumber
-			tmp = (nuDensityLin(ix) - ndeq)*nuFactor(ix)/ndeq
+			tmp = (nuDensityInt(ix) - ndeq)*nuFactor(ix)/ndeq
 			write(*,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 		end do

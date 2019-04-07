@@ -667,14 +667,8 @@ module ndInteractions
 
 	pure function coll_nue_3_ann_int(iy2, y4, obj, F_ab)
 		!annihilation
-		interface!use interface to switch between real and imaginary part for the F_ab
-			pure real(dl) function F_ab(n1, n2, f3, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n2
-				real(dl), intent(in) :: f3, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-		end interface
+		use ndInterfaces1
+		procedure (F_annihilation) :: F_ab
 		integer, intent(in) :: iy2
 		real(dl), intent(in) :: y4
 		type(coll_args), intent(in) :: obj
@@ -718,14 +712,8 @@ module ndInteractions
 
 	pure function coll_nue_3_sc_int(iy3, y2, obj, F_ab)
 		!scattering, summing positron and electrons
-		interface!use interface to switch between real and imaginary part for the F_ab
-			pure real(dl) function F_ab(n1, n3, f2, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n3
-				real(dl), intent(in) :: f2, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-		end interface
+		use ndInterfaces1
+		procedure (F_scattering) :: F_ab
 		integer, intent(in) :: iy3
 		real(dl), intent(in) :: y2
 		type(coll_args), intent(in) :: obj
@@ -770,20 +758,9 @@ module ndInteractions
 	end function coll_nue_3_sc_int
 
 	pure function coll_nue_3_int(iy, yx, obj, F_ab_ann, F_ab_sc)
-		interface
-			pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n2
-				real(dl), intent(in) :: f3, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-			pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n3
-				real(dl), intent(in) :: f2, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-		end interface
+		use ndInterfaces1
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
@@ -793,43 +770,15 @@ module ndInteractions
 			+ coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
 	end function coll_nue_3_int
 
-	pure function integrate_coll_int_3(f, obj, F_ab_ann, F_ab_sc)
+	pure function integrate_coll_int_NC(f, obj, F_ab_ann, F_ab_sc)
 		use omp_lib
-		interface
-			pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n2
-				real(dl), intent(in) :: f3, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-			pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n3
-				real(dl), intent(in) :: f2, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-			pure real(dl) function f(a, b, o, F_ab_ann, F_ab_sc)
-				use variables
-				interface
-					pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
-						use variables
-						type(cmplxMatNN), intent(in) :: n1, n2
-						real(dl), intent(in) :: f3, f4
-						integer, intent(in) :: a, b, i, j
-					end function
-					pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
-						use variables
-						type(cmplxMatNN), intent(in) :: n1, n3
-						real(dl), intent(in) :: f2, f4
-						integer, intent(in) :: a, b, i, j
-					end function
-				end interface
-				integer, intent(in) :: a
-				real(dl), intent(in) :: b
-				type(coll_args), intent(in) :: o
-			end function
-		end interface
-		real(dl) :: integrate_coll_int_3
+		use ndInterfaces1
+		use ndInterfaces2
+		implicit None
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
+		procedure (collision_integrand) :: f
+		real(dl) :: integrate_coll_int_NC
 		type(coll_args), intent(in) :: obj
 		integer :: ia, ib
 		real(dl), dimension(:,:), allocatable :: fy2_arr
@@ -842,34 +791,41 @@ module ndInteractions
 				fy2_arr(ia, ib) = f(ia, y_arr(ib), obj, F_ab_ann, F_ab_sc)
 			end do
 		end do
-		integrate_coll_int_3 = integral_linearized_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
+		integrate_coll_int_NC = integral_NC_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
 		deallocate(fy2_arr)
-	end function integrate_coll_int_3
+	end function integrate_coll_int_NC
+
+	pure function integrate_coll_int_GL(f, obj, F_ab_ann, F_ab_sc)
+		use omp_lib
+		use ndInterfaces1
+		use ndInterfaces2
+		implicit None
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
+		procedure (collision_integrand) :: f
+		real(dl) :: integrate_coll_int_GL
+		type(coll_args), intent(in) :: obj
+		integer :: ia, ib
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(fy2_arr(Ny, Ny))
+		fy2_arr = 0.d0
+		do ia=1, Ny
+			do ib=1, Ny
+				fy2_arr(ia, ib) = f(ia, y_arr(ib), obj, F_ab_ann, F_ab_sc)/(y_arr(ia)*y_arr(ib))**3
+			end do
+		end do
+		integrate_coll_int_GL = integral_GL_2d(Ny, w_gl_arr, w_gl_arr, fy2_arr)
+		deallocate(fy2_arr)
+	end function integrate_coll_int_GL
 
 	pure function get_collision_terms(collArgsIn, Fint)
-		interface
-			pure real(dl) function Fint(a, b, o, F_ab_ann, F_ab_sc)
-				use variables
-				interface
-					pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
-						use variables
-						type(cmplxMatNN), intent(in) :: n1, n2
-						real(dl), intent(in) :: f3, f4
-						integer, intent(in) :: a, b, i, j
-					end function
-					pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
-						use variables
-						type(cmplxMatNN), intent(in) :: n1, n3
-						real(dl), intent(in) :: f2, f4
-						integer, intent(in) :: a, b, i, j
-					end function
-				end interface
-				integer, intent(in) :: a
-				real(dl), intent(in) :: b
-				type(coll_args), intent(in) :: o
-			end function
-		end interface
+		use ndInterfaces2
+		use ndInterfaces3
+		implicit None
+		procedure (collision_integrand) :: Fint
 		type(cmplxMatNN) :: get_collision_terms
+		procedure (collision_integrator), pointer :: integrator
 		real(dl) :: x, z, y1, cf
 		integer :: iy1
 		type(coll_args), intent(in) :: collArgsIn
@@ -896,17 +852,22 @@ module ndInteractions
 			return
 		end if
 
+		if (use_gauss_laguerre) then
+			integrator => integrate_coll_int_GL
+		else
+			integrator => integrate_coll_int_NC
+		end if
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			if (.not.sterile(i)) then
-				get_collision_terms%re(i,i) = integrate_coll_int_3(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
+				get_collision_terms%re(i,i) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
 			end if
 			if (collision_offdiag.eq.1) then
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
-					get_collision_terms%re(i,j) = integrate_coll_int_3(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
-					get_collision_terms%im(i,j) = integrate_coll_int_3(Fint, collArgs, F_ab_ann_im, F_ab_sc_im)
+					get_collision_terms%re(i,j) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
+					get_collision_terms%im(i,j) = integrator(Fint, collArgs, F_ab_ann_im, F_ab_sc_im)
 				end do
 			else if (collision_offdiag.eq.2) then
 				do j=i+1, flavorNumber

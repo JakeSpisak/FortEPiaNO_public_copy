@@ -80,7 +80,7 @@ program tests
 	write(*,*) ""
 	write(*,"(a)") "Starting tests"
 	call do_basic_tests
-	call do_test_linearized_integrals
+	call do_test_NC_integrals
 	call do_test_commutator
 	call do_test_nu_matrices
 	call do_tests_cosmology
@@ -205,7 +205,7 @@ program tests
 		call assert_double_rel("y_arr linlog 2", y_arr(2), 0.21191919191919d0, 1d-7)
 	end subroutine do_basic_tests
 
-	subroutine do_test_linearized_integrals
+	subroutine do_test_NC_integrals
 		integer :: ia, ib
 		real(dl), dimension(:), allocatable :: fy1_arr
 		real(dl), dimension(:,:), allocatable :: fy2_arr
@@ -240,7 +240,7 @@ program tests
 
 		deallocate(fy1_arr)
 		deallocate(fy2_arr)
-	end subroutine do_test_linearized_integrals
+	end subroutine do_test_NC_integrals
 
 	subroutine do_test_commutator
 		real(dl), dimension(:,:), allocatable :: m1, m2, m3, res
@@ -401,41 +401,41 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 1", nuDensityNC(1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensNC test 1", nuDensityNC(1), 0.575727d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 2", nuDensityNC(1), 0.5d0*1.54346d0, 1d-4)
+		call assert_double_rel("nuDensNC test 2", nuDensityNC(1), 0.5d0*1.54346d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 3", nuDensityNC(1), 0.5d0*3.49577d0, 2d-4)
+		call assert_double_rel("nuDensNC test 3", nuDensityNC(1), 0.5d0*3.49577d0, 2d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 4", nuDensityNC(2), 0.5d0*2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDensNC test 4", nuDensityNC(2), 0.5d0*2.d0*4.05629d0, 5d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
 			end do
 		end do
-		call assert_double_rel("nuDensLin test 5", nuDensityNC(3), 0.5d0*3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuDensNC test 5", nuDensityNC(3), 0.5d0*3.d0*1.16533d0, 1d-4)
 
-		call assert_double_rel("nuDensLinEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDensLinEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
+		call assert_double_rel("nuDensEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double_rel("allNuDensLin test 1", allNuDensity(), 6*0.575727d0, 1d-3)
+		call assert_double_rel("allnuDensNC test 1", allNuDensity(), 6*0.575727d0, 1d-3)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
@@ -2403,14 +2403,16 @@ program tests
 		real(dl), dimension(:), allocatable :: xa, wa, fx1, dx, ya
 		real(dl), dimension(:,:), allocatable :: fx2a, fx2b
 		real(dl) :: inta, intb, tol
-		integer :: nix, nx, ix, iy
+		integer :: nix, nx, ix, iy, i, n, m
 		character(len=300) :: tmparg
 		real(dl), dimension(9,3) :: tmparrA, tmparrB, tmperrA, tmperrB
 		type(coll_args) :: collArgs
+		real(dl), dimension(:), allocatable :: ydot
 
 		write(*,*) ""
 		write(*,"(a)") "Gauss-Laguerre quadrature (82 tests)"
 
+		use_gauss_laguerre = .true.
 		do nx=50, 10, -1
 			call get_GLq_vectors(nx, xa, wa, .false.)
 
@@ -2559,6 +2561,68 @@ program tests
 				call assert_double_rel_verb(trim(tmparg), inta, tmparrB(nix,ix), tmperrB(nix,ix))
 			end do
 		end do
+
+		write(*,*) ""
+		write(*,"(a)") "other applications of Gauss-Laguerre quadrature (13 tests)"
+		Ny=50
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, .false.)
+		do i=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
+			end do
+		end do
+		call assert_double_rel("nuDensGL test 1", nuDensityGL(1), 0.575727d0, 1d-4)
+		do i=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
+			end do
+		end do
+		call assert_double_rel("nuDensGL test 2", nuDensityGL(1), 0.5d0*1.54346d0, 1d-4)
+		do i=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
+			end do
+		end do
+		call assert_double_rel("nuDensGL test 3", nuDensityGL(1), 0.5d0*3.49577d0, 2d-4)
+		do i=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
+			end do
+		end do
+		call assert_double_rel("nuDensGL test 4", nuDensityGL(2), 0.5d0*2.d0*4.05629d0, 5d-4)
+		do i=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
+			end do
+		end do
+		call assert_double_rel("nuDensGL test 5", nuDensityGL(3), 0.5d0*3.d0*1.16533d0, 1d-4)
+
+		call assert_double_rel("nuDensEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
+
+		n=ntot
+		allocate(ydot(n))
+		nuFactor=0.d0
+		nuFactor(1:3)=1.d0
+		Ny=25
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, .false.)
+		ydot = 0.d0
+		do m=1, Ny
+			ydot((m-1)*flavNumSqu + 1) = 1.d0/y_arr(m)
+			ydot((m-1)*flavNumSqu + 2) = y_arr(m)/20.d0
+			ydot((m-1)*flavNumSqu + 3) = 1.d0
+		end do
+
+		call dz_o_dx_lin(0.01d0, 1.2d0, 1.d0, ydot, n)
+		call assert_double_rel("dz_o_dx_lin test 1a", ydot(n), -0.120994d0, 1d-5)
+		call assert_double_rel("dz_o_dx_lin test 1b", ydot(n-1), -0.0734285d0, 4d-6)
+		call dz_o_dx_lin(1.1d0, 1.1d0, 1.1d0, ydot, n)
+		call assert_double_rel("dz_o_dx_lin test 2a", ydot(n), -0.0529951d0, 3d-6)
+		call assert_double_rel("dz_o_dx_lin test 2b", ydot(n-1), -0.0953301d0, 3d-6)
+		call dz_o_dx_lin(6.d0, 1.d0, 1.2d0, ydot, n)
+		call assert_double_rel("dz_o_dx_lin test 3a", ydot(n), -0.0950884d0, 2d-6)
+		call assert_double_rel("dz_o_dx_lin test 3b", ydot(n-1), -0.126884393d0, 2d-6)
+		deallocate(ydot)
 	end subroutine do_test_GL
 
 	subroutine do_test_zin

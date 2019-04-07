@@ -698,7 +698,7 @@ enddo                                                   !SG-PF
 			call random_number(x)
 			x=10.d0**(x/6.d0)
 			t1 = nuDensity(x, 1)
-			t1 = nuDensityLin(1)
+			t1 = nuDensityNC(1)
 		end do
 		call toc(timer1, "<reset>")
 
@@ -714,7 +714,7 @@ enddo                                                   !SG-PF
 		do ix=1, 1000000
 			call random_number(x)
 			x=10.d0**(x/6.d0)
-			t1 = nuDensityLin(1)
+			t1 = nuDensityNC(1)
 		end do
 		call toc(timer1, "<linearized>")
 
@@ -1349,20 +1349,10 @@ enddo                                                   !SG-PF
 	end function coll_nue_int_im
 
 	pure function coll_nue_3_ann_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
-		interface
-			pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n2
-				real(dl), intent(in) :: f3, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-			pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n3
-				real(dl), intent(in) :: f2, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-		end interface
+		use ndInterfaces1
+		implicit None
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
@@ -1371,20 +1361,10 @@ enddo                                                   !SG-PF
 	end function coll_nue_3_ann_int_w
 
 	pure function coll_nue_3_sc_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
-		interface
-			pure real(dl) function F_ab_ann(n1, n2, f3, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n2
-				real(dl), intent(in) :: f3, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-			pure real(dl) function F_ab_sc(n1, n3, f2, f4, a, b, i, j)
-				use variables
-				type(cmplxMatNN), intent(in) :: n1, n3
-				real(dl), intent(in) :: f2, f4
-				integer, intent(in) :: a, b, i, j
-			end function
-		end interface
+		use ndInterfaces1
+		implicit None
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
