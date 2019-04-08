@@ -139,6 +139,15 @@ def setParser():
 		action="store_true",
 		help='Plot contours from global fit',
 		)
+	parser_plot.add_argument(
+		'--colorbar',
+		action="store_false",
+		help='Disable plot contours from global fit',
+		)
+	parser_plot.add_argument(
+		'--colorbar_fname',
+		help='Name for the file where to save a separate colorbar',
+		)
 	parser_plot.set_defaults(func=call_plot)
 
 	parser_prepare = subparsers.add_parser(
@@ -393,6 +402,8 @@ def contourplot(xv, yv, values, points,
 		xlim=None, ylim=None,
 		bfx=-1, bfy=-1, bfup=False,
 		lsn_contours=[], lsn_contours_convssq2th=True,
+		colorbar=True,
+		colorbar_fname=None,
 		):
 	try:
 		zv = points.reshape((len(yv), len(xv)))
@@ -401,7 +412,7 @@ def contourplot(xv, yv, values, points,
 			+ "and what you fix, as the shapes of the arrays don't match.\n"
 			+ "x:%s, y:%s, z:%s"%(xv.shape, yv.shape, points.shape))
 		return
-	fig = plt.Figure(figsize=(6,4))
+	fig = plt.figure(figsize=(6,4))
 	cf = plt.contourf(xv, yv, zv,
 		levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'),
 		extend="both")
@@ -414,9 +425,9 @@ def contourplot(xv, yv, values, points,
 		else:
 			plt.plot(data[:,0], data[:,1], '-k')
 	cbar = plt.colorbar(cf)
+	cbar.ax.set_ylabel(r"$N_{\rm eff}$")
 	if bfx>0 and bfy>0:
 		plt.plot(bfx, bfy, color="g", marker=r"$\leftarrow$" if bfup else "*", markersize=10)
-	cbar.ax.set_ylabel(r"$N_{\rm eff}$")
 	if title is not None:
 		plt.title(title, y=1.02)
 	ax=plt.gca()
@@ -433,9 +444,22 @@ def contourplot(xv, yv, values, points,
 		plt.xlim(xlim)
 	if ylim is not None:
 		plt.ylim(ylim)
-	plt.tight_layout(rect=(-0.03, -0.05, 1.05, 1.02))
+	if not colorbar:
+		cbar.remove()
+		plt.draw()
+		plt.tight_layout(rect=(-0.03, -0.05, 1.2, 1.02))
+	else:
+		plt.tight_layout(rect=(-0.03, -0.05, 1.05, 1.02))
 	if fname is not None:
 		plt.savefig(fname)
+	if colorbar_fname is not None:
+		ax.set_visible(False)
+		plt.close()
+		plt.figure(figsize=(6.,1.))
+		cbar = plt.colorbar(cf, orientation='horizontal')
+		cbar.ax.set_xlabel(r"$N_{\rm eff}$")
+		plt.tight_layout(rect=(-0.02, -0.08, 1.02, 3.))
+		plt.savefig(colorbar_fname)
 	plt.close()
 
 
@@ -526,6 +550,8 @@ def call_plot(args, gridContent=None):
 		bfx=args.bestfit_x, bfy=args.bestfit_y, bfup=args.bestfit_upper,
 		lsn_contours=lsn_contours,
 		lsn_contours_convssq2th=lsn_contours_convssq2th,
+		colorbar=args.colorbar,
+		colorbar_fname=args.colorbar_fname if args.colorbar_fname != "" else None,
 		)
 	print("\nDone!\n\n")
 	return

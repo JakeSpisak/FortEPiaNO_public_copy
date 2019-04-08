@@ -32,7 +32,7 @@ def plotAttr(attr, ny, ip, lab, folder, color="k", mar=".", nnu=3, prange=(0, 1e
 			plt.plot(ny + (ip-1)*0.5 - 0.25, ptv, linestyle='none', color=color, marker=mar)
 
 print("3nu")
-fig = plt.Figure(figsize=(6,4))
+fig = plt.figure(figsize=(6,4))
 yran = (3.041, 3.046)
 for ip, prec in enumerate(["lp", "ip", "hp", "mp"]):
 	plt.plot(np.nan, color=colors[ip], marker=".", linestyle='none', label=labels[prec])
@@ -51,7 +51,7 @@ finalizePlot(
 	)
 
 print("\n\n3+1")
-fig = plt.Figure(figsize=(6,4))
+fig = plt.figure(figsize=(6,4))
 yran = (4.02, 4.08)
 for ip, prec in enumerate(["lp", "ip", "hp", "mp"]):
 	plt.plot(np.nan, color=colors[ip], marker=".", linestyle='none', label=labels[prec])
@@ -71,7 +71,7 @@ finalizePlot(
 	)
 
 print("\n\n3+1 xy")
-fig = plt.Figure(figsize=(6,4))
+fig = plt.figure(figsize=(6,4))
 yran = (4.02, 4.08)
 for ix, xin in enumerate([1e-3, 9e-4, 8e-4, 5e-4]):
 	plt.plot(np.nan, color='k', marker=markers[ix], linestyle='none', label=r"$x_{\rm in}$=%s"%xin)
