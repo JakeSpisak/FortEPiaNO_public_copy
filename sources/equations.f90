@@ -656,9 +656,10 @@ module ndEquations
 
 	subroutine finalresults
 		use ndInterfaces1
-		real(dl) :: ndeq, tmp, w, z
-		integer :: ix
 		procedure (nuDensity_integrator), pointer :: nuDensityInt
+		real(dl) :: ndeq, tmp, w, z
+		real(dl), dimension(:), allocatable :: tmpvec
+		integer :: ix, iy
 
 		if (use_gauss_laguerre) then
 			nuDensityInt => nuDensityGL
@@ -666,9 +667,20 @@ module ndEquations
 			nuDensityInt => nuDensityNC
 		end if
 
+		call openFile(9876, trim(outputFolder)//'/rho_final.dat', .true.)
+		allocate(tmpvec(flavorNumber))
+		do iy=1, nY
+			do ix=1, flavorNumber
+				tmpvec(ix)=nuDensMatVecFD(iy)%re(ix, ix)
+			end do
+			write(9876, multidblfmt) nuDensMatVecFD(iy)%y, tmpvec
+		end do
+		close(9876)
+		deallocate(tmpvec)
+
 		w = nuDensVec(ntot-1) + 1.d0
 		z = nuDensVec(ntot) + 1.d0
-		call openFile(9876, trim(outputFolder)//"/resume.dat", .true.)
+		call openFile(9876, trim(outputFolder)//'/resume.dat', .true.)
 		if (save_w_evolution) then
 			write(*,"('final w = ',F11.8)") w
 			write(9876,"('final w = ',F11.8)") w
