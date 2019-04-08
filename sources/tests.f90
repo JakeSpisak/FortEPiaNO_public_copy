@@ -2400,7 +2400,7 @@ program tests
 	end subroutine do_test_damping_factors
 
 	subroutine do_test_GL
-		real(dl), dimension(:), allocatable :: xa, wa, fx1, dx, ya
+		real(dl), dimension(:), allocatable :: xa, wa, wa2, fx1, dx, ya
 		real(dl), dimension(:,:), allocatable :: fx2a, fx2b
 		real(dl) :: inta, intb, tol
 		integer :: nix, nx, ix, iy, i, n, m
@@ -2414,7 +2414,7 @@ program tests
 
 		use_gauss_laguerre = .true.
 		do nx=50, 10, -1
-			call get_GLq_vectors(nx, xa, wa, .false.)
+			call get_GLq_vectors(nx, xa, wa, wa2, .false.)
 
 			allocate(fx1(nx))
 			do ix=1,nx
@@ -2450,7 +2450,7 @@ program tests
 			write(tmparg, "('test GL quadrature 2D on Fermi-Dirac, nx=',I2)") nx
 			call assert_double_rel(trim(tmparg), inta, 1.4829783d0, tol)
 !			print *,nx, inta, intb
-			deallocate(fx2a, fx2b, ya, dx)
+			deallocate(fx2a, fx2b, xa, wa, wa2, ya, dx)
 		end do
 
 		write(*,*) ""
@@ -2466,7 +2466,7 @@ program tests
 		tmparrB(:,:) = 0.d0
 		do nix=1, 9
 			nx = nix*5+5
-			call get_GLq_vectors(nx, xa, wa, .false.)
+			call get_GLq_vectors(nx, xa, wa, wa2, .false.)
 			collArgs%y1 = xa(collArgs%iy)
 			y_arr = loglinspace(y_min, collArgs%y1, y_max, Ny, 10)
 			do ix=1, Ny-1
@@ -2521,7 +2521,7 @@ program tests
 		do nix=3, 9
 			nx = nix*5+5
 			Ny=nx
-			call get_GLq_vectors(Ny, y_arr, w_gl_arr, .false.)
+			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false.)
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 			end do
@@ -2565,7 +2565,7 @@ program tests
 		write(*,*) ""
 		write(*,"(a)") "other applications of Gauss-Laguerre quadrature (13 tests)"
 		Ny=50
-		call get_GLq_vectors(Ny, y_arr, w_gl_arr, .false.)
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false.)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
@@ -2605,7 +2605,7 @@ program tests
 		nuFactor=0.d0
 		nuFactor(1:3)=1.d0
 		Ny=25
-		call get_GLq_vectors(Ny, y_arr, w_gl_arr, .false.)
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false.)
 		ydot = 0.d0
 		do m=1, Ny
 			ydot((m-1)*flavNumSqu + 1) = 1.d0/y_arr(m)

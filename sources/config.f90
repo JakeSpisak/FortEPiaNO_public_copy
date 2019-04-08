@@ -215,8 +215,8 @@ module ndConfig
 		deallocate(diag_el)
 	end subroutine init_matrices
 
-	subroutine get_GLq_vectors(nreal, yv, wv, verb)
-		real(dl), dimension(:), allocatable, intent(out) :: yv, wv
+	subroutine get_GLq_vectors(nreal, yv, wv, wv2, verb)
+		real(dl), dimension(:), allocatable, intent(out) :: yv, wv, wv2
 		integer, intent(in) :: nreal
 		logical, intent(in) :: verb
 		real(dl), dimension(:), allocatable :: tyv, twv
@@ -244,6 +244,11 @@ module ndConfig
 				wv = twv(1:effective_Ny)
 				do iy=1, nreal
 					wv(iy) = wv(iy)*exp(yv(iy))
+				end do
+				if (.not.allocated(wv2)) &
+					allocate(wv2(Ny))
+				do iy=1, Ny
+					wv2(iy) = wv(iy) / yv(iy)**3
 				end do
 				deallocate(tyv, twv)
 				return
@@ -329,7 +334,7 @@ module ndConfig
 			end if
 
 			if (use_gauss_laguerre) &
-				call get_GLq_vectors(Ny, y_arr, w_gl_arr, .true.)
+				call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .true.)
 
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)

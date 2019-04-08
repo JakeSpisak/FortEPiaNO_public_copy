@@ -812,10 +812,10 @@ module ndInteractions
 		fy2_arr = 0.d0
 		do ia=1, Ny
 			do ib=1, Ny
-				fy2_arr(ia, ib) = f(ia, y_arr(ib), obj, F_ab_ann, F_ab_sc)/(y_arr(ia)*y_arr(ib))**3
+				fy2_arr(ia, ib) = f(ia, y_arr(ib), obj, F_ab_ann, F_ab_sc)
 			end do
 		end do
-		integrate_coll_int_GL = integral_GL_2d(Ny, w_gl_arr, w_gl_arr, fy2_arr)
+		integrate_coll_int_GL = integral_GL_2d(Ny, w_gl_arr2, w_gl_arr2, fy2_arr)
 		deallocate(fy2_arr)
 	end function integrate_coll_int_GL
 
