@@ -197,6 +197,11 @@ def setParser():
 		action="store_true",
 		help='enable saving the evolution of the photon temperature z',
 		)
+	parser.add_argument(
+		'--no_GL',
+		action="store_true",
+		help='do not use the Gauss-Laguerre method for integrals and for spacing the y points',
+		)
 	return parser
 
 
@@ -318,6 +323,7 @@ def getIniValues(args):
 	values["save_Neff"] = "T" if args.save_Neff else "F"
 	values["save_nuDens"] = "T" if args.save_nuDens else "F"
 	values["save_z"] = "T" if args.save_z else "F"
+	values["use_GL"] = "F" if args.no_GL else "T"
 	return values
 
 
@@ -346,6 +352,7 @@ Nx = {Nx:}
 x_in = {x_in:}
 x_fin = {x_fin:}
 
+use_gauss_laguerre={use_GL:}
 Ny = {Ny:}
 Nylog = {Nylog:}
 y_min = {y_min:}

@@ -152,6 +152,11 @@ def setParser():
 		help='number of points in x where to save the output',
 		)
 	parser_prepare.add_argument(
+		'--no_GL',
+		action="store_true",
+		help='do not use the Gauss-Laguerre method for integrals and for spacing the y points',
+		)
+	parser_prepare.add_argument(
 		'--Ny',
 		type=int,
 		default=30,
@@ -255,13 +260,6 @@ def setParser():
 		help='resubmit only failed or incomplete runs',
 		)
 	parser_run.add_argument(
-		'-h',
-		'--walltime_hours',
-		type=int,
-		default=3,
-		help='maximum number of hours before killing the job',
-		)
-	parser_run.add_argument(
 		'-r',
 		'--remove_existing',
 		action="store_true",
@@ -280,6 +278,13 @@ def setParser():
 		type=int,
 		default=1000,
 		help='ending index for the runs to submit (if there are a lot of runs)',
+		)
+	parser_run.add_argument(
+		'-w',
+		'--walltime_hours',
+		type=int,
+		default=3,
+		help='maximum number of hours before killing the job',
 		)
 	parser_run.set_defaults(func=call_run)
 
@@ -582,6 +587,8 @@ def call_prepare(args):
 			"--th34=%s"%ssq34,
 			"--ordering=%s"%args.ordering,
 			]
+		if args.no_GL:
+			prep.append("--no_GL")
 		for s in ["save_fd", "save_Neff", "save_nuDens", "save_z"]:
 			if getattr(args, s):
 				prep.append("--%s"%s)
