@@ -159,7 +159,7 @@ def setParser():
 	parser_prepare.add_argument(
 		'--Ny',
 		type=int,
-		default=30,
+		default=20,
 		help='number of momenta',
 		)
 	parser_prepare.add_argument(
@@ -197,7 +197,7 @@ def setParser():
 	parser_prepare.add_argument(
 		'--x_in',
 		type=float,
-		default=5e-4,
+		default=8e-4,
 		help='initial value in x',
 		)
 	parser_prepare.add_argument(
@@ -283,7 +283,7 @@ def setParser():
 		'-w',
 		'--walltime_hours',
 		type=int,
-		default=3,
+		default=2,
 		help='maximum number of hours before killing the job',
 		)
 	parser_run.set_defaults(func=call_run)
