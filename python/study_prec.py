@@ -87,7 +87,7 @@ for iy, nyl in enumerate([2, 3, 4]):
 for ix, xin in enumerate([1e-3, None, 8e-4, 5e-4]):
 	if xin is not None:
 		for ny in range(15,40,5):
-			plotAttr(attr, ny, ip, "Ny=%s %s"%(ny, xin), "grids/GL/OUT/3p1bf_%s_hp_%s/"%(ny, xin),
+			plotAttr(attr, ny, ix, "Ny=%s %s"%(ny, xin), "grids/GL/OUT/3p1bf_%s_hp_%s/"%(ny, xin),
 				nnu=4, prange=yran, color='k', mar=markers[ix])
 finalizePlot(
 	"plots/prec_3p1_xy.pdf",
