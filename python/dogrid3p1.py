@@ -255,6 +255,13 @@ def setParser():
 		help='resubmit only failed or incomplete runs',
 		)
 	parser_run.add_argument(
+		'-h',
+		'--walltime_hours',
+		type=int,
+		default=3,
+		help='maximum number of hours before killing the job',
+		)
+	parser_run.add_argument(
 		'-r',
 		'--remove_existing',
 		action="store_true",
@@ -631,10 +638,11 @@ def call_run(args):
 		if i >= args.first_index and i < args.last_index:
 			current += 1
 			os.system(
-				"clusterlauncher -N %s_%s -n 1 --openmp -q short-seq -w 3:00:00 bin/nuDens.exe %s"%(
-					args.gridname,
-					f.split(os.sep)[-1].replace(".ini", ""),
-					f,
+				"clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q short-seq -w {h:}:00:00 bin/nuDens.exe {ini:}".format(
+					gn=args.gridname,
+					fn=f.split(os.sep)[-1].replace(".ini", ""),
+					h=args.walltime_hours,
+					ini=f,
 					))
 	print("\nTotal number of runs: %s, submitted: %s"%(len(files), current))
 
