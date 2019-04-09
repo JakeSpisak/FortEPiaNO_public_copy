@@ -359,6 +359,53 @@ module ndEquations
 				end do
 				write(units(k), '(*('//dblfmt//'))') x, tmpvec
 			end do
+! ((( PFdS ))) -- beginning
+! 	This is a sketch of what to do. There is an example of what I did in the old code, 
+!       where interX means the corresponding flavour diagonal of the density matrix and Ni is your nY
+			do k=1, flavorNumber
+				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_mass', k, '.dat'
+				call openFile(units(k), trim(fname),firstWrite)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				do iy=1, nY
+					tmpvec_flav(k,iy)=nuDensMatVecFD(iy)%re(k, k)
+				end do
+			end do
+			do k1=1, flavorNumber
+				do iy=1, nY
+					tmpvec_mass(k1,iy)=0.d0
+					do k2=1, flavorNumber
+						! here subroutine to obtain H_eff accounting for matter effects. TO BE CREATED
+						call H_eff(Uef,x,z,y)
+						! sort=1 gives you the eigenvalues (diag_eff_result) from smaller to larger, so Ueff_result is
+						! organized as expected. For smaller Dm41 this needs to be adjusted carefully!!
+						call HEigensystem(flavorNumber, Heff_entry,flavorNumber, diag_eff_result, Ueff_result,flavorNumber, sort)
+						tmpvec_mass(k1,iy)=tmpvec_mass(k1,iy)+Uef(k2,k1)**2*tmpvec_flav(k2,iy)
+					end do
+				enddo
+				write(units(k1), '(*('//dblfmt//'))') x, tmpvec_mass(k1,:)
+			end do
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! EXPLANATION in terms of what I was using in my old code:
+! 		the different routine (diag_H below) is because diag_H works for REAL matrices, and I was setting deltaCP=0
+!
+!           do k1=1,Ni
+!             inter1(k1)=vars(1+k1)
+!             inter2(k1)=vars(1+k1+Ni)
+!             inter3(k1)=vars(1+k1+2*Ni)
+!           enddo
+!           do k1=1,Ni
+!             call H_eff(Uef,x,vars(1),y_int(k1))
+!             call diag_H(Uef,eigint)
+!             fmass1(k1)=Uef(1,1)**2*inter1(k1)+Uef(2,1)**2*inter2(k1)+ &
+!                        Uef(3,1)**2*inter3(k1)
+!             fmass2(k1)=Uef(1,2)**2*inter1(k1)+Uef(2,2)**2*inter2(k1)+ &
+!                        Uef(3,2)**2*inter3(k1)
+!             fmass3(k1)=Uef(1,3)**2*inter1(k1)+Uef(2,3)**2*inter2(k1)+ &
+!                        Uef(3,3)**2*inter3(k1)
+!           enddo
+!
+! ((( PFdS ))) -- end
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
