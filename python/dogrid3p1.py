@@ -563,7 +563,8 @@ def call_plot(args, gridContent=None):
 		lsn_contours=lsn_contours,
 		lsn_contours_convssq2th=lsn_contours_convssq2th,
 		colorbar=args.colorbar,
-		colorbar_fname=args.colorbar_fname if args.colorbar_fname != "" else None,
+		colorbar_fname=os.path.join("grids", args.gridname, "plots", args.colorbar_fname) \
+			if args.colorbar_fname != "" else None,
 		)
 	print("\nDone!\n\n")
 	return
