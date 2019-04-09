@@ -146,6 +146,7 @@ def setParser():
 		)
 	parser_plot.add_argument(
 		'--colorbar_fname',
+		default="",
 		help='Name for the file where to save a separate colorbar',
 		)
 	parser_plot.set_defaults(func=call_plot)
@@ -278,6 +279,12 @@ def setParser():
 		'--local',
 		action="store_true",
 		help='run the jobs locally with os.system',
+		)
+	parser_run.add_argument(
+		'-q',
+		'--queue',
+		default="short-seq",
+		help='select the name of the queue where to submit the runs',
 		)
 	parser_run.add_argument(
 		'-r',
@@ -696,9 +703,10 @@ def call_run(args):
 			if args.local:
 				jobcommand = "bin/nuDens.exe {ini:}".format(ini=f)
 			else:
-				jobcommand = "clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q short-seq -w {h:}:{m:}:00 bin/nuDens.exe {ini:}".format(
+				jobcommand = "clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q {q:} -w {h:}:{m:}:00 bin/nuDens.exe {ini:}".format(
 					gn=args.gridname,
 					fn=f.split(os.sep)[-1].replace(".ini", ""),
+					q=args.queue,
 					h=args.walltime_hours,
 					m=args.walltime_minutes,
 					ini=f,
