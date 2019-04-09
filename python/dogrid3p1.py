@@ -274,6 +274,12 @@ def setParser():
 		help='resubmit only failed or incomplete runs',
 		)
 	parser_run.add_argument(
+		'-l',
+		'--local',
+		action="store_true",
+		help='run the jobs locally with os.system',
+		)
+	parser_run.add_argument(
 		'-r',
 		'--remove_existing',
 		action="store_true",
@@ -687,15 +693,18 @@ def call_run(args):
 	current = 0
 	for i, f in enumerate(sorted(files)):
 		if i >= args.first_index and i < args.last_index:
-			current += 1
-			os.system(
-				"clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q short-seq -w {h:}:{m:}:00 bin/nuDens.exe {ini:}".format(
+			if args.local:
+				jobcommand = "bin/nuDens.exe {ini:}".format(ini=f)
+			else:
+				jobcommand = "clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q short-seq -w {h:}:{m:}:00 bin/nuDens.exe {ini:}".format(
 					gn=args.gridname,
 					fn=f.split(os.sep)[-1].replace(".ini", ""),
 					h=args.walltime_hours,
 					m=args.walltime_minutes,
 					ini=f,
-					))
+					)
+			current += 1
+			os.system(jobcommand)
 	print("\nTotal number of runs: %s, submitted: %s"%(len(files), current))
 
 
