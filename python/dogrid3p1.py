@@ -250,6 +250,11 @@ def setParser():
 		default="NO",
 		help='define the mass ordering for the three active neutrinos'
 		)
+	parser_prepare.add_argument(
+		'--rename',
+		action="store_true",
+		help='rename old to new grid point format',
+		)
 	parser_prepare.set_defaults(func=call_prepare)
 
 	parser_read = subparsers.add_parser(
@@ -294,6 +299,13 @@ def setParser():
 		type=int,
 		default=2,
 		help='maximum number of hours before killing the job',
+		)
+	parser_run.add_argument(
+		'-m',
+		'--walltime_minutes',
+		type=int,
+		default=0,
+		help='maximum number of minutes before killing the job',
 		)
 	parser_run.set_defaults(func=call_run)
 
@@ -594,9 +606,14 @@ def call_prepare(args):
 		ssq14 = Ue4sq
 		ssq24 = Um4sq/(1.-Ue4sq)
 		ssq34 = Ut4sq/(1.-Ue4sq-Um4sq)
+		if args.rename:
+			oldname = "grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
+			newname = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
+			if os.path.exists(oldname):
+				os.rename(oldname, newname)
 		prep = [
-			"grids/%s/ini/%s_%s_%s_%s.ini"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq),
-			"grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq),
+			"grids/%s/ini/%.5e_%.5e_%.5e_%.5e.ini"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq),
+			"grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq),
 			"3+1",
 			"damping",
 			"--dlsoda_rtol=%s"%args.tolerance,
@@ -636,7 +653,7 @@ def call_read(args):
 			+ r"Um4sq=%s "%Um4sq
 			+ r"Ut4sq=%s "%Ut4sq
 			)
-		folder = "grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
+		folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
 		obj = None
 		try:
 			obj = NuDensRun(folder, label=lab, nnu=4, rho=False)
@@ -671,10 +688,11 @@ def call_run(args):
 		if i >= args.first_index and i < args.last_index:
 			current += 1
 			os.system(
-				"clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q short-seq -w {h:}:00:00 bin/nuDens.exe {ini:}".format(
+				"clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q short-seq -w {h:}:{m:}:00 bin/nuDens.exe {ini:}".format(
 					gn=args.gridname,
 					fn=f.split(os.sep)[-1].replace(".ini", ""),
 					h=args.walltime_hours,
+					m=args.walltime_minutes,
 					ini=f,
 					))
 	print("\nTotal number of runs: %s, submitted: %s"%(len(files), current))
