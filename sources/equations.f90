@@ -192,7 +192,7 @@ module ndEquations
 	end function G12_funcFull
 
 	subroutine init_interp_jkyg12
-		real(dl) :: num, den, j, y
+		real(dl) :: num, den, j, y, jmu, ymu
 		real(dl), dimension(:),allocatable :: A, B
 		real(dl), dimension(2) :: g12
 		integer :: ix, nx, iflag
@@ -204,9 +204,11 @@ module ndEquations
 		do ix=1, nx
 			j = J_funcFull(interp_xozvec(ix))
 			y = Y_funcFull(interp_xozvec(ix))
+			jmu = J_funcFull(interp_xozvec(ix)*m_mu_o_m_e)
+			ymu = Y_funcFull(interp_xozvec(ix)*m_mu_o_m_e)
 			g12 = G12_funcFull(interp_xozvec(ix))
-			num= interp_xozvec(ix) * j + g12(1)
-			den= interp_xozvec(ix)**2 * j + y + PISQ/7.5d0 + g12(2)
+			num= interp_xozvec(ix)*(j+jmu) + g12(1)
+			den= interp_xozvec(ix)**2*(j+jmu) + y+ymu + PISQ/7.5d0 + g12(2)
 			A(ix) = num / den
 			B(ix) = 1./(2.d0*PISQ*den)
 		end do
@@ -226,7 +228,7 @@ module ndEquations
 		call dzodx_B_interp%evaluate(o,0,dzodxcoef_interp_func(2),iflag)
 	end function dzodxcoef_interp_func
 
-	subroutine dz_o_dx_lin(x, w, z, ydot, n)
+	subroutine dz_o_dx(x, w, z, ydot, n)
 		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		!Newton-Cotes integral without need of interpolation
 		real(dl), intent(in) :: w, x, z
@@ -262,9 +264,9 @@ module ndEquations
 		ydot(n-1) = coeff_dw_dx * tmp / w**3 / tot_factor_active_nu
 		coeffs = dzodxcoef_interp_func(x/z)
 		ydot(n) = coeffs(1) - coeffs(2) * tmp / z**3
-	end subroutine dz_o_dx_lin
+	end subroutine dz_o_dx
 
-	subroutine dz_o_dx_eq_lin(n, x, vars, ydot)
+	subroutine dz_o_dx_eq(n, x, vars, ydot)
 		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		! at equilibrium (i.e. no contribution from neutrino distortions), needed for initial z
 		integer, intent(in) :: n
@@ -285,7 +287,7 @@ module ndEquations
 		den= xoz**2 * j + y + PISQ/7.5d0 + g12(2)
 
 		ydot(n) = num/den
-	end subroutine dz_o_dx_eq_lin
+	end subroutine dz_o_dx_eq
 
 	subroutine zin_solver
 		integer :: n
@@ -318,7 +320,7 @@ module ndEquations
 
 		cvec(n) = 0.d0
 
-		call dlsoda(dz_o_dx_eq_lin,n,cvec,xvh,x_in,&
+		call dlsoda(dz_o_dx_eq,n,cvec,xvh,x_in,&
 					itol,rtol,atol,itask,istate, &
 					iopt,rwork,lrw,iwork,liw,jdum,jt)
 
@@ -712,7 +714,7 @@ module ndEquations
 		deallocate(tmpvec)
 		!$omp end parallel
 
-		call dz_o_dx_lin(x, w, z, ydot, ntot)
+		call dz_o_dx(x, w, z, ydot, ntot)
 
 		call densMat_2_vec(nuDensVec)
 	end subroutine derivatives

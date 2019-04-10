@@ -454,7 +454,7 @@ enddo                                                   !SG-PF
 		integrate_dRhoNu = params%evaluate(y)
 	end function integrate_dRhoNu
 
-	subroutine dz_o_dx(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
+	subroutine dz_o_dx_old(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		real(dl), intent(in) :: x,z
 		integer, intent(in) :: n
 		real(dl), dimension(n), intent(inout) :: ydot
@@ -481,7 +481,7 @@ enddo                                                   !SG-PF
 		dzodx = coeffs(1) - coeffs(2)/ z**3 * tmp
 
 		ydot(n)=dzodx
-	end subroutine dz_o_dx
+	end subroutine dz_o_dx_old
 
 	subroutine test_dzodx_speed
 		real(dl), dimension(:), allocatable :: fd_vec, fd_x
@@ -512,8 +512,8 @@ enddo                                                   !SG-PF
 			x=(x_fin-x_in)*x + x_in
 			z=0.4d0*z + z_in
 			w=0.4d0*w + z_in
-			call dz_o_dx(x, z, ydot, n)
-			call dz_o_dx_lin(x, w, z, ydot, n)
+			call dz_o_dx_old(x, z, ydot, n)
+			call dz_o_dx(x, w, z, ydot, n)
 		end do
 		call toc(timer1, "<reset>")
 
@@ -523,7 +523,7 @@ enddo                                                   !SG-PF
 			call random_number(z)
 			x=(x_fin-x_in)*x + x_in
 			z=0.4d0*z + z_in
-			call dz_o_dx(x, z, ydot, n)
+			call dz_o_dx_old(x, z, ydot, n)
 		end do
 		call toc(timer1, "<rombint>")
 
@@ -535,7 +535,7 @@ enddo                                                   !SG-PF
 			x=(x_fin-x_in)*x + x_in
 			z=0.4d0*z + z_in
 			w=0.4d0*w + z_in
-			call dz_o_dx_lin(x, w, z, ydot, n)
+			call dz_o_dx(x, w, z, ydot, n)
 		end do
 		call toc(timer1, "<linearized>")
 

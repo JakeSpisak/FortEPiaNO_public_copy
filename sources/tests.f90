@@ -556,22 +556,22 @@ program tests
 		end do
 		write(*,*) ""
 		write(*,"(a)") "dz/dx functions (6 tests)"
-		call dz_o_dx(0.01d0, 1.d0, ydot, n)
+		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 1", ydot(n), -0.1751102d0, 4d-6)
-		call dz_o_dx(1.1d0, 1.1d0, ydot, n)
+		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2", ydot(n), -0.0946571d0, 5d-6)
-		call dz_o_dx(6.d0, 1.2d0, ydot, n)
+		call dz_o_dx_old(6.d0, 1.2d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 4d-6)
 
-		call dz_o_dx_lin(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 1a", ydot(n), -0.1751102d0, 4d-6)
-		call assert_double_rel("dz_o_dx_lin test 1b", ydot(n-1), -0.10615d0, 4d-6)
-		call dz_o_dx_lin(1.1d0, 1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 2a", ydot(n), -0.0946571d0, 3d-6)
-		call assert_double_rel("dz_o_dx_lin test 2b", ydot(n-1), -0.137812d0, 3d-6)
-		call dz_o_dx_lin(6.d0, 1.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 3a", ydot(n), -0.15262978d0, 2d-6)
-		call assert_double_rel("dz_o_dx_lin test 3b", ydot(n-1), -0.183428d0, 2d-6)
+		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
+		call assert_double_rel("dz_o_dx test 1a", ydot(n), -0.1751102d0, 4d-6)
+		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), -0.10615d0, 4d-6)
+		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
+		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0946571d0, 3d-6)
+		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.137812d0, 3d-6)
+		call dz_o_dx(6.d0, 1.d0, 1.2d0, ydot, n)
+		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.15262978d0, 2d-6)
+		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.183428d0, 2d-6)
 		deallocate(ydot)
 	end subroutine do_tests_dzodx
 
@@ -2613,15 +2613,15 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 
-		call dz_o_dx_lin(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 1a", ydot(n), -0.120994d0, 1d-5)
-		call assert_double_rel("dz_o_dx_lin test 1b", ydot(n-1), -0.0734285d0, 4d-6)
-		call dz_o_dx_lin(1.1d0, 1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 2a", ydot(n), -0.0529951d0, 3d-6)
-		call assert_double_rel("dz_o_dx_lin test 2b", ydot(n-1), -0.0953301d0, 3d-6)
-		call dz_o_dx_lin(6.d0, 1.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx_lin test 3a", ydot(n), -0.0950884d0, 2d-6)
-		call assert_double_rel("dz_o_dx_lin test 3b", ydot(n-1), -0.126884393d0, 2d-6)
+		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
+		call assert_double_rel("dz_o_dx test 1a", ydot(n), -0.120994d0, 1d-5)
+		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), -0.0734285d0, 4d-6)
+		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
+		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0529951d0, 3d-6)
+		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.0953301d0, 3d-6)
+		call dz_o_dx(6.d0, 1.d0, 1.2d0, ydot, n)
+		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.0950884d0, 2d-6)
+		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.126884393d0, 2d-6)
 		deallocate(ydot)
 	end subroutine do_test_GL
 
