@@ -123,6 +123,9 @@ class NuDensRun():
 		self.rho = np.asarray([
 			[[None, None] for i in range(nnu)] for j in range(nnu)
 			])
+		self.rhoM = np.asarray([
+			[[None, None] for i in range(nnu)] for j in range(nnu)
+			])
 		try:
 			with open("%s/resume.dat"%folder) as _f:
 				self.resume = _f.readlines()
@@ -174,16 +177,40 @@ class NuDensRun():
 						except OSError:
 							self.rho[i, j, 1] = np.nan
 							rho = False
+				try:
+					self.rhoM[i, i, 0] = np.loadtxt(
+						"%s/nuDens_mass%d.dat"%(folder, i+1))
+				except OSError:
+					self.rhoM[i, i, 0] = np.nan
+					rho = False
+				if full:
+					for j in range(i+1, self.nnu):
+						try:
+							self.rhoM[i, j, 0] = np.loadtxt(
+								"%s/nuDens_mass_nd_%d%d_re.dat"%(folder, i+1, j+1))
+						except OSError:
+							self.rhoM[i, j, 0] = np.nan
+							rho = False
+						try:
+							self.rhoM[i, j, 1] = np.loadtxt(
+								"%s/nuDens_mass_nd_%d%d_im.dat"%(folder, i+1, j+1))
+						except OSError:
+							self.rhoM[i, j, 1] = np.nan
+							rho = False
 		self.printTableLine()
 		if rho and plots:
 			self.doAllPlots()
 
-	def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False):
+	def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False, mass=False):
+		if mass:
+			rho = self.rhoM
+		else:
+			rho = self.rho
 		xv = []
 		yv = []
 		prevy = 0
-		for i, x in enumerate(self.rho[i1, i2, ri][:, 0]):
-			fy = interp1d(self.yv, self.rho[i1, i2, ri][i, 1:])
+		for i, x in enumerate(rho[i1, i2, ri][:, 0]):
+			fy = interp1d(self.yv, rho[i1, i2, ri][i, 1:])
 			cy = fy(y)
 			if cy != prevy:
 				prevy = cy
@@ -193,12 +220,16 @@ class NuDensRun():
 		yv.append(cy)
 		return xv, yv
 
-	def interpolateRhoIJ_x(self, i1, i2, x, ri=0,y2=False):
+	def interpolateRhoIJ_x(self, i1, i2, x, ri=0, y2=False, mass=False):
+		if mass:
+			rho = self.rhoM
+		else:
+			rho = self.rho
 		ov = []
 		for i, y in enumerate(self.yv):
 			fx = interp1d(
-				self.rho[i1, i2, ri][:, 0],
-				self.rho[i1, i2, ri][:, i] * (y**2 if y2 else 1.))
+				rho[i1, i2, ri][:, 0],
+				rho[i1, i2, ri][:, i] * (y**2 if y2 else 1.))
 			ov.append(fx(x))
 		return self.yv, ov
 
@@ -265,43 +296,55 @@ class NuDensRun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$z-z_{\rm ref}$")
 
-	def plotRhoDiag(self, inu, iy, ls, lc="k"):
+	def plotRhoDiag(self, inu, iy, ls, lc="k", mass=False):
+		if mass:
+			rho = self.rhoM
+		else:
+			rho = self.rho
 		plt.plot(
-			*stripRepeated(self.rho[inu, inu, 0], 0, iy),
+			*stripRepeated(rho[inu, inu, 0], 0, iy),
 			label="%s i=%d"%(self.label, inu+1), ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho_{ii}$")
 
-	def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True):
+	def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True, mass=False):
 		if not self.full:
 			print("no offdiagonal loaded")
 			return
+		if mass:
+			rho = self.rhoM
+		else:
+			rho = self.rho
 		plt.plot(
-			*stripRepeated(self.rho[i1, i2, 0], 0, iy),
+			*stripRepeated(rho[i1, i2, 0], 0, iy),
 			ls="-", c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1)
 			)
 		if im:
 			plt.plot(
-				*stripRepeated(self.rho[i1, i2, 1], 0, iy),
+				*stripRepeated(rho[i1, i2, 1], 0, iy),
 				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1)
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho_{ij}$")
 
-	def plotdRhoOffDiag(self, i1, i2, iy, lc="k", im=True):
+	def plotdRhoOffDiag(self, i1, i2, iy, lc="k", im=True, mass=False):
 		if not self.full:
 			print("no offdiagonal loaded")
 			return
-		dijrex, dijrey = stripRepeated(self.rho[i1, i2, 0], 0, iy)
+		if mass:
+			rho = self.rhoM
+		else:
+			rho = self.rho
+		dijrex, dijrey = stripRepeated(rho[i1, i2, 0], 0, iy)
 		plt.plot(
 			dijrex, np.gradient(dijrey, dijrex),
 			ls="-", c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1)
 			)
 		if im:
-			dijimx, dijimy = stripRepeated(self.rho[i1, i2, 1], 0, iy)
+			dijimx, dijimy = stripRepeated(rho[i1, i2, 1], 0, iy)
 			plt.plot(
 				dijimx, np.gradient(dijimy, dijimx),
 				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1)
@@ -310,14 +353,18 @@ class NuDensRun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$d\rho_{ij}/dt$")
 
-	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k", y2=False, lab=None):
+	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k", y2=False, lab=None, mass=False):
+		if mass:
+			rho = self.rhoM
+		else:
+			rho = self.rho
 		if iy is None:
 			iy = ix
 		if ri not in [0, 1]:
 			ri = 0
 		label = "%s ij=%d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im") \
 			if lab is None else lab
-		fyv = self.yv**2*self.rho[ix, iy, ri][-1, 1:] if y2 else self.rho[ix, iy, ri][-1, 1:]
+		fyv = self.yv**2*rho[ix, iy, ri][-1, 1:] if y2 else rho[ix, iy, ri][-1, 1:]
 		plt.plot(
 			self.yv, fyv,
 			ls=ls, c=lc,
@@ -326,21 +373,21 @@ class NuDensRun():
 		plt.xlabel("$y$")
 		plt.ylabel(r"$%s\rho_{ij}^{\rm fin}(y)$"%("y^2" if y2 else ""))
 
-	def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k", y2=False):
+	def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k", y2=False, mass=False):
 		if i2 is None:
 			i2 = i1
 		if ri not in [0, 1]:
 			ri = 0
 		plt.plot(
-			*self.interpolateRhoIJ_x(i1, i2, x, ri, y2=y2),
+			*self.interpolateRhoIJ_x(i1, i2, x, ri, y2=y2, mass=mass),
 			ls=ls, c=lc,
 			label="%s ij=%d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x)
 			)
 		plt.xlabel("$y$")
 		plt.ylabel(r"$%s\rho_{ij}(y)$"%("y^2" if y2 else ""))
 
-	def plotRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False):
-		x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0)
+	def plotRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False, mass=False):
+		x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
 		label = lab if lab is not None else "%s i=%d"%(self.label, inu+1)
 		plt.plot(
 			x, np.asarray(yv) * (y**2 if y2 else 1.),
@@ -350,12 +397,12 @@ class NuDensRun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$%s\rho_{ii}$"%("y^2" if y2 else ""))
 
-	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None):
+	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
 		if not self.full:
 			print("no offdiagonal loaded")
 			return
 		plt.plot(
-			*self.interpolateRhoIJ(i1, i2, y, ri=0),
+			*self.interpolateRhoIJ(i1, i2, y, ri=0, mass=mass),
 			ls=ls, c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1) if lab is None else lab
 			)
 		if im:
@@ -367,11 +414,11 @@ class NuDensRun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho_{ij}$")
 
-	def plotdRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None):
+	def plotdRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
 		if not self.full:
 			print("no offdiagonal loaded")
 			return
-		dijrex, dijrey = self.interpolateRhoIJ(i1, i2, y, ri=0)
+		dijrex, dijrey = self.interpolateRhoIJ(i1, i2, y, ri=0, mass=mass)
 		try:
 			plt.plot(
 				dijrex, np.gradient(dijrey, dijrex),
@@ -380,7 +427,7 @@ class NuDensRun():
 		except IndexError:
 			pass
 		if im:
-			dijimx, dijimy = self.interpolateRhoIJ(i1, i2, y, ri=1)
+			dijimx, dijimy = self.interpolateRhoIJ(i1, i2, y, ri=1, mass=mass)
 			try:
 				plt.plot(
 					dijimx, np.gradient(dijimy, dijimx),
@@ -440,9 +487,27 @@ class NuDensRun():
 			)
 
 		for i in range(self.nnu):
+			self.plotRhoDiagY(i, yref, styles[i], lc=colors[i], mass=True)
+		finalizePlot(
+			"%s/rho_mass_diag.pdf"%self.folder,
+			xlab="$x$",
+			ylab=r"$\rho$",
+			xscale="log",
+			yscale="log",
+			)
+
+		for i in range(self.nnu):
 			self.plotRhoFin(i, ls=styles[i], lc=colors[i])
 		finalizePlot(
 			"%s/rhofin_diag.pdf"%self.folder,
+			xscale="linear",
+			yscale="log",
+			)
+
+		for i in range(self.nnu):
+			self.plotRhoFin(i, ls=styles[i], lc=colors[i], mass=True)
+		finalizePlot(
+			"%s/rhofin_mass_diag.pdf"%self.folder,
 			xscale="linear",
 			yscale="log",
 			)
@@ -454,7 +519,6 @@ class NuDensRun():
 			finalizePlot(
 				"%s/rho_offdiag.pdf"%self.folder,
 				)
-
 			for i in range(self.nnu):
 				for j in range(i+1, self.nnu):
 					self.plotdRhoOffDiagY(i, j, yref, lc=colors[2*i+j-1])
@@ -462,12 +526,29 @@ class NuDensRun():
 				"%s/drho_offdiag.pdf"%self.folder,
 				)
 
-	def integrateRho_yn(self, inu, n, ix=-1, show=False):
+			for i in range(self.nnu):
+				for j in range(i+1, self.nnu):
+					self.plotRhoOffDiagY(i, j, yref, lc=colors[2*i+j-1], mass=True)
+			finalizePlot(
+				"%s/rho_mass_offdiag.pdf"%self.folder,
+				)
+			for i in range(self.nnu):
+				for j in range(i+1, self.nnu):
+					self.plotdRhoOffDiagY(i, j, yref, lc=colors[2*i+j-1], mass=True)
+			finalizePlot(
+				"%s/drho_mass_offdiag.pdf"%self.folder,
+				)
+
+	def integrateRho_yn(self, inu, n, ix=-1, show=False, mass=False):
 		"""Compute the integral
 		Int_0^Inf dy y^n f(y)/Pi^2
 		for the requested eigenstate at the given x
 		"""
-		fy = interp1d(self.yv, self.rho[inu, inu, 0][ix, 1:]*(np.exp(self.yv)+1))
+		if mass:
+			rho = self.rhoM
+		else:
+			rho = self.rho
+		fy = interp1d(self.yv, rho[inu, inu, 0][ix, 1:]*(np.exp(self.yv)+1))
 		res = quad(lambda y: y**n * fy(y)/(np.exp(y)+1), 0.01, 20)
 		if show:
 			print(res)

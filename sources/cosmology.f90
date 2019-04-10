@@ -28,24 +28,25 @@ module ndCosmology
 		photonDensity = PISQD15 * z**4
 	end function photonDensity
 
-	function integr_rho_e(vec,y)
+	function integr_rho_e(x, z, dme2, y)
 		real(dl) :: integr_rho_e, Emk
-		real(dl), intent(in) :: y
-		real(dl), dimension(3), intent(in) :: vec
-		Emk = Ebare_i_dme(y, vec(1), vec(3))
-		integr_rho_e = y*y*Emk * fermiDirac(Emk/vec(2))
+		real(dl), intent(in) :: x, z, dme2, y
+		Emk = Ebare_i_dme(y, x, dme2)
+		integr_rho_e = Emk * fermiDirac(Emk/z)
 	end function integr_rho_e
 
-	function electronDensityFull(x,z)!electron + positron!
-		real(dl) :: electronDensityFull
+	function electronDensityFull(x, z)!electron + positron!
+		real(dl) :: electronDensityFull, dme2
 		real(dl), intent(in) :: x,z
-		real(dl), dimension(3) :: vec
+		integer :: i
 
-		vec(1)=x
-		vec(2)=z
-		vec(3)=dme2_electronFull(x, 0.d0, z)
+		dme2 = dme2_electronFull(x, 0.d0, z)
 
-		electronDensityFull = rombint_vec(vec, integr_rho_e, fe_l, fe_u, toler_ed, maxiter)
+		electronDensityFull = 0.d0
+		do i=1, N_opt_y
+			electronDensityFull = electronDensityFull &
+				+ opt_y_w(i)*integr_rho_e(x, z, dme2, opt_y(i))
+		end do
 		electronDensityFull = electronDensityFull / PISQD2 !the factor is given by g = 2(elicity) * 2(e+e-)
 	end function electronDensityFull
 
@@ -56,27 +57,24 @@ module ndCosmology
 		call elDens%evaluate(x,z,electronDensity)
 	end function electronDensity
 
-	function integr_rho_mu(vec,y)
+	function integr_rho_mu(x, z, y)
 		real(dl) :: integr_rho_mu, Emk
-		real(dl), intent(in) :: y
-		real(dl), dimension(3), intent(in) :: vec
-		Emk = E_k_m(y, vec(1)*m_mu_o_m_e)
-		integr_rho_mu = y*y*Emk * fermiDirac(Emk/vec(2))
+		real(dl), intent(in) :: x, z, y
+		Emk = E_k_m(y, x*m_mu_o_m_e)
+		integr_rho_mu = Emk * fermiDirac(Emk/z)
 	end function integr_rho_mu
 
 	function muonDensityFull(x,z)!electron + positron!
 		real(dl) :: muonDensityFull
 		real(dl), intent(in) :: x,z
-		real(dl), dimension(3) :: vec
+		integer :: i
 
-		vec(1)=x
-		vec(2)=z
-		vec(3)=0.
-
-		if (x.gt.0.5d0) then
-			muonDensityFull = 0.d0
-		else
-			muonDensityFull = rombint_vec(vec, integr_rho_mu, fe_l, fe_u, toler_ed, maxiter)
+		muonDensityFull = 0.d0
+		if (x .lt. x_muon_cut) then
+			do i=1, N_opt_y
+				muonDensityFull = muonDensityFull &
+					+ opt_y_w(i)*integr_rho_mu(x, z, opt_y(i))
+			end do
 			muonDensityFull = muonDensityFull / PISQD2
 		end if
 	end function muonDensityFull

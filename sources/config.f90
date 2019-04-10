@@ -215,53 +215,12 @@ module ndConfig
 		deallocate(diag_el)
 	end subroutine init_matrices
 
-	subroutine get_GLq_vectors(nreal, yv, wv, wv2, verb)
-		real(dl), dimension(:), allocatable, intent(out) :: yv, wv, wv2
-		integer, intent(in) :: nreal
-		logical, intent(in) :: verb
-		real(dl), dimension(:), allocatable :: tyv, twv
-		integer :: ix, iy, effective_Ny
-		character(len=300) :: tmpstr
-
-		do ix=1, 350
-			call gaulag(tyv, twv, ix, 3.d0)
-			do iy=1, ix
-				if (tyv(iy).gt.20.d0)then
-					effective_Ny = iy-1
-					exit
-				end if
-			end do
-			if (nreal .eq. effective_Ny) then
-				if (verb) then
-					write(tmpstr, "(' [config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I2,' roots')") ix, effective_Ny
-					call addToLog(trim(tmpstr))
-				end if
-				if (.not. allocated(yv)) &
-					allocate(yv(effective_Ny))
-				if (.not. allocated(wv)) &
-					allocate(wv(effective_Ny))
-				yv = tyv(1:effective_Ny)
-				wv = twv(1:effective_Ny)
-				do iy=1, nreal
-					wv(iy) = wv(iy)*exp(yv(iy))
-				end do
-				if (.not.allocated(wv2)) &
-					allocate(wv2(Ny))
-				do iy=1, Ny
-					wv2(iy) = wv(iy) / yv(iy)**3
-				end do
-				deallocate(tyv, twv)
-				return
-			end if
-			deallocate(tyv, twv)
-		end do
-	end subroutine get_GLq_vectors
-
 	subroutine initConfig()
 		use omp_lib
 		character(len=300) :: tmparg, tmpstr
 		integer :: ix, iy, num_threads
 		logical :: file_exist
+		real(dl), dimension(:), allocatable :: fake
 
 		if (verbose>0) write(*,*) '[config] init configuration'
 		num_args = command_argument_count()
@@ -295,9 +254,6 @@ module ndConfig
 			Nprintderivs = read_ini_real('Nprintderivs', Nprintderivs)
 			checkpoint = read_ini_logical('checkpoint', .true.)
 			maxiter = read_ini_int('maxiter', 100)
-			toler = read_ini_real('tolerance', 1.d-5)
-			toler_dme2 = read_ini_real('tolerance_dme2', 1.d-5)
-			toler_ed = read_ini_real('tolerance_ed', 1.d-4)
 			toler_jkyg = read_ini_real('tolerance_jkyg', 1.d-7)
 			dlsoda_atol = read_ini_real('dlsoda_atol', 1.d-6)
 			dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-6)
@@ -333,15 +289,19 @@ module ndConfig
 				y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
 			end if
 
-			if (use_gauss_laguerre) &
-				call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .true.)
+			if (use_gauss_laguerre) then
+				call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .true., 3, opt_y_cut)
+			else
+				write(tmpstr,"('[config] Using Ny=',I3,' and Nylog=',I3)") Ny, Nylog
+				call addToLog(trim(tmpstr))
+			end if
+			call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
+			call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 			end do
 			dy_arr(Ny) = 0.d0
-
-			call zin_solver
 
 			!read mixing parameters and create matrices
 			giveSinSq = read_ini_logical('givesinsq', .true.)
@@ -357,6 +317,17 @@ module ndConfig
 			save_nuDens_evolution = read_ini_logical("save_nuDens_evolution",.true.)
 			save_z_evolution = read_ini_logical("save_z_evolution",.true.)
 			save_w_evolution = read_ini_logical("save_w_evolution",.true.)
+
+			z_in=1.d0
+			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
+			interp_xvec = logspace(interp_logx_in, logx_fin, interp_nx)
+			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
+			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
+
+			call init_interp_jkyg12
+			call init_interp_dme2_e
+			call init_interp_ElDensity
+			call zin_solver
 
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
@@ -432,14 +403,7 @@ module ndConfig
 			call setMixingMatrix()
 			call setMassMatrix()
 			!create other matrices
-			write(tmpstr,"('[config] Using Ny=',I3,' and Nylog=',I3)") Ny, Nylog
-			call addToLog(trim(tmpstr))
 			call init_matrices
-
-			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
-			interp_xvec = logspace(logx_in, logx_fin, interp_nx)
-			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
 		else
 			call criticalError("You are not passing a configuration file...are you sure?")
 		end if

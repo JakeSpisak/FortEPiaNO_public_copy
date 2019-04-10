@@ -19,7 +19,7 @@ module ndInteractions
 		real(8) :: timer1
 
 		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
-		allocate(dme_vec(interp_nx,interp_nz))
+		allocate(dme_vec(interp_nx, interp_nz))
 		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
 			do iz=1, interp_nz
@@ -78,16 +78,13 @@ module ndInteractions
 		fermiDirac = 1.d0/(exp(x) + 1.d0)
 	end function fermiDirac
 
-	pure function dme2_e_i1(vec, k)
+	pure function dme2_e_i1(x, z, y)
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12 first integral
 		real(dl) :: dme2_e_i1
-		real(dl), intent(in) :: k
-		real(dl), dimension(3), intent(in) :: vec
-		real(dl) :: m, T, Ekm
-		m = vec(1)
-		T = vec(2)
-		Ekm = E_k_m(k, m)
-		dme2_e_i1 = k*k/Ekm * fermiDirac(Ekm/T)
+		real(dl), intent(in) :: x, z, y
+		real(dl) :: Ekm
+		Ekm = E_k_m(y, x)
+		dme2_e_i1 = 1.d0/Ekm * fermiDirac(Ekm/z)
 	end function dme2_e_i1
 	
 	function dme2_electronFull(x, y, z)
@@ -95,13 +92,13 @@ module ndInteractions
 		real(dl) :: dme2_electronFull, tmp
 		real(dl), intent(in) :: x, y, z
 		real(dl), dimension(3) :: vec
+		integer :: i
 
 		if (dme2_temperature_corr) then
-			vec(1) = x
-			vec(2) = z
-			vec(3) = y !not used
-
-			tmp = rombint_vec(vec, dme2_e_i1, fe_l, fe_u, toler_dme2, maxiter)
+			tmp = 0.d0
+			do i=1, N_opt_y
+				tmp = tmp + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))
+			end do
 			dme2_electronFull = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
 		else
 			dme2_electronFull = 0.d0

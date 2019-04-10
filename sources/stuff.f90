@@ -454,7 +454,7 @@ enddo                                                   !SG-PF
 		integrate_dRhoNu = params%evaluate(y)
 	end function integrate_dRhoNu
 
-	subroutine dz_o_dx(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
+	subroutine dz_o_dx_old(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		real(dl), intent(in) :: x,z
 		integer, intent(in) :: n
 		real(dl), dimension(n), intent(inout) :: ydot
@@ -476,12 +476,12 @@ enddo                                                   !SG-PF
 			der(m) = y_arr(m)**3 * der(m) * fermiDirac(y_arr(m))
 		end do
 		call params%initialize(Ny, y_arr, der)
-		tmp = rombint_spli(params, integrate_dRhoNu, y_min, y_max, toler, maxiter)
+		tmp = rombint_spli(params, integrate_dRhoNu, y_min, y_max, 1.d-3, maxiter)
 
 		dzodx = coeffs(1) - coeffs(2)/ z**3 * tmp
 
 		ydot(n)=dzodx
-	end subroutine dz_o_dx
+	end subroutine dz_o_dx_old
 
 	subroutine test_dzodx_speed
 		real(dl), dimension(:), allocatable :: fd_vec, fd_x
@@ -512,8 +512,8 @@ enddo                                                   !SG-PF
 			x=(x_fin-x_in)*x + x_in
 			z=0.4d0*z + z_in
 			w=0.4d0*w + z_in
-			call dz_o_dx(x, z, ydot, n)
-			call dz_o_dx_lin(x, w, z, ydot, n)
+			call dz_o_dx_old(x, z, ydot, n)
+			call dz_o_dx(x, w, z, ydot, n)
 		end do
 		call toc(timer1, "<reset>")
 
@@ -523,7 +523,7 @@ enddo                                                   !SG-PF
 			call random_number(z)
 			x=(x_fin-x_in)*x + x_in
 			z=0.4d0*z + z_in
-			call dz_o_dx(x, z, ydot, n)
+			call dz_o_dx_old(x, z, ydot, n)
 		end do
 		call toc(timer1, "<rombint>")
 
@@ -535,7 +535,7 @@ enddo                                                   !SG-PF
 			x=(x_fin-x_in)*x + x_in
 			z=0.4d0*z + z_in
 			w=0.4d0*w + z_in
-			call dz_o_dx_lin(x, w, z, ydot, n)
+			call dz_o_dx(x, w, z, ydot, n)
 		end do
 		call toc(timer1, "<linearized>")
 
@@ -543,6 +543,65 @@ enddo                                                   !SG-PF
 	end subroutine test_dzodx_speed
 
 	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+	function rombint_vec(obj,f,a,b,tol, maxit)
+		use Precision
+		!  Rombint returns the integral from a to b of using Romberg integration.
+		!  The method converges provided that f(x) is continuous in (a,b).
+		!  f must be real(dl) and must be declared external in the calling
+		!  routine.  tol indicates the desired relative accuracy in the integral.
+		implicit none
+		integer, intent(in), optional :: maxit
+		integer :: MAXITER=20
+		integer, parameter :: MAXJ=5
+		dimension g(MAXJ+1)
+		real(dl), dimension(:), intent(in) :: obj
+		real(dl) f
+		external f
+		real(dl) :: rombint_vec
+		real(dl), intent(in) :: a,b,tol
+		integer :: nint, i, k, jmax, j
+		real(dl) :: h, gmax, error, g, g0, g1, fourj
+
+		if (present(maxit)) then
+			MaxIter = maxit
+		end if
+		h=0.5d0*(b-a)
+		gmax=h*(f(obj,a)+f(obj,b))
+		g(1)=gmax
+		nint=1
+		error=1.0d20
+		i=0
+10      i=i+1
+		if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
+			go to 40
+		!  Calculate next trapezoidal rule approximation to integral.
+		g0=0._dl
+		do 20 k=1,nint
+			g0=g0+f(obj,a+(k+k-1)*h)
+20      continue
+		g0=0.5d0*g(1)+h*g0
+		h=0.5d0*h
+		nint=nint+nint
+		jmax=min(i,MAXJ)
+		fourj=1._dl
+		do 30 j=1,jmax
+			!  Use Richardson extrapolation.
+			fourj=4._dl*fourj
+			g1=g0+(g0-g(j))/(fourj-1._dl)
+			g(j)=g0
+			g0=g1
+30      continue
+		if (abs(g0).gt.tol) then
+			error=1._dl-gmax/g0
+		else
+			error=gmax
+		end if
+		gmax=g0
+		g(jmax+1)=g0
+		go to 10
+40      rombint_vec=g0
+	end function rombint_vec
+
 	function rombint_nD(obj,f,a,b,tol, maxit)
 			use Precision
 	!  Rombint returns the integral from a to b of using Romberg integration.

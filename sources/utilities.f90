@@ -318,65 +318,6 @@ module utilities
 40      rombint_re=g0
 	end function rombint_re
 
-	function rombint_vec(obj,f,a,b,tol, maxit)
-		use Precision
-		!  Rombint returns the integral from a to b of using Romberg integration.
-		!  The method converges provided that f(x) is continuous in (a,b).
-		!  f must be real(dl) and must be declared external in the calling
-		!  routine.  tol indicates the desired relative accuracy in the integral.
-		implicit none
-		integer, intent(in), optional :: maxit
-		integer :: MAXITER=20
-		integer, parameter :: MAXJ=5
-		dimension g(MAXJ+1)
-		real(dl), dimension(:), intent(in) :: obj
-		real(dl) f
-		external f
-		real(dl) :: rombint_vec
-		real(dl), intent(in) :: a,b,tol
-		integer :: nint, i, k, jmax, j
-		real(dl) :: h, gmax, error, g, g0, g1, fourj
-
-		if (present(maxit)) then
-			MaxIter = maxit
-		end if
-		h=0.5d0*(b-a)
-		gmax=h*(f(obj,a)+f(obj,b))
-		g(1)=gmax
-		nint=1
-		error=1.0d20
-		i=0
-10      i=i+1
-		if (i.gt.MAXITER.or.(i.gt.5.and.abs(error).lt.tol)) &
-			go to 40
-		!  Calculate next trapezoidal rule approximation to integral.
-		g0=0._dl
-		do 20 k=1,nint
-			g0=g0+f(obj,a+(k+k-1)*h)
-20      continue
-		g0=0.5d0*g(1)+h*g0
-		h=0.5d0*h
-		nint=nint+nint
-		jmax=min(i,MAXJ)
-		fourj=1._dl
-		do 30 j=1,jmax
-			!  Use Richardson extrapolation.
-			fourj=4._dl*fourj
-			g1=g0+(g0-g(j))/(fourj-1._dl)
-			g(j)=g0
-			g0=g1
-30      continue
-		if (abs(g0).gt.tol) then
-			error=1._dl-gmax/g0
-		else
-			error=gmax
-		end if
-		gmax=g0
-		g(jmax+1)=g0
-		go to 10
-40      rombint_vec=g0
-	end function rombint_vec
-
 	!Newton-Cotes method:
 	!approximate 1D/2D integrals using a linear interpolation inside bins
 	!and perform analytical integration of the line/plane.
@@ -413,6 +354,7 @@ module utilities
 		integral_NC_2d = integral_NC_2d * 0.25d0
 	end function integral_NC_2d
 
+	!utilities for Gauss-Laguerre quadrature
 	elemental function gammln(xx)
 		real(dl) :: gammln
 		real(dl), intent(in) :: xx
@@ -485,6 +427,49 @@ module utilities
 		enddo
 		return
 	end subroutine
+
+	subroutine get_GLq_vectors(nreal, yv, wv, wv2, verb, alpha, ycut)
+		real(dl), dimension(:), allocatable, intent(out) :: yv, wv, wv2
+		integer, intent(in) :: nreal, alpha
+		logical, intent(in) :: verb
+		real(dl), dimension(:), allocatable :: tyv, twv
+		real(dl), intent(in) :: ycut
+		integer :: ix, iy, effective_Ny
+		character(len=300) :: tmpstr
+
+		do ix=1, 350
+			call gaulag(tyv, twv, ix, 1.d0*alpha)
+			do iy=1, ix
+				if (tyv(iy).gt.ycut)then
+					effective_Ny = iy-1
+					exit
+				end if
+			end do
+			if (nreal .eq. effective_Ny) then
+				if (verb) then
+					write(tmpstr, "(' [config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I2,' roots')") ix, effective_Ny
+					call addToLog(trim(tmpstr))
+				end if
+				if (.not. allocated(yv)) &
+					allocate(yv(effective_Ny))
+				if (.not. allocated(wv)) &
+					allocate(wv(effective_Ny))
+				yv = tyv(1:effective_Ny)
+				wv = twv(1:effective_Ny)
+				do iy=1, nreal
+					wv(iy) = wv(iy)*exp(yv(iy))
+				end do
+				if (.not.allocated(wv2)) &
+					allocate(wv2(Ny))
+				do iy=1, Ny
+					wv2(iy) = wv(iy) / yv(iy)**alpha
+				end do
+				deallocate(tyv, twv)
+				return
+			end if
+			deallocate(tyv, twv)
+		end do
+	end subroutine get_GLq_vectors
 
 	!Gauss-Laguerre quadrature: very effective for exponentially-suppressed functions
 	pure function integral_GL_1d(wx, f)
