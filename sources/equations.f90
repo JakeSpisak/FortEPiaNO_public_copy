@@ -361,126 +361,132 @@ module ndEquations
 	end function H_eff_cmplx
 
 	pure function rho_diag_mass(iy)
-		real(dl), dimension(:), allocatable :: rho_diag_mass
+		type(cmplxMatNN) :: rho_diag_mass
 		integer, intent(in) :: iy
 		complex(dl), dimension(maxflavorNumber, maxflavorNumber) :: tmpComplMat, transfMat
 		real(dl), dimension(maxflavorNumber) :: tmpvec
-		integer :: i, j, k
+		integer :: i, j, k, l
 
-		allocate(rho_diag_mass(flavorNumber))
+		call allocateCmplxMat(rho_diag_mass)
+		rho_diag_mass%re(:,:) = 0.d0
+		rho_diag_mass%im(:,:) = 0.d0
 		tmpvec = 0.d0
 
 		transfMat(:,:) = cmplx(0.d0, 0.d0)
+		tmpComplMat = H_eff_cmplx(y_arr(iy))
+		call HEigensystem(flavorNumber, tmpComplMat, flavorNumber, tmpvec, transfMat, flavorNumber, 0)
 		do k=1, flavorNumber
-			rho_diag_mass(k)=0.d0
-			! here subroutine to obtain H_eff accounting for matter effects. TO BE CREATED
-			tmpComplMat = H_eff_cmplx(y_arr(iy))
-			! sort=1 gives you the eigenvalues (diag_eff_result) from smaller to larger, so Ueff_result is
-			! organized as expected. For smaller Dm41 this needs to be adjusted carefully!!
-			call HEigensystem(flavorNumber, tmpComplMat, flavorNumber, tmpvec, transfMat, flavorNumber, 0)
-			do i=1, flavorNumber
-				do j=1, flavorNumber
-					rho_diag_mass(k) = rho_diag_mass(k) &
-						+ dble(conjg(transfMat(i,k))*transfMat(j,k)&
-							*cmplx(nuDensMatVecFD(iy)%re(i, j), nuDensMatVecFD(iy)%im(i, j)))
+			do l=k, flavorNumber
+				do i=1, flavorNumber
+					do j=1, flavorNumber
+						rho_diag_mass%re(k, l) = rho_diag_mass%re(k, l) &
+							+ dble(conjg(transfMat(i, k))*transfMat(j, l)&
+								*cmplx(nuDensMatVecFD(iy)%re(i, j), nuDensMatVecFD(iy)%im(i, j)))
+						rho_diag_mass%im(k, l) = rho_diag_mass%im(k, l) &
+							+ dimag(conjg(transfMat(i, k))*transfMat(j, l)&
+								*cmplx(nuDensMatVecFD(iy)%re(i, j), nuDensMatVecFD(iy)%im(i, j)))
+					end do
 				end do
 			end do
-		enddo
+		end do
 	end function rho_diag_mass
+
+	subroutine nuDens_to_file(u, ix, iy, x, mat, reim, fname)
+		integer, intent(in) :: u, ix, iy
+		real(dl), intent(in) :: x
+		logical, intent(in) :: reim!true for real, false for imaginary part
+		type(cmplxMatNN), dimension(:), allocatable, intent(in) :: mat
+		character(len=*), intent(in) :: fname
+		integer :: m
+		real(dl), dimension(:), allocatable :: tmpvec
+
+		allocate(tmpvec(Ny))
+		call openFile(u, trim(fname), firstWrite)
+		if (reim) then
+			do m=1, nY
+				tmpvec(m)=mat(m)%re(ix, iy)
+			end do
+		else
+			do m=1, nY
+				tmpvec(m)=mat(m)%im(ix, iy)
+			end do
+		end if
+		write(u, multidblfmt) x, tmpvec
+		deallocate(tmpvec)
+		close(u)
+	end subroutine nuDens_to_file
 
 	subroutine saveRelevantInfo(x, vec)
 		real(dl), intent(in) :: x
 		real(dl), dimension(:), intent(in) :: vec
-		real(dl), dimension(:), allocatable :: tmpvec
-		real(dl), dimension(:,:), allocatable :: rho_mass
+		type(cmplxMatNN), dimension(:), allocatable :: rho_mass
 		complex(dl), dimension(:,:), allocatable :: tmpComplMat, transfMat
-		integer :: k, i, j, iy, totFiles
+		integer :: k, i, j, iy
 		real(dl) :: neff, z
-		integer, dimension(:), allocatable :: units
+		integer, parameter :: iu = 8972
 		character(len=200) :: fname
-
-		totFiles = flavNumSqu + flavorNumber + 2
-		allocate(units(totFiles), tmpvec(Ny))
-		do i=1, totFiles
-			units(i) = 8972 + i
-		end do
 
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=', x
 		call addToLog(trim(fname))!not a filename but the above string
 
 		z = vec(ntot)+1.d0
-		k = 1
 		if (save_nuDens_evolution) then
 			!density matrix in flavor space
 			do k=1, flavorNumber
 				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
-				call openFile(units(k), trim(fname), firstWrite)
-				do iy=1, nY
-					tmpvec(iy)=nuDensMatVecFD(iy)%re(k, k)
-				end do
-				write(units(k), multidblfmt) x, tmpvec
+				call nuDens_to_file(iu, k, k, x, nuDensMatVecFD, .true., trim(fname))
 			end do
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_re.dat'
-						call openFile(units(k), trim(fname),firstWrite)
-						tmpvec=0
-						do iy=1, nY
-							tmpvec(iy)=nuDensMatVecFD(iy)%re(i,j)
-						end do
-						write(units(k), multidblfmt) x, tmpvec
-						k=k+1
+						call nuDens_to_file(iu, i, j, x, nuDensMatVecFD, .true., trim(fname))
 
 						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_im.dat'
-						call openFile(units(k), trim(fname),firstWrite)
-						tmpvec=0
-						do iy=1, nY
-							tmpvec(iy)=nuDensMatVecFD(iy)%im(i,j)
-						end do
-						write(units(k), multidblfmt) x, tmpvec
-						k=k+1
+						call nuDens_to_file(iu, i, j, x, nuDensMatVecFD, .false., trim(fname))
 					end do
 				end do
 			end if
 			!density matrix in mass space
-			deallocate(tmpvec)
-			do k=1, flavorNumber
-				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_mass', k, '.dat'
-				call openFile(units(k+flavNumSqu), trim(fname), firstWrite)
-			end do
-			allocate(rho_mass(flavorNumber, Ny))
+			allocate(rho_mass(Ny))
 			call updateLeptonDensities(x, z)
 			!$omp parallel do shared(rho_mass) private(iy) schedule(static)
 			do iy=1, Ny
-				rho_mass(:, iy) = rho_diag_mass(iy)
+				rho_mass(iy) = rho_diag_mass(iy)
 			end do
 			!$omp end parallel do
 			do k=1, flavorNumber
-				write(units(k+flavNumSqu), multidblfmt) x, rho_mass(k,:)
+				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_mass', k, '.dat'
+				call nuDens_to_file(iu, k, k, x, rho_mass, .true., trim(fname))
 			end do
-			k = flavNumSqu + flavorNumber + 1 ! enters the following in openFile/write(units(k),...
+			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_mass_nd_', i, j, '_re.dat'
+						call nuDens_to_file(iu, i, j, x, rho_mass, .true., trim(fname))
+
+						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_mass_nd_', i, j, '_im.dat'
+						call nuDens_to_file(iu, i, j, x, rho_mass, .false., trim(fname))
+					end do
+				end do
+			end if
 		end if
 		if (save_z_evolution) then
-			call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
+			call openFile(iu, trim(outputFolder)//'/z.dat', firstWrite)
 			if (save_w_evolution) then
-				write(units(k), multidblfmt) x, z, vec(ntot-1)+1.d0
+				write(iu, multidblfmt) x, z, vec(ntot-1)+1.d0
 			else
-				write(units(k), multidblfmt) x, z
+				write(iu, multidblfmt) x, z
 			end if
+			close(iu)
 		end if
 		if (save_Neff) then
 			neff = allNuDensity()/photonDensity(vec(ntot)+1.d0)
-			call openFile(units(k+1), trim(outputFolder)//'/Neff.dat', firstWrite)
-			write(units(k+1), multidblfmt) &
+			call openFile(iu, trim(outputFolder)//'/Neff.dat', firstWrite)
+			write(iu, multidblfmt) &
 				x, 8.d0/7.d0*neff, 8.d0/7.d0*zid**4*neff
+			close(iu)
 		end if
-
-		do i=1, totFiles
-			close(units(i))
-		end do
-		deallocate(units)
-
 		firstWrite=.false.
 	end subroutine saveRelevantInfo
 
