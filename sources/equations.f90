@@ -44,10 +44,12 @@ module ndEquations
 			if (.not.sterile(ix)) then
 				nuDensities%re(ix, ix) = nuDensities%re(ix, ix) + nuDensityInt(ix, ix)
 				do iy=ix, flavorNumber
-					nuDensities%re(ix, iy) = nuDensities%re(ix, iy) + nuDensityInt(ix, iy)
-					nuDensities%im(ix, iy) = nuDensities%im(ix, iy) + nuDensityInt(ix, iy, .false.)
-					nuDensities%re(iy, ix) = nuDensities%re(ix, iy)
-					nuDensities%im(iy, ix) = - nuDensities%im(ix, iy)
+					if (.not.sterile(iy)) then
+						nuDensities%re(ix, iy) = nuDensities%re(ix, iy) + nuDensityInt(ix, iy)
+						nuDensities%im(ix, iy) = nuDensities%im(ix, iy) + nuDensityInt(ix, iy, .false.)
+						nuDensities%re(iy, ix) = nuDensities%re(ix, iy)
+						nuDensities%im(iy, ix) = - nuDensities%im(ix, iy)
+					end if
 				end do
 			end if
 		end do
