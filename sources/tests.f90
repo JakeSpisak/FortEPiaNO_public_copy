@@ -338,7 +338,9 @@ program tests
 		end do
 
 		leptonDensities=0.d0
-		call updateLeptonDensities(0.076d0, 1.32d0)
+		nuDensities%re=0.d0
+		nuDensities%im=0.d0
+		call updateMatterDensities(0.076d0, 1.32d0)
 		m(1,:) = (/-0.0026760938/1.22, 0., 0./)
 		m(2,:) = (/0.,-2.58816e-6/1.22,0./)
 		m(3,:) = (/0.,0.,0./)
@@ -352,7 +354,7 @@ program tests
 				end if
 			end do
 		end do
-		call updateLeptonDensities(2.d1, 1.2d0)
+		call updateMatterDensities(2.d1, 1.2d0)
 		m(1,:) = (/-1.7572758d-23/0.22d0, 0.d0, 0.d0/)
 		m(2,:) = (/0.,0.,0./)
 		m(3,:) = (/0.,0.,0./)
@@ -403,31 +405,31 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 1", nuDensityNC(1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensNC test 1", nuDensityNC(1, 1), 0.575727d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 2", nuDensityNC(1), 0.5d0*1.54346d0, 1d-4)
+		call assert_double_rel("nuDensNC test 2", nuDensityNC(1, 1), 0.5d0*1.54346d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 3", nuDensityNC(1), 0.5d0*3.49577d0, 2d-4)
+		call assert_double_rel("nuDensNC test 3", nuDensityNC(1, 1), 0.5d0*3.49577d0, 2d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 4", nuDensityNC(2), 0.5d0*2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDensNC test 4", nuDensityNC(2, 2), 0.5d0*2.d0*4.05629d0, 5d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 5", nuDensityNC(3), 0.5d0*3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuDensNC test 5", nuDensityNC(3, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
 
 		call assert_double_rel("nuDensEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
 		call assert_double_rel("nuDensEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
@@ -2071,7 +2073,7 @@ program tests
 		x = 0.06d0
 		z = 1.23d0
 		dme2 = 0.1d0
-		call updateLeptonDensities(x,z)
+		call updateMatterDensities(x, z)
 		iy = 12 !2.231111111111111
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
@@ -2134,7 +2136,7 @@ program tests
 
 		x = 1.76d0
 		z = 1.31d0
-		call updateLeptonDensities(x,z)
+		call updateMatterDensities(x, z)
 		iy = 34 !6.67333333333333
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
@@ -2575,31 +2577,31 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
 			end do
 		end do
-		call assert_double_rel("nuDensGL test 1", nuDensityGL(1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuDensGL test 1", nuDensityGL(1, 1), 0.575727d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
 			end do
 		end do
-		call assert_double_rel("nuDensGL test 2", nuDensityGL(1), 0.5d0*1.54346d0, 1d-4)
+		call assert_double_rel("nuDensGL test 2", nuDensityGL(1, 1), 0.5d0*1.54346d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
 			end do
 		end do
-		call assert_double_rel("nuDensGL test 3", nuDensityGL(1), 0.5d0*3.49577d0, 2d-4)
+		call assert_double_rel("nuDensGL test 3", nuDensityGL(1, 1), 0.5d0*3.49577d0, 2d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
 			end do
 		end do
-		call assert_double_rel("nuDensGL test 4", nuDensityGL(2), 0.5d0*2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDensGL test 4", nuDensityGL(2, 2), 0.5d0*2.d0*4.05629d0, 5d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
 			end do
 		end do
-		call assert_double_rel("nuDensGL test 5", nuDensityGL(3), 0.5d0*3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuDensGL test 5", nuDensityGL(3, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
 
 		call assert_double_rel("nuDensEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
 		call assert_double_rel("nuDensEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)

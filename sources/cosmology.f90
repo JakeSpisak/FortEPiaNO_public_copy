@@ -145,26 +145,41 @@ module ndCosmology
 		call addToLog("[cosmo] ...done!")
 	end subroutine init_interp_ElDensity
 
-	function nuDensityNC(iFl)
+	function nuDensityNC(i1, i2, reim)
 		real(dl) :: nuDensityNC, y
-		integer, intent(in) :: iFl
+		integer, intent(in) :: i1, i2
+		logical, intent(in), optional :: reim
 		integer :: ix
 
-		do ix=1, Ny
-			y = y_arr(ix)
-			fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%re(iFl, iFl)
-		end do
+		if (present(reim) .and. .not.reim) then
+			do ix=1, Ny
+				y = y_arr(ix)
+				fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%im(i1, i2)
+			end do
+		else
+			do ix=1, Ny
+				y = y_arr(ix)
+				fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%re(i1, i2)
+			end do
+		end if
 		nuDensityNC = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
 	end function nuDensityNC
 
-	function nuDensityGL(iFl)
+	function nuDensityGL(i1, i2, reim)
 		real(dl) :: nuDensityGL
-		integer, intent(in) :: iFl
+		integer, intent(in) :: i1, i2
+		logical, intent(in), optional :: reim
 		integer :: ix
 
-		do ix=1, Ny
-			fy_arr(ix) = nuDensMatVecFD(ix)%re(iFl, iFl)
-		end do
+		if (present(reim) .and. .not.reim) then
+			do ix=1, Ny
+				fy_arr(ix) = nuDensMatVecFD(ix)%im(i1, i2)
+			end do
+		else
+			do ix=1, Ny
+				fy_arr(ix) = nuDensMatVecFD(ix)%re(i1, i2)
+			end do
+		end if
 		nuDensityGL = integral_GL_1d(w_gl_arr, fy_arr) / PISQ
 	end function nuDensityGL
 
@@ -182,7 +197,7 @@ module ndCosmology
 
 		allNuDensity = 0.d0
 		do ix=1, flavorNumber
-			allNuDensity = allNuDensity + nuDensityInt(ix)*nuFactor(ix)
+			allNuDensity = allNuDensity + nuDensityInt(ix, ix)*nuFactor(ix)
 		end do
 		allNuDensity = allNuDensity
 	end function allNuDensity

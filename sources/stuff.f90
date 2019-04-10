@@ -757,7 +757,7 @@ enddo                                                   !SG-PF
 			call random_number(x)
 			x=10.d0**(x/6.d0)
 			t1 = nuDensity(x, 1)
-			t1 = nuDensityNC(1)
+			t1 = nuDensityNC(1, 1)
 		end do
 		call toc(timer1, "<reset>")
 
@@ -773,7 +773,7 @@ enddo                                                   !SG-PF
 		do ix=1, 1000000
 			call random_number(x)
 			x=10.d0**(x/6.d0)
-			t1 = nuDensityNC(1)
+			t1 = nuDensityNC(1, 1)
 		end do
 		call toc(timer1, "<linearized>")
 

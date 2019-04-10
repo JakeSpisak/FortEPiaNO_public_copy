@@ -10,6 +10,7 @@ module ndEquations
 	use linear_interpolation_module
 	use sg_interpolate
 	use diagonalize
+	use ndInterfaces1
 	implicit none
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
@@ -20,15 +21,39 @@ module ndEquations
 
 	contains
 
-	subroutine updateLeptonDensities(x,z)
-		real(dl), intent(in) :: x,z
+	subroutine updateMatterDensities(x, z)
+		real(dl), intent(in) :: x, z
 		real(dl) :: ldf
+		integer :: ix, iy
+		procedure (nuDensity_integrator), pointer :: nuDensityInt
 
-		leptonDensities=0.d0
+		if (use_gauss_laguerre) then
+			nuDensityInt => nuDensityGL
+		else
+			nuDensityInt => nuDensityNC
+		end if
+
+		leptonDensities = 0.d0
 		ldf = leptDensFactor / x**6
-		leptonDensities(1,1) = ldf * electronDensity(x,z)
-		leptonDensities(2,2) = ldf * muonDensity(x,z)
-	end subroutine updateLeptonDensities
+		leptonDensities(1,1) = ldf * electronDensity(x, z)
+		leptonDensities(2,2) = ldf * muonDensity(x, z)
+
+		nuDensities%re = 0.d0
+		nuDensities%im = 0.d0
+		do ix=1, flavorNumber
+			if (.not.sterile(ix)) then
+				nuDensities%re(ix, ix) = nuDensities%re(ix, ix) + nuDensityInt(ix, ix)
+				do iy=ix, flavorNumber
+					nuDensities%re(ix, iy) = nuDensities%re(ix, iy) + nuDensityInt(ix, iy)
+					nuDensities%im(ix, iy) = nuDensities%im(ix, iy) + nuDensityInt(ix, iy, .false.)
+					nuDensities%re(iy, ix) = nuDensities%re(ix, iy)
+					nuDensities%im(iy, ix) = - nuDensities%im(ix, iy)
+				end do
+			end if
+		end do
+		nuDensities%re(ix, ix) = nuDensities%re(ix, ix) * ldf * (1.d0-sin2thW)
+		nuDensities%re(ix, ix) = nuDensities%im(ix, ix) * ldf * (1.d0-sin2thW)
+	end subroutine updateMatterDensities
 
 	subroutine densMat_2_vec(vec)
 		real(dL), dimension(:), intent(out) :: vec
@@ -359,10 +384,12 @@ module ndEquations
 		call allocateCmplxMat(H_eff)
 
 		!missing: term for NC!
-		H_eff%re = &
-			nuMassesMat(:,:)/(2*y) &
-			+ leptonDensities(:,:) * y
-		H_eff%im = 0.d0
+		H_eff%re = 0.d0 &
+			+ nuMassesMat(:,:)/(2*y) &
+			+ leptonDensities(:,:) * y &
+			+ nuDensities%re(:,:) * y
+		H_eff%im = 0.d0 &
+			+ nuDensities%im(:,:) * y
 	end function H_eff
 
 	pure function H_eff_cmplx(y)
@@ -469,7 +496,7 @@ module ndEquations
 			end if
 			!density matrix in mass space
 			allocate(rho_mass(Ny))
-			call updateLeptonDensities(x, z)
+			call updateMatterDensities(x, z)
 			!$omp parallel do shared(rho_mass) private(iy) schedule(static)
 			do iy=1, Ny
 				rho_mass(iy) = rho_diag_mass(iy)
@@ -716,8 +743,8 @@ module ndEquations
 		call vec_2_densMat(vars)
 
 		dme2 = dme2_electron(x, 0.d0, z)
-		sqrtraddens = sqrt(radDensity(x,z))
-		call updateLeptonDensities(x,z)
+		sqrtraddens = sqrt(radDensity(x, z))
+		call updateMatterDensities(x, z)
 
 		!$omp parallel shared(ydot, x, z, dme2, sqrtraddens, flavNumSqu) private(m, s, tmpvec)
 		allocate(tmpvec(flavNumSqu))
@@ -794,7 +821,7 @@ module ndEquations
 		!otherwise the result is not referring to the same quantity
 		ndeq=nuDensityEq(1.d0)
 		do ix=1, flavorNumber
-			tmp = (nuDensityInt(ix) - ndeq)*nuFactor(ix)/ndeq
+			tmp = (nuDensityInt(ix, ix) - ndeq)*nuFactor(ix)/ndeq
 			write(*,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 		end do

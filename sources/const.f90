@@ -92,6 +92,7 @@ module variables
 	real(dl) :: tot_factor_active_nu, tot_factor_nu
 	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
+	type(cmplxMatNN) :: nuDensities
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeff
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
@@ -169,9 +170,10 @@ module ndInterfaces1
 		end function
 	end interface
 	interface
-		pure real(dl) function nuDensity_integrator(iFl)
+		pure real(dl) function nuDensity_integrator(i1, i2, reim)
 			use precision
-			integer, intent(in) :: iFl
+			integer, intent(in) :: i1, i2
+			logical, intent(in), optional :: reim
 		end function
 	end interface
 end module ndInterfaces1

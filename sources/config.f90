@@ -21,6 +21,7 @@ module ndConfig
 		allocate(nuMasses(nf), nuFactor(nf), sterile(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
+		call allocateCmplxMat(nuDensities)
 		allocate(dampTermMatrixCoeff(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 		allocate(massSplittings(nf))
@@ -172,6 +173,8 @@ module ndConfig
 
 		!lepton densities
 		leptonDensities = 0.d0
+		nuDensities%re = 0.d0
+		nuDensities%im = 0.d0
 
 		!identity (Matrix complex)
 		call createIdentityMat(idMat, flavorNumber)
