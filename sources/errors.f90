@@ -23,6 +23,11 @@ module ndErrors
 		close(lfu)
 	end subroutine closeLogFile
 
+	subroutine renameLogFile(newfilename)
+		character(len=*) :: newfilename
+		call rename("log/"//trim(logFile), newfilename)
+	end subroutine renameLogFile
+
 	subroutine timeToLog
 		character(8)  :: date
 		character(10) :: time

@@ -16,4 +16,5 @@ program nuDens
 
 	call addToLog("Finished. closing log file.")
 	call closeLogFile
+	call renameLogFile(trim(outputFolder)//'/messages.log')
 end program nuDens

@@ -444,6 +444,7 @@ module ndConfig
 			call criticalError("You are not passing a configuration file...are you sure?")
 		end if
 		call ini_file_close()
+		call rename(trim(args(1))//".log", trim(outputFolder)//'/ini.log')
 		call addToLog("[config] Read configuration from ini file: complete.")
 	end subroutine initconfig
 end module ndConfig
