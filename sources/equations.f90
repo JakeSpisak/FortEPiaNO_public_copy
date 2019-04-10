@@ -89,14 +89,19 @@ module ndEquations
 		real(dl), intent(in) :: o, u
 
 		esuo=exp(sqrt(u*u+o*o))
-		J_int = u*u * esuo / ((1.d0+esuo)**2)
+		J_int = esuo / ((1.d0+esuo)**2)
 	end function J_int
 
 	pure function J_funcFull(o)
 		real(dl) :: J_funcFull
 		real(dl), intent(in) :: o
+		integer :: i
 
-		J_funcFull = rombint_re(o, J_int, zero, upper, toler_jkyg, maxiter) / PISQ
+		J_funcFull = 0.d0
+		do i=1, N_opt_xoz
+			J_funcFull = J_funcFull + opt_xoz_w(i)*J_int(o, opt_xoz(i))
+		end do
+		J_funcFull = J_funcFull / PISQ
 	end function J_funcFull
 
 	pure function Jprime_int(o, u)
@@ -108,14 +113,19 @@ module ndEquations
 		sqrtuuoo = sqrt(uuoo)
 		expsqrtuuoo = exp(sqrtuuoo)
 
-		Jprime_int = u*u * expsqrtuuoo * (1.d0-expsqrtuuoo) /(sqrtuuoo*(expsqrtuuoo+1)**3)
+		Jprime_int = expsqrtuuoo * (1.d0-expsqrtuuoo) /(sqrtuuoo*(expsqrtuuoo+1)**3)
 	end function Jprime_int
 
 	pure function JprimeFull(o)
 		real(dl) :: JprimeFull
 		real(dl), intent(in) :: o
+		integer :: i
 
-		JprimeFull = rombint_re(o, Jprime_int, zero, upper, toler_jkyg, maxiter) * o / PISQ
+		JprimeFull = 0.d0
+		do i=1, N_opt_xoz
+			JprimeFull = JprimeFull + opt_xoz_w(i)*Jprime_int(o, opt_xoz(i))
+		end do
+		JprimeFull = JprimeFull * o / PISQ
 	end function JprimeFull
 
 	pure function K_int(o, u)
@@ -123,14 +133,19 @@ module ndEquations
 		real(dl), intent(in) :: o, u
 
 		suo=sqrt(u*u+o*o)
-		K_int = u*u / (suo * (1.d0+exp(suo)))
+		K_int = 1.d0 / (suo * (1.d0+exp(suo)))
 	end function K_int
 
 	pure function K_funcFull(o)
 		real(dl) :: K_funcFull
 		real(dl), intent(in) :: o
+		integer :: i
 
-		k_funcFull = rombint_re(o, k_int, zero, upper, toler_jkyg, maxiter) / PISQ
+		K_funcFull = 0.d0
+		do i=1, N_opt_xoz
+			K_funcFull = K_funcFull + opt_xoz_w(i)*K_int(o, opt_xoz(i))
+		end do
+		K_funcFull = K_funcFull / PISQ
 	end function K_funcFull
 
 	pure function Kprime_int(o, u)
@@ -158,14 +173,19 @@ module ndEquations
 		real(dl), intent(in) :: o, u
 
 		esuo=exp(sqrt(u*u+o*o))
-		Y_int = u**4 * esuo / ((1.d0+esuo)**2)
+		Y_int = u**2 * esuo / ((1.d0+esuo)**2)
 	end function Y_int
 
 	pure function Y_funcFull(o)
 		real(dl) :: Y_funcFull
 		real(dl), intent(in) :: o
+		integer :: i
 
-		Y_funcFull = rombint_re(o, Y_int, zero, upper, toler_jkyg, maxiter) / PISQ
+		Y_funcFull = 0.d0
+		do i=1, N_opt_xoz
+			Y_funcFull = Y_funcFull + opt_xoz_w(i)*Y_int(o, opt_xoz(i))
+		end do
+		Y_funcFull = Y_funcFull / PISQ
 	end function Y_funcFull
 
 	pure function G12_funcFull(o)
@@ -193,7 +213,7 @@ module ndEquations
 
 	subroutine init_interp_jkyg12
 		real(dl) :: num, den, j, y, jmu, ymu
-		real(dl), dimension(:),allocatable :: A, B
+		real(dl), dimension(:), allocatable :: A, B
 		real(dl), dimension(2) :: g12
 		integer :: ix, nx, iflag
 
@@ -204,8 +224,13 @@ module ndEquations
 		do ix=1, nx
 			j = J_funcFull(interp_xozvec(ix))
 			y = Y_funcFull(interp_xozvec(ix))
-			jmu = J_funcFull(interp_xozvec(ix)*m_mu_o_m_e)
-			ymu = Y_funcFull(interp_xozvec(ix)*m_mu_o_m_e)
+			if (interp_xozvec(ix).gt.x_muon_cut) then
+				jmu=0.d0
+				ymu=0.d0
+			else
+				jmu = J_funcFull(interp_xozvec(ix)*m_mu_o_m_e)
+				ymu = Y_funcFull(interp_xozvec(ix)*m_mu_o_m_e)
+			end if
 			g12 = G12_funcFull(interp_xozvec(ix))
 			num= interp_xozvec(ix)*(j+jmu) + g12(1)
 			den= interp_xozvec(ix)**2*(j+jmu) + y+ymu + PISQ/7.5d0 + g12(2)
@@ -273,20 +298,13 @@ module ndEquations
 		real(dl), intent(in) :: x
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
-		real(dl) :: z, j, y, xoz, num, den
+		real(dl) :: z, xoz
 		real(dl), dimension(2) :: coeffs
-		real(dl), dimension(2) :: g12
 
 		z = vars(n)+1.d0
 		xoz=x/z
-
-		j      = J_funcFull(xoz)
-		y      = Y_funcFull(xoz)
-		g12    = G12_funcFull(xoz)
-		num= xoz * j + g12(1)
-		den= xoz**2 * j + y + PISQ/7.5d0 + g12(2)
-
-		ydot(n) = num/den
+		coeffs = dzodxcoef_interp_func(x/z)
+		ydot(n) = coeffs(1)
 	end subroutine dz_o_dx_eq
 
 	subroutine zin_solver

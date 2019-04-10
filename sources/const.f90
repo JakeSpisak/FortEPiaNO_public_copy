@@ -27,6 +27,7 @@ module constants
 	real(dl), parameter :: m_e_cub = m_e**3
 	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
 	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
+	real(dl), parameter :: x_muon_cut = 0.5d0!do not compute mu densities above this value, to avoid float overflow
 	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
 	real(dl), parameter :: G_F = 1.1663787d-5/(Gev2eV*Gev2eV)
 	real(dl), parameter :: G_Fsq = G_F * G_F
@@ -50,8 +51,6 @@ module constants
 	real(dl), parameter :: coeff_dw_dx = -30.d0/(7.d0*PISQ*PISQ)
 
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
-
-	real(dl), parameter :: fe_l = 0.d0, fe_u = 100.d0
 
 	character(len=5), parameter :: dblfmt = "E17.9"
 	character(len=10), parameter :: multidblfmt = "(*(E17.9))"
@@ -114,7 +113,15 @@ module variables
 	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr, w_gl_arr2
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter
-	real(dl) :: toler, toler_dme2, toler_ed, toler_jkyg, dlsoda_atol, dlsoda_rtol
+	real(dl) :: toler_jkyg, dlsoda_atol, dlsoda_rtol
+
+	integer, parameter :: N_opt_xoz = 63
+	real(dl), parameter :: opt_xoz_cut = 30.d0
+	real(dl), dimension(:), allocatable :: opt_xoz, opt_xoz_w
+
+	integer, parameter :: N_opt_y = 60
+	real(dl), parameter :: opt_y_cut = 30.d0
+	real(dl), dimension(:), allocatable :: opt_y, opt_y_w
 
 	!used for 2d interpolation:
 	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 1500

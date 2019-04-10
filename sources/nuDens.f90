@@ -7,10 +7,6 @@ program nuDens
 
 	call initConfig
 
-	call init_interp_jkyg12
-	call init_interp_dme2_e
-	call init_interp_ElDensity
-
 	call solver
 	call finalresults
 

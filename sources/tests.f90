@@ -82,8 +82,9 @@ program tests
 	call do_basic_tests
 	call do_test_NC_integrals
 	call do_test_commutator
-	call do_test_nu_matrices
+	call do_tests_dme2
 	call do_tests_cosmology
+	call do_test_nu_matrices
 	call do_tests_JKYG
 	call do_tests_dzodx
 	call do_tests_dme2
@@ -110,14 +111,13 @@ program tests
 	contains
 
 	subroutine do_tests_initialization
+		real(dl), dimension(:), allocatable :: fake
 		integer :: ix
+
 		checkpoint = .true.
 		outputFolder = ""
 		maxiter = 100
-		toler   = 1.d-5
-		toler_dme2 = 1.d-5
 		toler_jkyg = 1.d-7
-		toler_ed = 1.d-4
 		dlsoda_atol = 1.d-6
 		dlsoda_rtol = 1.d-6
 		Nx = 100
@@ -174,6 +174,8 @@ program tests
 		interp_xvec = logspace(logx_in, logx_fin, interp_nx)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
+		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
+		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 	end subroutine do_tests_initialization
 
 	subroutine do_basic_tests
@@ -502,6 +504,8 @@ program tests
 
 	subroutine do_tests_JKYG
 		real(dl), dimension(2) :: res
+		integer :: ix
+
 		write(*,*) ""
 		write(*,"(a)") "JKYG (27 tests)"
 		call assert_double_rel("J test 1", J_funcFull(0.01d0), 0.1666641d0, 1d-6)
@@ -2414,7 +2418,7 @@ program tests
 
 		use_gauss_laguerre = .true.
 		do nx=50, 10, -1
-			call get_GLq_vectors(nx, xa, wa, wa2, .false.)
+			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
 
 			allocate(fx1(nx))
 			do ix=1,nx
@@ -2466,7 +2470,7 @@ program tests
 		tmparrB(:,:) = 0.d0
 		do nix=1, 9
 			nx = nix*5+5
-			call get_GLq_vectors(nx, xa, wa, wa2, .false.)
+			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
 			collArgs%y1 = xa(collArgs%iy)
 			y_arr = loglinspace(y_min, collArgs%y1, y_max, Ny, 10)
 			do ix=1, Ny-1
@@ -2521,7 +2525,7 @@ program tests
 		do nix=3, 9
 			nx = nix*5+5
 			Ny=nx
-			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false.)
+			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 			end do
@@ -2565,7 +2569,7 @@ program tests
 		write(*,*) ""
 		write(*,"(a)") "other applications of Gauss-Laguerre quadrature (13 tests)"
 		Ny=50
-		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false.)
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
@@ -2605,7 +2609,7 @@ program tests
 		nuFactor=0.d0
 		nuFactor(1:3)=1.d0
 		Ny=25
-		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false.)
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		ydot = 0.d0
 		do m=1, Ny
 			ydot((m-1)*flavNumSqu + 1) = 1.d0/y_arr(m)
