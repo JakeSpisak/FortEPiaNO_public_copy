@@ -9,6 +9,7 @@ module ndEquations
 	use bspline_module
 	use linear_interpolation_module
 	use sg_interpolate
+	use diagonalize
 	implicit none
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
@@ -331,17 +332,75 @@ module ndEquations
 		z_in = cvec(n) + 1.d0
 	end subroutine zin_solver
 
+	pure function H_eff(y)
+		real(dl), intent(in) :: y
+		type(cmplxMatNN) :: H_eff
+
+		call allocateCmplxMat(H_eff)
+
+		!missing: term for NC!
+		H_eff%re = &
+			nuMassesMat(:,:)/(2*y) &
+			+ leptonDensities(:,:) * y
+		H_eff%im = 0.d0
+	end function H_eff
+
+	pure function H_eff_cmplx(y)
+		complex(dl), dimension(maxflavorNumber, maxflavorNumber) :: H_eff_cmplx
+		real(dl), intent(in) :: y
+		type(cmplxMatNN) :: H
+		integer :: i, j
+
+		H = H_eff(y)
+		H_eff_cmplx(:,:) = cmplx(0.d0, 0.d0)
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				H_eff_cmplx(i, j) = cmplx(H%re(i,j), H%im(i,j))
+			end do
+		end do
+	end function H_eff_cmplx
+
+	pure function rho_diag_mass(iy)
+		real(dl), dimension(:), allocatable :: rho_diag_mass
+		integer, intent(in) :: iy
+		complex(dl), dimension(maxflavorNumber, maxflavorNumber) :: tmpComplMat, transfMat
+		real(dl), dimension(maxflavorNumber) :: tmpvec
+		integer :: i, j, k
+
+		allocate(rho_diag_mass(flavorNumber))
+		tmpvec = 0.d0
+
+		transfMat(:,:) = cmplx(0.d0, 0.d0)
+		do k=1, flavorNumber
+			rho_diag_mass(k)=0.d0
+			! here subroutine to obtain H_eff accounting for matter effects. TO BE CREATED
+			tmpComplMat = H_eff_cmplx(y_arr(iy))
+			! sort=1 gives you the eigenvalues (diag_eff_result) from smaller to larger, so Ueff_result is
+			! organized as expected. For smaller Dm41 this needs to be adjusted carefully!!
+			call HEigensystem(flavorNumber, tmpComplMat, flavorNumber, tmpvec, transfMat, flavorNumber, 0)
+			do i=1, flavorNumber
+				do j=1, flavorNumber
+					rho_diag_mass(k) = rho_diag_mass(k) &
+						+ dble(conjg(transfMat(i,k))*transfMat(j,k)&
+							*cmplx(nuDensMatVecFD(iy)%re(i, j), nuDensMatVecFD(iy)%im(i, j)))
+				end do
+			end do
+		enddo
+	end function rho_diag_mass
+
 	subroutine saveRelevantInfo(x, vec)
 		real(dl), intent(in) :: x
 		real(dl), dimension(:), intent(in) :: vec
 		real(dl), dimension(:), allocatable :: tmpvec
+		real(dl), dimension(:,:), allocatable :: rho_mass
+		complex(dl), dimension(:,:), allocatable :: tmpComplMat, transfMat
 		integer :: k, i, j, iy, totFiles
-		real(dl) :: neff
+		real(dl) :: neff, z
 		integer, dimension(:), allocatable :: units
 		character(len=200) :: fname
 
-		totFiles=flavNumSqu+2
-		allocate(units(totFiles),tmpvec(Ny))
+		totFiles = flavNumSqu + flavorNumber + 2
+		allocate(units(totFiles), tmpvec(Ny))
 		do i=1, totFiles
 			units(i) = 8972 + i
 		end do
@@ -349,63 +408,18 @@ module ndEquations
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=', x
 		call addToLog(trim(fname))!not a filename but the above string
 
+		z = vec(ntot)+1.d0
 		k = 1
 		if (save_nuDens_evolution) then
+			!density matrix in flavor space
 			do k=1, flavorNumber
 				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
-				call openFile(units(k), trim(fname),firstWrite)
+				call openFile(units(k), trim(fname), firstWrite)
 				do iy=1, nY
 					tmpvec(iy)=nuDensMatVecFD(iy)%re(k, k)
 				end do
-				write(units(k), '(*('//dblfmt//'))') x, tmpvec
+				write(units(k), multidblfmt) x, tmpvec
 			end do
-! ((( PFdS ))) -- beginning
-! 	This is a sketch of what to do. There is an example of what I did in the old code, 
-!       where interX means the corresponding flavour diagonal of the density matrix and Ni is your nY
-			do k=1, flavorNumber
-				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_mass', k, '.dat'
-				call openFile(units(k), trim(fname),firstWrite)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				do iy=1, nY
-					tmpvec_flav(k,iy)=nuDensMatVecFD(iy)%re(k, k)
-				end do
-			end do
-			do k1=1, flavorNumber
-				do iy=1, nY
-					tmpvec_mass(k1,iy)=0.d0
-					do k2=1, flavorNumber
-						! here subroutine to obtain H_eff accounting for matter effects. TO BE CREATED
-						call H_eff(Uef,x,z,y)
-						! sort=1 gives you the eigenvalues (diag_eff_result) from smaller to larger, so Ueff_result is
-						! organized as expected. For smaller Dm41 this needs to be adjusted carefully!!
-						call HEigensystem(flavorNumber, Heff_entry,flavorNumber, diag_eff_result, Ueff_result,flavorNumber, sort)
-						tmpvec_mass(k1,iy)=tmpvec_mass(k1,iy)+Uef(k2,k1)**2*tmpvec_flav(k2,iy)
-					end do
-				enddo
-				write(units(k1), '(*('//dblfmt//'))') x, tmpvec_mass(k1,:)
-			end do
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-! EXPLANATION in terms of what I was using in my old code:
-! 		the different routine (diag_H below) is because diag_H works for REAL matrices, and I was setting deltaCP=0
-!
-!           do k1=1,Ni
-!             inter1(k1)=vars(1+k1)
-!             inter2(k1)=vars(1+k1+Ni)
-!             inter3(k1)=vars(1+k1+2*Ni)
-!           enddo
-!           do k1=1,Ni
-!             call H_eff(Uef,x,vars(1),y_int(k1))
-!             call diag_H(Uef,eigint)
-!             fmass1(k1)=Uef(1,1)**2*inter1(k1)+Uef(2,1)**2*inter2(k1)+ &
-!                        Uef(3,1)**2*inter3(k1)
-!             fmass2(k1)=Uef(1,2)**2*inter1(k1)+Uef(2,2)**2*inter2(k1)+ &
-!                        Uef(3,2)**2*inter3(k1)
-!             fmass3(k1)=Uef(1,3)**2*inter1(k1)+Uef(2,3)**2*inter2(k1)+ &
-!                        Uef(3,3)**2*inter3(k1)
-!           enddo
-!
-! ((( PFdS ))) -- end
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
@@ -415,7 +429,7 @@ module ndEquations
 						do iy=1, nY
 							tmpvec(iy)=nuDensMatVecFD(iy)%re(i,j)
 						end do
-						write(units(k), '(*('//dblfmt//'))') x, tmpvec
+						write(units(k), multidblfmt) x, tmpvec
 						k=k+1
 
 						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_im.dat'
@@ -424,31 +438,48 @@ module ndEquations
 						do iy=1, nY
 							tmpvec(iy)=nuDensMatVecFD(iy)%im(i,j)
 						end do
-						write(units(k), '(*('//dblfmt//'))') x, tmpvec
+						write(units(k), multidblfmt) x, tmpvec
 						k=k+1
 					end do
 				end do
 			end if
+			!density matrix in mass space
+			deallocate(tmpvec)
+			do k=1, flavorNumber
+				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_mass', k, '.dat'
+				call openFile(units(k+flavNumSqu), trim(fname), firstWrite)
+			end do
+			allocate(rho_mass(flavorNumber, Ny))
+			call updateLeptonDensities(x, z)
+			!$omp parallel do shared(rho_mass) private(iy) schedule(static)
+			do iy=1, Ny
+				rho_mass(:, iy) = rho_diag_mass(iy)
+			end do
+			!$omp end parallel do
+			do k=1, flavorNumber
+				write(units(k+flavNumSqu), multidblfmt) x, rho_mass(k,:)
+			end do
+			k = flavNumSqu + flavorNumber + 1 ! enters the following in openFile/write(units(k),...
 		end if
 		if (save_z_evolution) then
 			call openFile(units(k), trim(outputFolder)//'/z.dat', firstWrite)
 			if (save_w_evolution) then
-				write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0, vec(ntot-1)+1.d0
+				write(units(k), multidblfmt) x, z, vec(ntot-1)+1.d0
 			else
-				write(units(k), '(*('//dblfmt//'))') x, vec(ntot)+1.d0
+				write(units(k), multidblfmt) x, z
 			end if
 		end if
 		if (save_Neff) then
 			neff = allNuDensity()/photonDensity(vec(ntot)+1.d0)
 			call openFile(units(k+1), trim(outputFolder)//'/Neff.dat', firstWrite)
-			write(units(k+1), '(*('//dblfmt//'))') &
+			write(units(k+1), multidblfmt) &
 				x, 8.d0/7.d0*neff, 8.d0/7.d0*zid**4*neff
 		end if
 
 		do i=1, totFiles
 			close(units(i))
 		end do
-		deallocate(units,tmpvec)
+		deallocate(units)
 
 		firstWrite=.false.
 	end subroutine saveRelevantInfo
@@ -567,7 +598,6 @@ module ndEquations
 		type(cmplxMatNN) :: tmpmat
 
 		call allocateCmplxMat(tmpmat)
-		call allocateCmplxMat(matrix)
 
 		y = nuDensMatVecFD(iy)%y
 
@@ -578,7 +608,7 @@ module ndEquations
 		collArgs%iy = iy
 
 		overallNorm = overallFactor / sqrtraddens
-		matrix%re(:,:) = nuMassesMat(:,:)/(2*y) + leptonDensities(:,:) * y
+		matrix = H_eff(y)
 
 		!switch imaginary and real parts because of the "-i" factor
 		call Commutator(matrix%re, nuDensMatVecFD(iy)%re, tmpmat%im)

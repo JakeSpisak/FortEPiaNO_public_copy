@@ -1,7 +1,7 @@
-* diag-f.h
-* global declarations for the Diag routines
-* this file is part of Diag
-* last modified 21 Aug 15 th
+! diag-f.h
+! global declarations for the Diag routines
+! this file is part of Diag
+! last modified 21 Aug 15 th
 
 #ifdef QUAD
 #define RealType real*16
@@ -29,17 +29,17 @@
 #endif
 
 
-* The maximum dimension of a matrix, needed for allocating internal
-* memory, i.e. the routines handle at most MAXDIM-by-MAXDIM matrices.
+! The maximum dimension of a matrix, needed for allocating internal
+! memory, i.e. the routines handle at most MAXDIM-by-MAXDIM matrices.
 
 #define MAXDIM 16
 
 
-* A matrix is considered diagonal if the sum of the squares
-* of the off-diagonal elements is less than EPS.  SYM_EPS is
-* half of EPS since only the upper triangle is counted for
-* symmetric matrices.
-* 52 bits is the mantissa length for IEEE double precision.
+! A matrix is considered diagonal if the sum of the squares
+! of the off-diagonal elements is less than EPS.  SYM_EPS is
+! half of EPS since only the upper triangle is counted for
+! symmetric matrices.
+! 52 bits is the mantissa length for IEEE double precision.
 
 #define EPS 2D0**(-102)
 
