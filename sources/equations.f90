@@ -316,7 +316,7 @@ module ndEquations
 		real(dl), dimension(:), allocatable :: rwork, atol, cvec
 		integer, dimension(:), allocatable :: iwork
 
-		xvh = 1d-6
+		xvh = very_early_x
 		write(tmpstring,"('[zin] Computation of z_in started, x_in=',E10.3,', x_end=',E10.3,'.')") xvh, x_in
 		call addToLog(tmpstring)
 		n=1

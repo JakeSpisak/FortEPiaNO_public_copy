@@ -508,25 +508,25 @@ program tests
 
 		write(*,*) ""
 		write(*,"(a)") "JKYG (27 tests)"
-		call assert_double_rel("J test 1", J_funcFull(0.01d0), 0.1666641d0, 1d-6)
-		call assert_double_rel("J test 2", J_funcFull(1.d0), 0.1437972d0, 1d-6)
-		call assert_double_rel("J test 3", J_funcFull(5.d0), 0.01339351d0, 1d-6)
-		call assert_double_rel("J' test 1", JprimeFull(0.01d0), -0.0005065951d0, 1d-6)
-		call assert_double_rel("J' test 2", JprimeFull(1.d0), -0.04125339d0, 1d-6)
-		call assert_double_rel("J' test 3", JprimeFull(5.d0), -0.01015141d0, 1d-6)
-		call assert_double_rel("K test 1", K_funcFull(0.01d0), 0.083319d0, 1d-6)
-		call assert_double_rel("K test 2", K_funcFull(1.d0), 0.0550046d0, 1d-6)
-		call assert_double_rel("K test 3", K_funcFull(5.d0), 0.00204432d0, 1d-6)
-		call assert_double_rel("K' test 1", KprimeFull(0.01d0), -0.00262052d0, 1d-6)
-		call assert_double_rel("K' test 2", KprimeFull(1.d0), -0.03378793d0, 1d-6)
-		call assert_double_rel("K' test 3", KprimeFull(5.d0), -0.001860974d0, 1d-6)
-		call assert_double_rel("Y test 1", Y_funcFull(0.01d0), 2.302883d0, 1d-6)
-		call assert_double_rel("Y test 2", Y_funcFull(1.d0), 2.070647d0, 1d-6)
-		call assert_double_rel("Y test 3", Y_funcFull(5.d0), 0.3145333d0, 1d-6)
+		call assert_double_rel("J test 1", J_funcFull(0.01d0), 0.16666413d0, 1d-7)
+		call assert_double_rel("J test 2", J_funcFull(1.d0), 0.143797172d0, 1d-7)
+		call assert_double_rel("J test 3", J_funcFull(5.d0), 0.0133935079d0, 1d-7)
+		call assert_double_rel("J' test 1", JprimeFull(0.01d0), -0.000506595121d0, 1d-7)
+		call assert_double_rel("J' test 2", JprimeFull(1.d0), -0.0412533987d0, 1d-7)
+		call assert_double_rel("J' test 3", JprimeFull(5.d0), -0.0101514145d0, 1d-7)
+		call assert_double_rel("K test 1", K_funcFull(0.01d0), 0.083318964d0, 5d-7)
+		call assert_double_rel("K test 2", K_funcFull(1.d0), 0.055004619d0, 1d-7)
+		call assert_double_rel("K test 3", K_funcFull(5.d0), 0.0020443184d0, 1d-7)
+		call assert_double_rel("K' test 1", KprimeFull(0.01d0), -0.0026205179d0, 1d-7)
+		call assert_double_rel("K' test 2", KprimeFull(1.d0), -0.0337879339d0, 1d-7)
+		call assert_double_rel("K' test 3", KprimeFull(5.d0), -0.00186097423d0, 1d-7)
+		call assert_double_rel("Y test 1", Y_funcFull(0.01d0), 2.30288269d0, 1d-7)
+		call assert_double_rel("Y test 2", Y_funcFull(1.d0), 2.070646778d0, 1d-7)
+		call assert_double_rel("Y test 3", Y_funcFull(5.d0), 0.3145333371d0, 1d-7)
 
 		res = G12_funcFull(0.01d0)
-		call assert_double_rel("G1 test 1", res(1), -0.0000658825d0, 3d-5)
-		call assert_double_rel("G2 test 1", res(2), -0.0095518d0, 3d-5)
+		call assert_double("G1 test 1", res(1), -0.0000658825d0, 1d-7)
+		call assert_double("G2 test 1", res(2), -0.0095518d0, 1d-8)
 		res = G12_funcFull(1.d0)
 		call assert_double_rel("G1 test 2", res(1), -0.00115846d0, 1d-5)
 		call assert_double_rel("G2 test 2", res(2), -0.00806502d0, 1d-5)
@@ -535,8 +535,8 @@ program tests
 		call assert_double_rel("G2 test 3", res(2), -0.000945107d0, 1d-5)
 
 		res = dzodxcoef_interp_func(0.01d0)
-		call assert_double_rel("A test 1", res(1), 0.00044351d0, 1d-5)
-		call assert_double_rel("B test 1", res(2), 0.0140361d0, 1d-5)
+		call assert_double("A test 1", res(1), 0.000495618d0, 1d-5)
+		call assert_double("B test 1", res(2), 0.00991412d0, 1d-4)
 		res = dzodxcoef_interp_func(1.d0)
 		call assert_double_rel("A test 2", res(1), 0.0404956d0, 1d-5)
 		call assert_double_rel("B test 2", res(2), 0.0143827d0, 1d-5)
@@ -561,14 +561,14 @@ program tests
 		write(*,*) ""
 		write(*,"(a)") "dz/dx functions (6 tests)"
 		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1", ydot(n), -0.1751102d0, 4d-6)
+		call assert_double_rel("dz_o_dx test 1", ydot(n), -0.123503d0, 8d-3)
 		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 2", ydot(n), -0.0946571d0, 5d-6)
+		call assert_double_rel("dz_o_dx test 2", ydot(n), -0.0946571d0, 7d-6)
 		call dz_o_dx_old(6.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 4d-6)
+		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 6d-6)
 
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1a", ydot(n), -0.1751102d0, 4d-6)
+		call assert_double_rel("dz_o_dx test 1a", ydot(n), -0.123503d0, 8d-3)
 		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), -0.10615d0, 4d-6)
 		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0946571d0, 3d-6)
@@ -2618,7 +2618,7 @@ program tests
 		end do
 
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1a", ydot(n), -0.120994d0, 1d-5)
+		call assert_double("dz_o_dx test 1a", ydot(n), -0.0852792d0, 1d-3)
 		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), -0.0734285d0, 4d-6)
 		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0529951d0, 3d-6)
@@ -2636,18 +2636,10 @@ program tests
 		x_in=0.05d0
 		z_in=0.d0
 		call zin_solver
-		call assert_double("z_in test 1", z_in-1.d0, 0.575d-04, 1d-6)
+		call assert_double("z_in test 1", z_in-1.d0, 0.57d-04, 1d-6)
 		x_in=1d-3
 		call zin_solver
-		call assert_double("z_in test 2", z_in-1.d0, 2.3d-8, 1d-9)
-!		dme2_temperature_corr = .true.
-!		x_in=0.05d0
-!		z_in=0.d0
-!		call zin_solver
-!		call assert_double("z_in test 1", z_in-1.d0, 0.56d-04, 1d-6)
-!		x_in=1d-3
-!		call zin_solver
-!		call assert_double("z_in test 2", z_in-1.d0, 7.7d-8, 1d-9)
+		call assert_double("z_in test 2", z_in-1.d0, 8.9d-8, 1d-9)
 	end subroutine do_test_zin
 
 	subroutine do_timing_tests

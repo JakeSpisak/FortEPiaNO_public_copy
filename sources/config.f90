@@ -320,7 +320,7 @@ module ndConfig
 
 			z_in=1.d0
 			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
-			interp_xvec = logspace(logx_in, logx_fin, interp_nx)
+			interp_xvec = logspace(interp_logx_in, logx_fin, interp_nx)
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
 
