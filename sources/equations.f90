@@ -389,7 +389,7 @@ module ndEquations
 
 		!missing: term for NC!
 		H_eff%re = 0.d0 &
-			+ nuMassesMat(:,:)/(2*y) &
+			+ nuMassesMat(:,:)/(2.d0*y) &
 			+ leptonDensities(:,:) * y &
 			+ nuDensities%re(:,:) * y
 		H_eff%im = 0.d0 &
@@ -397,7 +397,7 @@ module ndEquations
 	end function H_eff
 
 	pure function H_eff_cmplx(y)
-		complex(dl), dimension(maxflavorNumber, maxflavorNumber) :: H_eff_cmplx
+		complex(dl), dimension(maxFlavorNumber, maxFlavorNumber) :: H_eff_cmplx
 		real(dl), intent(in) :: y
 		type(cmplxMatNN) :: H
 		integer :: i, j
@@ -414,8 +414,8 @@ module ndEquations
 	pure function rho_diag_mass(iy)
 		type(cmplxMatNN) :: rho_diag_mass
 		integer, intent(in) :: iy
-		complex(dl), dimension(maxflavorNumber, maxflavorNumber) :: tmpComplMat, transfMat
-		real(dl), dimension(maxflavorNumber) :: tmpvec
+		complex(dl), dimension(maxFlavorNumber, maxFlavorNumber) :: tmpComplMat, transfMat
+		real(dl), dimension(maxFlavorNumber) :: tmpvec
 		integer :: i, j, k, l
 
 		call allocateCmplxMat(rho_diag_mass)

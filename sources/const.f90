@@ -36,7 +36,7 @@ module constants
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 
-	integer,  parameter :: maxflavorNumber = 6
+	integer,  parameter :: maxFlavorNumber = 6
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2018: M. Tanabashi et al. (Particle Data Group), Phys.Rev.D, 98, 030001 (2018).
 	real(dl), parameter :: i_theta12 = 0.297

@@ -37,6 +37,8 @@ program tests
 	call do_test_damping_factors
 	call do_test_zin
 	call do_test_GL
+	call do_test_matterPotential
+!	call do_test_diagonalization
 
 	write(*,*) ""
 	write(*,*) ""
@@ -2666,14 +2668,178 @@ program tests
 	end subroutine do_test_zin
 
 	subroutine do_test_matterPotential
+		type(cmplxMatNN) :: Heff
+		complex(dl), dimension(maxFlavorNumber, maxFlavorNumber) :: Heffc
+		character(len=300) :: tmparg
+		real(dl), dimension(3,3) :: r1, r2
+		integer :: i,j
+
 		call printTestBlockName("matter potential, including neutrinos")
-		
+
+		!A
+		nuMassesMat(1,:) = (/1.,2.,3./)
+		nuMassesMat(2,:) = (/3.,2.,1./)
+		nuMassesMat(3,:) = (/1.1,2.2,3./)
+		leptonDensities(1,:) = (/200., 1., 0./)
+		leptonDensities(2,:) = (/1., 500., 0./)
+		leptonDensities(3,:) = (/0.,0.,0./)
+		nuDensities%re = 0.01d0
+		nuDensities%im = 0.d0
+		Heff = H_eff(0.04d0)
+		r1(1,:) = (/20.5004,25.0404,37.5004/)
+		r1(2,:) = (/37.5404,45.0004,12.5004/)
+		r1(3,:) = (/13.7504,27.5004,37.5004/)
+		r2 = 0.d0
+		do i=1, flavorNumber
+			do j=i, flavorNumber
+				write(tmparg,"('H_eff A ',2I1)") i,j
+				if (abs(Heff%re(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
+				end if
+				call assert_double(trim(tmparg)//"re", Heff%im(i,j), r2(i,j), 1d-7)
+			end do
+		end do
+		Heffc = H_eff_cmplx(0.04d0)
+		do i=1, flavorNumber
+			do j=i, flavorNumber
+				write(tmparg,"('H_eff_cmplx A ',2I1)") i,j
+				if (abs(r1(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
+				end if
+				if (abs(r2(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
+				end if
+			end do
+		end do
+		!B
+		nuDensities%re(1,:) = (/0.1,0.7,0.5/)
+		nuDensities%re(2,:) = (/0.7,0.8,0.2/)
+		nuDensities%re(3,:) = (/0.5,0.2,1.1/)
+		nuDensities%im(1,:) = (/0.,3.,2./)
+		nuDensities%im(2,:) = (/-3.,0.,1.5/)
+		nuDensities%im(3,:) = (/-2.,-1.5,0./)
+		Heff = H_eff(0.7d0)
+		r1(1,:) = (/140.78428,2.6185714,2.4928571/)
+		r1(2,:) = (/3.33285714,351.98857,0.85428571/)
+		r1(3,:) = (/1.1357142,1.7114285,2.91285714/)
+		r2(1,:) = (/0.,2.1,1.4/)
+		r2(2,:) = (/-2.1,0.,1.05/)
+		r2(3,:) = (/-1.4,-1.05,0./)
+		do i=1, flavorNumber
+			do j=i, flavorNumber
+				write(tmparg,"('H_eff B ',2I1)") i,j
+				if (abs(r1(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
+				end if
+				if (abs(r2(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", Heff%im(i,j), r2(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", Heff%im(i,j), r2(i,j), 1d-7)
+				end if
+			end do
+		end do
+		Heffc = H_eff_cmplx(0.7d0)
+		do i=1, flavorNumber
+			do j=i, flavorNumber
+				write(tmparg,"('H_eff_cmplx B ',2I1)") i,j
+				if (abs(r1(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
+				end if
+				if (abs(r2(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
+				end if
+			end do
+		end do
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_matterPotential
 
 	subroutine do_test_diagonalization
+		type(cmplxMatNN) :: m
+		character(len=300) :: tmparg
+		complex(dl), dimension(maxFlavorNumber, maxFlavorNumber) :: cmp1, cmp2
+		real(dl), dimension(maxFlavorNumber) :: tmpvec, rv
+		real(dl), dimension(3,3) :: r1, r2
+		integer :: iy,i,j
+
 		call printTestBlockName("diagonalization")
+
+		nuMassesMat(1,:) = (/1.,2.,3./)
+		nuMassesMat(2,:) = (/2.,4.,0.5/)
+		nuMassesMat(3,:) = (/3.,0.5,3./)
+		leptonDensities(1,:) = (/200., 1., 0./)
+		leptonDensities(2,:) = (/1., 500., 0./)
+		leptonDensities(3,:) = (/0.,0.,0./)
+		nuDensities%re(1,:) = (/0.01,0.04,0.01/)
+		nuDensities%re(2,:) = (/0.04,0.01,0.01/)
+		nuDensities%re(3,:) = (/0.01,0.01,0.07/)
+		nuDensities%im(1,:) = (/0.,3.,2./)
+		nuDensities%im(2,:) = (/-3.,0.,1.5/)
+		nuDensities%im(3,:) = (/-2.,-1.5,0./)
+		y_arr(1) = 0.04
+
+		tmpvec = 0.d0
+		cmp2(:,:) = cmplx(0.d0, 0.d0)
+		cmp1 = H_eff_cmplx(y_arr(1))
+		call HEigensystem(flavorNumber, cmp1, flavorNumber, tmpvec, cmp2, flavorNumber, -1)
+		print*,cmp2
+		rv = (/90.616907,50.009983,-12.6224912,0.,0.,0./)
+		do i=1, maxFlavorNumber
+			write(tmparg,"('HEigensystem ',I1)") i
+			if (abs(rv(i)).lt.1d-7) then
+				call assert_double(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7)
+			else
+				call assert_double_rel(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-4)
+			end if
+		end do
+
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re(1,:) = (/0.4d0,0.5d0,0.2d0/)
+			nuDensMatVecFD(iy)%re(2,:) = (/3.d0,-1.d0,0.6d0/)
+			nuDensMatVecFD(iy)%re(3,:) = (/1.1d0,4.3d0,0.9d0/)
+			nuDensMatVecFD(iy)%im(1,:) = (/0.d0,0.1d0,0.2d0/)
+			nuDensMatVecFD(iy)%im(2,:) = (/-0.1d0,0.d0,0.3d0/)
+			nuDensMatVecFD(iy)%im(3,:) = (/-0.2d0,-0.3d0,0.d0/)
+		end do
+
+		m = rho_diag_mass(1)
+		call printMat(m%re)
+		call printMat(m%im)
+		r1(1,:) = (/140.78428,2.6185714,2.4928571/)
+		r1(2,:) = (/3.33285714,351.98857,0.85428571/)
+		r1(3,:) = (/1.1357142,1.7114285,2.91285714/)
+		r2(1,:) = (/0.,2.1,1.4/)
+		r2(2,:) = (/-2.1,0.,1.05/)
+		r2(3,:) = (/-1.4,-1.05,0./)
+		do i=1, flavorNumber
+			do j=i, flavorNumber
+				write(tmparg,"('rho mass basis ',2I1)") i,j
+				if (abs(r1(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7)
+				end if
+				if (abs(r2(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", m%im(i,j), r2(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", m%im(i,j), r2(i,j), 1d-7)
+				end if
+			end do
+		end do
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_diagonalization

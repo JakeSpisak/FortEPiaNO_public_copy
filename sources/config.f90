@@ -362,10 +362,10 @@ module ndConfig
 			write(tmpstr,"(A,', of which they are steriles:',*(L2))") trim(tmparg), sterile
 			call addToLog(trim(tmpstr))
 
-			if (flavorNumber .gt. maxflavorNumber) then
-				write(tmpstr,"('[config] WARNING: only up to ',I1,' neutrino flavors are supported. Using N=',I1)") maxflavorNumber, maxflavorNumber
+			if (flavorNumber .gt. maxFlavorNumber) then
+				write(tmpstr,"('[config] WARNING: only up to ',I1,' neutrino flavors are supported. Using N=',I1)") maxFlavorNumber, maxFlavorNumber
 				call error(tmpstr)
-				flavorNumber = maxflavorNumber
+				flavorNumber = maxFlavorNumber
 			end if
 
 			massSplittings = 0.d0
