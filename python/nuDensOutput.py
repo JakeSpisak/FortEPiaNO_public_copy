@@ -497,7 +497,7 @@ class NuDensRun():
 			)
 
 		for i in range(self.nnu):
-			self.plotRhoFin(i, ls=styles[i], lc=colors[i])
+			self.plotRhoFin(i, ls=styles[i], lc=colors[i], y2=True)
 		finalizePlot(
 			"%s/rhofin_diag.pdf"%self.folder,
 			xscale="linear",
@@ -505,7 +505,7 @@ class NuDensRun():
 			)
 
 		for i in range(self.nnu):
-			self.plotRhoFin(i, ls=styles[i], lc=colors[i], mass=True)
+			self.plotRhoFin(i, ls=styles[i], lc=colors[i], y2=True, mass=True)
 		finalizePlot(
 			"%s/rhofin_mass_diag.pdf"%self.folder,
 			xscale="linear",

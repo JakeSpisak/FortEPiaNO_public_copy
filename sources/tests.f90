@@ -287,9 +287,10 @@ program tests
 	end subroutine do_test_commutator
 
 	subroutine do_test_nu_matrices
-		real(dl), dimension(3,3) :: m
+		real(dl), dimension(3) :: er
+		real(dl), dimension(3,3) :: m, nr, ni
 		real(dl), dimension(:,:), allocatable :: ide
-		integer :: i,j
+		integer :: i,j, iy
 		character(len=300) :: tmparg
 
 		write(*,*)
@@ -340,28 +341,84 @@ program tests
 		leptonDensities=0.d0
 		nuDensities%re=0.d0
 		nuDensities%im=0.d0
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re = 0.d0
+			nuDensMatVecFD(iy)%im = 0.d0
+		end do
+		!A
 		call updateMatterDensities(0.076d0, 1.32d0)
 		m(1,:) = (/-0.0026760938/1.22, 0., 0./)
 		m(2,:) = (/0.,-2.58816e-6/1.22,0./)
 		m(3,:) = (/0.,0.,0./)
+		er = (/5d-5,1d-3,0.d0/)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix A ',2I1)") i,j
-				if (m(i,j).gt.1d-16) then
-					call assert_double_rel(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-6)
+				if (abs(m(i,j)).gt.1d-16) then
+					call assert_double_rel(trim(tmparg), leptonDensities(i,j), m(i,j), er(i))
 				else
 					call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
 				end if
+				write(tmparg,"('nu density matrix re A ',2I1)") i,j
+				call assert_double(trim(tmparg), nuDensities%re(i,j), 0.d0, 1d-7)
+				write(tmparg,"('nu density matrix im A ',2I1)") i,j
+				call assert_double(trim(tmparg), nuDensities%im(i,j), 0.d0, 1d-7)
 			end do
+		end do
+		!B
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re = fermiDirac(y_arr(iy))
+			nuDensMatVecFD(iy)%im = 0.01d0 * fermiDirac(y_arr(iy))
+		end do
+		call updateMatterDensities(0.0176d0, 1.d0)
+		write(*,*)""
+		m(1,:) = (/-4.6873496d0, 0.d0, 0.d0/)
+		m(2,:) = (/0.,-1.63431,0./)
+		m(3,:) = (/0.,0.,0./)
+		nr(1,:) = (/-1.80466,-1.80466,-1.80466/)
+		nr(2,:) = (/-1.80466,-1.80466,-1.80466/)
+		nr(3,:) = (/-1.80466,-1.80466,-1.80466/)
+		ni(1,:) = (/0.,-1.80466e-2,-1.80466e-2/)
+		ni(2,:) = (/1.80466e-2,0.,-1.80466e-2/)
+		ni(3,:) = (/1.80466e-2,1.80466e-2,0./)
+		er = (/5d-5,8d-5,0.d0/)
+		do i=1,3
+			do j=1,3
+				write(tmparg,"('lepton matrix B ',2I1)") i,j
+				if (abs(m(i,j)).gt.1d-16) then
+					call assert_double_rel(trim(tmparg), leptonDensities(i,j), m(i,j), er(i))
+				else
+					call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
+				end if
+				write(tmparg,"('nu density matrix re B ',2I1)") i,j
+				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 5d-7)
+				write(tmparg,"('nu density matrix im B ',2I1)") i,j
+				call assert_double(trim(tmparg), nuDensities%im(i,j), ni(i,j), 1d-7)
+			end do
+		end do
+		!C
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re = 0.01d0*exp(-y_arr(iy))
+			nuDensMatVecFD(iy)%im = 0.4d0*exp(-y_arr(iy))
 		end do
 		call updateMatterDensities(2.d1, 1.2d0)
 		m(1,:) = (/-1.7572758d-23/0.22d0, 0.d0, 0.d0/)
 		m(2,:) = (/0.,0.,0./)
 		m(3,:) = (/0.,0.,0./)
+		nr(1,:) = (/1.d0, 1.d0, 1.d0/)
+		nr(2,:) = (/1.,1.,1./)
+		nr(3,:) = (/1.,1.,1./)
+		ni(1,:) = (/0.d0, 1.d0, 1.d0/)
+		ni(2,:) = (/-1.,0.,1./)
+		ni(3,:) = (/-1.,-1.,0./)
 		do i=1,3
 			do j=1,3
-				write(tmparg,"('lepton matrix B ',2I1)") i,j
+				write(tmparg,"('lepton matrix C ',2I1)") i,j
 				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 5d-26)
+				write(tmparg,"('nu density matrix re C ',2I1)") i,j
+				call assert_double(trim(tmparg), nuDensities%re(i,j), -0.01d0*8d-19*nr(i,j), 1d-20)
+				write(tmparg,"('nu density matrix im C ',2I1)") i,j
+				call assert_double(trim(tmparg), nuDensities%im(i,j), -0.4d0*8d-19*nr(i,j), 8d-19)
 			end do
 		end do
 	end subroutine do_test_nu_matrices
@@ -371,6 +428,10 @@ program tests
 		integer :: i, iy
 
 		allocate(ndmv_re(Ny))
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re = 0.d0
+			nuDensMatVecFD(iy)%im = 0.d0
+		end do
 		do i=1, flavorNumber
 			do iy=1, Ny
 				ndmv_re(iy) = 1.d0*i
@@ -380,7 +441,7 @@ program tests
 		end do
 
 		write(*,*) ""
-		write(*,"(a)") "Cosmology (35 tests)"
+		write(*,"(a)") "Cosmology (48 tests)"
 		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06102d0, 1d-4)
 		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.48762d0, 1d-4)
 		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377464d0, 1d-4)
@@ -430,9 +491,14 @@ program tests
 			end do
 		end do
 		call assert_double_rel("nuDensNC test 5", nuDensityNC(3, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
-
-		call assert_double_rel("nuDensEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDensEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
+		call assert_double("nuDensNC test 6", nuDensityNC(1, 2), 0.0d0, 1d-7)
+		call assert_double("nuDensNC test 7", nuDensityNC(1, 2, .false.), 0.0d0, 1d-7)
+		do iy=1, Ny
+			nuDensMatVecFD(iy)%re(1, 2) = 2.d0 * fermiDirac(y_arr(iy))
+			nuDensMatVecFD(iy)%im(1, 2) = 0.1d0 * fermiDirac(y_arr(iy))
+		end do
+		call assert_double_rel("nuDensNC test 8", nuDensityNC(1, 2), 2.d0*0.575727d0, 1d-4)
+		call assert_double_rel("nuDensNC test 9", nuDensityNC(1, 2, .false.), 0.0575727d0, 1d-4)
 
 		do i=1, flavorNumber
 			do iy=1, Ny

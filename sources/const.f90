@@ -31,7 +31,8 @@ module constants
 	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
 	real(dl), parameter :: G_F = 1.1663787d-5/(Gev2eV*Gev2eV)
 	real(dl), parameter :: G_Fsq = G_F * G_F
-	real(dl), parameter :: sin2thW =  0.23129
+	real(dl), parameter :: sin2thW = 0.23129
+	real(dl), parameter :: cos2thW = 1.d0-sin2thW
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 
