@@ -28,14 +28,14 @@ module ndCosmology
 		photonDensity = PISQD15 * z**4
 	end function photonDensity
 
-	function integr_rho_e(x, z, dme2, y)
+	pure function integr_rho_e(x, z, dme2, y)
 		real(dl) :: integr_rho_e, Emk
 		real(dl), intent(in) :: x, z, dme2, y
 		Emk = Ebare_i_dme(y, x, dme2)
 		integr_rho_e = Emk * fermiDirac(Emk/z)
 	end function integr_rho_e
 
-	function electronDensityFull(x, z)!electron + positron!
+	pure function electronDensityFull(x, z)!electron + positron!
 		real(dl) :: electronDensityFull, dme2
 		real(dl), intent(in) :: x,z
 		integer :: i
@@ -57,14 +57,14 @@ module ndCosmology
 		call elDens%evaluate(x,z,electronDensity)
 	end function electronDensity
 
-	function integr_rho_mu(x, z, y)
+	pure function integr_rho_mu(x, z, y)
 		real(dl) :: integr_rho_mu, Emk
 		real(dl), intent(in) :: x, z, y
 		Emk = E_k_m(y, x*m_mu_o_m_e)
 		integr_rho_mu = Emk * fermiDirac(Emk/z)
 	end function integr_rho_mu
 
-	function muonDensityFull(x,z)!electron + positron!
+	pure function muonDensityFull(x,z)!electron + positron!
 		real(dl) :: muonDensityFull
 		real(dl), intent(in) :: x,z
 		integer :: i

@@ -87,7 +87,7 @@ module ndInteractions
 		dme2_e_i1 = 1.d0/Ekm * fermiDirac(Ekm/z)
 	end function dme2_e_i1
 	
-	function dme2_electronFull(x, y, z)
+	pure function dme2_electronFull(x, y, z)
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12
 		real(dl) :: dme2_electronFull, tmp
 		real(dl), intent(in) :: x, y, z

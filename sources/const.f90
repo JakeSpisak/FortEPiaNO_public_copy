@@ -171,7 +171,7 @@ module ndInterfaces1
 		end function
 	end interface
 	interface
-		pure real(dl) function nuDensity_integrator(i1, i2, reim)
+		real(dl) function nuDensity_integrator(i1, i2, reim)
 			use precision
 			integer, intent(in) :: i1, i2
 			logical, intent(in), optional :: reim
