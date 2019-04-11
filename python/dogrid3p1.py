@@ -320,6 +320,11 @@ def setParser():
 		default=0,
 		help='maximum number of minutes before killing the job',
 		)
+	parser_run.add_argument(
+		'--from_heaviest',
+		action="store_true",
+		help='submit the runs starting from the higher masses',
+		)
 	parser_run.set_defaults(func=call_run)
 
 	parser_ternary = subparsers.add_parser(
@@ -698,7 +703,14 @@ def call_run(args):
 				newfiles.append(f)
 		files = newfiles
 	current = 0
-	for i, f in enumerate(sorted(files)):
+	files = (
+		sorted(files,
+			key=lambda x: [float(f) for f in x.replace(".ini", "").split("/")[-1].split("_")],
+			reverse=True)
+		if args.from_heaviest
+		else sorted(files)
+		)
+	for i, f in enumerate(files):
 		if i >= args.first_index and i < args.last_index:
 			if args.local:
 				jobcommand = "bin/nuDens.exe {ini:}".format(ini=f)

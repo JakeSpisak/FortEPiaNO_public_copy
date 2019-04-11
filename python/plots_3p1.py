@@ -6,7 +6,7 @@ import numpy as np
 from nuDensOutput import colors, styles, finalizePlot, stripRepeated, NuDensRun
 
 flavors=["e", r"\mu", r"\tau", "s"]
-a3nu = NuDensRun("OUT/prec_3nu/n30_hp/", label=r"$3\nu$")
+a3nu = NuDensRun("OUT/3nu/n30_hp/", label=r"$3\nu$")
 # new3p1 = NuDensRun("OUT/prec_3p1/n40_hp/", nnu=4, label=r"3+1")
 Ue4h = NuDensRun("OUT/3p1/30_1_0.01_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-2}$")
 Ue4l = NuDensRun("OUT/3p1/30_1_0.001_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-3}$")
@@ -38,7 +38,7 @@ for iy, y in enumerate([0.1, 2, 5]):
 	plt.plot(np.nan, ls='-', color=colors[iy], label="y=%s"%y)
 for i in [0, 3]:
 	plt.plot(np.nan, ls=styles[i], color="k", label="i=%s"%flavors[i])
-for iy, y in enumerate([0.1, 2, 5]):
+for iy, y in enumerate([0.3, 2, 5]):
 	for i in [0, 3]:
 		Ue4h.plotRhoDiagY(i, y, styles[i], lc=colors[iy], lab="", y2=True)
 finalizePlot(
