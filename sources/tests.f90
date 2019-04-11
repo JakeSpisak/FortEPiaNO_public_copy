@@ -18,8 +18,6 @@ program tests
 	call init_interp_ElDensity
 	call allocate_interpNuDens
 
-	write(*,*) ""
-	write(*,"(a)") "Starting tests"
 	call do_basic_tests
 	call do_test_NC_integrals
 	call do_test_commutator
@@ -124,6 +122,7 @@ program tests
 		integer :: N, ix
 		character(len=30) :: tmparg
 
+		call printTestBlockName("basic tests")
 		N = 12
 		allocate(tarr(N))
 		tarr = linspace(0.0d0, 11.d0, N)
@@ -158,8 +157,7 @@ program tests
 		allocate(fy1_arr(Ny))
 		allocate(fy2_arr(Ny, Ny))
 
-		write(*,*) ""
-		write(*,"(a)") "integral_linearized"
+		call printTestBlockName("integral_linearized")
 
 		do ia=1, Ny
 			fy1_arr(ia) = 0.35d0*y_arr(ia) + 11.41d0
@@ -204,8 +202,7 @@ program tests
 		m2(3,:) = (/0.01, 0.66, 0.55, 0.31/)
 		m2(4,:) = (/0.98, 0.4, -0.78, 0.4/)
 
-		write(*,*)
-		write(*,"(a)") "Commutator & anticommutator"
+		call printTestBlockName("Commutator & anticommutator")
 		call Commutator(m1, m2, m3)
 		res(1,:) = (/2.8641, 9.5666, -1.1085, -0.1569/)
 		res(2,:) = (/0.53, 2.55, -1.589, 0.1475/)
@@ -240,8 +237,7 @@ program tests
 		integer :: i,j, iy
 		character(len=300) :: tmparg
 
-		write(*,*)
-		write(*,"(a)") "Neutrino and lepton matrices"
+		call printTestBlockName("Neutrino and lepton matrices")
 
 		m(1,:) = (/0.825082, 0.54529713, 0.1479548/)
 		m(2,:) = (/-0.47410446, 0.525726198, 0.7062839/)
@@ -389,8 +385,7 @@ program tests
 			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
 		end do
 
-		write(*,*) ""
-		write(*,"(a)") "Cosmology"
+		call printTestBlockName("Cosmology")
 		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06102d0, 1d-4)
 		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.48762d0, 1d-4)
 		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377464d0, 1d-4)
@@ -525,8 +520,7 @@ program tests
 		real(dl), dimension(2) :: res
 		integer :: ix
 
-		write(*,*) ""
-		write(*,"(a)") "JKYG"
+		call printTestBlockName("JKYG")
 		call assert_double_rel("J test 1", J_funcFull(0.01d0), 0.16666413d0, 1d-7)
 		call assert_double_rel("J test 2", J_funcFull(1.d0), 0.143797172d0, 1d-7)
 		call assert_double_rel("J test 3", J_funcFull(5.d0), 0.0133935079d0, 1d-7)
@@ -579,8 +573,7 @@ program tests
 			ydot((m-1)*flavNumSqu + 2) = y_arr(m)/20.d0
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
-		write(*,*) ""
-		write(*,"(a)") "dz/dx functions"
+		call printTestBlockName("dz/dx functions")
 		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 1", ydot(n), -0.123503d0, 8d-3)
 		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
@@ -603,8 +596,7 @@ program tests
 	end subroutine do_tests_dzodx
 
 	subroutine do_tests_dme2
-		write(*,*) ""
-		write(*,"(a)") "dme2"
+		call printTestBlockName("dme2")
 		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2F test 3", dme2_electronFull(0.5d0, 0.d0, 1.1d0), 0.0283696d0, 1d-5)
@@ -624,8 +616,7 @@ program tests
 	end subroutine do_tests_dme2
 
 	subroutine do_tests_Di
-		write(*,*) ""
-		write(*,"(a)") "D_i functions"
+		call printTestBlockName("D_i functions")
 		call assert_double("D1 test 1", D1_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 2", D1_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 3", D1_full(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
@@ -682,8 +673,7 @@ program tests
 
 	subroutine do_tests_Pi_ij
 		real(dl), dimension(2) :: temp_v2
-		write(*,*) ""
-		write(*,"(a)") "Pi(yi,yj) functions"
+		call printTestBlockName("Pi(yi,yj) functions")
 		call assert_double("Pi_1_12 test 1", PI1_12_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.00933333d0, 1d-7)
 		call assert_double("Pi_1_12 test 2", PI1_12_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.0893333d0, 1d-7)
 		call assert_double_rel("Pi_1_12 test 3", PI1_12_full(10.d0, 2.d0, 5.3d0, 6.7d0), 170.66667d0, 1d-7)
@@ -733,8 +723,7 @@ program tests
 		f1 = fermiDirac(0.3d0)
 		f2 = fermiDirac(0.4d0)
 		f3 = fermiDirac(0.1d0)
-		write(*,*) ""
-		write(*,"(a)") "F_ann_re functions at equilibrium"
+		call printTestBlockName("F_ann_re functions at equilibrium")
 		call allocateCmplxMat(nA)
 		call allocateCmplxMat(nB)
 		fdA = fermiDirac(0.1d0)
@@ -878,8 +867,7 @@ program tests
 		f1 = fermiDirac(0.2d0)
 		f2 = fermiDirac(0.4d0)
 		f3 = fermiDirac(0.1d0)
-		write(*,*)
-		write(*,"(a)") "F_sc_re functions at equilibrium"
+		call printTestBlockName("F_sc_re functions at equilibrium")
 		fdA = fermiDirac(0.1d0)
 		fdB = fermiDirac(0.3d0)
 		do ix=1, flavorNumber
@@ -1028,8 +1016,7 @@ program tests
 		f1 = fermiDirac(0.1d0)
 		f2 = fermiDirac(0.7d0)
 		f3 = fermiDirac(1.9d0)
-		write(*,*)
-		write(*,"(a)") "F_ann functions, empty rho"
+		call printTestBlockName("F_ann functions, empty rho")
 		call allocateCmplxMat(nA)
 		call allocateCmplxMat(nB)
 		nA%re = 0.d0
@@ -1112,8 +1099,7 @@ program tests
 			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,2, ix,ix), tmparrA(ix), 1d-7)
 		end do
 
-		write(*,*)
-		write(*,"(a)") "F_sc functions, empty rho"
+		call printTestBlockName("F_sc functions, empty rho")
 		do a=1, 2
 			do b=1, 2
 				do ix=1, flavorNumber
@@ -1151,8 +1137,7 @@ program tests
 			end do
 		end do
 
-		write(*,*)
-		write(*,"(a)") "F_ann functions, full rho"
+		call printTestBlockName("F_ann functions, full rho")
 		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
 		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
 		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
@@ -1281,8 +1266,7 @@ program tests
 			end do
 		end do
 
-		write(*,*)
-		write(*,"(a)") "F_sc functions, full rho"
+		call printTestBlockName("F_sc functions, full rho")
 		!RR
 		tmpmatA(1,:) = (/0.0093345,0.00309005,0.000821132/)
 		tmpmatA(2,:) = (/0.00309005,0.0248957,-0.000671452/)
@@ -1397,8 +1381,7 @@ program tests
 			end do
 		end do
 
-		write(*,*)
-		write(*,"(a)") "F_ann functions, final tests"
+		call printTestBlockName("F_ann functions, final tests")
 		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
 		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
 		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
@@ -1466,8 +1449,7 @@ program tests
 
 		allocate(fy2_arr(Ny, Ny))
 
-		write(*,*) ""
-		write(*,"(a)") "Collision integrals"
+		call printTestBlockName("Collision integrals")
 
 		x=0.05d0
 		iy1=7 !1.22151515151515
@@ -1745,8 +1727,7 @@ program tests
 		x=0.05d0
 		iy1=7 !1.22151515151515
 		z=1.06d0
-		write(*,*)
-		write(*,"(a)") "Collision integrands im part and off diagonal"
+		call printTestBlockName("Collision integrands, im and off-diag")
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
@@ -1861,8 +1842,7 @@ program tests
 		iy1 = 7 !1.22151515151515
 		z = 1.186d0
 		dme2 = 0.1d0
-		write(*,*)
-		write(*,"(a)") "Collision_terms"
+		call printTestBlockName("Collision_terms")
 		collArgs%ix1 = 1
 		collArgs%ix1 = 1
 		collArgs%x = x
@@ -2102,13 +2082,14 @@ program tests
 		allocate(GLR_vectmp(2, flavorNumber, flavorNumber))
 		GLR_vectmp = GLR_vec
 		GLR_vec = 0.d0
-		write(*,*) ""
-		write(*,"(a)") "d rho/d x [without collision_terms or with fake ones]"
+		call printTestBlockName("d rho/d x [w/o real collision_terms]")
 		call allocateCmplxMat(res)
 		x = 0.06d0
 		z = 1.23d0
 		dme2 = 0.1d0
 		call updateMatterDensities(x, z)
+		nuDensities%re=0.d0
+		nuDensities%im=0.d0
 		iy = 12 !2.231111111111111
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
@@ -2172,6 +2153,8 @@ program tests
 		x = 1.76d0
 		z = 1.31d0
 		call updateMatterDensities(x, z)
+		nuDensities%re=0.d0
+		nuDensities%im=0.d0
 		iy = 34 !6.67333333333333
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
@@ -2254,8 +2237,7 @@ program tests
 		iy1 = 7 !1.22151515151515
 		z = 1.186d0
 		dme2 = 0.1d0
-		write(*,*)
-		write(*,"(a)") "Damping terms"
+		call printTestBlockName("Damping terms")
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
@@ -2454,8 +2436,7 @@ program tests
 		type(coll_args) :: collArgs
 		real(dl), dimension(:), allocatable :: ydot
 
-		write(*,*) ""
-		write(*,"(a)") "Gauss-Laguerre quadrature"
+		call printTestBlockName("Gauss-Laguerre quadrature")
 
 		use_gauss_laguerre = .true.
 		do nx=50, 10, -1
@@ -2498,8 +2479,7 @@ program tests
 			deallocate(fx2a, fx2b, xa, wa, wa2, ya, dx)
 		end do
 
-		write(*,*) ""
-		write(*,"(a)") "Gauss-Laguerre quadrature of collision integrals"
+		call printTestBlockName("GL quadrature of collision integrals")
 		collArgs%x = 0.05d0
 		collArgs%z = 1.06d0
 		collArgs%iy = 5
@@ -2607,8 +2587,7 @@ program tests
 			end do
 		end do
 
-		write(*,*) ""
-		write(*,"(a)") "other applications of Gauss-Laguerre quadrature"
+		call printTestBlockName("other applications of GL quadrature")
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		do i=1, flavorNumber
@@ -2673,8 +2652,7 @@ program tests
 	end subroutine do_test_GL
 
 	subroutine do_test_zin
-		write(*,*)
-		write(*,"(a)") "z_in solver"
+		call printTestBlockName("z_in solver")
 		dme2_temperature_corr = .false.
 		x_in=0.05d0
 		z_in=0.d0
@@ -2686,6 +2664,19 @@ program tests
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_zin
+
+	subroutine do_test_matterPotential
+		call printTestBlockName("matter potential, including neutrinos")
+		
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_matterPotential
+
+	subroutine do_test_diagonalization
+		call printTestBlockName("diagonalization")
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_diagonalization
 
 	subroutine do_timing_tests
 		timing_tests = .true.
