@@ -1,63 +1,3 @@
-subroutine assert_double(testname, num1, num2, tol)
-	use precision
-	implicit none
-	character(len=*) :: testname
-	real(dl) :: num1, num2, tol
-
-	if (abs(num1 - num2) .lt. tol) then
-		write(*, fmt="(a)", advance="no") "."
-	else
-		print *, testname, " failed"
-		write (*,"(*(E17.9))") num1, num2, num1 - num2, tol
-		call exit()
-	end if
-end subroutine assert_double
-
-subroutine assert_double_verb(testname, num1, num2, tol)
-	use precision
-	implicit none
-	character(len=*) :: testname
-	real(dl) :: num1, num2, tol
-
-	if (abs(num1 - num2) .lt. tol) then
-		write(*, fmt="(a,'  ',E14.7)") testname, num1 - num2
-	else
-		print *, testname, " failed"
-		write (*,"(*(E17.9))") num1, num2, num1 - num2, tol
-		call exit()
-	end if
-end subroutine assert_double_verb
-
-subroutine assert_double_rel(testname, num1, num2, tol)
-	use precision
-	implicit none
-	character(len=*) :: testname
-	real(dl) :: num1, num2, tol
-
-	if (abs((num1 - num2)/num1) .lt. tol) then
-		write(*, fmt="(a)", advance="no") "."
-	else
-		print *, testname, " failed"
-		write (*,"(*(E17.9))") num1, num2, (num1 - num2)/num1, tol
-		call exit()
-	end if
-end subroutine assert_double_rel
-
-subroutine assert_double_rel_verb(testname, num1, num2, tol)
-	use precision
-	implicit none
-	character(len=*) :: testname
-	real(dl) :: num1, num2, tol
-
-	if (abs((num1 - num2)/num1) .lt. tol) then
-		write(*, fmt="(a,'  ',E14.7)") testname, (num1 - num2)/num1
-	else
-		print *, testname, " failed"
-		write (*,"(*(E17.9))") num1, num2, (num1 - num2)/num1, tol
-		call exit()
-	end if
-end subroutine assert_double_rel_verb
-
 program tests
 	use precision
 	use variables
@@ -65,6 +5,7 @@ program tests
 	use ndErrors
 	use ndEquations
 	use ndstuff
+	use sgTestUtils
 	implicit none
 
 	call openLogFile
@@ -205,6 +146,8 @@ program tests
 
 		call assert_double_rel("y_arr linlog 1", y_arr(1), 0.01d0, 1d-7)
 		call assert_double_rel("y_arr linlog 2", y_arr(2), 0.21191919191919d0, 1d-7)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_basic_tests
 
 	subroutine do_test_NC_integrals
@@ -216,7 +159,7 @@ program tests
 		allocate(fy2_arr(Ny, Ny))
 
 		write(*,*) ""
-		write(*,"(a)") "integral_linearized (4 tests)"
+		write(*,"(a)") "integral_linearized"
 
 		do ia=1, Ny
 			fy1_arr(ia) = 0.35d0*y_arr(ia) + 11.41d0
@@ -242,6 +185,8 @@ program tests
 
 		deallocate(fy1_arr)
 		deallocate(fy2_arr)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_test_NC_integrals
 
 	subroutine do_test_commutator
@@ -260,7 +205,7 @@ program tests
 		m2(4,:) = (/0.98, 0.4, -0.78, 0.4/)
 
 		write(*,*)
-		write(*,"(a)") "Commutator & anticommutator (32 tests)"
+		write(*,"(a)") "Commutator & anticommutator"
 		call Commutator(m1, m2, m3)
 		res(1,:) = (/2.8641, 9.5666, -1.1085, -0.1569/)
 		res(2,:) = (/0.53, 2.55, -1.589, 0.1475/)
@@ -284,6 +229,8 @@ program tests
 			end do
 		end do
 		deallocate(m1, m2, m3, res)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_test_commutator
 
 	subroutine do_test_nu_matrices
@@ -294,7 +241,7 @@ program tests
 		character(len=300) :: tmparg
 
 		write(*,*)
-		write(*,"(a)") "Neutrino and lepton matrices (63 tests)"
+		write(*,"(a)") "Neutrino and lepton matrices"
 
 		m(1,:) = (/0.825082, 0.54529713, 0.1479548/)
 		m(2,:) = (/-0.47410446, 0.525726198, 0.7062839/)
@@ -421,6 +368,8 @@ program tests
 				call assert_double(trim(tmparg), nuDensities%im(i,j), -0.4d0*8d-19*nr(i,j), 8d-19)
 			end do
 		end do
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_test_nu_matrices
 
 	subroutine do_tests_cosmology
@@ -441,7 +390,7 @@ program tests
 		end do
 
 		write(*,*) ""
-		write(*,"(a)") "Cosmology (48 tests)"
+		write(*,"(a)") "Cosmology"
 		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06102d0, 1d-4)
 		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.48762d0, 1d-4)
 		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377464d0, 1d-4)
@@ -568,6 +517,8 @@ program tests
 		end do
 		call assert_double("radDens test 4", radDensity(0.01d0, 1.24d0), 8.16007d0, 1d-3)
 		deallocate(ndmv_re)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_tests_cosmology
 
 	subroutine do_tests_JKYG
@@ -575,7 +526,7 @@ program tests
 		integer :: ix
 
 		write(*,*) ""
-		write(*,"(a)") "JKYG (27 tests)"
+		write(*,"(a)") "JKYG"
 		call assert_double_rel("J test 1", J_funcFull(0.01d0), 0.16666413d0, 1d-7)
 		call assert_double_rel("J test 2", J_funcFull(1.d0), 0.143797172d0, 1d-7)
 		call assert_double_rel("J test 3", J_funcFull(5.d0), 0.0133935079d0, 1d-7)
@@ -611,6 +562,8 @@ program tests
 		res = dzodxcoef_interp_func(5.d0)
 		call assert_double_rel("A test 3", res(1), 0.034036d0, 1d-5)
 		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_tests_JKYG
 
 	subroutine do_tests_dzodx
@@ -627,7 +580,7 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 		write(*,*) ""
-		write(*,"(a)") "dz/dx functions (6 tests)"
+		write(*,"(a)") "dz/dx functions"
 		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 1", ydot(n), -0.123503d0, 8d-3)
 		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
@@ -645,11 +598,13 @@ program tests
 		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.15262978d0, 2d-6)
 		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.183428d0, 2d-6)
 		deallocate(ydot)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_tests_dzodx
 
 	subroutine do_tests_dme2
 		write(*,*) ""
-		write(*,"(a)") "dme2 (14 tests)"
+		write(*,"(a)") "dme2"
 		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2F test 3", dme2_electronFull(0.5d0, 0.d0, 1.1d0), 0.0283696d0, 1d-5)
@@ -664,11 +619,13 @@ program tests
 		call assert_double("dme2 test 6", dme2_electron(35.d0, 0.d0, 1.39d0), 0.0295293d0, 1d-5)
 		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), 1.3d0, 1d-7)
 		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), 8.944272d0, 1d-7)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_tests_dme2
 
 	subroutine do_tests_Di
 		write(*,*) ""
-		write(*,"(a)") "D_i functions (48 tests)"
+		write(*,"(a)") "D_i functions"
 		call assert_double("D1 test 1", D1_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 2", D1_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 3", D1_full(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
@@ -719,12 +676,14 @@ program tests
 		call assert_double_rel("D3p test 4", D3_bis(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
 		call assert_double_rel("D3p test 5", D3_bis(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
 		call assert_double_rel("D3p test 6", D3_bis(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_tests_Di
 
 	subroutine do_tests_Pi_ij
 		real(dl), dimension(2) :: temp_v2
 		write(*,*) ""
-		write(*,"(a)") "Pi(yi,yj) functions (24 tests)"
+		write(*,"(a)") "Pi(yi,yj) functions"
 		call assert_double("Pi_1_12 test 1", PI1_12_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.00933333d0, 1d-7)
 		call assert_double("Pi_1_12 test 2", PI1_12_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.0893333d0, 1d-7)
 		call assert_double_rel("Pi_1_12 test 3", PI1_12_full(10.d0, 2.d0, 5.3d0, 6.7d0), 170.66667d0, 1d-7)
@@ -760,6 +719,8 @@ program tests
 		temp_v2 = PI2_ne_f(2.d0, 10.d0, 6.7d0, 5.3d0, 10.d0, 5.3d0)
 		call assert_double("Pi_2_14 test 4", temp_v2(1), 1978.88d0, 1d-7)
 		call assert_double("Pi_2_12 test 4", temp_v2(2), 9420.8d0, 1d-7)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_tests_Pi_ij
 
 	subroutine do_f_ann_sc_re_tests_eq
@@ -773,7 +734,7 @@ program tests
 		f2 = fermiDirac(0.4d0)
 		f3 = fermiDirac(0.1d0)
 		write(*,*) ""
-		write(*,"(a)") "F_ann_re functions at equilibrium (144 tests)"
+		write(*,"(a)") "F_ann_re functions at equilibrium"
 		call allocateCmplxMat(nA)
 		call allocateCmplxMat(nB)
 		fdA = fermiDirac(0.1d0)
@@ -918,7 +879,7 @@ program tests
 		f2 = fermiDirac(0.4d0)
 		f3 = fermiDirac(0.1d0)
 		write(*,*)
-		write(*,"(a)") "F_sc_re functions at equilibrium (144 tests)"
+		write(*,"(a)") "F_sc_re functions at equilibrium"
 		fdA = fermiDirac(0.1d0)
 		fdB = fermiDirac(0.3d0)
 		do ix=1, flavorNumber
@@ -1052,6 +1013,8 @@ program tests
 		end do
 		call deallocateCmplxMat(nA)
 		call deallocateCmplxMat(nB)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_f_ann_sc_re_tests_eq
 
 	subroutine do_f_ann_sc_re_tests_full
@@ -1066,7 +1029,7 @@ program tests
 		f2 = fermiDirac(0.7d0)
 		f3 = fermiDirac(1.9d0)
 		write(*,*)
-		write(*,"(a)") "F_ann functions, empty rho (144 tests)"
+		write(*,"(a)") "F_ann functions, empty rho"
 		call allocateCmplxMat(nA)
 		call allocateCmplxMat(nB)
 		nA%re = 0.d0
@@ -1150,7 +1113,7 @@ program tests
 		end do
 
 		write(*,*)
-		write(*,"(a)") "F_sc functions, empty rho (144 tests)"
+		write(*,"(a)") "F_sc functions, empty rho"
 		do a=1, 2
 			do b=1, 2
 				do ix=1, flavorNumber
@@ -1189,7 +1152,7 @@ program tests
 		end do
 
 		write(*,*)
-		write(*,"(a)") "F_ann functions, full rho (144 tests)"
+		write(*,"(a)") "F_ann functions, full rho"
 		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
 		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
 		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
@@ -1319,7 +1282,7 @@ program tests
 		end do
 
 		write(*,*)
-		write(*,"(a)") "F_sc functions, full rho (144 tests)"
+		write(*,"(a)") "F_sc functions, full rho"
 		!RR
 		tmpmatA(1,:) = (/0.0093345,0.00309005,0.000821132/)
 		tmpmatA(2,:) = (/0.00309005,0.0248957,-0.000671452/)
@@ -1435,7 +1398,7 @@ program tests
 		end do
 
 		write(*,*)
-		write(*,"(a)") "F_ann functions, final tests (36 tests)"
+		write(*,"(a)") "F_ann functions, final tests"
 		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
 		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
 		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
@@ -1484,6 +1447,8 @@ program tests
 		end do
 		call deallocateCmplxMat(nA)
 		call deallocateCmplxMat(nB)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_f_ann_sc_re_tests_full
 
 	subroutine do_tests_coll_int
@@ -1502,7 +1467,7 @@ program tests
 		allocate(fy2_arr(Ny, Ny))
 
 		write(*,*) ""
-		write(*,"(a)") "Collision integrals (57 tests)"
+		write(*,"(a)") "Collision integrals"
 
 		x=0.05d0
 		iy1=7 !1.22151515151515
@@ -1781,7 +1746,7 @@ program tests
 		iy1=7 !1.22151515151515
 		z=1.06d0
 		write(*,*)
-		write(*,"(a)") "Collision integrands im part and off diagonal (36 tests)"
+		write(*,"(a)") "Collision integrands im part and off diagonal"
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
@@ -1854,6 +1819,8 @@ program tests
 		end do
 !		call criticalError("stop")
 		deallocate(ndmv_re)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_tests_coll_int
 
 	pure real(dl) function fakecollint1(a, b, o)
@@ -1895,7 +1862,7 @@ program tests
 		z = 1.186d0
 		dme2 = 0.1d0
 		write(*,*)
-		write(*,"(a)") "Collision_terms (36 tests)"
+		write(*,"(a)") "Collision_terms"
 		collArgs%ix1 = 1
 		collArgs%ix1 = 1
 		collArgs%x = x
@@ -1997,6 +1964,8 @@ program tests
 				end if
 			end do
 		end do
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_test_collision_terms
 
 	subroutine test_speed_coll_int
@@ -2134,7 +2103,7 @@ program tests
 		GLR_vectmp = GLR_vec
 		GLR_vec = 0.d0
 		write(*,*) ""
-		write(*,"(a)") "d rho/d x [without collision_terms or with fake ones] (72 tests)"
+		write(*,"(a)") "d rho/d x [without collision_terms or with fake ones]"
 		call allocateCmplxMat(res)
 		x = 0.06d0
 		z = 1.23d0
@@ -2263,6 +2232,8 @@ program tests
 		end do
 		GLR_vec = GLR_vectmp
 		deallocate(GLR_vectmp)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_test_drho_dx
 
 	subroutine do_test_damping_factors
@@ -2284,7 +2255,7 @@ program tests
 		z = 1.186d0
 		dme2 = 0.1d0
 		write(*,*)
-		write(*,"(a)") "Damping terms (28 tests)"
+		write(*,"(a)") "Damping terms"
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
@@ -2469,6 +2440,8 @@ program tests
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
 		end do
 		collision_offdiag = 1
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_test_damping_factors
 
 	subroutine do_test_GL
@@ -2482,7 +2455,7 @@ program tests
 		real(dl), dimension(:), allocatable :: ydot
 
 		write(*,*) ""
-		write(*,"(a)") "Gauss-Laguerre quadrature (82 tests)"
+		write(*,"(a)") "Gauss-Laguerre quadrature"
 
 		use_gauss_laguerre = .true.
 		do nx=50, 10, -1
@@ -2526,7 +2499,7 @@ program tests
 		end do
 
 		write(*,*) ""
-		write(*,"(a)") "Gauss-Laguerre quadrature of collision integrals (54 tests)"
+		write(*,"(a)") "Gauss-Laguerre quadrature of collision integrals"
 		collArgs%x = 0.05d0
 		collArgs%z = 1.06d0
 		collArgs%iy = 5
@@ -2635,7 +2608,7 @@ program tests
 		end do
 
 		write(*,*) ""
-		write(*,"(a)") "other applications of Gauss-Laguerre quadrature (13 tests)"
+		write(*,"(a)") "other applications of Gauss-Laguerre quadrature"
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		do i=1, flavorNumber
@@ -2695,11 +2668,13 @@ program tests
 		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.0950884d0, 2d-6)
 		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.126884393d0, 2d-6)
 		deallocate(ydot)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_test_GL
 
 	subroutine do_test_zin
 		write(*,*)
-		write(*,"(a)") "z_in solver (4 tests)"
+		write(*,"(a)") "z_in solver"
 		dme2_temperature_corr = .false.
 		x_in=0.05d0
 		z_in=0.d0
@@ -2708,6 +2683,8 @@ program tests
 		x_in=1d-3
 		call zin_solver
 		call assert_double("z_in test 2", z_in-1.d0, 8.9d-8, 1d-9)
+		call printTotalTests
+		call resetTestCounter
 	end subroutine do_test_zin
 
 	subroutine do_timing_tests

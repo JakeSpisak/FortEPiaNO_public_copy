@@ -41,6 +41,8 @@ OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
 	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/bspline_oo_module.o $(BUILD_DIR)/bspline_sub_module.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 
+OBJ_TESTS=$(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/test_utils.o
+
 ifeq ($(BUILD_DIR),builddeb)
 FFLAGS=$(DEBUGFLAGS)
 else
@@ -71,23 +73,19 @@ $(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/nuDens.o: $(OBJ_FILES)
 $(BUILD_DIR)/stuff.o: $(OBJ_FILES)
-$(BUILD_DIR)/tests.o: $(OBJ_FILES) $(BUILD_DIR)/stuff.o
+$(BUILD_DIR)/test_utils.o: $(BUILD_DIR)/const.o
+$(BUILD_DIR)/tests.o: $(OBJ_TESTS)
 
 all: nudens
 
 directories:
 	mkdir -p bin/ log/ $(BUILD_DIR)
 
-objects: $(OBJ_FILES) $(BUILD_DIR)/nuDens.o
-
-nudens: directories objects Makefile
+nudens: directories Makefile $(OBJ_FILES) $(BUILD_DIR)/nuDens.o
 	$(F90) -o bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
 
-nudens_debug: directories objects Makefile
-	$(F90) -o bin/nuDens_debug.exe $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
-
-tests: directories objects Makefile $(BUILD_DIR)/tests.o
-	$(F90) -o bin/tests $(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/tests.o $(FFLAGS)
+tests: directories Makefile $(OBJ_TESTS) $(BUILD_DIR)/tests.o
+	$(F90) -o bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS)
 
 clean: 
 	rm -rf bin/* $(BUILD_DIR)*/ build*/
