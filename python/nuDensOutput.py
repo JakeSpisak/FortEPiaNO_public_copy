@@ -96,12 +96,22 @@ def stripRepeated(data, ix1, ix2):
 class NuDensRun():
 	"""Class that reads the output and helps to do plots"""
 
-	def __init__(self, folder, nnu=3, full=True, label="", plots=False, rho=True):
+	def __init__(self,
+			folder,
+			nnu=3,
+			full=True,
+			label="",
+			plots=False,
+			rho=True,
+			verbose=True,
+			):
 		self.folder = folder
 		self.full = full
 		self.label = label
+		self.verbose = verbose
 		if not os.path.exists(folder):
-			print("non-existing folder: %s"%folder)
+			if verbose:
+				print("non-existing folder: %s"%folder)
 			return
 		try:
 			fdy = np.loadtxt("%s/fd.dat"%folder)
@@ -141,7 +151,8 @@ class NuDensRun():
 				self.wfin = float(
 					re.match("final w[ =]*([-\d.]*)", self.resume[0]).group(1))
 			except AttributeError:
-				print("final w is not in resume.dat")
+				if verbose:
+					print("final w is not in resume.dat")
 				zlineindex=0
 			else:
 				zlineindex = 1
@@ -234,6 +245,8 @@ class NuDensRun():
 		return self.yv, ov
 
 	def printTableLine(self):
+		if not self.verbose:
+			return
 		if self.hasResume:
 			deltastr = ""
 			for i in range(self.nnu):

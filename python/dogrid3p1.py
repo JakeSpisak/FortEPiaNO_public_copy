@@ -149,6 +149,11 @@ def setParser():
 		default="",
 		help='Name for the file where to save a separate colorbar',
 		)
+	parser_plot.add_argument(
+		'--verbose',
+		action="store_true",
+		help='print information on the points that are missing and so on',
+		)
 	parser_plot.set_defaults(func=call_plot)
 
 	parser_prepare = subparsers.add_parser(
@@ -262,6 +267,11 @@ def setParser():
 		'read',
 		help='read the output files and print resume'
 		)
+	parser_read.add_argument(
+		'--verbose',
+		action="store_true",
+		help='print information on the points that are missing and so on',
+		)
 	parser_read.set_defaults(func=call_read)
 
 	parser_run = subparsers.add_parser(
@@ -353,6 +363,11 @@ def setParser():
 		choices=["heatmap", "scatter"],
 		default="heatmap",
 		help='which type of plot to use to show Delta Neff',
+		)
+	parser_ternary.add_argument(
+		'--verbose',
+		action="store_true",
+		help='print information on the points that are missing and so on',
 		)
 	parser_ternary.set_defaults(func=call_ternary)
 	return parser
@@ -675,9 +690,10 @@ def call_read(args):
 		folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
 		obj = None
 		try:
-			obj = NuDensRun(folder, label=lab, nnu=4, rho=False)
+			obj = NuDensRun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
 		except (IOError, IndexError):
-			print("no %s"%lab)
+			if args.verbose:
+				print("no %s"%lab)
 			missing += 1
 		else:
 			try:
