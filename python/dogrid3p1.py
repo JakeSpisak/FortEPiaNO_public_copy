@@ -68,6 +68,11 @@ def setParser():
 		'gridname',
 		help='the name of the grid you want to use'
 		)
+	parser.add_argument(
+		'--verbose',
+		action="store_true",
+		help='print information on the grid parameters, on the points that are missing and so on',
+		)
 	subparsers = parser.add_subparsers(
 		help='sub-command help',
 		dest='cmd',
@@ -148,11 +153,6 @@ def setParser():
 		'--colorbar_fname',
 		default="",
 		help='Name for the file where to save a separate colorbar',
-		)
-	parser_plot.add_argument(
-		'--verbose',
-		action="store_true",
-		help='print information on the points that are missing and so on',
 		)
 	parser_plot.set_defaults(func=call_plot)
 
@@ -267,11 +267,6 @@ def setParser():
 		'read',
 		help='read the output files and print resume'
 		)
-	parser_read.add_argument(
-		'--verbose',
-		action="store_true",
-		help='print information on the points that are missing and so on',
-		)
 	parser_read.set_defaults(func=call_read)
 
 	parser_run = subparsers.add_parser(
@@ -363,11 +358,6 @@ def setParser():
 		choices=["heatmap", "scatter"],
 		default="heatmap",
 		help='which type of plot to use to show Delta Neff',
-		)
-	parser_ternary.add_argument(
-		'--verbose',
-		action="store_true",
-		help='print information on the points that are missing and so on',
 		)
 	parser_ternary.set_defaults(func=call_ternary)
 	return parser
@@ -680,7 +670,8 @@ def call_read(args):
 	values, grid = read_grid_cfg(args.gridname)
 	objects = []
 	missing = 0
-	print("\nTotal number of points: %s"%len(grid))
+	if args.verbose:
+		print("\nTotal number of points: %s"%len(grid))
 	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
 		lab = (r"dm41=%s "%dm41
 			+ r"Ue4sq=%s "%Ue4sq
@@ -701,7 +692,10 @@ def call_read(args):
 			except AttributeError:
 				missing += 1
 		objects.append(obj)
-	print("\nMissing or incomplete points: %s\n"%missing)
+	if args.verbose:
+		print("\nMissing or incomplete points: %s\n"%missing)
+	else:
+		print("\n%s: total=%s, missing=%s\n"%(args.gridname, len(grid), missing))
 	return values, grid, objects
 
 
@@ -930,5 +924,6 @@ if __name__=='__main__':
 			args.func(args, gridContent)
 	else:
 		args = parser.parse_args(argsList)
-		print(args)
+		if args.verbose:
+			print(args)
 		args.func(args)
