@@ -241,7 +241,7 @@ module ndEquations
 	end function G12_funcFull
 
 	subroutine init_interp_jkyg12
-		real(dl) :: num, den, j, y, jmu, ymu
+		real(dl) :: num, den, j, y, jmu, ymu, xoz, xozmu
 		real(dl), dimension(:), allocatable :: A, B
 		real(dl), dimension(2) :: g12
 		integer :: ix, nx, iflag
@@ -249,20 +249,22 @@ module ndEquations
 		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx...")
 		nx=interp_nxz
 		allocate(A(nx), B(nx))
-		!$omp parallel do default(shared) private(ix, j, y, g12, num, den) schedule(dynamic)
+		!$omp parallel do default(shared) private(ix, j, y, g12, num, den, xoz, xozmu) schedule(dynamic)
 		do ix=1, nx
-			j = J_funcFull(interp_xozvec(ix))
-			y = Y_funcFull(interp_xozvec(ix))
-			if (interp_xozvec(ix).gt.x_muon_cut) then
+			xoz = interp_xozvec(ix)
+			j = J_funcFull(xoz)
+			y = Y_funcFull(xoz)
+			if (xoz.gt.x_muon_cut) then
 				jmu=0.d0
 				ymu=0.d0
 			else
-				jmu = J_funcFull(interp_xozvec(ix)*m_mu_o_m_e)
-				ymu = Y_funcFull(interp_xozvec(ix)*m_mu_o_m_e)
+				xozmu = xoz*m_mu_o_m_e
+				jmu = J_funcFull(xozmu)
+				ymu = Y_funcFull(xozmu)
 			end if
-			g12 = G12_funcFull(interp_xozvec(ix))
-			num= interp_xozvec(ix)*(j+jmu) + g12(1)
-			den= interp_xozvec(ix)**2*(j+jmu) + y+ymu + PISQ/7.5d0 + g12(2)
+			g12 = G12_funcFull(xoz)
+			num= xoz*(j+jmu) + g12(1)
+			den= xoz**2*(j+jmu) + y+ymu + PISQ/7.5d0 + g12(2)
 			A(ix) = num / den
 			B(ix) = 1./(2.d0*PISQ*den)
 		end do
