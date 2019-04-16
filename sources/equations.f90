@@ -418,7 +418,7 @@ module ndEquations
 		integer, intent(in) :: iy
 		complex(dl), dimension(maxFlavorNumber, maxFlavorNumber) :: tmpComplMat, transfMat
 		real(dl), dimension(maxFlavorNumber) :: tmpvec
-		integer :: i, j, k, l
+		integer :: i, k
 
 		call allocateCmplxMat(rho_diag_mass)
 		rho_diag_mass%re(:,:) = 0.d0
@@ -429,17 +429,10 @@ module ndEquations
 		tmpComplMat = H_eff_cmplx(y_arr(iy))
 		call HEigensystem(flavorNumber, tmpComplMat, flavorNumber, tmpvec, transfMat, flavorNumber, 0)
 		do k=1, flavorNumber
-			do l=k, flavorNumber
-				do i=1, flavorNumber
-					do j=1, flavorNumber
-						rho_diag_mass%re(k, l) = rho_diag_mass%re(k, l) &
-							+ dble(conjg(transfMat(i, k))*transfMat(j, l)&
-								*cmplx(nuDensMatVecFD(iy)%re(i, j), nuDensMatVecFD(iy)%im(i, j)))
-						rho_diag_mass%im(k, l) = rho_diag_mass%im(k, l) &
-							+ dimag(conjg(transfMat(i, k))*transfMat(j, l)&
-								*cmplx(nuDensMatVecFD(iy)%re(i, j), nuDensMatVecFD(iy)%im(i, j)))
-					end do
-				end do
+			do i=1, flavorNumber
+				rho_diag_mass%re(k, k) = rho_diag_mass%re(k, k) &
+					+ dble(conjg(transfMat(i, k))*transfMat(i, k)) &
+						* nuDensMatVecFD(iy)%re(i, i)
 			end do
 		end do
 	end function rho_diag_mass
@@ -512,17 +505,6 @@ module ndEquations
 				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_mass', k, '.dat'
 				call nuDens_to_file(iu, k, k, x, rho_mass, .true., trim(fname))
 			end do
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
-				do i=1, flavorNumber-1
-					do j=i+1, flavorNumber
-						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_mass_nd_', i, j, '_re.dat'
-						call nuDens_to_file(iu, i, j, x, rho_mass, .true., trim(fname))
-
-						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_mass_nd_', i, j, '_im.dat'
-						call nuDens_to_file(iu, i, j, x, rho_mass, .false., trim(fname))
-					end do
-				end do
-			end if
 		end if
 		if (save_z_evolution) then
 			call openFile(iu, trim(outputFolder)//'/z.dat', firstWrite)
