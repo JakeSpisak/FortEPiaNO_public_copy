@@ -48,6 +48,15 @@ labels = {
 indexes = {"dm41": 0, "Ue4sq": 1, "Um4sq": 2, "Ut4sq": 3}
 
 
+def sortFiles(files, from_heaviest):
+	return (sorted(files,
+			key=lambda x: [float(f) for f in x.replace(".ini", "").split("/")[-1].split("_")],
+			reverse=True)
+		if from_heaviest
+		else sorted(files)
+		)
+
+
 class Namespace:
 	def __init__(self, **kwargs):
 		self.__dict__.update(kwargs)
@@ -154,6 +163,30 @@ def setParser():
 		default="",
 		help='Name for the file where to save a separate colorbar',
 		)
+	parser_plot.add_argument(
+		'--xmin',
+		type=float,
+		default=-1,
+		help='lower limit for the x axis. Set to negative to ignore',
+		)
+	parser_plot.add_argument(
+		'--xmax',
+		type=float,
+		default=-1,
+		help='upper limit for the x axis. Set to negative to ignore',
+		)
+	parser_plot.add_argument(
+		'--ymin',
+		type=float,
+		default=-1,
+		help='lower limit for the y axis. Set to negative to ignore',
+		)
+	parser_plot.add_argument(
+		'--ymax',
+		type=float,
+		default=-1,
+		help='upper limit for the y axis. Set to negative to ignore',
+		)
 	parser_plot.set_defaults(func=call_plot)
 
 	parser_prepare = subparsers.add_parser(
@@ -219,6 +252,12 @@ def setParser():
 		'--ternary',
 		action="store_true",
 		help='activate if you want the grid for ternary plots on the angles [will save a lot of calculations, as it scales with (N+2)(N+1)/2 instead of N^3 for the Ui4sq]',
+		)
+	parser_prepare.add_argument(
+		'--addExp',
+		type=float,
+		default=0,
+		help='Add this number to the exponent, only for ternary grid',
 		)
 	parser_prepare.add_argument(
 		'--tolerance',
@@ -366,6 +405,10 @@ def setParser():
 def fillGrid(args):
 	if tern and hasattr(args, "ternary") and args.ternary:
 		pts=[]
+		try:
+			a = args.addExp
+		except AttributeError:
+			a = 0
 		minv = np.log10(args.Ue4sq_min)
 		maxv = np.log10(args.Ue4sq_max)
 		basescale = maxv-minv
@@ -374,7 +417,7 @@ def fillGrid(args):
 		frac=1./N
 		for dm41 in np.logspace(np.log10(args.dm41_min), np.log10(args.dm41_max), args.dm41_N):
 			for pt in ternary.helpers.simplex_iterator(n):
-				pts.append([dm41, 10**(frac*(pt[0]-n-N)),10**(frac*(pt[1]-n-N)),10**(frac*(pt[2]-n-N))])
+				pts.append([dm41, 10**(a+frac*(pt[0]-n-N)), 10**(a+frac*(pt[1]-n-N)), 10**(a+frac*(pt[2]-n-N))])
 		return np.asarray(pts)
 	else:
 		return 10**(np.mgrid[
@@ -581,6 +624,8 @@ def call_plot(args, gridContent=None):
 		fname="grids/%s/plots/%s_%s.pdf"%(args.gridname, args.par_x, args.par_y)
 			if args.filename == "" else "grids/%s/plots/%s"%(args.gridname, args.filename),
 		xlab=labels[args.par_x], ylab=labels[args.par_y],
+		xlim=[args.xmin, args.xmax] if (args.xmin>0 and args.xmax>0) else None,
+		ylim=[args.ymin, args.ymax] if (args.ymin>0 and args.ymax>0) else None,
 		title=args.title,
 		bfx=args.bestfit_x, bfy=args.bestfit_y, bfup=args.bestfit_upper,
 		lsn_contours=lsn_contours,
@@ -630,6 +675,12 @@ def call_prepare(args):
 		ssq14 = Ue4sq
 		ssq24 = Um4sq/(1.-Ue4sq)
 		ssq34 = Ut4sq/(1.-Ue4sq-Um4sq)
+		if np.isnan(ssq14):
+			ssq14 = 0.
+		if np.isnan(ssq24):
+			ssq24 = 0.
+		if np.isnan(ssq34):
+			ssq34 = 0.
 		if args.rename:
 			oldname = "grids/%s/OUT/%s_%s_%s_%s/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
 			newname = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
@@ -713,13 +764,7 @@ def call_run(args):
 				newfiles.append(f)
 		files = newfiles
 	current = 0
-	files = (
-		sorted(files,
-			key=lambda x: [float(f) for f in x.replace(".ini", "").split("/")[-1].split("_")],
-			reverse=True)
-		if args.from_heaviest
-		else sorted(files)
-		)
+	files = sortFiles(files, args.from_heaviest)
 	for i, f in enumerate(files):
 		if i >= args.first_index and i < args.last_index:
 			if args.local:
