@@ -3,17 +3,17 @@ import matplotlib
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from nuDensOutput import colors, styles, finalizePlot, stripRepeated, NuDensRun
+from fortepianoOutput import colors, styles, finalizePlot, stripRepeated, FortEPiaNORun
 
 flavors=["e", r"\mu", r"\tau", "s"]
-a3nu = NuDensRun("OUT/3nu/n30_hp/", label=r"$3\nu$")
-# new3p1 = NuDensRun("OUT/prec_3p1/n40_hp/", nnu=4, label=r"3+1")
-Ue4h = NuDensRun("OUT/3p1/30_1_0.01_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-2}$")
-Ue4l = NuDensRun("OUT/3p1/30_1_0.001_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-3}$")
-Um4h = NuDensRun("OUT/3p1/30_1_0_0.01_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-2}$")
-Um4l = NuDensRun("OUT/3p1/30_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-4}$")
-Ut4h = NuDensRun("OUT/3p1/30_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
-Ut4l = NuDensRun("OUT/3p1/30_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
+a3nu = FortEPiaNORun("OUT/3nu/n30_hp/", label=r"$3\nu$")
+# new3p1 = FortEPiaNORun("OUT/prec_3p1/n40_hp/", nnu=4, label=r"3+1")
+Ue4h = FortEPiaNORun("OUT/3p1/30_1_0.01_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-2}$")
+Ue4l = FortEPiaNORun("OUT/3p1/30_1_0.001_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-3}$")
+Um4h = FortEPiaNORun("OUT/3p1/30_1_0_0.01_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-2}$")
+Um4l = FortEPiaNORun("OUT/3p1/30_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-4}$")
+Ut4h = FortEPiaNORun("OUT/3p1/30_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
+Ut4l = FortEPiaNORun("OUT/3p1/30_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
 
 # plot Neff with three different choices for the angles
 fig = plt.figure(figsize=(6,4))
@@ -248,12 +248,12 @@ for ol, fn in [
 		)
 
 print("IO:")
-Ue4ih = NuDensRun("OUT/3p1/30i_1_0.01_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-2}$")
-Ue4il = NuDensRun("OUT/3p1/30i_1_0.001_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-3}$")
-Um4ih = NuDensRun("OUT/3p1/30i_1_0_0.01_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-2}$")
-Um4il = NuDensRun("OUT/3p1/30i_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-4}$")
-Ut4ih = NuDensRun("OUT/3p1/30i_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
-Ut4il = NuDensRun("OUT/3p1/30i_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
+Ue4ih = FortEPiaNORun("OUT/3p1/30i_1_0.01_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-2}$")
+Ue4il = FortEPiaNORun("OUT/3p1/30i_1_0.001_0_0", nnu=4, label=r"$|U_{e4}|^2=10^{-3}$")
+Um4ih = FortEPiaNORun("OUT/3p1/30i_1_0_0.01_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-2}$")
+Um4il = FortEPiaNORun("OUT/3p1/30i_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^{-4}$")
+Ut4ih = FortEPiaNORun("OUT/3p1/30i_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
+Ut4il = FortEPiaNORun("OUT/3p1/30i_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
 
 # plot Neff with three different choices for the angles
 fig = plt.figure(figsize=(6,4))

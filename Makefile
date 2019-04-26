@@ -1,6 +1,6 @@
 # FLAGS
 BUILD_DIR ?= build
-EXECNAME ?= nuDens.exe
+EXECNAME = fortepiano
 # define TESTSPEED=1 to compute the time required for the first 1000 derivatives
 TESTSPEED ?=
 # define FULL_F_AB=1 to compute full matrix product in F_AB functions (by default assumes diagonal G matrices)
@@ -34,16 +34,16 @@ ifeq ($(FULL_F_AB), 1)
 endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
-	$(BUILD_DIR)/IniFile.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/matrix_utils.o \
+	$(BUILD_DIR)/iniFile.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/matrix_utils.o \
 	$(BUILD_DIR)/interactions.o $(BUILD_DIR)/cosmology.o $(BUILD_DIR)/equations.o \
-	$(BUILD_DIR)/HEigensystem.o \
+	$(BUILD_DIR)/heigensystem.o \
 	$(BUILD_DIR)/odepack.o $(BUILD_DIR)/odepack-sub1.o $(BUILD_DIR)/odepack-sub2.o \
 	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/bspline_oo_module.o $(BUILD_DIR)/bspline_sub_module.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 
 OBJ_TESTS=$(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/test_utils.o
 
-ifeq ($(BUILD_DIR),builddeb)
+ifeq ($(BUILD_DIR),build_debug)
 FFLAGS=$(DEBUGFLAGS)
 else
 FFLAGS=$(F90FLAGS)
@@ -55,11 +55,11 @@ $(BUILD_DIR)/bspline_module.o: $(BUILD_DIR)/bspline_oo_module.o \
 	$(BUILD_DIR)/bspline_sub_module.o
 $(BUILD_DIR)/bspline_oo_module.o: $(BUILD_DIR)/bspline_sub_module.o
 $(BUILD_DIR)/odepack.o: $(BUILD_DIR)/odepack-sub1.o $(BUILD_DIR)/odepack-sub2.o
-$(BUILD_DIR)/IniFile.o: $(BUILD_DIR)/const.o
+$(BUILD_DIR)/iniFile.o: $(BUILD_DIR)/const.o
 $(BUILD_DIR)/matrix_utils.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o
-$(BUILD_DIR)/HEigensystem.o: $(BUILD_DIR)/const.o
+$(BUILD_DIR)/heigensystem.o: $(BUILD_DIR)/const.o
 $(BUILD_DIR)/config.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/interactions.o \
-	$(BUILD_DIR)/IniFile.o $(BUILD_DIR)/matrix_utils.o $(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/iniFile.o $(BUILD_DIR)/matrix_utils.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/equations.o
 $(BUILD_DIR)/interactions.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/matrix_utils.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/bspline_module.o \
@@ -69,20 +69,20 @@ $(BUILD_DIR)/cosmology.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o \
-	$(BUILD_DIR)/HEigensystem.o \
+	$(BUILD_DIR)/heigensystem.o \
 	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/linear_interpolation_module.o
-$(BUILD_DIR)/nuDens.o: $(OBJ_FILES)
+$(BUILD_DIR)/fortepiano.o: $(OBJ_FILES)
 $(BUILD_DIR)/stuff.o: $(OBJ_FILES)
 $(BUILD_DIR)/test_utils.o: $(BUILD_DIR)/const.o
 $(BUILD_DIR)/tests.o: $(OBJ_TESTS)
 
-all: nudens
+all: fortepiano
 
 directories:
 	mkdir -p bin/ log/ $(BUILD_DIR)
 
-nudens: directories Makefile $(OBJ_FILES) $(BUILD_DIR)/nuDens.o
-	$(F90) -o bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/nuDens.o $(FFLAGS)
+fortepiano: directories Makefile $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o
+	$(F90) -o bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS)
 
 tests: directories Makefile $(OBJ_TESTS) $(BUILD_DIR)/tests.o
 	$(F90) -o bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS)

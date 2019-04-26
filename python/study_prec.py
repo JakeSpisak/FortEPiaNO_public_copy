@@ -2,7 +2,7 @@ import matplotlib
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, NuDensRun
+from fortepianoOutput import colors, markers, styles, finalizePlot, stripRepeated, FortEPiaNORun
 
 labels = {
 	"lp": "tol=1e-3",
@@ -14,7 +14,7 @@ attr = "Neff"
 
 def plotAttr(attr, ny, ip, lab, folder, color="k", mar=".", nnu=3, prange=(0, 1e3)):
 	try:
-		obj = NuDensRun(folder, label=lab, nnu=nnu)
+		obj = FortEPiaNORun(folder, label=lab, nnu=nnu)
 	except (IOError, IndexError):
 		print("no %s"%lab)
 	else:
@@ -102,8 +102,8 @@ finalizePlot(
 print("\n\n3+1 incomplete thermal")
 for l in ["hp", "mp"]:
 	for ny in range(15,40,5):
-		a = NuDensRun("grids/GL/OUT/3p1it_%s_%s"%(ny, l), label="Ny=%s"%ny, nnu=4)
+		a = FortEPiaNORun("grids/GL/OUT/3p1it_%s_%s"%(ny, l), label="Ny=%s"%ny, nnu=4)
 print("\n\n3+1 low dm41")
 for l in ["hp", "mp"]:
 	for ny in range(15,40,5):
-		a = NuDensRun("grids/GL/OUT/3p1lm_%s_%s"%(ny, l), label="Ny=%s"%ny, nnu=4)
+		a = FortEPiaNORun("grids/GL/OUT/3p1lm_%s_%s"%(ny, l), label="Ny=%s"%ny, nnu=4)

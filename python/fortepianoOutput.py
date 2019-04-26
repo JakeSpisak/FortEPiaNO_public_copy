@@ -93,7 +93,7 @@ def stripRepeated(data, ix1, ix2):
 	y.append(data[-1][ix2])
 	return np.asarray(x), np.asarray(y)
 
-class NuDensRun():
+class FortEPiaNORun():
 	"""Class that reads the output and helps to do plots"""
 
 	def __init__(self,

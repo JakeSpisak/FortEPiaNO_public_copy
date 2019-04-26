@@ -1,4 +1,4 @@
-program nuDens
+program fortepiano
 	use precision
 	use ndConfig
 	use ndErrors
@@ -13,4 +13,4 @@ program nuDens
 	call addToLog("Finished. closing log file.")
 	call closeLogFile
 	call renameLogFile(trim(outputFolder)//'/messages.log')
-end program nuDens
+end program fortepiano

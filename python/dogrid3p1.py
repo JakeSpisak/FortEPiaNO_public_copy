@@ -27,7 +27,7 @@ else:
 	tern = True
 import prepareIni
 try:
-	from nuDensOutput import colors, markers, styles, finalizePlot, stripRepeated, NuDensRun
+	from fortepianoOutput import colors, markers, styles, finalizePlot, stripRepeated, FortEPiaNORun
 except ImportError:
 	print("missing modules, many things will not work")
 
@@ -732,7 +732,7 @@ def call_read(args):
 		folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
 		obj = None
 		try:
-			obj = NuDensRun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
+			obj = FortEPiaNORun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
 		except (IOError, IndexError):
 			if args.verbose:
 				print("no %s"%lab)
@@ -768,9 +768,9 @@ def call_run(args):
 	for i, f in enumerate(files):
 		if i >= args.first_index and i < args.last_index:
 			if args.local:
-				jobcommand = "bin/nuDens.exe {ini:}".format(ini=f)
+				jobcommand = "bin/fortepiano {ini:}".format(ini=f)
 			else:
-				jobcommand = "clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q {q:} -w {h:}:{m:}:00 bin/nuDens.exe {ini:}".format(
+				jobcommand = "clusterlauncher -N {gn:}_{fn:} -n 1 --openmp -q {q:} -w {h:}:{m:}:00 bin/fortepiano {ini:}".format(
 					gn=args.gridname,
 					fn=f.split(os.sep)[-1].replace(".ini", ""),
 					q=args.queue,
