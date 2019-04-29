@@ -167,47 +167,28 @@ class FortEPiaNORun():
 							.group(1)
 						)
 					)
-			if rho:
-				try:
-					self.rho[i, i, 0] = np.loadtxt(
-						"%s/nuDens_diag%d.dat"%(folder, i+1))
-				except OSError:
-					self.rho[i, i, 0] = np.nan
-					rho = False
-				if full:
-					for j in range(i+1, self.nnu):
-						try:
-							self.rho[i, j, 0] = np.loadtxt(
-								"%s/nuDens_nd_%d%d_re.dat"%(folder, i+1, j+1))
-						except OSError:
-							self.rho[i, j, 0] = np.nan
-							rho = False
-						try:
-							self.rho[i, j, 1] = np.loadtxt(
-								"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
-						except OSError:
-							self.rho[i, j, 1] = np.nan
-							rho = False
-				try:
-					self.rhoM[i, i, 0] = np.loadtxt(
-						"%s/nuDens_mass%d.dat"%(folder, i+1))
-				except OSError:
-					self.rhoM[i, i, 0] = np.nan
-					rho = False
-				if full:
-					for j in range(i+1, self.nnu):
-						try:
-							self.rhoM[i, j, 0] = np.loadtxt(
-								"%s/nuDens_mass_nd_%d%d_re.dat"%(folder, i+1, j+1))
-						except OSError:
-							self.rhoM[i, j, 0] = np.nan
-							rho = False
-						try:
-							self.rhoM[i, j, 1] = np.loadtxt(
-								"%s/nuDens_mass_nd_%d%d_im.dat"%(folder, i+1, j+1))
-						except OSError:
-							self.rhoM[i, j, 1] = np.nan
-							rho = False
+			try:
+				self.rho[i, i, 0] = np.loadtxt(
+					"%s/nuDens_diag%d.dat"%(folder, i+1))
+			except OSError:
+				self.rho[i, i, 0] = np.nan
+			if full:
+				for j in range(i+1, self.nnu):
+					try:
+						self.rho[i, j, 0] = np.loadtxt(
+							"%s/nuDens_nd_%d%d_re.dat"%(folder, i+1, j+1))
+					except OSError:
+						self.rho[i, j, 0] = np.nan
+					try:
+						self.rho[i, j, 1] = np.loadtxt(
+							"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
+					except OSError:
+						self.rho[i, j, 1] = np.nan
+			try:
+				self.rhoM[i, i, 0] = np.loadtxt(
+					"%s/nuDens_mass%d.dat"%(folder, i+1))
+			except OSError:
+				self.rhoM[i, i, 0] = np.nan
 		self.printTableLine()
 		if rho and plots:
 			self.doAllPlots()
@@ -322,6 +303,20 @@ class FortEPiaNORun():
 		plt.xlabel("$x$")
 		plt.ylabel(r"$\rho_{ii}$")
 
+	def plotdRhoDiag(self, inu, iy, ls, lc="k", mass=False):
+		if mass:
+			rho = self.rhoM
+		else:
+			rho = self.rho
+		dijrex, dijrey = stripRepeated(rho[inu, inu, 0], 0, iy)
+		plt.plot(
+			dijrex, np.gradient(dijrey, dijrex),
+			ls=ls, c=lc, label="%s i=%d"%(self.label, inu+1)
+			)
+		plt.xscale("log")
+		plt.xlabel("$x$")
+		plt.ylabel(r"$d\rho_{ii}/dt$")
+
 	def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True, mass=False):
 		if not self.full:
 			print("no offdiagonal loaded")
@@ -409,6 +404,17 @@ class FortEPiaNORun():
 		plt.xscale("log")
 		plt.xlabel("$x$")
 		plt.ylabel(r"$%s\rho_{ii}$"%("y^2" if y2 else ""))
+
+	def plotdRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False, mass=False):
+		x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
+		label = lab if lab is not None else "%s i=%d"%(self.label, inu+1)
+		plt.plot(
+			x, np.gradient(np.asarray(yv) * (y**2 if y2 else 1.), x),
+			ls=ls, c=lc, label="%s i=%d"%(self.label, inu+1)
+			)
+		plt.xscale("log")
+		plt.xlabel("$x$")
+		plt.ylabel(r"$d\rho_{ii}/dt$")
 
 	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
 		if not self.full:
