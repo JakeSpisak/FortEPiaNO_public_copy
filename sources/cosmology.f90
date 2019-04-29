@@ -248,19 +248,19 @@ module ndCosmology
 		do k = 1,Ninte
 			int_K_uX = int_K_uX + integrand_K_uX(u_ini+du*(k-1),w,n)+integrand_K_uX(u_ini+du*k,w,n)
 		enddo
-		int_K_uX = int_K_uX*du*0.5d0/PISQ
+		int_K_uX = int_K_uX*du/PISQx2
 	end function int_K_uX
 
 	function photonEntropy(z) ! comoving
 		real(dl) :: photonEntropy
 		real(dl), intent(in) :: z
-		photonEntropy = 4.d0/45.d0*PISQ*z**3
+		photonEntropy = four_thirds*PISQD15*z**3
 	end function photonEntropy
 
 	function nonRelativistic_Entropy(x, z, m)
 		real(dl) :: nonRelativistic_Entropy
 		real(dl), intent(in) :: x, z, m
-		nonRelativistic_Entropy = 2.d0*z**3*(4.d0/3.d0*int_K_uX(m*x/z, 4) + (x/z)**2*int_K_uX(m*x/z, 2))
+		nonRelativistic_Entropy = 2.d0*z**3*(four_thirds*int_K_uX(m*x/z, 4) + (x/z)**2*int_K_uX(m*x/z, 2))
 	end function nonRelativistic_Entropy
 
 	function electronEntropy(x,z)

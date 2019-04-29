@@ -531,7 +531,7 @@ module ndEquations
 				photonEntropy(z), &
 				electronEntropy(x, z), &
 				muonEntropy(x, z), &
-				nuEnDens(1:flavorNumber)*4.d0/(3.d0*z)
+				nuEnDens(1:flavorNumber)*four_thirds/z
 			close(iu)
 		end if
 		if (save_z_evolution) then
@@ -547,7 +547,7 @@ module ndEquations
 			neff = allNuDensity()/photonDensity(vec(ntot)+1.d0)
 			call openFile(iu, trim(outputFolder)//'/Neff.dat', firstWrite)
 			write(iu, multidblfmt) &
-				x, 8.d0/7.d0*neff, 8.d0/7.d0*zid**4*neff
+				x, neff/0.875d0, zid**4*neff/0.875d0
 			close(iu)
 		end if
 		firstWrite=.false.
@@ -797,7 +797,7 @@ module ndEquations
 		ndeq=nuDensityEq(w)
 		rhototnu = (allNuDensity() - totf*ndeq)/ndeq
 		Neff_from_rho_z = (w*zid/z)**4 * &
-			(3.d0 + rhototnu)
+			(tot_factor_active_nu + rhototnu)
 	end function Neff_from_rho_z
 
 	subroutine finalresults

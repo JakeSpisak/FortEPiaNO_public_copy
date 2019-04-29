@@ -9,6 +9,7 @@ module constants
 	use precision
 	implicit none
 
+	real(dl), parameter :: four_thirds = 4.d0/3.d0
 	real(dl), parameter :: SQRT2 = sqrt(2.d0)
 	real(dl), parameter :: PI  =3.141592653589793238463d0
 	real(dl), parameter :: PIx2=2.d0*PI
@@ -16,6 +17,7 @@ module constants
 	real(dl), parameter :: PID2=PI/2.d0
 	real(dl), parameter :: PID3=PI/3.d0
 	real(dl), parameter :: PISQ = PI*PI
+	real(dl), parameter :: PISQx2=2.d0*PISQ
 	real(dl), parameter :: PISQD2 = PISQ/2.d0
 	real(dl), parameter :: PISQD15=PISQ/15.d0
 	real(dl), parameter :: PICub = PI*PI*PI
