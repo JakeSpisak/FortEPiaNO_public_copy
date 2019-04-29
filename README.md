@@ -45,7 +45,7 @@ Additional commands for the makefile include:
 ## 2.Python scripts
 Some useful python scripts are delivered together with the main fortran code.
 
-In order to be sure that all the python scripts can work, you can install the required dependencies using...
+In order to be sure that all the python scripts work properly, you should install the required dependencies using `python setup.py install --user`.
 
 ### 2.1.`prepareIni.py`
 Tool that will help to generate an ini file, using default values for the non-specified parameters.  
