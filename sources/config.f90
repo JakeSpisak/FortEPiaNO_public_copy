@@ -315,11 +315,12 @@ module ndConfig
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
 
 			!settings for saving files
-			save_fd = read_ini_logical("save_fd",.true.)
-			save_Neff = read_ini_logical("save_Neff",.true.)
-			save_nuDens_evolution = read_ini_logical("save_nuDens_evolution",.true.)
-			save_z_evolution = read_ini_logical("save_z_evolution",.true.)
-			save_w_evolution = read_ini_logical("save_w_evolution",.true.)
+			save_fd = read_ini_logical("save_fd", .true.)
+			save_energy_entropy_evolution = read_ini_logical("save_energy_entropy_evolution", .true.)
+			save_Neff = read_ini_logical("save_Neff", .true.)
+			save_nuDens_evolution = read_ini_logical("save_nuDens_evolution", .true.)
+			save_w_evolution = read_ini_logical("save_w_evolution", .true.)
+			save_z_evolution = read_ini_logical("save_z_evolution", .true.)
 
 			z_in=1.d0
 			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))

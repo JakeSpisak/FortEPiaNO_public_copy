@@ -223,6 +223,11 @@ def setParser():
 		help='number of log-spaced points in 0.01 < y < 1',
 		)
 	parser_prepare.add_argument(
+		'--save_energy_entropy',
+		action="store_true",
+		help='enable saving the evolution of the energy density and entropy for each component',
+		)
+	parser_prepare.add_argument(
 		'--save_fd',
 		action="store_true",
 		help='enable saving the y grid and the corresponding Fermi-Dirac to fd.dat',
@@ -707,7 +712,13 @@ def call_prepare(args):
 			]
 		if args.no_GL:
 			prep.append("--no_GL")
-		for s in ["save_fd", "save_Neff", "save_nuDens", "save_z"]:
+		for s in [
+				"save_energy_entropy",
+				"save_fd",
+				"save_Neff",
+				"save_nuDens",
+				"save_z",
+				]:
 			if getattr(args, s):
 				prep.append("--%s"%s)
 		parser = prepareIni.setParser()

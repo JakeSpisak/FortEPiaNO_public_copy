@@ -467,10 +467,18 @@ module ndEquations
 		real(dl), dimension(:), intent(in) :: vec
 		type(cmplxMatNN), dimension(:), allocatable :: rho_mass
 		complex(dl), dimension(:,:), allocatable :: tmpComplMat, transfMat
+		real(dl), dimension(maxFlavorNumber) :: nuEnDens
 		integer :: k, i, j, iy
 		real(dl) :: neff, z
 		integer, parameter :: iu = 8972
 		character(len=200) :: fname
+		procedure (nuDensity_integrator), pointer :: nuDensityInt
+
+		if (use_gauss_laguerre) then
+			nuDensityInt => nuDensityGL
+		else
+			nuDensityInt => nuDensityNC
+		end if
 
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=', x
 		call addToLog(trim(fname))!not a filename but the above string
@@ -505,6 +513,26 @@ module ndEquations
 				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_mass', k, '.dat'
 				call nuDens_to_file(iu, k, k, x, rho_mass, .true., trim(fname))
 			end do
+			deallocate(rho_mass)
+		end if
+		if (save_energy_entropy_evolution) then
+			do k=1, flavorNumber
+				nuEnDens(k) = nuDensityInt(k, k)*nuFactor(k)
+			end do
+			call openFile(iu, trim(outputFolder)//'/energyDensity.dat', firstWrite)
+			write(iu, multidblfmt) x, z, &
+				photonDensity(z), &
+				electronDensity(x, z), &
+				muonDensity(x, z), &
+				nuEnDens(1:flavorNumber)
+			close(iu)
+			call openFile(iu, trim(outputFolder)//'/entropy.dat', firstWrite)
+			write(iu, multidblfmt) x, z, &
+				photonEntropy(z), &
+				electronEntropy(x, z), &
+				muonEntropy(x, z), &
+				nuEnDens(1:flavorNumber)*4.d0/(3.d0*z)
+			close(iu)
 		end if
 		if (save_z_evolution) then
 			call openFile(iu, trim(outputFolder)//'/z.dat', firstWrite)
@@ -731,7 +759,7 @@ module ndEquations
 		call vec_2_densMat(vars)
 
 		dme2 = dme2_electron(x, 0.d0, z)
-		sqrtraddens = sqrt(radDensity(x, z))
+		sqrtraddens = sqrt(totalRadiationDensity(x, z))
 		call updateMatterDensities(x, z)
 
 		!$omp parallel shared(ydot, x, z, dme2, sqrtraddens, flavNumSqu) private(m, s, tmpvec)

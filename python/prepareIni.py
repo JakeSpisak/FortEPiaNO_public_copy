@@ -178,6 +178,11 @@ def setParser():
 		help='relative tolerance for DLSODA',
 		)
 	parser.add_argument(
+		'--save_energy_entropy',
+		action="store_true",
+		help='enable saving the evolution of the energy density and entropy for each component',
+		)
+	parser.add_argument(
 		'--save_fd',
 		action="store_true",
 		help='enable saving the y grid and the corresponding Fermi-Dirac to fd.dat',
@@ -319,6 +324,7 @@ def getIniValues(args):
 	values["dlsoda_rtol"] = args.dlsoda_rtol
 	values["folder"] = args.outputfolder
 	values["Nprintderivs"] = args.verbose_deriv_freq
+	values["save_energy_entropy"] = "T" if args.save_energy_entropy else "F"
 	values["save_fd"] = "T" if args.save_fd else "F"
 	values["save_Neff"] = "T" if args.save_Neff else "F"
 	values["save_nuDens"] = "T" if args.save_nuDens else "F"
@@ -366,6 +372,7 @@ save_fd = {save_fd:}
 save_Neff = {save_Neff:}
 save_nuDens_evolution = {save_nuDens:}
 save_z_evolution = {save_z:}
+save_energy_entropy_evolution = {save_energy_entropy:}
 
 dlsoda_atol = {dlsoda_atol:}
 dlsoda_rtol = {dlsoda_rtol:}

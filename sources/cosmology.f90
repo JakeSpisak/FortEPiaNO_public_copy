@@ -11,11 +11,11 @@ module ndCosmology
 
 	contains
 
-	function radDensity(x,z)
-		real(dl) :: radDensity
+	function totalRadiationDensity(x,z)
+		real(dl) :: totalRadiationDensity
 		real(dl), intent(in) :: x,z
 
-		radDensity = photonDensity(z) + &
+		totalRadiationDensity = photonDensity(z) + &
 			electronDensity(x,z) + &
 			muonDensity(x,z) + &
 			allNuDensity()
@@ -220,4 +220,63 @@ module ndCosmology
 			nuDensityEq = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
 		end if
 	end function nuDensityEq
+
+	pure function integrand_K_uX(u, w, n)
+		real(dl) :: integrand_K_uX
+		real(dl), intent(in) :: u, w
+		integer, intent(in) :: n
+		real(dl) :: squ2w2, expsqu2w2
+		squ2w2 = sqrt(u**2+w**2)
+		expsqu2w2 = exp(squ2w2)
+		integrand_K_uX = u**n/(squ2w2*(1.d0+expsqu2w2))
+	end function integrand_K_uX
+
+	!check GL method
+	function int_K_uX(w, n)
+		!computes the integral of u**n/(sqrt(u**2+w**2)(1+exp(sqrt(u**2+w**2))))
+		!useful to get the pressure for non-relativistic species
+		real(dl) :: int_K_uX
+		real(dl), intent(in) :: w
+		integer, intent(in) :: n
+		integer k, Ninte
+		real(dl) :: u_ini,u_fin,du
+		Ninte = 10000
+		u_ini = 0.d0
+		u_fin =500.d0 ! 50.d0 is OK except for muons
+		du = u_fin/Ninte
+		int_K_uX = 0.d0
+		do k = 1,Ninte
+			int_K_uX = int_K_uX + integrand_K_uX(u_ini+du*(k-1),w,n)+integrand_K_uX(u_ini+du*k,w,n)
+		enddo
+		int_K_uX = int_K_uX*du*0.5d0/PISQ
+	end function int_K_uX
+
+	function photonEntropy(z) ! comoving
+		real(dl) :: photonEntropy
+		real(dl), intent(in) :: z
+		photonEntropy = 4.d0/45.d0*PISQ*z**3
+	end function photonEntropy
+
+	function nonRelativistic_Entropy(x, z, m)
+		real(dl) :: nonRelativistic_Entropy
+		real(dl), intent(in) :: x, z, m
+		nonRelativistic_Entropy = 2.d0*z**3*(4.d0/3.d0*int_K_uX(m*x/z, 4) + (x/z)**2*int_K_uX(m*x/z, 2))
+	end function nonRelativistic_Entropy
+
+	function electronEntropy(x,z)
+		real(dl) :: electronEntropy
+		real(dl), intent(in) :: x,z
+		electronEntropy = nonRelativistic_Entropy(x, z, 1.d0)
+	end function electronEntropy
+
+	function muonEntropy(x,z)
+		real(dl) :: muonEntropy
+		real(dl), intent(in) :: x,z
+		if (x .lt. x_muon_cut) then
+			muonEntropy = nonRelativistic_Entropy(x, z, m_mu_o_m_e)
+		else
+			muonEntropy = 0.d0
+		end if
+	end function muonEntropy
+
 end module

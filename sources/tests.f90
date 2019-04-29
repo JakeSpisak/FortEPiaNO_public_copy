@@ -106,8 +106,12 @@ program tests
 			massSplittings(3) = 0.0025153d0
 		end if
 		z_in=1.0000575
-		save_w_evolution = .true.
+		save_fd = .true.
+		save_energy_entropy_evolution = .true.
+		save_Neff = .true.
 		save_nuDens_evolution = .true.
+		save_w_evolution = .true.
+		save_z_evolution = .true.
 		call setMixingMatrix()
 		call setMassMatrix()
 		call init_matrices
@@ -458,9 +462,9 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double("radDens test 1", radDensity(0.7d0, 1.04d0), 3.79519d0, 1d-3)
-		call assert_double("radDens test 2", radDensity(1.d0, 1.04d0), 3.74595d0, 1d-3)
-		call assert_double("radDens test 3", radDensity(1.d0, 1.24d0), 5.86425d0, 3d-3)
+		call assert_double("radDens test 1", totalRadiationDensity(0.7d0, 1.04d0), 3.79519d0, 1d-3)
+		call assert_double("radDens test 2", totalRadiationDensity(1.d0, 1.04d0), 3.74595d0, 1d-3)
+		call assert_double("radDens test 3", totalRadiationDensity(1.d0, 1.24d0), 5.86425d0, 3d-3)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
@@ -512,7 +516,7 @@ program tests
 			nuDensMatVecFD(iy)%re(2, 2) = 1.d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double("radDens test 4", radDensity(0.01d0, 1.24d0), 8.16007d0, 1d-3)
+		call assert_double("radDens test 4", totalRadiationDensity(0.01d0, 1.24d0), 8.16007d0, 1d-3)
 		deallocate(ndmv_re)
 		call printTotalTests
 		call resetTestCounter
@@ -2102,7 +2106,7 @@ program tests
 			nuDensMatVecFD(i)%im(2, :) = (/0.02, 0.0, 0.1/)
 			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
 		end do
-		sqrtraddens = sqrt(radDensity(x,z))
+		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
 		res%re(1,:) = (/605.541d0/fd, 15531.6d0, 73346.3d0/)
@@ -2167,7 +2171,7 @@ program tests
 			nuDensMatVecFD(i)%im(2, :) = (/0.02, 0.0, 0.1/)
 			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
 		end do
-		sqrtraddens = sqrt(radDensity(x,z))
+		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
 		res%re(1,:) = (/164543.d0/fd, 346799.d0, 481933.d0/)
