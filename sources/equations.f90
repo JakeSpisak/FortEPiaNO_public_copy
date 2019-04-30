@@ -263,7 +263,7 @@ module ndEquations
 				ymu = Y_funcFull(xozmu)
 			end if
 			g12 = G12_funcFull(xoz)
-			num= xoz*j + xozmu*jmu + g12(1)
+			num= xoz*j + m_mu_o_m_e*xozmu*jmu + g12(1)
 			den= xoz**2*j + xozmu**2*jmu + y+ymu + PISQ/7.5d0 + g12(2)
 			A(ix) = num / den
 			B(ix) = 1./(2.d0*PISQ*den)

@@ -545,19 +545,6 @@ class FortEPiaNORun():
 				"%s/drho_offdiag.pdf"%self.folder,
 				)
 
-			for i in range(self.nnu):
-				for j in range(i+1, self.nnu):
-					self.plotRhoOffDiagY(i, j, yref, lc=colors[2*i+j-1], mass=True)
-			finalizePlot(
-				"%s/rho_mass_offdiag.pdf"%self.folder,
-				)
-			for i in range(self.nnu):
-				for j in range(i+1, self.nnu):
-					self.plotdRhoOffDiagY(i, j, yref, lc=colors[2*i+j-1], mass=True)
-			finalizePlot(
-				"%s/drho_mass_offdiag.pdf"%self.folder,
-				)
-
 	def integrateRho_yn(self, inu, n, ix=-1, show=False, mass=False):
 		"""Compute the integral
 		Int_0^Inf dy y^n f(y)/Pi^2
