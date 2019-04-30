@@ -257,23 +257,25 @@ module ndCosmology
 		photonEntropy = four_thirds*PISQD15*z**3
 	end function photonEntropy
 
-	function nonRelativistic_Entropy(x, z, m)
+	function nonRelativistic_Entropy(mx, z)
 		real(dl) :: nonRelativistic_Entropy
-		real(dl), intent(in) :: x, z, m
-		nonRelativistic_Entropy = 2.d0*z**3*(four_thirds*int_K_uX(m*x/z, 4) + (x/z)**2*int_K_uX(m*x/z, 2))
+		real(dl), intent(in) :: mx, z
+		real(dl) :: t
+		t = mx/z
+		nonRelativistic_Entropy = 2.d0*z**3*(four_thirds*int_K_uX(t, 4) + t**2*int_K_uX(t, 2))
 	end function nonRelativistic_Entropy
 
 	function electronEntropy(x,z)
 		real(dl) :: electronEntropy
 		real(dl), intent(in) :: x,z
-		electronEntropy = nonRelativistic_Entropy(x, z, 1.d0)
+		electronEntropy = nonRelativistic_Entropy(x, z)
 	end function electronEntropy
 
 	function muonEntropy(x,z)
 		real(dl) :: muonEntropy
 		real(dl), intent(in) :: x,z
 		if (x .lt. x_muon_cut) then
-			muonEntropy = nonRelativistic_Entropy(x, z, m_mu_o_m_e)
+			muonEntropy = nonRelativistic_Entropy(x*m_mu_o_m_e, z)
 		else
 			muonEntropy = 0.d0
 		end if
