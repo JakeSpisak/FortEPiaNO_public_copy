@@ -1845,25 +1845,31 @@ program tests
 		call resetTestCounter
 	end subroutine do_tests_coll_int
 
-	pure real(dl) function fakecollint1(a, b, o)
+	pure real(dl) function fakecollint1(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
 		fakecollint1=1.d0
 	end function
-	pure real(dl) function fakecollint0(a, b, o)
+	pure real(dl) function fakecollint0(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
 		fakecollint0=0.d0
 	end function
-	pure real(dl) function fakecollinty(a, b, o)
+	pure real(dl) function fakecollinty(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
 		fakecollinty=1.d4*b**2
 	end function
 
@@ -2444,22 +2450,22 @@ program tests
 		tmperrB(3,:) = (/0.3d0, 0.15d0, 0.1d0/)
 		!Ny=25
 		tmperrA(4,:) = (/0.15, 0.11, 0.06/)
-		tmperrB(4,:) = (/0.08d0, 0.04d0, 0.04d0/)
+		tmperrB(4,:) = (/0.08d0, 0.06d0, 0.06d0/)
 		!Ny=30
 		tmperrA(5,:) = (/0.1, 0.06, 0.01/)
-		tmperrB(5,:) = (/0.04d0, 0.03d0, 0.03d0/)
+		tmperrB(5,:) = (/0.04d0, 0.04d0, 0.04d0/)
 		!Ny=35
 		tmperrA(6,:) = (/0.07, 0.03, 0.03/)
-		tmperrB(6,:) = (/0.03d0, 0.02d0, 0.02d0/)
+		tmperrB(6,:) = (/0.03d0, 0.03d0, 0.03d0/)
 		!Ny=40
 		tmperrA(7,:) = (/0.06, 0.03, 0.03/)
-		tmperrB(7,:) = (/0.005d0, 0.002d0, 0.002d0/)
+		tmperrB(7,:) = (/0.005d0, 0.01d0, 0.01d0/)
 		!Ny=45
 		tmperrA(8,:) = (/0.05, 0.025, 0.025/)
-		tmperrB(8,:) = (/0.025, 0.015, 0.015/)
+		tmperrB(8,:) = (/0.025, 0.03, 0.03/)
 		!Ny=50
 		tmperrA(9,:) = (/0.05, 0.02, 0.025/)
-		tmperrB(9,:) = (/0.021, 0.013, 0.013/)
+		tmperrB(9,:) = (/0.021, 0.03, 0.03/)
 		do nix=3, 9
 			nx = nix*5+5
 			Ny=nx
@@ -2489,7 +2495,11 @@ program tests
 				intb = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrA(nix,ix), (inta-tmparrA(nix,ix))/inta, (intb-tmparrA(nix,ix))/intb
 				write(tmparg,"('test coll sc GL, N=',I2,' - ',2I1)") Ny, ix, ix
-				call assert_double_rel_verb(trim(tmparg), inta, tmparrA(nix,ix), tmperrA(nix,ix))
+				if (abs(tmparrA(nix,ix)).gt.1d-30) then
+					call assert_double_rel_verb(trim(tmparg), inta, tmparrA(nix,ix), tmperrA(nix,ix))
+				else
+					call assert_double_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30)
+				end if
 			end do
 
 			write(*,*) ""
@@ -2500,7 +2510,11 @@ program tests
 				intb = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrB(nix,ix), (inta-tmparrB(nix,ix))/inta, (intb-tmparrB(nix,ix))/intb
 				write(tmparg,"('test coll ann GL, N=',I2,' - ',2I1)") Ny, ix, ix
-				call assert_double_rel_verb(trim(tmparg), inta, tmparrB(nix,ix), tmperrB(nix,ix))
+				if (abs(tmparrB(nix,ix)).gt.1d-30) then
+					call assert_double_rel_verb(trim(tmparg), inta, tmparrB(nix,ix), tmperrB(nix,ix))
+				else
+					call assert_double_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30)
+				end if
 			end do
 		end do
 

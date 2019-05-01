@@ -142,7 +142,7 @@ module ndCosmology
 		end if
 	end function nonRelativistic_pressure
 
-	pure function nonRelativistic_entropy(cls, x, z) result(entropy)
+	function nonRelativistic_entropy(cls, x, z) result(entropy)
 		real(dl) :: entropy
 		class(nonRelativistic_fermion), intent(in) :: cls
 		real(dl), intent(in) :: x, z
