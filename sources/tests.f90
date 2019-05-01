@@ -516,6 +516,27 @@ program tests
 		end do
 		call assert_double("radDens test 4", totalRadiationDensity(0.01d0, 1.24d0), 8.16007d0, 1d-3)
 		deallocate(ndmv_re)
+
+		call assert_double_rel("elDens test 6", electrons%energyDensity(0.076d0, 1.d0), 1.14904d0, 1d-4)
+		call assert_double_rel("elPress test 1", electrons%pressure(0.076d0, 1.d0), 0.381462d0, 1d-4)
+		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.32d0), 1.15731d0, 2d-3)
+		call assert_double_rel("elPress test 3", electrons%pressure(1.d1, 1.2d0), 0.00376189d0, 2d-3)
+		call assert_double_rel("elPress test 4", electrons%pressure(2.d1, 1.2d0), 2.3083d-6, 1d-2)
+		call assert_double("elPress test 5", electrons%pressure(3.d1, 1.2d0), 1d-9, 1d-10)
+		call assert_double_rel("muPress test 1", muons%pressure(0.01d0, 1.d0), 0.195024d0, 1d-4)
+		call assert_double_rel("muPress test 2", muons%pressure(0.076d0, 1.d0), 2.659d-6, 1d-2)
+		call assert_double_rel("muPress test 3", muons%pressure(0.076d0, 1.32d0), 0.0002489d0, 1d-3)
+		call assert_double("muPress test 4", muons%pressure(1.d1, 1.2d0), 0.d0, 1d-10)
+		call assert_double_rel("muPress test 5", muons%pressure(1.d-3, 1.1d0), 0.557706d0, 1d-4)
+
+		call assert_double_rel("elEntropy test 1", electrons%entropy(0.001d0, 1.d0), 1.53146d0, 1d-3)
+		call assert_double_rel("elEntropy test 2", electrons%entropy(0.076d0, 1.d0), 1.53051d0, 2d-3)
+		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.51889d0, 2d-3)
+		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0345903d0, 2d-3)
+		call assert_double_rel("muEntropy test 1", muons%entropy(0.001d0, 1.d0), 1.52817d0, 1d-4)
+		call assert_double_rel("muEntropy test 2", muons%entropy(0.076d0, 1.d0), 4.87363d-5, 1d-2)
+		call assert_double_rel("muEntropy test 3", muons%entropy(0.076d0, 1.32d0), 0.0027439d0, 1d-3)
+		call assert_double("muEntropy test 4", muons%entropy(1.d1, 1.2d0), 0.d0, 1d-10)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_tests_cosmology

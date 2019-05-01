@@ -124,8 +124,8 @@ module variables
 	real(dl), parameter :: opt_xoz_cut = 30.d0
 	real(dl), dimension(:), allocatable :: opt_xoz, opt_xoz_w
 
-	integer, parameter :: N_opt_y = 60
-	real(dl), parameter :: opt_y_cut = 30.d0
+	integer, parameter :: N_opt_y = 110
+	real(dl), parameter :: opt_y_cut = 100.d0
 	real(dl), dimension(:), allocatable :: opt_y, opt_y_w
 
 	!used for 2d interpolation:

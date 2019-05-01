@@ -447,7 +447,7 @@ module utilities
 			end do
 			if (nreal .eq. effective_Ny) then
 				if (verb) then
-					write(tmpstr, "(' [config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I2,' roots')") ix, effective_Ny
+					write(tmpstr, "(' [config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I3,' roots')") ix, effective_Ny
 					call addToLog(trim(tmpstr))
 				end if
 				if (.not. allocated(yv)) &

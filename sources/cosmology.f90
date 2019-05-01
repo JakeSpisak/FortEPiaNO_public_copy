@@ -19,10 +19,11 @@ module ndCosmology
 		type(linear_interp_2d) :: enDensInterp !information for interpolating the energy density
 		contains
 		procedure :: initialize => nonRelativistic_initialize !save properties and prepare energy density interpolation
+		procedure :: dzodx_terms => nonRelativistic_dzodx_terms !contributions to the dz/dx numerator and denominator
 		procedure :: energyDensityFull => nonRelativistic_energyDensity_full !full integral of the energy density
 		procedure :: energyDensity => nonRelativistic_energyDensity !interpolated energy density
 		procedure :: entropy => nonRelativistic_entropy !entropy
-		procedure :: dzodx_terms => nonRelativistic_dzodx_terms !contributions to the dz/dx numerator and denominator
+		procedure :: pressure => nonRelativistic_pressure !pressure
 	end type nonRelativistic_fermion
 	
 	integer, parameter :: fermions_number = 2
@@ -83,14 +84,13 @@ module ndCosmology
 		real(dl), intent(in) :: x,z
 		integer :: i
 
-		if (cls%isElectron) then
-			dme2 = dme2_electronFull(x, 0.d0, z)
-		else
-			dme2 = 0.d0
-		end if
-
 		nredf = 0.d0
 		if (x .lt. cls%x_enDens_cut) then
+			if (cls%isElectron) then
+				dme2 = dme2_electronFull(x, 0.d0, z)
+			else
+				dme2 = 0.d0
+			end if
 			do i=1, N_opt_y
 				nredf = nredf &
 					+ opt_y_w(i)*integrand_rho_nonRel(x*cls%mass_factor, z, dme2, opt_y(i))
@@ -108,44 +108,49 @@ module ndCosmology
 		call cls%enDensInterp%evaluate(x, z, ed)
 	end function nonRelativistic_energyDensity
 
-	pure function integrate_uX_Ek_nonRel(w, dm, n)!to be studied and optimized
+	pure function integrate_uX_Ek_nonRel(w, dm, n)
 		!computes the integral of u**n/(sqrt(u**2+w**2)(1+exp(sqrt(u**2+w**2))))
 		!useful to get the pressure for non-relativistic species
 		real(dl) :: integrate_uX_Ek_nonRel
 		real(dl), intent(in) :: w, dm
 		integer, intent(in) :: n
-		integer k, Ninte
-		real(dl) :: u_ini,u_fin,du
-		Ninte = 10000
-		u_ini = 0.d0
-		u_fin =500.d0 ! 50.d0 is OK except for muons
-		du = u_fin/Ninte
+		integer :: i
 		integrate_uX_Ek_nonRel = 0.d0
-		do k = 1,Ninte
+		do i = 1, N_opt_xoz
 			integrate_uX_Ek_nonRel = integrate_uX_Ek_nonRel &
-				+ integrand_uX_Ek_nonRel(u_ini+du*(k-1), w, dm, n) &
-				+ integrand_uX_Ek_nonRel(u_ini+du*k, w, dm, n)
-		enddo
-		integrate_uX_Ek_nonRel = integrate_uX_Ek_nonRel*du/PISQx2
+				+ opt_y_w(i)*integrand_uX_Ek_nonRel(opt_y(i), w, dm, n-2)!n-2 because the weights already take into account y^2
+		end do
+		integrate_uX_Ek_nonRel = integrate_uX_Ek_nonRel/PISQx2
 	end function integrate_uX_Ek_nonRel
 
-	pure function nonRelativistic_entropy(cls, x, z)
-		real(dl) :: nonRelativistic_entropy
+	pure function nonRelativistic_pressure(cls, x, z) result(press)
+		real(dl) :: press
 		class(nonRelativistic_fermion), intent(in) :: cls
 		real(dl), intent(in) :: x, z
 		real(dl) :: t, dm
 
-		if (cls%isElectron) then
-			dm = dme2_electronFull(x, 0.d0, z) / z
+		if (x .lt. cls%x_enDens_cut) then
+			if (cls%isElectron) then
+				dm = dme2_electronFull(x, 0.d0, z) / z
+			else
+				dm = 0.d0
+			end if
+			t = cls%mass_factor*x/z
+			press = 4.d0*z**4/3.d0*(integrate_uX_Ek_nonRel(t, dm, 4))
 		else
-			dm = 0.d0
+			press = 0.d0
 		end if
+	end function nonRelativistic_pressure
+
+	pure function nonRelativistic_entropy(cls, x, z) result(entropy)
+		real(dl) :: entropy
+		class(nonRelativistic_fermion), intent(in) :: cls
+		real(dl), intent(in) :: x, z
 
 		if (x .lt. cls%x_enDens_cut) then
-			t = cls%mass_factor*x/z
-			nonRelativistic_entropy = 2.d0*z**3*(four_thirds*integrate_uX_Ek_nonRel(t, dm, 4) + t**2*integrate_uX_Ek_nonRel(t, dm, 2))
+			entropy = (cls%energyDensity(x, z) + cls%pressure(x, z))/z
 		else
-			nonRelativistic_entropy = 0.d0
+			entropy = 0.d0
 		end if
 	end function nonRelativistic_entropy
 
