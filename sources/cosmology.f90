@@ -13,19 +13,21 @@ module ndCosmology
 
 	type nonRelativistic_fermion
 		logical :: isElectron !if true, compute the electromagnetic corrections to the mass
-		real(dl) :: mass_factor, x_enDens_cut
-		type(linear_interp_2d) :: enDensInterp
+		real(dl) :: mass_factor !mass of the particle divided by electron mass
+		real(dl) :: x_enDens_cut !for x larger than this, do not consider this particle (fix energy density and other things to 0)
+		type(linear_interp_2d) :: enDensInterp !information for interpolating the energy density
 		contains
-		procedure :: initialize => nonRelativistic_initialize
-		procedure :: energyDensityFull => nonRelativistic_energyDensity_full
-		procedure :: energyDensity => nonRelativistic_energyDensity
-		procedure :: entropy => nonRelativistic_entropy
-		procedure :: dzodx_terms => nonRelativistic_dzodx_terms
+		procedure :: initialize => nonRelativistic_initialize !save properties and prepare energy density interpolation
+		procedure :: energyDensityFull => nonRelativistic_energyDensity_full !full integral of the energy density
+		procedure :: energyDensity => nonRelativistic_energyDensity !interpolated energy density
+		procedure :: entropy => nonRelativistic_entropy !entropy
+		procedure :: dzodx_terms => nonRelativistic_dzodx_terms !contributions to the dz/dx numerator and denominator
 	end type nonRelativistic_fermion
 	type(nonRelativistic_fermion) :: electrons, muons
 
 	contains
 
+	!total energy density
 	function totalRadiationDensity(x,z)
 		real(dl) :: totalRadiationDensity
 		real(dl), intent(in) :: x,z
@@ -36,6 +38,7 @@ module ndCosmology
 			+ allNuDensity()
 	end function
 
+	!photons
 	elemental function photonDensity(z)
 		real(dl) :: photonDensity
 		real(dl), intent(in) :: z
@@ -49,6 +52,7 @@ module ndCosmology
 		photonEntropy = four_thirds*PISQD15*z**3
 	end function photonEntropy
 
+	!functions for non relativistic particles
 	pure function integrand_rho_nonRel(x, z, dme2, y)
 		real(dl) :: integrand_rho_nonRel, Emk
 		real(dl), intent(in) :: x, z, dme2, y
@@ -97,8 +101,7 @@ module ndCosmology
 		call cls%enDensInterp%evaluate(x, z, ed)
 	end function nonRelativistic_energyDensity
 
-	!check GL method
-	pure function integrate_uX_Ek_nonRel(w, dm, n)
+	pure function integrate_uX_Ek_nonRel(w, dm, n)!to be studied and optimized
 		!computes the integral of u**n/(sqrt(u**2+w**2)(1+exp(sqrt(u**2+w**2))))
 		!useful to get the pressure for non-relativistic species
 		real(dl) :: integrate_uX_Ek_nonRel
@@ -176,83 +179,7 @@ module ndCosmology
 		call addToLog("[cosmo] ...done!")
 	end subroutine nonRelativistic_initialize
 
-	function nuDensityNC(i1, i2, reim)
-		real(dl) :: nuDensityNC, y
-		integer, intent(in) :: i1, i2
-		logical, intent(in), optional :: reim
-		integer :: ix
-
-		if (present(reim) .and. .not.reim) then
-			do ix=1, Ny
-				y = y_arr(ix)
-				fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%im(i1, i2)
-			end do
-		else
-			do ix=1, Ny
-				y = y_arr(ix)
-				fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%re(i1, i2)
-			end do
-		end if
-		nuDensityNC = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
-	end function nuDensityNC
-
-	function nuDensityGL(i1, i2, reim)
-		real(dl) :: nuDensityGL
-		integer, intent(in) :: i1, i2
-		logical, intent(in), optional :: reim
-		integer :: ix
-
-		if (present(reim) .and. .not.reim) then
-			do ix=1, Ny
-				fy_arr(ix) = nuDensMatVecFD(ix)%im(i1, i2)
-			end do
-		else
-			do ix=1, Ny
-				fy_arr(ix) = nuDensMatVecFD(ix)%re(i1, i2)
-			end do
-		end if
-		nuDensityGL = integral_GL_1d(w_gl_arr, fy_arr) / PISQ
-	end function nuDensityGL
-
-	function allNuDensity()
-		use ndInterfaces1
-		real(dl) :: allNuDensity
-		integer :: ix
-		procedure (nuDensity_integrator), pointer :: nuDensityInt
-
-		if (use_gauss_laguerre) then
-			nuDensityInt => nuDensityGL
-		else
-			nuDensityInt => nuDensityNC
-		end if
-
-		allNuDensity = 0.d0
-		do ix=1, flavorNumber
-			allNuDensity = allNuDensity + nuDensityInt(ix, ix)*nuFactor(ix)
-		end do
-		allNuDensity = allNuDensity
-	end function allNuDensity
-
-	function nuDensityEq(w)
-		real(dl) :: nuDensityEq, y
-		real(dl), intent(in) :: w
-		integer :: ix
-
-		if (use_gauss_laguerre) then
-			do ix=1, Ny
-				fy_arr(ix) = fermiDirac(y_arr(ix)/w)
-			end do
-			nuDensityEq = integral_GL_1d(w_gl_arr, fy_arr) / PISQ
-		else
-			do ix=1, Ny
-				y = y_arr(ix)
-				fy_arr(ix) = y*y*y * fermiDirac(y/w)
-			end do
-			nuDensityEq = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
-		end if
-	end function nuDensityEq
-
-	!functions from rho and drho/dx, for photon temperature
+	!functions derived from rho and drho/dx, for photon temperature evolution
 	pure function J_int(o, u)
 		real(dl) :: J_int, esuo
 		real(dl), intent(in) :: o, u
@@ -396,4 +323,81 @@ module ndCosmology
 		oj(1) = cls%mass_factor * o * j
 		oj(2) = o**2 * j + y
 	end function
+
+	!functions for neutrino energy density
+	function nuDensityNC(i1, i2, reim)
+		real(dl) :: nuDensityNC, y
+		integer, intent(in) :: i1, i2
+		logical, intent(in), optional :: reim
+		integer :: ix
+
+		if (present(reim) .and. .not.reim) then
+			do ix=1, Ny
+				y = y_arr(ix)
+				fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%im(i1, i2)
+			end do
+		else
+			do ix=1, Ny
+				y = y_arr(ix)
+				fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%re(i1, i2)
+			end do
+		end if
+		nuDensityNC = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
+	end function nuDensityNC
+
+	function nuDensityGL(i1, i2, reim)
+		real(dl) :: nuDensityGL
+		integer, intent(in) :: i1, i2
+		logical, intent(in), optional :: reim
+		integer :: ix
+
+		if (present(reim) .and. .not.reim) then
+			do ix=1, Ny
+				fy_arr(ix) = nuDensMatVecFD(ix)%im(i1, i2)
+			end do
+		else
+			do ix=1, Ny
+				fy_arr(ix) = nuDensMatVecFD(ix)%re(i1, i2)
+			end do
+		end if
+		nuDensityGL = integral_GL_1d(w_gl_arr, fy_arr) / PISQ
+	end function nuDensityGL
+
+	function allNuDensity()
+		use ndInterfaces1
+		real(dl) :: allNuDensity
+		integer :: ix
+		procedure (nuDensity_integrator), pointer :: nuDensityInt
+
+		if (use_gauss_laguerre) then
+			nuDensityInt => nuDensityGL
+		else
+			nuDensityInt => nuDensityNC
+		end if
+
+		allNuDensity = 0.d0
+		do ix=1, flavorNumber
+			allNuDensity = allNuDensity + nuDensityInt(ix, ix)*nuFactor(ix)
+		end do
+		allNuDensity = allNuDensity
+	end function allNuDensity
+
+	function nuDensityEq(w)
+		real(dl) :: nuDensityEq, y
+		real(dl), intent(in) :: w
+		integer :: ix
+
+		if (use_gauss_laguerre) then
+			do ix=1, Ny
+				fy_arr(ix) = fermiDirac(y_arr(ix)/w)
+			end do
+			nuDensityEq = integral_GL_1d(w_gl_arr, fy_arr) / PISQ
+		else
+			do ix=1, Ny
+				y = y_arr(ix)
+				fy_arr(ix) = y*y*y * fermiDirac(y/w)
+			end do
+			nuDensityEq = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
+		end if
+	end function nuDensityEq
 end module
