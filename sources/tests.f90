@@ -13,10 +13,7 @@ program tests
 	write(*,*) ""
 	write(*,"(a)") "Initializations"
 	call do_tests_initialization
-	call init_interp_dme2_e
-	call electrons%initialize("electrons", .true., 1.d0, 1d3)
-	call muons%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
-	call init_interp_jkyg12
+	call init_fermions
 	call allocate_interpNuDens
 
 	call do_basic_tests

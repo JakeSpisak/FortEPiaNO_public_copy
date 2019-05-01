@@ -6,7 +6,6 @@ module ndstuff
 	use ndInteractions
 	use ndequations
 	use ndcosmology
-	use ndinteractions
 	use linear_interpolation_module
 
 	type nuDensArgs

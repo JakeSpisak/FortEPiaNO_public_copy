@@ -72,7 +72,9 @@ $(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/heigensystem.o \
 	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/fortepiano.o: $(OBJ_FILES)
-$(BUILD_DIR)/stuff.o: $(OBJ_FILES)
+$(BUILD_DIR)/stuff.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o \
+	$(BUILD_DIR)/equations.o $(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/test_utils.o: $(BUILD_DIR)/const.o
 $(BUILD_DIR)/tests.o: $(OBJ_TESTS)
 

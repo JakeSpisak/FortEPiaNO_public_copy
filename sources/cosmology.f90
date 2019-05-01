@@ -12,6 +12,7 @@ module ndCosmology
 	type(linear_interp_2d) :: elDens, muDens
 
 	type nonRelativistic_fermion
+		character(len=20) :: fermionName
 		logical :: isElectron !if true, compute the electromagnetic corrections to the mass
 		real(dl) :: mass_factor !mass of the particle divided by electron mass
 		real(dl) :: x_enDens_cut !for x larger than this, do not consider this particle (fix energy density and other things to 0)
@@ -23,19 +24,25 @@ module ndCosmology
 		procedure :: entropy => nonRelativistic_entropy !entropy
 		procedure :: dzodx_terms => nonRelativistic_dzodx_terms !contributions to the dz/dx numerator and denominator
 	end type nonRelativistic_fermion
-	type(nonRelativistic_fermion) :: electrons, muons
+	
+	integer, parameter :: fermions_number = 2
+	type(nonRelativistic_fermion), dimension(fermions_number), target :: fermions
+	!define these only for easier reference in updateMatterDensities, output and tests:
+	type(nonRelativistic_fermion), pointer :: electrons, muons
 
 	contains
 
 	!total energy density
-	function totalRadiationDensity(x,z)
-		real(dl) :: totalRadiationDensity
+	function totalRadiationDensity(x,z) result(rho_r)
+		real(dl) :: rho_r
 		real(dl), intent(in) :: x,z
+		integer :: ix
 
-		totalRadiationDensity = photonDensity(z) &
-			+ electrons%energyDensity(x,z) &
-			+ muons%energyDensity(x,z) &
+		rho_r = photonDensity(z) &
 			+ allNuDensity()
+		do ix=1, fermions_number
+			rho_r = rho_r + fermions(ix)%energyDensity(x,z)
+		end do
 	end function
 
 	!photons
@@ -153,6 +160,7 @@ module ndCosmology
 		real(8) :: timer1
 
 		call addToLog("[cosmo] Initializing "//fermionName//"...")
+		cls%fermionName = fermionName
 		cls%isElectron = isElectron
 		cls%mass_factor = mass_factor
 		cls%x_enDens_cut = xcut

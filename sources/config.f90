@@ -218,6 +218,15 @@ module ndConfig
 		deallocate(diag_el)
 	end subroutine init_matrices
 
+	subroutine init_fermions	
+		call init_interp_dme2_e
+		call fermions(1)%initialize("electrons", .true., 1.d0, 1d3)
+		call fermions(2)%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
+		electrons => fermions(1)
+		muons => fermions(2)
+		call init_interp_jkyg12
+	end subroutine init_fermions
+
 	subroutine initConfig()
 		use omp_lib
 		character(len=300) :: tmparg, tmpstr
@@ -328,10 +337,7 @@ module ndConfig
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
 
-			call init_interp_dme2_e
-			call electrons%initialize("electrons", .true., 1.d0, 1d3)
-			call muons%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
-			call init_interp_jkyg12
+			call init_fermions
 			call zin_solver
 
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)

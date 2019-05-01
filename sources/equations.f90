@@ -114,20 +114,23 @@ module ndEquations
 	subroutine init_interp_jkyg12
 		real(dl) :: num, den, xoz, xozmu
 		real(dl), dimension(:), allocatable :: A, B
-		real(dl), dimension(2) :: g12, electronContribution, muonContribution
-		integer :: ix, nx, iflag
+		real(dl), dimension(2) :: g12, fContr
+		integer :: ix, j, nx, iflag
 
 		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx...")
 		nx=interp_nxz
 		allocate(A(nx), B(nx))
-		!$omp parallel do default(private) shared(A, B, nx, interp_xozvec, electrons, muons) schedule(dynamic)
+		!$omp parallel do default(private) shared(A, B, nx, interp_xozvec, fermions) schedule(dynamic)
 		do ix=1, nx
 			xoz = interp_xozvec(ix)
 			g12 = G12_funcFull(xoz)
-			electronContribution = electrons%dzodx_terms(xoz)
-			muonContribution = muons%dzodx_terms(xoz)
-			num = electronContribution(1) + muonContribution(1) + g12(1)
-			den = electronContribution(2) + muonContribution(2) + PISQ/7.5d0 + g12(2)
+			num = g12(1)
+			den = PISQ/7.5d0 + g12(2)
+			do j=1, fermions_number
+				fContr = fermions(j)%dzodx_terms(xoz)
+				num = num + fContr(1)
+				den = den + fContr(2)
+			end do
 			A(ix) = num / den
 			B(ix) = 1./(2.d0*PISQ*den)
 		end do
@@ -143,8 +146,8 @@ module ndEquations
 		real(dl), dimension(2) :: dzodxcoef_interp_func
 		real(dl), intent(in) :: o
 		integer :: iflag
-		call dzodx_A_interp%evaluate(o,0,dzodxcoef_interp_func(1),iflag)
-		call dzodx_B_interp%evaluate(o,0,dzodxcoef_interp_func(2),iflag)
+		call dzodx_A_interp%evaluate(o, 0, dzodxcoef_interp_func(1), iflag)
+		call dzodx_B_interp%evaluate(o, 0, dzodxcoef_interp_func(2), iflag)
 	end function dzodxcoef_interp_func
 
 	subroutine dz_o_dx(x, w, z, ydot, n)
