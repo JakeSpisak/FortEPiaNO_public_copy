@@ -328,9 +328,10 @@ module ndConfig
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
 
-			call init_interp_jkyg12
 			call init_interp_dme2_e
-			call init_interp_ElDensity
+			call electrons%initialize("electrons", .true., 1.d0, 1d3)
+			call muons%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
+			call init_interp_jkyg12
 			call zin_solver
 
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)

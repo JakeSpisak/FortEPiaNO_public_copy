@@ -427,6 +427,165 @@ enddo                                                   !SG-PF
 		call addToLog("[interactions] ...done!")
 	end subroutine init_interp_FD
 
+	subroutine time_electron_energyDensity
+		real(dl), dimension(:,:), allocatable :: ed_vec, md_vec
+		integer :: ix, iz, iflag
+		real(dl) :: x,z, t1,t2
+		real(8) :: timer1
+
+		call random_seed()
+
+		if (timing_tests) then
+			call tic(timer1)
+			write (*,*) "[cosmo] now doing some timing for electron energy density..."
+			call tic(timer1)
+			do ix=1, 1000000
+				call random_number(x)
+				call random_number(z)
+				x=(x_fin-x_in)*x + x_in
+				z=0.4d0*z + z_in
+				t1 = electrons%energyDensity(x,z)
+			end do
+			call toc(timer1, "<interpolated>")
+
+			call tic(timer1)
+			do ix=1, 1000000
+				call random_number(x)
+				call random_number(z)
+				x=(x_fin-x_in)*x + x_in
+				z=0.4d0*z + z_in
+				t1 = electrons%energyDensityFull(x,z)
+			end do
+			call toc(timer1, "<full>")
+		end if
+
+		call addToLog("[cosmo] ...done!")
+	end subroutine time_electron_energyDensity
+
+	subroutine test_speed_coll_int
+		real(dl) :: x,z, y1
+		type(coll_args) :: collArgs
+		integer :: i, ix, Npt!,j, k
+		real(dl) :: errr1,errr2, res1,res2,res3,res4, cf
+		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
+		real(dl) ::  VK(2)
+		real(dl), dimension(:), allocatable :: ndmv_re
+		real(8) :: timer1
+
+		x=0.05d0
+		y1=1.2d0
+		z=1.06d0
+		npts=1
+		nrand=1
+		n=2
+		Npt=1000!number of calculations for each comparison
+
+		allocate(ndmv_re(Ny))
+
+		do i=1, flavorNumber
+			do ix=1, Ny
+				nuDensMatVecFD(ix)%re(i, i) = 1.d0*i * fermiDirac(y_arr(ix)/z)
+				ndmv_re(ix) = nuDensMatVecFD(ix)%re(i, i)
+			end do
+			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
+		end do
+
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%y1 = y1
+		collArgs%dme2 = 0.d0!dme2_electron(x, 0.d0, z)
+		collArgs%ix1 = 1
+		collArgs%ix2 = 1
+		collArgs%iy = 12
+
+		write (*,*) "[interactions] timing 2D integrals..."
+		call tic(timer1)
+		do ix=1, Npt
+			call random_number(x)
+			call random_number(z)
+			collArgs%x = (x_fin-x_in)*x + x_in
+			collArgs%z = 0.4d0*z + z_in
+			ifail=0
+			itrans=0
+			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+		end do
+		call toc(timer1, "<sc re semilin>")
+		call tic(timer1)
+		do ix=1, Npt
+			call random_number(x)
+			call random_number(z)
+			collArgs%x = (x_fin-x_in)*x + x_in
+			collArgs%z = 0.4d0*z + z_in
+			ifail=0
+			itrans=0
+			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+		end do
+		call toc(timer1, "<sc re D01GCF>")
+
+		call tic(timer1)
+		do ix=1, Npt
+			call random_number(x)
+			call random_number(z)
+			collArgs%x = (x_fin-x_in)*x + x_in
+			collArgs%z = 0.4d0*z + z_in
+			ifail=0
+			itrans=0
+			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+		end do
+		call toc(timer1, "<ann re semilin>")
+		call tic(timer1)
+		do ix=1, Npt
+			call random_number(x)
+			call random_number(z)
+			collArgs%x = (x_fin-x_in)*x + x_in
+			collArgs%z = 0.4d0*z + z_in
+			ifail=0
+			itrans=0
+			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
+		end do
+		call toc(timer1, "<ann re D01GCF>")
+		
+		call tic(timer1)
+		do ix=1, 10*Npt
+			call random_number(x)
+			call random_number(z)
+			collArgs%x = (x_fin-x_in)*x + x_in
+			collArgs%z = 0.4d0*z + z_in
+			ifail=0
+			itrans=0
+			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
+		end do
+		call toc(timer1, "<reset>")
+		call tic(timer1)
+		do ix=1, 10*Npt
+			call random_number(x)
+			call random_number(z)
+			collArgs%x = (x_fin-x_in)*x + x_in
+			collArgs%z = 0.4d0*z + z_in
+			ifail=0
+			itrans=0
+			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+		end do
+		call toc(timer1, "<sep ann, sc>")
+		call tic(timer1)
+		do ix=1, 10*Npt
+			call random_number(x)
+			call random_number(z)
+			collArgs%x = (x_fin-x_in)*x + x_in
+			collArgs%z = 0.4d0*z + z_in
+			ifail=0
+			itrans=0
+			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
+		end do
+		call toc(timer1, "<sum ann+sc>")
+		
+		deallocate(ndmv_re)
+		call addToLog("[interactions] ...done!")
+	end subroutine test_speed_coll_int
+
 	function integr_rho_nu(vec,y)
 		real(dl) :: integr_rho_nu
 		real(dl), intent(in) :: y

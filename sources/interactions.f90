@@ -120,6 +120,7 @@ module ndInteractions
 		Ebare_i_dme = sqrt(x*x+y*y+dme2)
 	end function Ebare_i_dme
 
+	!phase space
 	pure function F_ab_ann_re(n1, n2, f3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
 	!doi:10.1088/1475-7516/2016/07/051 eq. 2.5
 		real(dl) :: F_ab_ann_re
@@ -662,6 +663,7 @@ module ndInteractions
 			- e3 * e4 * D2_full(y1, y2, y3, y4))
 	end function PI2_ne_f
 
+	!integrands of collision terms
 	pure function coll_nue_3_ann_int(iy2, y4, obj, F_ab)
 		!annihilation
 		use ndInterfaces1
@@ -767,8 +769,8 @@ module ndInteractions
 			+ coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
 	end function coll_nue_3_int
 
+	!integrate collision terms
 	pure function integrate_coll_int_NC(f, obj, F_ab_ann, F_ab_sc)
-		use omp_lib
 		use ndInterfaces1
 		use ndInterfaces2
 		implicit None
@@ -793,7 +795,6 @@ module ndInteractions
 	end function integrate_coll_int_NC
 
 	pure function integrate_coll_int_GL(f, obj, F_ab_ann, F_ab_sc)
-		use omp_lib
 		use ndInterfaces1
 		use ndInterfaces2
 		implicit None

@@ -15,8 +15,6 @@ module ndEquations
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
 
-	real(dl), parameter :: upper = 1.d2
-
 	real(dl) :: deriv_counter
 
 	contains
@@ -35,8 +33,8 @@ module ndEquations
 
 		leptonDensities = 0.d0
 		ldf = leptDensFactor / x**6
-		leptonDensities(1,1) = ldf * electronDensity(x, z)
-		leptonDensities(2,2) = ldf * muonDensity(x, z)
+		leptonDensities(1,1) = ldf * electrons%energyDensity(x, z)
+		leptonDensities(2,2) = ldf * muons%energyDensity(x, z)
 
 		nuDensities%re = 0.d0
 		nuDensities%im = 0.d0
@@ -113,164 +111,29 @@ module ndEquations
 		end do
 	end subroutine vec_2_densMat
 
-	pure function J_int(o, u)
-		real(dl) :: J_int, esuo
-		real(dl), intent(in) :: o, u
-
-		esuo=exp(sqrt(u*u+o*o))
-		J_int = esuo / ((1.d0+esuo)**2)
-	end function J_int
-
-	pure function J_funcFull(o)
-		real(dl) :: J_funcFull
-		real(dl), intent(in) :: o
-		integer :: i
-
-		J_funcFull = 0.d0
-		do i=1, N_opt_xoz
-			J_funcFull = J_funcFull + opt_xoz_w(i)*J_int(o, opt_xoz(i))
-		end do
-		J_funcFull = J_funcFull / PISQ
-	end function J_funcFull
-
-	pure function Jprime_int(o, u)
-		real(dl) :: Jprime_int
-		real(dl), intent(in) :: o, u
-		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
-
-		uuoo=u*u+o*o
-		sqrtuuoo = sqrt(uuoo)
-		expsqrtuuoo = exp(sqrtuuoo)
-
-		Jprime_int = expsqrtuuoo * (1.d0-expsqrtuuoo) /(sqrtuuoo*(expsqrtuuoo+1)**3)
-	end function Jprime_int
-
-	pure function JprimeFull(o)
-		real(dl) :: JprimeFull
-		real(dl), intent(in) :: o
-		integer :: i
-
-		JprimeFull = 0.d0
-		do i=1, N_opt_xoz
-			JprimeFull = JprimeFull + opt_xoz_w(i)*Jprime_int(o, opt_xoz(i))
-		end do
-		JprimeFull = JprimeFull * o / PISQ
-	end function JprimeFull
-
-	pure function K_int(o, u)
-		real(dl) :: K_int,suo
-		real(dl), intent(in) :: o, u
-
-		suo=sqrt(u*u+o*o)
-		K_int = 1.d0 / (suo * (1.d0+exp(suo)))
-	end function K_int
-
-	pure function K_funcFull(o)
-		real(dl) :: K_funcFull
-		real(dl), intent(in) :: o
-		integer :: i
-
-		K_funcFull = 0.d0
-		do i=1, N_opt_xoz
-			K_funcFull = K_funcFull + opt_xoz_w(i)*K_int(o, opt_xoz(i))
-		end do
-		K_funcFull = K_funcFull / PISQ
-	end function K_funcFull
-
-	pure function Kprime_int(o, u)
-		real(dl) :: Kprime_int
-		real(dl), intent(in) :: o, u
-		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
-
-		uuoo=u*u+o*o
-		sqrtuuoo = sqrt(uuoo)
-		expsqrtuuoo = exp(sqrtuuoo)
-
-		Kprime_int = u*u / (uuoo*sqrtuuoo*(expsqrtuuoo+1)**2) * &
-			(1.d0 + expsqrtuuoo*(sqrtuuoo+1.d0))
-	end function Kprime_int
-
-	pure function KprimeFull(o)
-		real(dl) :: KprimeFull
-		real(dl), intent(in) :: o
-
-		KprimeFull = - rombint_re(o, Kprime_int, zero, upper, toler_jkyg, maxiter) * o / PISQ
-	end function KprimeFull
-
-	pure function Y_int(o, u)
-		real(dl) :: Y_int, esuo
-		real(dl), intent(in) :: o, u
-
-		esuo=exp(sqrt(u*u+o*o))
-		Y_int = u**2 * esuo / ((1.d0+esuo)**2)
-	end function Y_int
-
-	pure function Y_funcFull(o)
-		real(dl) :: Y_funcFull
-		real(dl), intent(in) :: o
-		integer :: i
-
-		Y_funcFull = 0.d0
-		do i=1, N_opt_xoz
-			Y_funcFull = Y_funcFull + opt_xoz_w(i)*Y_int(o, opt_xoz(i))
-		end do
-		Y_funcFull = Y_funcFull / PISQ
-	end function Y_funcFull
-
-	pure function G12_funcFull(o)
-		real(dl), dimension(2) :: G12_funcFull
-		real(dl), intent(in) :: o
-		real(dl) :: ko, jo, kp, jp, tmp
-
-		if (dme2_temperature_corr) then
-			ko=k_funcFull(o)
-			jo=j_funcFull(o)
-			kp=kprimeFull(o)
-			jp=jprimeFull(o)
-			tmp = (kp/6.d0 - ko*kp + jp/6.d0 + jp*ko + jo*kp)
-
-			G12_funcFull(1) = PIx2*alpha_fine *(&
-				(ko/3.d0 + 2.d0*ko*ko - jo/6.d0 - ko*jo)/o + &
-				tmp )
-			G12_funcFull(2) = PIx2*alpha_fine*( &
-				o * tmp &
-				- 4.d0*((ko+jo)/6.d0 + ko*jo - ko*ko/2.d0))
-		else
-			G12_funcFull = 0.d0
-		end if
-	end function G12_funcFull
-
 	subroutine init_interp_jkyg12
-		real(dl) :: num, den, j, y, jmu, ymu, xoz, xozmu
+		real(dl) :: num, den, xoz, xozmu
 		real(dl), dimension(:), allocatable :: A, B
-		real(dl), dimension(2) :: g12
+		real(dl), dimension(2) :: g12, electronContribution, muonContribution
 		integer :: ix, nx, iflag
 
 		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx...")
 		nx=interp_nxz
 		allocate(A(nx), B(nx))
-		!$omp parallel do default(shared) private(ix, j, y, g12, num, den, xoz, xozmu) schedule(dynamic)
+		!$omp parallel do default(private) shared(A, B, nx, interp_xozvec, electrons, muons) schedule(dynamic)
 		do ix=1, nx
 			xoz = interp_xozvec(ix)
-			xozmu = xoz*m_mu_o_m_e
-			j = J_funcFull(xoz)
-			y = Y_funcFull(xoz)
-			if (xoz.gt.x_muon_cut) then
-				jmu=0.d0
-				ymu=0.d0
-			else
-				jmu = J_funcFull(xozmu)
-				ymu = Y_funcFull(xozmu)
-			end if
 			g12 = G12_funcFull(xoz)
-			num= xoz*j + m_mu_o_m_e*xozmu*jmu + g12(1)
-			den= xoz**2*j + xozmu**2*jmu + y+ymu + PISQ/7.5d0 + g12(2)
+			electronContribution = electrons%dzodx_terms(xoz)
+			muonContribution = muons%dzodx_terms(xoz)
+			num = electronContribution(1) + muonContribution(1) + g12(1)
+			den = electronContribution(2) + muonContribution(2) + PISQ/7.5d0 + g12(2)
 			A(ix) = num / den
 			B(ix) = 1./(2.d0*PISQ*den)
 		end do
 		!$omp end parallel do
-		call dzodx_A_interp%initialize(interp_xozvec,A,4,iflag)
-		call dzodx_B_interp%initialize(interp_xozvec,B,4,iflag)
+		call dzodx_A_interp%initialize(interp_xozvec, A, 4, iflag)
+		call dzodx_B_interp%initialize(interp_xozvec, B, 4, iflag)
 
 		deallocate(A, B)
 		call addToLog("[equations] ...done!")
@@ -522,15 +385,15 @@ module ndEquations
 			call openFile(iu, trim(outputFolder)//'/energyDensity.dat', firstWrite)
 			write(iu, multidblfmt) x, z, &
 				photonDensity(z), &
-				electronDensity(x, z), &
-				muonDensity(x, z), &
+				electrons%energyDensity(x, z), &
+				muons%energyDensity(x, z), &
 				nuEnDens(1:flavorNumber)
 			close(iu)
 			call openFile(iu, trim(outputFolder)//'/entropy.dat', firstWrite)
 			write(iu, multidblfmt) x, z, &
 				photonEntropy(z), &
-				electronEntropy(x, z), &
-				muonEntropy(x, z), &
+				electrons%entropy(x, z), &
+				muons%entropy(x, z), &
 				nuEnDens(1:flavorNumber)*four_thirds/z
 			close(iu)
 		end if

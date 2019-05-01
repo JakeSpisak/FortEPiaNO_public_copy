@@ -13,9 +13,10 @@ program tests
 	write(*,*) ""
 	write(*,"(a)") "Initializations"
 	call do_tests_initialization
-	call init_interp_jkyg12
 	call init_interp_dme2_e
-	call init_interp_ElDensity
+	call electrons%initialize("electrons", .true., 1.d0, 1d3)
+	call muons%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
+	call init_interp_jkyg12
 	call allocate_interpNuDens
 
 	call do_basic_tests
@@ -392,16 +393,16 @@ program tests
 		end do
 
 		call printTestBlockName("Cosmology")
-		call assert_double_rel("elDensF test 1", electronDensityFull(1.d0, 1.d0), 1.06102d0, 1d-4)
-		call assert_double_rel("elDensF test 2", electronDensityFull(0.076d0, 1.32d0), 3.48762d0, 1d-4)
-		call assert_double_rel("elDensF test 3", electronDensityFull(1.d1, 1.2d0), 0.0377464d0, 1d-4)
-		call assert_double_rel("elDensF test 4", electronDensityFull(2.d1, 1.2d0), 0.0000421797d0, 1d-4)
-		call assert_double_rel("elDensF test 5", electronDensityFull(3.d1, 1.2d0), 2.61396d-8, 5d-3)
-		call assert_double_rel("elDens test 1", electronDensity(1.d0, 1.d0), 1.06102d0, 1d-4)
-		call assert_double_rel("elDens test 2", electronDensity(0.076d0, 1.32d0), 3.48762d0, 1d-4)
-		call assert_double_rel("elDens test 3", electronDensity(1.d1, 1.2d0), 0.0377464d0, 1d-2)
-		call assert_double_rel("elDens test 4", electronDensity(2.d1, 1.2d0), 0.0000421797d0, 2d-2)
-		call assert_double_rel("elDens test 5", electronDensity(3.d1, 1.2d0), 2.61396d-8, 5d-2)
+		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.06102d0, 1d-4)
+		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.32d0), 3.48762d0, 1d-4)
+		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(1.d1, 1.2d0), 0.0377464d0, 1d-4)
+		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(2.d1, 1.2d0), 0.0000421797d0, 1d-4)
+		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0), 2.61396d-8, 5d-3)
+		call assert_double_rel("elDens test 1", electrons%energyDensity(1.d0, 1.d0), 1.06102d0, 1d-4)
+		call assert_double_rel("elDens test 2", electrons%energyDensity(0.076d0, 1.32d0), 3.48762d0, 1d-4)
+		call assert_double_rel("elDens test 3", electrons%energyDensity(1.d1, 1.2d0), 0.0377464d0, 1d-2)
+		call assert_double_rel("elDens test 4", electrons%energyDensity(2.d1, 1.2d0), 0.0000421797d0, 2d-2)
+		call assert_double_rel("elDens test 5", electrons%energyDensity(3.d1, 1.2d0), 2.61396d-8, 5d-2)
 		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
 		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
 
@@ -497,19 +498,19 @@ program tests
 		end do
 		call assert_double("Neff test 5", Neff_from_rho_z(1.d0, 1.39779d0), 3.045d0, 1d-3)
 
-		call assert_double("muonDensF test 1", muonDensityFull(1.d0, 1.d0), 0.d0, 1d-15)
-		call assert_double_rel("muonDensF test 2", muonDensityFull(0.1d0, 1.32d0), 0.000146007d0, 1d-4)
-		call assert_double_rel("muonDensF test 3", muonDensityFull(0.01d0, 1.2d0), 1.86472d0, 1d-4)
-		call assert_double_rel("muonDensF test 4", muonDensityFull(3.d-3, 1.2d0), 2.3396d0, 1d-4)
-		call assert_double_rel("muonDensF test 5", muonDensityFull(1.d-3, 1.d0), 1.14785d0, 1d-4)
-		call assert_double("muonDensF test 6", muonDensityFull(4.d0, 1.3d0), 0.d0, 1d-15)
+		call assert_double("muonDensF test 1", muons%energyDensityFull(1.d0, 1.d0), 0.d0, 1d-15)
+		call assert_double_rel("muonDensF test 2", muons%energyDensityFull(0.1d0, 1.32d0), 0.000146007d0, 1d-4)
+		call assert_double_rel("muonDensF test 3", muons%energyDensityFull(0.01d0, 1.2d0), 1.86472d0, 1d-4)
+		call assert_double_rel("muonDensF test 4", muons%energyDensityFull(3.d-3, 1.2d0), 2.3396d0, 1d-4)
+		call assert_double_rel("muonDensF test 5", muons%energyDensityFull(1.d-3, 1.d0), 1.14785d0, 1d-4)
+		call assert_double("muonDensF test 6", muons%energyDensityFull(4.d0, 1.3d0), 0.d0, 1d-15)
 
-		call assert_double("muonDens test 1", muonDensity(1.d0, 1.d0), 0.d0, 1d-15)
-		call assert_double_rel("muonDens test 2", muonDensity(1.d-1, 1.32d0), 0.000146007d0, 1.1d-2)
-		call assert_double_rel("muonDens test 3", muonDensity(1.d-2, 1.2d0), 1.86472d0, 1d-4)
-		call assert_double_rel("muonDens test 4", muonDensity(3.d-3, 1.2d0), 2.3396d0, 1d-4)
-		call assert_double_rel("muonDens test 5", muonDensity(1.d-3, 1.d0), 1.14785d0, 1d-4)
-		call assert_double("muonDens test 6", muonDensity(4.d0, 1.3d0), 0.d0, 1d-15)
+		call assert_double("muonDens test 1", muons%energyDensity(1.d0, 1.d0), 0.d0, 1d-15)
+		call assert_double_rel("muonDens test 2", muons%energyDensity(1.d-1, 1.32d0), 0.000146007d0, 1.1d-2)
+		call assert_double_rel("muonDens test 3", muons%energyDensity(1.d-2, 1.2d0), 1.86472d0, 1d-4)
+		call assert_double_rel("muonDens test 4", muons%energyDensity(3.d-3, 1.2d0), 2.3396d0, 1d-4)
+		call assert_double_rel("muonDens test 5", muons%energyDensity(1.d-3, 1.d0), 1.14785d0, 1d-4)
+		call assert_double("muonDens test 6", muons%energyDensity(4.d0, 1.3d0), 0.d0, 1d-15)
 
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 1) = 1.d0 * fermiDirac(y_arr(iy))
@@ -543,6 +544,22 @@ program tests
 		call assert_double_rel("Y test 2", Y_funcFull(1.d0), 2.070646778d0, 1d-7)
 		call assert_double_rel("Y test 3", Y_funcFull(5.d0), 0.3145333371d0, 1d-7)
 
+		res = electrons%dzodx_terms(0.01d0)
+		call assert_double_rel("elContr test 1a", res(1), 0.0016666413d0, 1d-7)
+		call assert_double_rel("elContr test 1b", res(2), 2.3028993d0, 1d-7)
+		res = electrons%dzodx_terms(1d0)
+		call assert_double_rel("elContr test 2a", res(1), 0.143797172d0, 1d-7)
+		call assert_double_rel("elContr test 2b", res(2), 2.214444d0, 1d-7)
+		res = electrons%dzodx_terms(5d0)
+		call assert_double_rel("elContr test 3a", res(1), 0.066967539d0, 1d-7)
+		call assert_double_rel("elContr test 3b", res(2), 0.64937103d0, 1d-7)
+		res = muons%dzodx_terms(0.01d0)
+		call assert_double_rel("muContr test 1a", res(1), 39.8383018d0, 1d-7)
+		call assert_double_rel("muContr test 1b", res(2), 1.89902183d0, 1d-7)
+		res = muons%dzodx_terms(1d0)
+		call assert_double("muContr test 2a", res(1), 0d0, 1d-7)
+		call assert_double("muContr test 2b", res(2), 0d0, 1d-7)
+
 		res = G12_funcFull(0.01d0)
 		call assert_double("G1 test 1", res(1), -0.0000658825d0, 1d-7)
 		call assert_double("G2 test 1", res(2), -0.0095518d0, 1d-8)
@@ -554,8 +571,8 @@ program tests
 		call assert_double_rel("G2 test 3", res(2), -0.000945107d0, 1d-5)
 
 		res = dzodxcoef_interp_func(0.01d0)
-		call assert_double("A test 1", res(1), 0.000495618d0, 1d-5)
-		call assert_double("B test 1", res(2), 0.00991412d0, 1d-4)
+		call assert_double("A test 1", res(1), 7.23268d0, 1d-5)
+		call assert_double("B test 1", res(2), 0.00919711d0, 1d-4)
 		res = dzodxcoef_interp_func(1.d0)
 		call assert_double_rel("A test 2", res(1), 0.0404956d0, 1d-5)
 		call assert_double_rel("B test 2", res(2), 0.0143827d0, 1d-5)
@@ -581,14 +598,14 @@ program tests
 		end do
 		call printTestBlockName("dz/dx functions")
 		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1", ydot(n), -0.123503d0, 8d-3)
+		call assert_double_rel("dz_o_dx test 1", ydot(n), 7.11765d0, 8d-3)
 		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2", ydot(n), -0.0946571d0, 7d-6)
 		call dz_o_dx_old(6.d0, 1.2d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 6d-6)
 
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1a", ydot(n), -0.123503d0, 8d-3)
+		call assert_double_rel("dz_o_dx test 1a", ydot(n), 7.11765d0, 8d-3)
 		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), -0.10615d0, 4d-6)
 		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0946571d0, 3d-6)
@@ -1954,130 +1971,6 @@ program tests
 		call resetTestCounter
 	end subroutine do_test_collision_terms
 
-	subroutine test_speed_coll_int
-		real(dl) :: x,z, y1
-		type(coll_args) :: collArgs
-		integer :: i, ix, Npt!,j, k
-		real(dl) :: errr1,errr2, res1,res2,res3,res4, cf
-		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
-		real(dl) ::  VK(2)
-		real(dl), dimension(:), allocatable :: ndmv_re
-		real(8) :: timer1
-
-		x=0.05d0
-		y1=1.2d0
-		z=1.06d0
-		npts=1
-		nrand=1
-		n=2
-		Npt=1000!number of calculations for each comparison
-
-		allocate(ndmv_re(Ny))
-
-		do i=1, flavorNumber
-			do ix=1, Ny
-				nuDensMatVecFD(ix)%re(i, i) = 1.d0*i * fermiDirac(y_arr(ix)/z)
-				ndmv_re(ix) = nuDensMatVecFD(ix)%re(i, i)
-			end do
-			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
-		end do
-
-		collArgs%x = x
-		collArgs%z = z
-		collArgs%y1 = y1
-		collArgs%dme2 = 0.d0!dme2_electron(x, 0.d0, z)
-		collArgs%ix1 = 1
-		collArgs%ix2 = 1
-		collArgs%iy = 12
-
-		write (*,*) "[interactions] timing 2D integrals..."
-		call tic(timer1)
-		do ix=1, Npt
-			call random_number(x)
-			call random_number(z)
-			collArgs%x = (x_fin-x_in)*x + x_in
-			collArgs%z = 0.4d0*z + z_in
-			ifail=0
-			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-		end do
-		call toc(timer1, "<sc re semilin>")
-		call tic(timer1)
-		do ix=1, Npt
-			call random_number(x)
-			call random_number(z)
-			collArgs%x = (x_fin-x_in)*x + x_in
-			collArgs%z = 0.4d0*z + z_in
-			ifail=0
-			itrans=0
-			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-		end do
-		call toc(timer1, "<sc re D01GCF>")
-
-		call tic(timer1)
-		do ix=1, Npt
-			call random_number(x)
-			call random_number(z)
-			collArgs%x = (x_fin-x_in)*x + x_in
-			collArgs%z = 0.4d0*z + z_in
-			ifail=0
-			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-		end do
-		call toc(timer1, "<ann re semilin>")
-		call tic(timer1)
-		do ix=1, Npt
-			call random_number(x)
-			call random_number(z)
-			collArgs%x = (x_fin-x_in)*x + x_in
-			collArgs%z = 0.4d0*z + z_in
-			ifail=0
-			itrans=0
-			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-		end do
-		call toc(timer1, "<ann re D01GCF>")
-		
-		call tic(timer1)
-		do ix=1, 10*Npt
-			call random_number(x)
-			call random_number(z)
-			collArgs%x = (x_fin-x_in)*x + x_in
-			collArgs%z = 0.4d0*z + z_in
-			ifail=0
-			itrans=0
-			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
-		end do
-		call toc(timer1, "<reset>")
-		call tic(timer1)
-		do ix=1, 10*Npt
-			call random_number(x)
-			call random_number(z)
-			collArgs%x = (x_fin-x_in)*x + x_in
-			collArgs%z = 0.4d0*z + z_in
-			ifail=0
-			itrans=0
-			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-		end do
-		call toc(timer1, "<sep ann, sc>")
-		call tic(timer1)
-		do ix=1, 10*Npt
-			call random_number(x)
-			call random_number(z)
-			collArgs%x = (x_fin-x_in)*x + x_in
-			collArgs%z = 0.4d0*z + z_in
-			ifail=0
-			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
-		end do
-		call toc(timer1, "<sum ann+sc>")
-		
-		deallocate(ndmv_re)
-		call addToLog("[interactions] ...done!")
-	end subroutine test_speed_coll_int
-
 	subroutine do_test_drho_dx
 		real(dl) :: x,z,fd, dme2, sqrtraddens
 		type(cmplxMatNN) :: res, outp
@@ -2644,7 +2537,7 @@ program tests
 		end do
 
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double("dz_o_dx test 1a", ydot(n), -0.0852792d0, 1d-3)
+		call assert_double("dz_o_dx test 1a", ydot(n), 7.15311d0, 1d-3)
 		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), -0.0734285d0, 4d-6)
 		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0529951d0, 3d-6)
@@ -2663,10 +2556,10 @@ program tests
 		x_in=0.05d0
 		z_in=0.d0
 		call zin_solver
-		call assert_double("z_in test 1", z_in-1.d0, 0.57d-04, 1d-6)
+		call assert_double_rel("z_in test 1", z_in-1.d0, 0.17623d0, 1d-3)
 		x_in=1d-3
 		call zin_solver
-		call assert_double("z_in test 2", z_in-1.d0, 8.9d-8, 1d-9)
+		call assert_double_rel("z_in test 2", z_in-1.d0, 0.333117d-3, 1d-3)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_zin
@@ -2845,7 +2738,7 @@ program tests
 		timing_tests = .true.
 		call test_dzodx_speed
 		call test_nuDens_speed
-		call init_interp_ElDensity
+		call time_electron_energyDensity
 		call init_interp_dme2_e
 		call init_interp_FD
 		call init_interp_d123
