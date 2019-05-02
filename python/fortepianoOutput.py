@@ -487,7 +487,8 @@ class FortEPiaNORun():
 
 	def doAllPlots(self, yref=5., color="k"):
 		plt.close()
-		self.plotZ(lc=color)
+		self.plotZ(lc=color, lab="z")
+		self.plotW(lc=color, ls=":", lab="w")
 		finalizePlot(
 			"%s/z.pdf"%self.folder,
 			xlab="$x$",
