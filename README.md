@@ -1,4 +1,4 @@
-# [FortEPiaNO](https://bitbucket.org/ahep_cosmo/piano/)
+# [FortEPiaNO](https://bitbucket.org/ahep_cosmo/fortepiano/)
 FORTran-Evolved PrImordiAl Neutrino Oscillations  
 by S. Gariazzo (stefano.gariazzo@gmail.com) and P.F. de Salas ()
 
@@ -18,7 +18,7 @@ https://inspire....
 
 ## 1.Install and compile
 In order to install the code, the suggested option is to clone the git repository.  
-To do so, go to the webpage [https://bitbucket.org/ahep_cosmo/piano/](https://bitbucket.org/ahep_cosmo/piano/),
+To do so, go to the webpage [https://bitbucket.org/ahep_cosmo/fortepiano/](https://bitbucket.org/ahep_cosmo/fortepiano/),
 and use the button on the top right to obtain the clone link (...).  
 You can also download a compressed folder with all the content: in such case, uncompress it in a new folder.
 

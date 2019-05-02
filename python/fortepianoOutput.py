@@ -36,7 +36,7 @@ def finalizePlot(fname,
 	plt.title(title)
 	ax=plt.gca()
 	if not Neff_axes:
-		ax.tick_params("both", which="both", direction="out",
+		ax.tick_params("both", which="both", direction="in",
 			left=True, right=True, top=True, bottom=True)
 	if legend:
 		plt.legend(loc=lloc, ncol=legcol)
@@ -129,6 +129,14 @@ class FortEPiaNORun():
 			self.Neffdat = np.loadtxt("%s/Neff.dat"%folder)
 		except (IOError, OSError):
 			self.Neffdat = np.asarray([[np.nan, np.nan, np.nan]])
+		try:
+			self.endens = np.loadtxt("%s/energyDensity.dat"%folder)
+		except (IOError, OSError):
+			self.endens = np.nan
+		try:
+			self.entropy = np.loadtxt("%s/entropy.dat"%folder)
+		except (IOError, OSError):
+			self.entropy = np.nan
 		self.nnu = nnu
 		self.rho = np.asarray([
 			[[None, None] for i in range(nnu)] for j in range(nnu)
@@ -484,6 +492,74 @@ class FortEPiaNORun():
 			ax.set_ylabel(r"$N_{\rm eff}^{\rm in}$")
 			ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}$")
 			ax1.set_ylim(np.asarray(lims)*(11./4)**(4./3))
+
+	def plotEnergyDensity(self,
+			gamma_e=True,
+			gec="#00ccff",
+			ges=":",
+			gamma_e_mu=True,
+			gemc="#6666ff",
+			gems="--",
+			labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$", r"$\nu_\mu$", r"$\nu_\tau$", r"$\nu_s$"],
+			colors=["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"],
+			styles=["-", "-", "-", ":", "-.", ":", "-"],
+			):
+		plt.plot(self.endens[:,0], np.asarray([np.sum(cl[2:]) for cl in self.endens]), label="total", c="k")
+		for ix, lab in enumerate(labels):
+			try:
+				plt.plot(self.endens[:, 0], self.endens[:, 2+ix], label=lab, c=colors[ix], ls=styles[ix])
+			except IndexError:
+				pass
+		if gamma_e:
+			plt.plot(
+				self.endens[:,0],
+				self.endens[:,2]+self.endens[:,3],
+				label=r"$\gamma+e$",
+				c=gec,
+				ls=ges,
+				)
+		if gamma_e_mu:
+			plt.plot(
+				self.endens[:,0],
+				self.endens[:,2]+self.endens[:,3]+self.endens[:,4],
+				label=r"$\gamma+e+\mu$",
+				c=gemc,
+				ls=gems,
+				)
+
+	def plotEntropy(self,
+			gamma_e=True,
+			gec="#00ccff",
+			ges=":",
+			gamma_e_mu=True,
+			gemc="#6666ff",
+			gems="--",
+			labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$", r"$\nu_\mu$", r"$\nu_\tau$", r"$\nu_s$"],
+			colors=["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"],
+			styles=["-", "-", "-", ":", "-.", ":", "-"],
+			):
+		plt.plot(self.entropy[:,0], np.asarray([np.sum(cl[2:]) for cl in self.entropy]), label="total", c="k")
+		for ix, lab in enumerate(labels):
+			try:
+				plt.plot(self.entropy[:, 0], self.entropy[:, 2+ix], label=lab, c=colors[ix], ls=styles[ix])
+			except IndexError:
+				pass
+		if gamma_e:
+			plt.plot(
+				self.entropy[:,0],
+				self.entropy[:,2]+self.entropy[:,3],
+				label=r"$\gamma+e$",
+				c=gec,
+				ls=ges,
+				)
+		if gamma_e_mu:
+			plt.plot(
+				self.entropy[:,0],
+				self.entropy[:,2]+self.entropy[:,3]+self.entropy[:,4],
+				label=r"$\gamma+e+\mu$",
+				c=gemc,
+				ls=gems,
+				)
 
 	def doAllPlots(self, yref=5., color="k"):
 		plt.close()

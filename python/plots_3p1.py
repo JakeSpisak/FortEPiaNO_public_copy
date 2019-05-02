@@ -18,7 +18,7 @@ Ut4l = FortEPiaNORun("OUT/3p1/30_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10
 # plot Neff with three different choices for the angles
 fig = plt.figure(figsize=(6,4))
 for ir, r in enumerate([
-		Ue4h, Um4h, Ut4h, None, Ut4l, a3nu]):
+		Ue4h, Um4h, Ut4h, None, Ue4l, a3nu]):
 	if r is not None:
 		print("Neff for %s"%r.label)
 		r.plotNeff(lc=colors[ir], ls='-', axes=False)
@@ -31,6 +31,30 @@ finalizePlot(
 	lloc="lower left",
 	x_T=True,
 	Neff_axes=True,
+	)
+
+#energy densities
+Um4h.plotEnergyDensity()
+finalizePlot(
+	"plots/3p1/energyDensity.pdf",
+	xlab="$x$",
+	xlim=[1e-3, 35],
+	ylim=[0, 7],
+	ylab=r"$\rho$",
+	xscale="log",
+	legcol=3,
+	)
+
+#entropy
+Um4h.plotEntropy(gamma_e_mu=False)
+finalizePlot(
+	"plots/3p1/entropy.pdf",
+	xlab="$x$",
+	xlim=[1e-3, 35],
+	ylim=[0, 8],
+	ylab=r"$s$",
+	xscale="log",
+	legcol=3,
 	)
 
 # rho diagonal for different y, only one run
@@ -171,7 +195,7 @@ for fn, cl, ol in [
 		)
 
 # plot z and w with three different choices for the angles
-for ir, r in enumerate([Ue4h, Um4h, Ut4h, None, Ut4l, a3nu]):
+for ir, r in enumerate([Ue4h, Um4h, Ut4h, None, Ue4l, a3nu]):
 	if r is not None:
 		plt.plot(np.nan, ls='-', color=colors[ir], label=r.label)
 		r.plotZ(lc=colors[ir], ls='-', lab="")
@@ -199,7 +223,7 @@ for i in range(4):
 first_legend = plt.legend(loc='lower left')
 ax = plt.gca()
 ax.add_artist(first_legend)
-for ir, r in enumerate([Ue4l, Um4l, Ut4l, None, Ue4h, Um4h, Ut4h]):
+for ir, r in enumerate([Ue4l, Um4l, Ue4l, None, Ue4h, Um4h, Ut4h]):
 	if r is not None:
 		plt.plot(np.nan, ls='-', color=colors[ir], label=r.label)
 		for i in range(4):
