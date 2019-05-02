@@ -115,7 +115,7 @@ class FortEPiaNORun():
 			return
 		try:
 			fdy = np.loadtxt("%s/fd.dat"%folder)
-		except OSError:
+		except (IOError, OSError):
 			self.yv = np.nan
 			self.fd = np.nan
 		else:
@@ -123,11 +123,11 @@ class FortEPiaNORun():
 			self.fd = fdy[:,1]
 		try:
 			self.zdat = np.loadtxt("%s/z.dat"%folder)
-		except OSError:
+		except (IOError, OSError):
 			self.zdat = np.asarray([[np.nan, np.nan, np.nan]])
 		try:
 			self.Neffdat = np.loadtxt("%s/Neff.dat"%folder)
-		except OSError:
+		except (IOError, OSError):
 			self.Neffdat = np.asarray([[np.nan, np.nan, np.nan]])
 		self.nnu = nnu
 		self.rho = np.asarray([
@@ -170,24 +170,24 @@ class FortEPiaNORun():
 			try:
 				self.rho[i, i, 0] = np.loadtxt(
 					"%s/nuDens_diag%d.dat"%(folder, i+1))
-			except OSError:
+			except (IOError, OSError):
 				self.rho[i, i, 0] = np.nan
 			if full:
 				for j in range(i+1, self.nnu):
 					try:
 						self.rho[i, j, 0] = np.loadtxt(
 							"%s/nuDens_nd_%d%d_re.dat"%(folder, i+1, j+1))
-					except OSError:
+					except (IOError, OSError):
 						self.rho[i, j, 0] = np.nan
 					try:
 						self.rho[i, j, 1] = np.loadtxt(
 							"%s/nuDens_nd_%d%d_im.dat"%(folder, i+1, j+1))
-					except OSError:
+					except (IOError, OSError):
 						self.rho[i, j, 1] = np.nan
 			try:
 				self.rhoM[i, i, 0] = np.loadtxt(
 					"%s/nuDens_mass%d.dat"%(folder, i+1))
-			except OSError:
+			except (IOError, OSError):
 				self.rhoM[i, i, 0] = np.nan
 		self.printTableLine()
 		if rho and plots:
