@@ -283,8 +283,7 @@ module ndConfig
 				call criticalError("Ny>50 cannot be used with the Gauss-Laguerre method")
 
 			Nylog = read_ini_int('Nylog',7)
-			allocate(x_arr(Nx), y_arr(Ny))
-			allocate(dy_arr(Ny), fy_arr(Ny))
+			allocate(x_arr(Nx))
 
 			x_in    = read_ini_real('x_in', 0.01d0)
 			x_fin   = read_ini_real('x_fin', 40.d0)
@@ -295,18 +294,20 @@ module ndConfig
 			y_min = read_ini_real('y_min', 0.01d0)
 			y_max = read_ini_real('y_max', 20.0d0)
 			y_cen = read_ini_real('y_cen', 1.0d0)
-			if (Nylog .lt. 2) then
-				y_arr = linspace(y_min, y_max, Ny)
-			else
-				y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
-			end if
 
 			if (use_gauss_laguerre) then
-				call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .true., 3, opt_y_cut)
+				call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .true., 3, y_max)
 			else
+				allocate(y_arr(Ny))
+				if (Nylog .lt. 2) then
+					y_arr = linspace(y_min, y_max, Ny)
+				else
+					y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
+				end if
 				write(tmpstr,"('[config] Using Ny=',I3,' and Nylog=',I3)") Ny, Nylog
 				call addToLog(trim(tmpstr))
 			end if
+			allocate(dy_arr(Ny), fy_arr(Ny))
 			call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
 			call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 
