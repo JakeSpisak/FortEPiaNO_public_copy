@@ -438,6 +438,7 @@ module utilities
 		character(len=300) :: tmpstr
 
 		do ix=1, 350
+			effective_Ny = 0
 			call gaulag(tyv, twv, ix, 1.d0*alpha)
 			do iy=1, ix
 				if (tyv(iy).gt.ycut)then
