@@ -14,6 +14,7 @@ module ndEquations
 	implicit none
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
+	type(bspline_1d) :: dwodx_A_interp, dwodx_B_interp
 
 	real(dl) :: deriv_counter
 
@@ -112,15 +113,18 @@ module ndEquations
 	end subroutine vec_2_densMat
 
 	subroutine init_interp_jkyg12
-		real(dl) :: num, den, xoz, xozmu
+		real(dl) :: num, den, xoz, numw, denw
 		real(dl), dimension(:), allocatable :: A, B
-		real(dl), dimension(2) :: g12, fContr
+		real(dl), dimension(:), allocatable :: Aw, Bw
+		real(dl), dimension(2) :: g12, fContr, elContr0
 		integer :: ix, j, nx, iflag
 
-		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx...")
+		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx and dw/dx...")
 		nx=interp_nxz
 		allocate(A(nx), B(nx))
-		!$omp parallel do default(private) shared(A, B, nx, interp_xozvec, fermions) schedule(dynamic)
+		allocate(Aw(nx), Bw(nx))
+		elContr0 = electrons%dzodx_terms(interp_xozvec(1))
+		!$omp parallel do default(private) shared(A, B, Aw, Bw, nx, interp_xozvec, fermions, elContr0) schedule(dynamic)
 		do ix=1, nx
 			xoz = interp_xozvec(ix)
 			g12 = G12_funcFull(xoz)
@@ -131,14 +135,26 @@ module ndEquations
 				num = num + fContr(1)
 				den = den + fContr(2)
 			end do
+			numw = g12(1) + elContr0(1)
+			denw = PISQ/7.5d0 + g12(2) + elContr0(2)
+			do j=2, fermions_number
+				fContr = fermions(j)%dzodx_terms(xoz)
+				numw = numw + fContr(1)
+				denw = denw + fContr(2)
+			end do
 			A(ix) = num / den
 			B(ix) = 1./(2.d0*PISQ*den)
+			Aw(ix) = numw / denw
+			Bw(ix) = 1./(2.d0*PISQ*denw)
 		end do
 		!$omp end parallel do
 		call dzodx_A_interp%initialize(interp_xozvec, A, 4, iflag)
 		call dzodx_B_interp%initialize(interp_xozvec, B, 4, iflag)
+		call dwodx_A_interp%initialize(interp_xozvec, Aw, 4, iflag)
+		call dwodx_B_interp%initialize(interp_xozvec, Bw, 4, iflag)
 
 		deallocate(A, B)
+		deallocate(Aw, Bw)
 		call addToLog("[equations] ...done!")
 	end subroutine init_interp_jkyg12
 
@@ -149,6 +165,14 @@ module ndEquations
 		call dzodx_A_interp%evaluate(o, 0, dzodxcoef_interp_func(1), iflag)
 		call dzodx_B_interp%evaluate(o, 0, dzodxcoef_interp_func(2), iflag)
 	end function dzodxcoef_interp_func
+
+	function dwodxcoef_interp_func(o)
+		real(dl), dimension(2) :: dwodxcoef_interp_func
+		real(dl), intent(in) :: o
+		integer :: iflag
+		call dwodx_A_interp%evaluate(o, 0, dwodxcoef_interp_func(1), iflag)
+		call dwodx_B_interp%evaluate(o, 0, dwodxcoef_interp_func(2), iflag)
+	end function dwodxcoef_interp_func
 
 	subroutine dz_o_dx(x, w, z, ydot, n)
 		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
@@ -183,7 +207,10 @@ module ndEquations
 			!$omp end parallel do
 			tmp = integral_NC_1d(Ny, dy_arr, fy_arr)
 		end if
-		ydot(n-1) = coeff_dw_dx * tmp / w**3 / tot_factor_active_nu
+		!neutrino effective temperature
+		coeffs = dwodxcoef_interp_func(x/z)
+		ydot(n-1) = coeffs(1) - coeffs(2) * tmp / z**3
+		!photon temperature
 		coeffs = dzodxcoef_interp_func(x/z)
 		ydot(n) = coeffs(1) - coeffs(2) * tmp / z**3
 	end subroutine dz_o_dx
