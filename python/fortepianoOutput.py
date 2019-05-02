@@ -305,11 +305,11 @@ class FortEPiaNORun():
 			rho = self.rho
 		plt.plot(
 			*stripRepeated(rho[inu, inu, 0], 0, iy),
-			label="%s i=%d"%(self.label, inu+1), ls=ls, c=lc
+			label="%s \alpha=%d"%(self.label, inu+1), ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ii}$")
+		plt.ylabel(r"$\rho_{\alpha\alpha}$")
 
 	def plotdRhoDiag(self, inu, iy, ls, lc="k", mass=False):
 		if mass:
@@ -319,11 +319,11 @@ class FortEPiaNORun():
 		dijrex, dijrey = stripRepeated(rho[inu, inu, 0], 0, iy)
 		plt.plot(
 			dijrex, np.gradient(dijrey, dijrex),
-			ls=ls, c=lc, label="%s i=%d"%(self.label, inu+1)
+			ls=ls, c=lc, label="%s \alpha=%d"%(self.label, inu+1)
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$d\rho_{ii}/dt$")
+		plt.ylabel(r"$d\rho_{\alpha\alpha}/dt$")
 
 	def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True, mass=False):
 		if not self.full:
@@ -335,16 +335,16 @@ class FortEPiaNORun():
 			rho = self.rho
 		plt.plot(
 			*stripRepeated(rho[i1, i2, 0], 0, iy),
-			ls="-", c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1)
+			ls="-", c=lc, label="%s \alpha\beta=%d%d re"%(self.label, i1+1, i2+1)
 			)
 		if im:
 			plt.plot(
 				*stripRepeated(rho[i1, i2, 1], 0, iy),
-				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1)
+				ls=":", c=lc, label="%s \alpha\beta=%d%d im"%(self.label, i1+1, i2+1)
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ij}$")
+		plt.ylabel(r"$\rho_{\alpha\beta}$")
 
 	def plotdRhoOffDiag(self, i1, i2, iy, lc="k", im=True, mass=False):
 		if not self.full:
@@ -357,17 +357,17 @@ class FortEPiaNORun():
 		dijrex, dijrey = stripRepeated(rho[i1, i2, 0], 0, iy)
 		plt.plot(
 			dijrex, np.gradient(dijrey, dijrex),
-			ls="-", c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1)
+			ls="-", c=lc, label="%s \alpha\beta=%d%d re"%(self.label, i1+1, i2+1)
 			)
 		if im:
 			dijimx, dijimy = stripRepeated(rho[i1, i2, 1], 0, iy)
 			plt.plot(
 				dijimx, np.gradient(dijimy, dijimx),
-				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1)
+				ls=":", c=lc, label="%s \alpha\beta=%d%d im"%(self.label, i1+1, i2+1)
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$d\rho_{ij}/dt$")
+		plt.ylabel(r"$d\rho_{\alpha\beta}/dt$")
 
 	def plotRhoFin(self, ix, iy=None, ri=0, ls="-", lc="k", y2=False, lab=None, mass=False):
 		if mass:
@@ -378,7 +378,7 @@ class FortEPiaNORun():
 			iy = ix
 		if ri not in [0, 1]:
 			ri = 0
-		label = "%s ij=%d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im") \
+		label = "%s \alpha\beta=%d%d %s"%(self.label, ix+1, iy+1, "re" if ri == 0 else "im") \
 			if lab is None else lab
 		fyv = self.yv**2*rho[ix, iy, ri][-1, 1:] if y2 else rho[ix, iy, ri][-1, 1:]
 		plt.plot(
@@ -387,7 +387,7 @@ class FortEPiaNORun():
 			label=label,
 			)
 		plt.xlabel("$y$")
-		plt.ylabel(r"$%s\rho_{ij}^{\rm fin}(y)$"%("y^2" if y2 else ""))
+		plt.ylabel(r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$"%("y^2" if y2 else ""))
 
 	def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k", y2=False, mass=False):
 		if i2 is None:
@@ -397,32 +397,32 @@ class FortEPiaNORun():
 		plt.plot(
 			*self.interpolateRhoIJ_x(i1, i2, x, ri, y2=y2, mass=mass),
 			ls=ls, c=lc,
-			label="%s ij=%d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x)
+			label="%s \alpha\beta=%d%d %s x=%f"%(self.label, i1+1, i2+1, "re" if ri == 0 else "im", x)
 			)
 		plt.xlabel("$y$")
-		plt.ylabel(r"$%s\rho_{ij}(y)$"%("y^2" if y2 else ""))
+		plt.ylabel(r"$%s\rho_{\alpha\beta}(y)$"%("y^2" if y2 else ""))
 
 	def plotRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False, mass=False):
 		x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
-		label = lab if lab is not None else "%s i=%d"%(self.label, inu+1)
+		label = lab if lab is not None else "%s \alpha=%d"%(self.label, inu+1)
 		plt.plot(
 			x, np.asarray(yv) * (y**2 if y2 else 1.),
 			label=label, ls=ls, c=lc
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$%s\rho_{ii}$"%("y^2" if y2 else ""))
+		plt.ylabel(r"$%s\rho_{\alpha\alpha}$"%("y^2" if y2 else ""))
 
 	def plotdRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False, mass=False):
 		x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
-		label = lab if lab is not None else "%s i=%d"%(self.label, inu+1)
+		label = lab if lab is not None else "%s \alpha=%d"%(self.label, inu+1)
 		plt.plot(
 			x, np.gradient(np.asarray(yv) * (y**2 if y2 else 1.), x),
-			ls=ls, c=lc, label="%s i=%d"%(self.label, inu+1)
+			ls=ls, c=lc, label="%s \alpha=%d"%(self.label, inu+1)
 			)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$d\rho_{ii}/dt$")
+		plt.ylabel(r"$d\rho_{\alpha\alpha}/dt$")
 
 	def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
 		if not self.full:
@@ -430,16 +430,16 @@ class FortEPiaNORun():
 			return
 		plt.plot(
 			*self.interpolateRhoIJ(i1, i2, y, ri=0, mass=mass),
-			ls=ls, c=lc, label="%s ij=%d%d re"%(self.label, i1+1, i2+1) if lab is None else lab
+			ls=ls, c=lc, label="%s \alpha\beta=%d%d re"%(self.label, i1+1, i2+1) if lab is None else lab
 			)
 		if im:
 			plt.plot(
 				*self.interpolateRhoIJ(i1, i2, y, ri=1),
-				ls=":", c=lc, label="%s ij=%d%d im"%(self.label, i1+1, i2+1) if lab is None else lab
+				ls=":", c=lc, label="%s \alpha\beta=%d%d im"%(self.label, i1+1, i2+1) if lab is None else lab
 				)
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$\rho_{ij}$")
+		plt.ylabel(r"$\rho_{\alpha\beta}$")
 
 	def plotdRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
 		if not self.full:
@@ -464,7 +464,7 @@ class FortEPiaNORun():
 				pass
 		plt.xscale("log")
 		plt.xlabel("$x$")
-		plt.ylabel(r"$d\rho_{ij}/dt$")
+		plt.ylabel(r"$d\rho_{\alpha\beta}/dt$")
 
 	def plotNeff(self, lc="k", ls="-", im=True, lab=None, xlims=[0.5, 4.5], axes=True):
 		if not np.isnan(self.Neffdat[0,0]):
