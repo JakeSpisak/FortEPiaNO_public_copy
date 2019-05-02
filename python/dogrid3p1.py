@@ -447,7 +447,7 @@ def write_grid_cfg(args):
 
 
 def read_grid_cfg(gridname):
-	with open("grids/%s/params.cfg"%args.gridname) as _f:
+	with open("grids/%s/params.cfg"%gridname) as _f:
 		text = _f.readlines()
 	values = {"ternary": False}
 	for l in text:
