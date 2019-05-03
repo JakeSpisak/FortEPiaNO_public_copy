@@ -5,11 +5,11 @@ matplotlib.use("agg")
 import matplotlib.pyplot as plt
 from dogrid3p1 import Namespace, call_read, fillGrid, indexes, safegetattr
 
-levels=[3., 3.1, 3.3, 3.5, 3.7, 3.9]
+levels=[3., 3.1, 3.3, 3.9]
 labels={"e": r"$\alpha=e$", "m": r"$\alpha=\mu$", "t": r"$\alpha=\tau$"}
 lstyles=['dashed', 'dashdot', 'dotted']
 cmap=matplotlib.cm.get_cmap('CMRmap')
-colors=[cmap(l-3) for l in levels]
+colors=[cmap((l-2.5)/2) for l in levels]
 
 
 def convert_grid(convert_x, convert_y, pts):
@@ -76,8 +76,8 @@ for order in ["no", "io"]:
 			linestyles=lstyles[ix],
 			extend="both")
 		plt.plot(np.nan, label=labels[grid], ls=lstyles[ix], c="k")
-	cf.cmap.set_over(cmap(0.95))
-	cf.cmap.set_under(cmap(0.0))
+	cf.cmap.set_over(colors[-1])
+	cf.cmap.set_under(colors[0])
 	cbar = plt.colorbar(cf, filled=True)
 	cbar.ax.set_ylabel(r"$N_{\rm eff}$")
 	ax=plt.gca()
