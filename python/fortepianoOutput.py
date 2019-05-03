@@ -32,6 +32,7 @@ def finalizePlot(fname,
 		legend=True,
 		x_T=None,
 		Neff_axes=False,
+		tightrect=(-0.025, -0.025, 1.02, 1.02),
 		):
 	plt.title(title)
 	ax=plt.gca()
@@ -61,18 +62,18 @@ def finalizePlot(fname,
 		ax1.set_xscale("log")
 		ax1.set_xlabel("$T$ [MeV]")
 	if Neff_axes:
-		ax.set_ylabel(r"$N_{\rm eff}^{\rm in}$")
+		ax.set_ylabel(r"$N_{\rm eff}^{\rm in}=\frac{8}{7}\frac{\rho_\nu}{\rho_\gamma}$")
 		lims = ax.get_ylim()
 		ax1=ax.twinx()
 		ax.tick_params("both", which="both", direction="out",
 			left=True, right=False, labelleft=True, labelright=False)
 		ax1.tick_params("both", which="both", direction="out",
 			left=False, right=True, labelleft=False, labelright=True)
-		ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}$")
+		ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}=\frac{8}{7}\left(\frac{11}{4}\right)^{4/3}\;\frac{\rho_\nu}{\rho_\gamma}$")
 		ax1.set_ylim(np.asarray(lims)*(11./4)**(4./3))
 		minorLocatorX = AutoMinorLocator(2)
 		ax1.yaxis.set_minor_locator(minorLocatorX)
-	plt.tight_layout()
+	plt.tight_layout(rect=tightrect)
 	plt.savefig(fname)
 	plt.close()
 
@@ -252,9 +253,13 @@ class FortEPiaNORun():
 				x=self.zdat[-1],
 				))
 
-	def plotFD(self, ls="-", lc="k", lab=None):
+	def plotFD(self, ls="-", lc="k", lab=None, rescale=1., fac=1.):
+		if rescale != 1.:
+			fd = self.fd*(np.exp(self.yv)+1.)/(np.exp(self.yv/rescale)+1.)
+		else:
+			fd = self.fd
 		plt.plot(
-			self.yv, self.fd,
+			self.yv, fac*fd,
 			label=self.label if lab is None else lab, ls=ls, marker=".", c=lc
 			)
 		plt.xscale("log")
@@ -279,6 +284,20 @@ class FortEPiaNORun():
 			return
 		plt.plot(
 			*stripRepeated(self.zdat, 0, 2),
+			label=self.label if lab is None else lab, ls=ls, c=lc
+			)
+		plt.xscale("log")
+		plt.xlabel("$x$")
+		plt.ylabel(r"$w$")
+
+	def plotZoverW(self, ls="-", lc="k", lab=None):
+		try:
+			self.zdat[0, 2]
+		except IndexError:
+			print("w is not in z.dat")
+			return
+		plt.plot(
+			*stripRepeated(np.asarray([[x[0], x[1]/x[2]] for x in self.zdat]), 0, 1),
 			label=self.label if lab is None else lab, ls=ls, c=lc
 			)
 		plt.xscale("log")
@@ -502,10 +521,13 @@ class FortEPiaNORun():
 			gems="--",
 			labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$", r"$\nu_\mu$", r"$\nu_\tau$", r"$\nu_s$"],
 			colors=["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"],
-			styles=["-", "-", "-", ":", "-.", ":", "-"],
+			styles=["-", "-", "-", ":", "-.", "--", "-"],
+			skip=[False, False, False, False, False, False, False],
 			):
 		plt.plot(self.endens[:,0], np.asarray([np.sum(cl[2:]) for cl in self.endens]), label="total", c="k")
 		for ix, lab in enumerate(labels):
+			if skip[ix]:
+				continue
 			try:
 				plt.plot(self.endens[:, 0], self.endens[:, 2+ix], label=lab, c=colors[ix], ls=styles[ix])
 			except IndexError:
@@ -536,10 +558,13 @@ class FortEPiaNORun():
 			gems="--",
 			labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$", r"$\nu_\mu$", r"$\nu_\tau$", r"$\nu_s$"],
 			colors=["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"],
-			styles=["-", "-", "-", ":", "-.", ":", "-"],
+			styles=["-", "-", "-", ":", "-.", "--", "-"],
+			skip=[False, False, False, False, False, False, False],
 			):
 		plt.plot(self.entropy[:,0], np.asarray([np.sum(cl[2:]) for cl in self.entropy]), label="total", c="k")
 		for ix, lab in enumerate(labels):
+			if skip[ix]:
+				continue
 			try:
 				plt.plot(self.entropy[:, 0], self.entropy[:, 2+ix], label=lab, c=colors[ix], ls=styles[ix])
 			except IndexError:

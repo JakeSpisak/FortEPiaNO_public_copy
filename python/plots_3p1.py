@@ -15,6 +15,8 @@ Um4l = FortEPiaNORun("OUT/3p1/30_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^
 Ut4h = FortEPiaNORun("OUT/3p1/30_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
 Ut4l = FortEPiaNORun("OUT/3p1/30_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
 
+print(Ue4h.wfin, Ue4h.wfin/a3nu.wfin)
+
 # plot Neff with three different choices for the angles
 fig = plt.figure(figsize=(6,4))
 for ir, r in enumerate([
@@ -34,7 +36,11 @@ finalizePlot(
 	)
 
 #energy densities
-Um4h.plotEnergyDensity()
+Um4h.plotEnergyDensity(
+	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
+	styles=["-", "-", "-", "-", "-.", ":", "-"],
+	skip=[False, False, False, False, True, True, False],
+	)
 finalizePlot(
 	"plots/3p1/energyDensity.pdf",
 	xlab="$x$",
@@ -46,7 +52,27 @@ finalizePlot(
 	)
 
 #entropy
-Um4h.plotEntropy(gamma_e_mu=False)
+a3nu.plotEntropy(
+	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
+	styles=["-", "-", "-", "-", "-.", ":", "-"],
+	skip=[False, False, False, False, True, True, False],
+	gamma_e_mu=False,
+	)
+finalizePlot(
+	"plots/3nu/entropy.pdf",
+	xlab="$x$",
+	xlim=[1e-3, 35],
+	ylim=[0, 8],
+	ylab=r"$s$",
+	xscale="log",
+	legcol=3,
+	)
+Um4h.plotEntropy(
+	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$, $\nu_\mu$, $\nu_\tau$", "", "", r"$\nu_s$"],
+	styles=["-", "-", "-", "-", "-.", ":", "-"],
+	skip=[False, False, False, False, True, True, False],
+	gamma_e_mu=False,
+	)
 finalizePlot(
 	"plots/3p1/entropy.pdf",
 	xlab="$x$",
@@ -61,14 +87,14 @@ finalizePlot(
 for iy, y in enumerate([0.1, 2, 5]):
 	plt.plot(np.nan, ls='-', color=colors[iy], label="y=%s"%y)
 for i in [0, 3]:
-	plt.plot(np.nan, ls=styles[i], color="k", label="i=%s"%flavors[i])
+	plt.plot(np.nan, ls=styles[i], color="k", label=r"$\alpha=%s$"%flavors[i])
 for iy, y in enumerate([0.3, 2, 5]):
 	for i in [0, 3]:
 		Ue4h.plotRhoDiagY(i, y, styles[i], lc=colors[iy], lab="", y2=True)
 finalizePlot(
 	"plots/3p1/rho_diag_y.pdf",
 	xlab="$x$",
-	ylab=r"$y^2\rho_{ii}$",
+	ylab=r"$y^2\rho_{\alpha\alpha}$",
 	xlim=(1e-3, 30),
 	ylim=(1e-5, 1.),
 	xscale="log",
@@ -80,7 +106,7 @@ finalizePlot(
 
 # evolution of rho(y=5) for different cases
 for i in range(4):
-	plt.plot(np.nan, ls=styles[i], color="k", label="$i=%s$"%flavors[i])
+	plt.plot(np.nan, ls=styles[i], color="k", label=r"$\alpha=%s$"%flavors[i])
 plt.plot(np.nan, ls='-', color=colors[0], label=Ue4h.label)
 plt.plot(np.nan, ls='-', color=colors[1], label=Ue4l.label)
 plt.plot(np.nan, ls='-', color=colors[2], label=a3nu.label)
@@ -92,7 +118,7 @@ for i in range(3):
 finalizePlot(
 	"plots/3p1/rho_diag_prec.pdf",
 	xlab="$x$",
-	ylab=r"$y^2\rho_{ii}$",
+	ylab=r"$y^2\rho_{\alpha\alpha}$",
 	xlim=(1e-3, 30),
 	ylim=(1e-3, 0.3),
 	xscale="log",
@@ -125,7 +151,7 @@ for ol, fn in [
 		]:
 	for i in range(4):
 		for j in range(i+1, 4):
-			plt.plot(np.nan, ls='-', color=colors[2*i+j-1], label="$ij=%s %s$"%(flavors[i], flavors[j]))
+			plt.plot(np.nan, ls='-', color=colors[2*i+j-1], label=r"$\alpha\beta=%s %s$"%(flavors[i], flavors[j]))
 	first_legend = plt.legend(loc='lower left')
 	ax = plt.gca()
 	ax.add_artist(first_legend)
@@ -148,7 +174,7 @@ for ol, fn in [
 
 	for i in range(4):
 		for j in range(i+1, 4):
-			plt.plot(np.nan, ls='-', color=colors[2*i+j-1], label="$ij=%s %s$"%(flavors[i], flavors[j]))
+			plt.plot(np.nan, ls='-', color=colors[2*i+j-1], label=r"$\alpha\beta=%s %s$"%(flavors[i], flavors[j]))
 	first_legend = plt.legend(loc='lower left')
 	ax = plt.gca()
 	ax.add_artist(first_legend)
@@ -171,7 +197,7 @@ for ol, fn in [
 
 # final rho for some cases
 for i in range(4):
-	plt.plot(np.nan, ls=styles[i], color="k", label="$i=%s$"%flavors[i])
+	plt.plot(np.nan, ls=styles[i], color="k", label=r"$\alpha=%s$"%flavors[i])
 for fn, cl, ol in [
 		["ord", (0, 1, 2), (Ue4h, Ue4l, a3nu)],
 		]:
@@ -182,13 +208,13 @@ for fn, cl, ol in [
 				o.plotRhoFin(i, ls=styles[i], lc=colors[c], y2=True, lab="")
 			except IndexError:
 				pass#print(traceback.format_exc())
-	a3nu.plotFD(lab="FD", ls=":", lc=colors[3])
+	a3nu.plotFD(lab=r"FD $3\nu$", ls=":", lc=colors[3], rescale=Ue4l.wfin, fac=(Ue4l.Neff-a3nu.Neff))
 	finalizePlot(
 		"plots/3p1/rhofin_diag_%s.pdf"%fn,
 		lloc="upper right",
 		xlim=[-0.2, 15],
 		ylim=[1e-4, 1],
-		ylab=r"$y^2\rho_{ii}^{\rm fin}(y)$",
+		ylab=r"$y^2\rho_{\alpha\alpha}^{\rm fin}(y)$",
 		xscale="linear",
 		yscale="log",
 		legcol=2,
@@ -205,8 +231,9 @@ ax = plt.gca()
 ax.add_artist(first_legend)
 plt.plot(np.nan, ls='-', color=colors[3], label=r"$z$")
 plt.plot(np.nan, ls=':', color=colors[3], label=r"$w$")
+a3nu.plotZoverW(ls="--", lc="#999999", lab="$z/w$")
 hands, labs = ax.get_legend_handles_labels()
-second_legend = plt.legend(hands[-2:], labs[-2:], loc='upper center')
+second_legend = plt.legend(hands[-3:], labs[-3:], loc='upper center')
 finalizePlot(
 	"plots/3p1/z_angles.pdf",
 	xlim=[1e-3, 35],
@@ -219,7 +246,7 @@ finalizePlot(
 
 # evolution of rho(y=5) for different cases
 for i in range(4):
-	plt.plot(np.nan, ls=styles[i], color="k", label="$i=%s$"%flavors[i])
+	plt.plot(np.nan, ls=styles[i], color="k", label=r"$\alpha=%s$"%flavors[i])
 first_legend = plt.legend(loc='lower left')
 ax = plt.gca()
 ax.add_artist(first_legend)
@@ -233,7 +260,7 @@ second_legend = plt.legend(hands[4:], labs[4:], loc='lower right', ncol=2)
 finalizePlot(
 	"plots/3p1/rho_diag_angles.pdf",
 	xlab="$x$",
-	ylab=r"$y^2\rho_{ii}$",
+	ylab=r"$y^2\rho_{\alpha\alpha}$",
 	xlim=(1e-3, 30),
 	ylim=(1e-3, 0.3),
 	xscale="log",
@@ -248,7 +275,7 @@ for ol, fn in [
 		]:
 	for i in range(4):
 		for j in range(i+1, 4):
-			plt.plot(np.nan, ls='-', color=colors[2*i+j-1], label="$ij=%s %s$"%(flavors[i], flavors[j]))
+			plt.plot(np.nan, ls='-', color=colors[2*i+j-1], label=r"$\alpha\beta=%s %s$"%(flavors[i], flavors[j]))
 	first_legend = plt.legend(loc='lower left')
 	ax = plt.gca()
 	ax.add_artist(first_legend)
