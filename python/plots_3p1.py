@@ -15,8 +15,6 @@ Um4l = FortEPiaNORun("OUT/3p1/30_1_0_0.0001_0", nnu=4, label=r"$|U_{\mu4}|^2=10^
 Ut4h = FortEPiaNORun("OUT/3p1/30_1_0_0_0.01", nnu=4, label=r"$|U_{\tau4}|^2=10^{-2}$")
 Ut4l = FortEPiaNORun("OUT/3p1/30_1_0_0_0.0001", nnu=4, label=r"$|U_{\tau4}|^2=10^{-4}$")
 
-print(Ue4h.wfin, Ue4h.wfin/a3nu.wfin)
-
 # plot Neff with three different choices for the angles
 fig = plt.figure(figsize=(6,4))
 for ir, r in enumerate([
@@ -48,6 +46,7 @@ finalizePlot(
 	ylim=[0, 7],
 	ylab=r"$\rho$",
 	xscale="log",
+	x_T=True,
 	legcol=3,
 	)
 
@@ -65,6 +64,7 @@ finalizePlot(
 	ylim=[0, 8],
 	ylab=r"$s$",
 	xscale="log",
+	x_T=True,
 	legcol=3,
 	)
 Um4h.plotEntropy(
@@ -80,6 +80,7 @@ finalizePlot(
 	ylim=[0, 8],
 	ylab=r"$s$",
 	xscale="log",
+	x_T=True,
 	legcol=3,
 	)
 
@@ -208,7 +209,7 @@ for fn, cl, ol in [
 				o.plotRhoFin(i, ls=styles[i], lc=colors[c], y2=True, lab="")
 			except IndexError:
 				pass#print(traceback.format_exc())
-	a3nu.plotFD(lab=r"FD $3\nu$", ls=":", lc=colors[3], rescale=Ue4l.wfin, fac=(Ue4l.Neff-a3nu.Neff))
+	a3nu.plotFD(lab=r"FD $3+1$ DW", ls=":", lc=colors[3], rescale=Ue4l.wfin, fac=(Ue4l.Neff-a3nu.Neff))
 	finalizePlot(
 		"plots/3p1/rhofin_diag_%s.pdf"%fn,
 		lloc="upper right",
