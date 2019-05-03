@@ -362,7 +362,7 @@ module ndEquations
 		complex(dl), dimension(:,:), allocatable :: tmpComplMat, transfMat
 		real(dl), dimension(maxFlavorNumber) :: nuEnDens
 		integer :: k, i, j, iy
-		real(dl) :: neff, z
+		real(dl) :: neff, z, w
 		integer, parameter :: iu = 8972
 		character(len=200) :: fname
 		procedure (nuDensity_integrator), pointer :: nuDensityInt
@@ -376,6 +376,7 @@ module ndEquations
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=', x
 		call addToLog(trim(fname))!not a filename but the above string
 
+		w = vec(ntot-1)+1.d0
 		z = vec(ntot)+1.d0
 		if (save_nuDens_evolution) then
 			!density matrix in flavor space
@@ -424,7 +425,7 @@ module ndEquations
 				photonEntropy(z), &
 				electrons%entropy(x, z), &
 				muons%entropy(x, z), &
-				nuEnDens(1:flavorNumber)*four_thirds/z
+				nuEnDens(1:flavorNumber)*four_thirds/w
 			close(iu)
 		end if
 		if (save_z_evolution) then
