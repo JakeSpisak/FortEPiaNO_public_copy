@@ -97,5 +97,5 @@ for order in ["no", "io"]:
 	plt.ylim([5e-3, 1e2] if order == "no" else [1e-4, 1e2])
 	plt.tight_layout(rect=(-0.03, -0.03, 1.02, 1.02))
 	plt.legend(loc="lower left")
-	plt.savefig("plots/3p1/angles_%s.pdf"%order)
+	plt.savefig("../plots/3p1/angles_%s.pdf"%order)
 	plt.close()

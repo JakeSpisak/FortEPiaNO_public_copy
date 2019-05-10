@@ -2,11 +2,24 @@
 
 import os
 import re
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.interpolate import interp1d
-from scipy.integrate import quad
-from matplotlib.ticker import AutoMinorLocator
+try:
+	import matplotlib.pyplot as plt
+	from matplotlib.ticker import AutoMinorLocator
+except ImportError:
+	print("Cannot import matplotlib.pyplot...may raise errors later")
+	plt = None
+try:
+	import numpy as np
+except ImportError:
+	print("Cannot import numpy...may raise errors later")
+	np = None
+try:
+	from scipy.interpolate import interp1d
+	from scipy.integrate import quad
+except ImportError:
+	print("Cannot import scipy...may raise errors later")
+	interp1d = None
+	quad = None
 
 try:
 	FileNotFoundError

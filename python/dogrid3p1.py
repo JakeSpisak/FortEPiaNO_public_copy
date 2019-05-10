@@ -317,6 +317,11 @@ def setParser():
 		'read',
 		help='read the output files and print resume'
 		)
+	parser_read.add_argument(
+		'--write',
+		action="store_true",
+		help='save the Neff values in the grid points to a file',
+		)
 	parser_read.set_defaults(func=call_read)
 
 	parser_run = subparsers.add_parser(
@@ -852,11 +857,15 @@ def call_prepare(args):
 
 
 def call_read(args):
+	write = args.write if hasattr(args, "write") else False
 	values, grid = read_grid_cfg(args.gridname)
 	objects = []
 	missing = 0
 	if args.verbose:
 		print("\nTotal number of points: %s"%len(grid))
+	if write:
+		with open("grids/%s/Neff.dat"%args.gridname, "w") as _f:
+			_f.write("#dm41 Ue4sq Um4sq Ut4sq Neff\n")
 	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
 		lab = (r"dm41=%.5e "%dm41
 			+ r"Ue4sq=%.5e "%Ue4sq
@@ -876,6 +885,10 @@ def call_read(args):
 				obj.Neff
 			except AttributeError:
 				missing += 1
+			else:
+				if write:
+					with open("grids/%s/Neff.dat"%args.gridname, "a") as _f:
+						_f.write("%.5e %.5e %.5e %.5e %.5e\n"%(dm41, Ue4sq, Um4sq, Ut4sq, obj.Neff))
 		objects.append(obj)
 	if args.verbose:
 		print("\nMissing or incomplete points: %s\n"%missing)
