@@ -15,6 +15,7 @@ module ndEquations
 
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
 	type(bspline_1d) :: dwodx_A_interp, dwodx_B_interp
+	type(bspline_1d) :: dzodx_eq_interp
 
 	real(dl) :: deriv_counter
 
@@ -116,6 +117,7 @@ module ndEquations
 		real(dl) :: num, den, xoz, numw, denw
 		real(dl), dimension(:), allocatable :: A, B
 		real(dl), dimension(:), allocatable :: Aw, Bw
+		real(dl), dimension(:), allocatable :: eq
 		real(dl), dimension(2) :: g12, fContr, elContr0
 		integer :: ix, j, nx, iflag
 
@@ -123,8 +125,9 @@ module ndEquations
 		nx=interp_nxz
 		allocate(A(nx), B(nx))
 		allocate(Aw(nx), Bw(nx))
+		allocate(eq(nx))
 		elContr0 = electrons%dzodx_terms(interp_xozvec(1))
-		!$omp parallel do default(private) shared(A, B, Aw, Bw, nx, interp_xozvec, fermions, elContr0) schedule(dynamic)
+		!$omp parallel do default(private) shared(A, B, Aw, Bw, eq, nx, interp_xozvec, fermions, elContr0, tot_factor_active_nu) schedule(dynamic)
 		do ix=1, nx
 			xoz = interp_xozvec(ix)
 			g12 = G12_funcFull(xoz)
@@ -146,15 +149,18 @@ module ndEquations
 			B(ix) = 1./(2.d0*PISQ*den)
 			Aw(ix) = numw / denw
 			Bw(ix) = 1./(2.d0*PISQ*denw)
+			eq(ix) = num / (den + PISQ/7.5d0*0.875d0*tot_factor_active_nu)
 		end do
 		!$omp end parallel do
 		call dzodx_A_interp%initialize(interp_xozvec, A, 4, iflag)
 		call dzodx_B_interp%initialize(interp_xozvec, B, 4, iflag)
 		call dwodx_A_interp%initialize(interp_xozvec, Aw, 4, iflag)
 		call dwodx_B_interp%initialize(interp_xozvec, Bw, 4, iflag)
+		call dzodx_eq_interp%initialize(interp_xozvec, eq, 4, iflag)
 
 		deallocate(A, B)
 		deallocate(Aw, Bw)
+		deallocate(eq)
 		call addToLog("[equations] ...done!")
 	end subroutine init_interp_jkyg12
 
@@ -222,13 +228,13 @@ module ndEquations
 		real(dl), intent(in) :: x
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
-		real(dl) :: z, xoz
-		real(dl), dimension(2) :: coeffs
+		real(dl) :: z, xoz, coeff
+		integer :: iflag
 
 		z = vars(n)+1.d0
 		xoz=x/z
-		coeffs = dzodxcoef_interp_func(x/z)
-		ydot(n) = coeffs(1)
+		call dzodx_eq_interp%evaluate(xoz, 0, coeff, iflag)
+		ydot(n) = coeff
 	end subroutine dz_o_dx_eq
 
 	subroutine zin_solver

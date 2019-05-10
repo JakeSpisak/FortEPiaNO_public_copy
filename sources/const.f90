@@ -51,7 +51,6 @@ module constants
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
 	real(dl), parameter :: overallFactor = planck_mass / sqrt(PIx8D3)
 	real(dl), parameter :: dampTermFactor = -7.d0*PISQ*PISQ/135.d0
-	real(dl), parameter :: coeff_dw_dx = -30.d0/(7.d0*PISQ*PISQ)
 
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
 
@@ -129,11 +128,12 @@ module variables
 	real(dl), dimension(:), allocatable :: opt_y, opt_y_w
 
 	!used for 2d interpolation:
-	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 2400
+	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 1800
 	integer :: interp_nx, interp_nz, interp_nxz
 	integer, parameter :: interp_ny = 40!not used in real code, it's for interpolations of D and Pi functions
 	real(dl), parameter :: interp_zmin0 = 0.9d0, interp_zmax0 = 1.5d0
-	real(dl), parameter :: very_early_x=1d-6, interp_logx_in=log10(very_early_x)
+	real(dl), parameter :: very_early_x=0.1*0.5109989461/105.6583745!initial temperature is 10 times the muon mass
+	real(dl), parameter :: interp_logx_in=log10(very_early_x)
 	real(dl) :: interp_zmin, interp_zmax
 	real(dl), dimension(:), allocatable :: interp_xvec
 	real(dl), dimension(:), allocatable :: interp_zvec

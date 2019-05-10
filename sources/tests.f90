@@ -623,14 +623,14 @@ program tests
 		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 6d-6)
 
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1a", ydot(n), 7.11765d0, 8d-3)
-		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), -0.10615d0, 4d-6)
+		call assert_double_rel("dz_o_dx test 1a", ydot(n), 7.11765d0, 5d-5)
+		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), 7.11765d0, 5d-5)
 		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0946571d0, 3d-6)
-		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.137812d0, 3d-6)
+		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.132132d0, 3d-6)
 		call dz_o_dx(6.d0, 1.d0, 1.2d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.15262978d0, 2d-6)
-		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.183428d0, 2d-6)
+		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.10135096d0, 2d-6)
 		deallocate(ydot)
 		call printTotalTests
 		call resetTestCounter
@@ -2569,14 +2569,14 @@ program tests
 		end do
 
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double("dz_o_dx test 1a", ydot(n), 7.15311d0, 1d-3)
-		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), -0.0734285d0, 4d-6)
+		call assert_double("dz_o_dx test 1a", ydot(n), 7.15311d0, 5d-5)
+		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), 7.15311d0, 5d-5)
 		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0529951d0, 3d-6)
-		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.0953301d0, 3d-6)
+		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.0914903549d0, 3d-6)
 		call dz_o_dx(6.d0, 1.d0, 1.2d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.0950884d0, 2d-6)
-		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.126884393d0, 2d-6)
+		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.0701083754d0, 2d-6)
 		deallocate(ydot)
 		call printTotalTests
 		call resetTestCounter
@@ -2588,10 +2588,10 @@ program tests
 		x_in=0.05d0
 		z_in=0.d0
 		call zin_solver
-		call assert_double_rel("z_in test 1", z_in-1.d0, 0.17623d0, 1d-3)
+		call assert_double("z_in test 1", z_in-1.d0, 0.09788d0, 1d-4)
 		x_in=1d-3
 		call zin_solver
-		call assert_double_rel("z_in test 2", z_in-1.d0, 0.333117d-3, 1d-3)
+		call assert_double("z_in test 2", z_in-1.d0, 0.29017d-03, 1d-4)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_zin

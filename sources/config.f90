@@ -336,10 +336,7 @@ module ndConfig
 			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
 			interp_xvec = logspace(interp_logx_in, logx_fin, interp_nx)
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-			interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
-
-			call init_fermions
-			call zin_solver
+			interp_xozvec = logspace(log10(very_early_x/interp_zmax), logx_fin, interp_nxz)
 
 			flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
@@ -376,6 +373,9 @@ module ndConfig
 				call error(tmpstr)
 				flavorNumber = maxFlavorNumber
 			end if
+
+			call init_fermions
+			call zin_solver
 
 			massSplittings = 0.d0
 			massSplittings(2) = read_ini_real('dm21', i_dm21)
