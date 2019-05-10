@@ -88,6 +88,12 @@ def setParser():
 		)
 	subparsers.required = True
 
+	parser_fill = subparsers.add_parser(
+		'fill',
+		help='fill points in the grid that do not need to be computed (you already know that Neff=4.05)'
+		)
+	parser_fill.set_defaults(func=call_fill)
+
 	parser_plot = subparsers.add_parser(
 		'plot',
 		help='plot some output'
@@ -544,6 +550,65 @@ def contourplot(xv, yv, values, points,
 		plt.tight_layout(rect=(-0.02, -0.08, 1.02, 3.))
 		plt.savefig(colorbar_fname)
 	plt.close()
+
+
+def call_fill(args):
+	values, grid = read_grid_cfg(args.gridname)
+	objects = []
+	missing = 0
+	filled = 0
+	if args.verbose:
+		print("\nTotal number of points: %s"%len(grid))
+	curr_dm41 = 0.
+	curr_Ue4sq = 0.
+	curr_Um4sq = 0.
+	curr_Ut4sq = 0.
+	fill = False
+	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
+		if dm41 != curr_dm41:
+			fill = False
+			curr_dm41 = dm41
+		if Ue4sq != curr_Ue4sq:
+			fill = False
+			curr_Ue4sq = Ue4sq
+		if Um4sq != curr_Um4sq:
+			fill = False
+			curr_Um4sq = Um4sq
+		lab = (r"dm41=%.5e "%dm41
+			+ r"Ue4sq=%.5e "%Ue4sq
+			+ r"Um4sq=%.5e "%Um4sq
+			+ r"Ut4sq=%.5e "%Ut4sq
+			)
+		folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
+		obj = None
+		is_missing = False
+		try:
+			obj = FortEPiaNORun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
+		except (IOError, IndexError):
+			if args.verbose:
+				print("no %s"%lab)
+			is_missing = True
+		else:
+			try:
+				obj.Neff
+			except AttributeError:
+				is_missing = True
+			else:
+				if obj.Neff > 4.:
+					fill = True
+		if is_missing:
+			missing += 1
+			if fill:
+				if not os.path.exists(folder):
+					os.mkdir(folder)
+				with open("%s/resume.dat"%folder, "w") as _f:
+					_f.write("final w =  1.056\nfinal z =  1.479\n")
+					for i in range(1, 5):
+						_f.write("dRho_%d  =  0.\n"%i)
+					_f.write("Neff    =  4.05\n")
+				filled += 1
+	print("\n%s: total=%s, missing=%s, filled: %d\n"%(args.gridname, len(grid), missing, filled))
+	return values, grid, objects
 
 
 def call_plot(args, gridContent=None):
