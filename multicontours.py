@@ -10,6 +10,7 @@ labels={"e": r"$\alpha=e$", "m": r"$\alpha=\mu$", "t": r"$\alpha=\tau$"}
 lstyles=['dashed', 'dashdot', 'dotted']
 cmap=matplotlib.cm.get_cmap('CMRmap')
 colors=[cmap((l-2.5)/2) for l in levels]
+bboxprop = dict(facecolor='white', alpha=0.8, boxstyle='round')
 
 
 def convert_grid(convert_x, convert_y, pts):
@@ -20,13 +21,6 @@ def convert_grid(convert_x, convert_y, pts):
 
 for order in ["no", "io"]:
 	fig = plt.figure(figsize=(6,4))
-	cf = plt.contourf(
-		[np.nan, np.nan],
-		[np.nan, np.nan],
-		[[np.nan, np.nan], [np.nan, np.nan]],
-		levels=levels,
-		colors=colors,
-		extend="both")
 	for ix, grid in enumerate(["e", "m", "t"]):
 		args = Namespace(
 			gridname="U%s4_%s"%(grid, order),
@@ -76,10 +70,21 @@ for order in ["no", "io"]:
 			linestyles=lstyles[ix],
 			extend="both")
 		plt.plot(np.nan, label=labels[grid], ls=lstyles[ix], c="k")
-	cf.cmap.set_over(colors[-1])
-	cf.cmap.set_under(colors[0])
-	cbar = plt.colorbar(cf, filled=True)
-	cbar.ax.set_ylabel(r"$N_{\rm eff}$")
+	plt.text(1.2e-6, 30, r"$N_{\rm eff}\leq 3.1$", color=colors[1], bbox=bboxprop)
+	plt.text(3e-5, 30, r"$N_{\rm eff}\simeq 3.3$", color=colors[2], bbox=bboxprop)
+	plt.text(7e-4, 30, r"$N_{\rm eff}\geq 3.9$", color=colors[3], bbox=bboxprop)
+	#electron disappearance
+	for constr_file in [
+			"/home/gariazzo/data/lsn/globalfit/1801.06469/fig4b-contours/cnt-9973-%d.dat"%i
+			for i in [1,2,3]]:
+		data = np.loadtxt(constr_file)
+		plt.plot((1.-np.sqrt(1.-data[:,0]))*0.5, data[:,1], c="r", ls="--")
+	#muon disappearance
+	if order == "no":
+		for constr_file in [
+				"/home/gariazzo/data/lsn/minos+/1710.06488v2/minosp_90cl_1710_06488v2_f3.dat"]:
+			data = np.loadtxt(constr_file)
+			plt.plot(data[:,0], data[:,1], c="b", ls="-.")
 	ax=plt.gca()
 	ax.tick_params("both", which="both", direction="in",
 		left=True, right=True, top=True, bottom=True)
@@ -89,8 +94,8 @@ for order in ["no", "io"]:
 	plt.xlabel(r"$|U_{\alpha4}|^2$")
 	plt.ylabel(r"$\Delta m^2_{41}$ [eV$^2$]")
 	plt.xlim([1e-6, 3e-1])
-	plt.ylim([1e-5, 1e2])
-	plt.tight_layout(rect=(-0.03, -0.05, 1.05, 1.02))
-	plt.legend()
+	plt.ylim([5e-3, 1e2] if order == "no" else [1e-4, 1e2])
+	plt.tight_layout(rect=(-0.03, -0.03, 1.02, 1.02))
+	plt.legend(loc="lower left")
 	plt.savefig("plots/3p1/angles_%s.pdf"%order)
 	plt.close()

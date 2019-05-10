@@ -560,30 +560,49 @@ class FortEPiaNORun():
 			colors=["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"],
 			styles=["-", "-", "-", ":", "-.", "--", "-"],
 			skip=[False, False, False, False, False, False, False],
+			lw=1,
+			allstyles=False,
+			alllabels=None,
 			):
-		plt.plot(self.entropy[:,0], np.asarray([np.sum(cl[2:]) for cl in self.entropy]), label="total", c="k")
+		plt.plot(
+			self.entropy[:,0],
+			np.asarray([np.sum(cl[2:]) for cl in self.entropy]),
+			label="total" if alllabels is None else alllabels,
+			c="k",
+			ls="-" if not allstyles else allstyles,
+			lw=lw,
+			)
 		for ix, lab in enumerate(labels):
 			if skip[ix]:
 				continue
 			try:
-				plt.plot(self.entropy[:, 0], self.entropy[:, 2+ix], label=lab, c=colors[ix], ls=styles[ix])
+				plt.plot(
+					self.entropy[:, 0],
+					self.entropy[:, 2+ix],
+					label=lab if alllabels is None else alllabels,
+					c=colors[ix],
+					ls=styles[ix] if not allstyles else allstyles,
+					lw=lw,
+					)
 			except IndexError:
 				pass
 		if gamma_e:
 			plt.plot(
 				self.entropy[:,0],
 				self.entropy[:,2]+self.entropy[:,3],
-				label=r"$\gamma+e$",
+				label=r"$\gamma+e$" if alllabels is None else alllabels,
 				c=gec,
-				ls=ges,
+				ls=ges if not allstyles else allstyles,
+				lw=lw,
 				)
 		if gamma_e_mu:
 			plt.plot(
 				self.entropy[:,0],
 				self.entropy[:,2]+self.entropy[:,3]+self.entropy[:,4],
-				label=r"$\gamma+e+\mu$",
+				label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
 				c=gemc,
-				ls=gems,
+				ls=gems if not allstyles else allstyles,
+				lw=lw,
 				)
 
 	def doAllPlots(self, yref=5., color="k"):

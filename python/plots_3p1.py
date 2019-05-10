@@ -83,6 +83,33 @@ finalizePlot(
 	x_T=True,
 	legcol=3,
 	)
+# combined
+a3nu.plotEntropy(
+	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
+	skip=[False, False, False, False, True, True, False],
+	allstyles=":",
+	alllabels="",
+	lw=1,
+	gamma_e_mu=False,
+	)
+Um4h.plotEntropy(
+	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$, $\nu_\mu$, $\nu_\tau$", "", "", r"$\nu_s$"],
+	skip=[False, False, False, False, True, True, False],
+	allstyles="-",
+	alllabels=None,
+	lw=2,
+	gamma_e_mu=False,
+	)
+finalizePlot(
+	"plots/3p1/entropy_combined.pdf",
+	xlab="$x$",
+	xlim=[1e-3, 35],
+	ylim=[0, 8.5],
+	ylab=r"$s$",
+	xscale="log",
+	x_T=True,
+	legcol=3,
+	)
 
 # rho diagonal for different y, only one run
 for iy, y in enumerate([0.1, 2, 5]):
