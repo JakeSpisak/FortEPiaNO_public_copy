@@ -560,7 +560,12 @@ def call_fill(args):
 	filled = 0
 	if args.verbose:
 		print("\nTotal number of points: %s"%len(grid))
-	order = [["e", "m", "t"], ["m", "t", "e"], ["t", "e", "m"]]
+	order = [
+		["dm41", "Ue4sq", "Um4sq", "Ut4sq"],
+		["Ut4sq", "dm41", "Ue4sq", "Um4sq"],
+		["Um4sq", "Ut4sq", "dm41", "Ue4sq"],
+		["Ue4sq", "Um4sq", "Ut4sq", "dm41"],
+		]
 	grids = [
 		10**(np.mgrid[
 			np.log10(nsvals.dm41_min):np.log10(nsvals.dm41_max):nsvals.dm41_N*1j,
@@ -569,70 +574,97 @@ def call_fill(args):
 			np.log10(nsvals.Ut4sq_min):np.log10(nsvals.Ut4sq_max):nsvals.Ut4sq_N*1j,
 			]).reshape(4, nsvals.dm41_N*nsvals.Ue4sq_N*nsvals.Um4sq_N*nsvals.Ut4sq_N).T,
 		10**(np.mgrid[
+			np.log10(nsvals.Ut4sq_min):np.log10(nsvals.Ut4sq_max):nsvals.Ut4sq_N*1j,
 			np.log10(nsvals.dm41_min):np.log10(nsvals.dm41_max):nsvals.dm41_N*1j,
+			np.log10(nsvals.Ue4sq_min):np.log10(nsvals.Ue4sq_max):nsvals.Ue4sq_N*1j,
+			np.log10(nsvals.Um4sq_min):np.log10(nsvals.Um4sq_max):nsvals.Um4sq_N*1j,
+			]).reshape(4, nsvals.dm41_N*nsvals.Ue4sq_N*nsvals.Um4sq_N*nsvals.Ut4sq_N).T,
+		10**(np.mgrid[
 			np.log10(nsvals.Um4sq_min):np.log10(nsvals.Um4sq_max):nsvals.Um4sq_N*1j,
 			np.log10(nsvals.Ut4sq_min):np.log10(nsvals.Ut4sq_max):nsvals.Ut4sq_N*1j,
+			np.log10(nsvals.dm41_min):np.log10(nsvals.dm41_max):nsvals.dm41_N*1j,
 			np.log10(nsvals.Ue4sq_min):np.log10(nsvals.Ue4sq_max):nsvals.Ue4sq_N*1j,
 			]).reshape(4, nsvals.dm41_N*nsvals.Ue4sq_N*nsvals.Um4sq_N*nsvals.Ut4sq_N).T,
 		10**(np.mgrid[
-			np.log10(nsvals.dm41_min):np.log10(nsvals.dm41_max):nsvals.dm41_N*1j,
-			np.log10(nsvals.Ut4sq_min):np.log10(nsvals.Ut4sq_max):nsvals.Ut4sq_N*1j,
 			np.log10(nsvals.Ue4sq_min):np.log10(nsvals.Ue4sq_max):nsvals.Ue4sq_N*1j,
 			np.log10(nsvals.Um4sq_min):np.log10(nsvals.Um4sq_max):nsvals.Um4sq_N*1j,
+			np.log10(nsvals.Ut4sq_min):np.log10(nsvals.Ut4sq_max):nsvals.Ut4sq_N*1j,
+			np.log10(nsvals.dm41_min):np.log10(nsvals.dm41_max):nsvals.dm41_N*1j,
 			]).reshape(4, nsvals.dm41_N*nsvals.Ue4sq_N*nsvals.Um4sq_N*nsvals.Ut4sq_N).T
 		]
-	for i, o in enumerate(order):
-		missing = 0
-		fill = False
-		curr_ord = ["dm41"] + ["U%s4sq"%i for i in o]
-		print(curr_ord)
-		curr={
-			"dm41": 0.,
-			"Ue4sq": 0.,
-			"Um4sq": 0.,
-			"Ut4sq": 0.,
-			}
-		for currpt in grid:
-			for i in range(3):
-				if curr[curr_ord[i]] != currpt[i]:
-					fill = False
-					curr[curr_ord[i]] = currpt[i]
-			curr[curr_ord[3]] = currpt[3]
-			lab = (r"dm41=%.5e "%curr["dm41"]
-				+ r"Ue4sq=%.5e "%curr["Ue4sq"]
-				+ r"Um4sq=%.5e "%curr["Um4sq"]
-				+ r"Ut4sq=%.5e "%curr["Ut4sq"]
-				)
-			folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, curr["dm41"], curr["Ue4sq"], curr["Um4sq"], curr["Ut4sq"])
-			obj = None
-			is_missing = False
-			try:
-				obj = FortEPiaNORun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
-			except (IOError, IndexError):
-				if args.verbose:
-					print("no %s"%lab)
-				is_missing = True
+	for fill_up in [False, True]:
+		for j, curr_ord in enumerate(order):
+			print(curr_ord, fill_up)
+			if fill_up:
+				ptsgrid = grids[j]
 			else:
+				ptsgrid = np.flipud(grids[j])
+			missing = 0
+			curr={
+				"dm41": 0.,
+				"Ue4sq": 0.,
+				"Um4sq": 0.,
+				"Ut4sq": 0.,
+				}
+			fill_4 = False
+			fill_3 = False
+			for currpt in ptsgrid:
+				for i in range(3):
+					if fill_up and curr[curr_ord[i]] < currpt[i]:
+						fill_4 = False
+					elif curr[curr_ord[i]] > currpt[i]:
+						fill_3 = False
+				for i in range(4):
+					curr[curr_ord[i]] = currpt[i]
+				lab = (r"dm41=%.5e "%curr["dm41"]
+					+ r"Ue4sq=%.5e "%curr["Ue4sq"]
+					+ r"Um4sq=%.5e "%curr["Um4sq"]
+					+ r"Ut4sq=%.5e "%curr["Ut4sq"]
+					)
+				folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, curr["dm41"], curr["Ue4sq"], curr["Um4sq"], curr["Ut4sq"])
+				obj = None
+				is_missing = False
 				try:
-					obj.Neff
-				except AttributeError:
+					obj = FortEPiaNORun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
+				except (IOError, IndexError):
+					if args.verbose:
+						print("no %s"%lab)
 					is_missing = True
 				else:
-					if obj.Neff > 4.:
-						fill = True
-			if is_missing:
-				missing += 1
-				if fill:
-					print("will fill %s"%folder)
-					if not os.path.exists(folder):
-						os.mkdir(folder)
-					with open("%s/resume.dat"%folder, "w") as _f:
-						_f.write("final w =  1.056\nfinal z =  1.479\n")
-						for i in range(1, 5):
-							_f.write("dRho_%d  =  0.\n"%i)
-						_f.write("Neff    =  4.05\n")
-					filled += 1
-					missing -= 1
+					try:
+						obj.Neff
+					except AttributeError:
+						is_missing = True
+					else:
+						if fill_up and obj.Neff > 4.:
+							fill_4 = True
+						elif obj.Neff<3.1:
+							fill_3 = True
+				if is_missing:
+					missing += 1
+					if fill_4 or fill_3:
+						if fill_4 and fill_up:
+							print("will fill (4) %s"%folder)
+							if not os.path.exists(folder):
+								os.mkdir(folder)
+							with open("%s/resume.dat"%folder, "w") as _f:
+								_f.write("final w =  1.056\nfinal z =  1.479\n")
+								for i in range(1, 5):
+									_f.write("dRho_%d  =  0.\n"%i)
+								_f.write("Neff    =  4.05\n")
+							filled += 1
+							missing -= 1
+						if fill_3 and not fill_up:
+							print("will fill (3) %s"%folder)
+							if not os.path.exists(folder):
+								os.mkdir(folder)
+							with open("%s/resume.dat"%folder, "w") as _f:
+								_f.write("final w =  1.097\nfinal z =  1.536\n")
+								for i in range(1, 5):
+									_f.write("dRho_%d  =  0.\n"%i)
+								_f.write("Neff    =  3.044\n")
+							filled += 1
+							missing -= 1
 	print("\n%s: total=%s, missing=%s, filled: %d\n"%(args.gridname, len(grid), missing, filled))
 	return values, grid, objects
 
@@ -826,10 +858,10 @@ def call_read(args):
 	if args.verbose:
 		print("\nTotal number of points: %s"%len(grid))
 	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
-		lab = (r"dm41=%s "%dm41
-			+ r"Ue4sq=%s "%Ue4sq
-			+ r"Um4sq=%s "%Um4sq
-			+ r"Ut4sq=%s "%Ut4sq
+		lab = (r"dm41=%.5e "%dm41
+			+ r"Ue4sq=%.5e "%Ue4sq
+			+ r"Um4sq=%.5e "%Um4sq
+			+ r"Ut4sq=%.5e "%Ut4sq
 			)
 		folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
 		obj = None
