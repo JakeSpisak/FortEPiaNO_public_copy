@@ -565,6 +565,32 @@ def call_fill(args):
 	filled = 0
 	if args.verbose:
 		print("\nTotal number of points: %s"%len(grid))
+	#first, read existing points
+	Neffpoints = {}
+	curr = {}
+	for currpt in grid:
+		curr["dm41"] = currpt[0]
+		curr["Ue4sq"] = currpt[1]
+		curr["Um4sq"] = currpt[2]
+		curr["Ut4sq"] = currpt[3]
+		lab = (r"dm41=%.5e "%curr["dm41"]
+			+ r"Ue4sq=%.5e "%curr["Ue4sq"]
+			+ r"Um4sq=%.5e "%curr["Um4sq"]
+			+ r"Ut4sq=%.5e "%curr["Ut4sq"]
+			)
+		string = "%.5e_%.5e_%.5e_%.5e"%(curr["dm41"], curr["Ue4sq"], curr["Um4sq"], curr["Ut4sq"])
+		folder = "grids/%s/OUT/%s/"%(args.gridname, string)
+		try:
+			obj = FortEPiaNORun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
+		except (IOError, IndexError):
+			if args.verbose:
+				print("no %s"%lab)
+		else:
+			try:
+				Neffpoints[string] = obj.Neff
+			except AttributeError:
+				Neffpoints[string] = None
+	#define grids over which to scan
 	order = [
 		["dm41", "Ue4sq", "Um4sq", "Ut4sq"],
 		["Ut4sq", "dm41", "Ue4sq", "Um4sq"],
@@ -597,6 +623,7 @@ def call_fill(args):
 			np.log10(nsvals.dm41_min):np.log10(nsvals.dm41_max):nsvals.dm41_N*1j,
 			]).reshape(4, nsvals.dm41_N*nsvals.Ue4sq_N*nsvals.Um4sq_N*nsvals.Ut4sq_N).T
 		]
+	#start checking the grid content
 	for fill_up in [False, True]:
 		for j, curr_ord in enumerate(order):
 			print(curr_ord, fill_up)
@@ -626,25 +653,15 @@ def call_fill(args):
 					+ r"Um4sq=%.5e "%curr["Um4sq"]
 					+ r"Ut4sq=%.5e "%curr["Ut4sq"]
 					)
-				folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, curr["dm41"], curr["Ue4sq"], curr["Um4sq"], curr["Ut4sq"])
-				obj = None
-				is_missing = False
-				try:
-					obj = FortEPiaNORun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
-				except (IOError, IndexError):
-					if args.verbose:
-						print("no %s"%lab)
-					is_missing = True
-				else:
-					try:
-						obj.Neff
-					except AttributeError:
-						is_missing = True
-					else:
-						if fill_up and obj.Neff > 4.:
-							fill_4 = True
-						elif obj.Neff<3.1:
-							fill_3 = True
+				string = "%.5e_%.5e_%.5e_%.5e"%(curr["dm41"], curr["Ue4sq"], curr["Um4sq"], curr["Ut4sq"])
+				folder = "grids/%s/OUT/%s/"%(args.gridname, string)
+				is_missing = True
+				if Neffpoints[string] is not None:
+					is_missing = False
+					if fill_up and Neffpoints[string] > 4.:
+						fill_4 = True
+					elif Neffpoints[string] < 3.1:
+						fill_3 = True
 				if is_missing:
 					missing += 1
 					if fill_4 or fill_3:
@@ -657,6 +674,7 @@ def call_fill(args):
 								for i in range(1, 5):
 									_f.write("dRho_%d  =  0.\n"%i)
 								_f.write("Neff    =  4.05\n")
+							Neffpoints[string] = 4.05
 							filled += 1
 							missing -= 1
 						if fill_3 and not fill_up:
@@ -668,6 +686,7 @@ def call_fill(args):
 								for i in range(1, 5):
 									_f.write("dRho_%d  =  0.\n"%i)
 								_f.write("Neff    =  3.044\n")
+							Neffpoints[string] = 3.044
 							filled += 1
 							missing -= 1
 	print("\n%s: total=%s, missing=%s, filled: %d\n"%(args.gridname, len(grid), missing, filled))
