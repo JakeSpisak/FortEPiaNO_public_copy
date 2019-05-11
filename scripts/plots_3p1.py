@@ -34,10 +34,19 @@ finalizePlot(
 	)
 
 #energy densities
+a3nu.plotEnergyDensity(
+	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
+	skip=[False, False, False, False, True, True, False],
+	allstyles=":",
+	alllabels="",
+	lw=1,
+	)
 Um4h.plotEnergyDensity(
 	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
-	styles=["-", "-", "-", "-", "-.", ":", "-"],
 	skip=[False, False, False, False, True, True, False],
+	allstyles="-",
+	alllabels=None,
+	lw=2,
 	)
 finalizePlot(
 	"plots/3p1/energyDensity.pdf",
@@ -50,40 +59,7 @@ finalizePlot(
 	legcol=3,
 	)
 
-#entropy
-a3nu.plotEntropy(
-	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
-	styles=["-", "-", "-", "-", "-.", ":", "-"],
-	skip=[False, False, False, False, True, True, False],
-	gamma_e_mu=False,
-	)
-finalizePlot(
-	"plots/3nu/entropy.pdf",
-	xlab="$x$",
-	xlim=[1e-3, 35],
-	ylim=[0, 8],
-	ylab=r"$s$",
-	xscale="log",
-	x_T=True,
-	legcol=3,
-	)
-Um4h.plotEntropy(
-	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$, $\nu_\mu$, $\nu_\tau$", "", "", r"$\nu_s$"],
-	styles=["-", "-", "-", "-", "-.", ":", "-"],
-	skip=[False, False, False, False, True, True, False],
-	gamma_e_mu=False,
-	)
-finalizePlot(
-	"plots/3p1/entropy.pdf",
-	xlab="$x$",
-	xlim=[1e-3, 35],
-	ylim=[0, 8],
-	ylab=r"$s$",
-	xscale="log",
-	x_T=True,
-	legcol=3,
-	)
-# combined
+#entropy combined
 a3nu.plotEntropy(
 	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
 	skip=[False, False, False, False, True, True, False],
