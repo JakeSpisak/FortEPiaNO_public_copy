@@ -882,16 +882,15 @@ def call_read(args):
 	missing = 0
 	if args.verbose:
 		print("\nTotal number of points: %s"%len(grid))
-	if write:
-		with open("grids/%s/Neff.dat"%args.gridname, "w") as _f:
-			_f.write("#dm41 Ue4sq Um4sq Ut4sq Neff\n")
+	Neffpoints = {}
 	for dm41, Ue4sq, Um4sq, Ut4sq in grid:
 		lab = (r"dm41=%.5e "%dm41
 			+ r"Ue4sq=%.5e "%Ue4sq
 			+ r"Um4sq=%.5e "%Um4sq
 			+ r"Ut4sq=%.5e "%Ut4sq
 			)
-		folder = "grids/%s/OUT/%.5e_%.5e_%.5e_%.5e/"%(args.gridname, dm41, Ue4sq, Um4sq, Ut4sq)
+		string = "%.5e_%.5e_%.5e_%.5e"%(dm41, Ue4sq, Um4sq, Ut4sq)
+		folder = "grids/%s/OUT/%s/"%(args.gridname, string)
 		obj = None
 		try:
 			obj = FortEPiaNORun(folder, label=lab, nnu=4, rho=False, verbose=args.verbose)
@@ -901,14 +900,17 @@ def call_read(args):
 			missing += 1
 		else:
 			try:
-				obj.Neff
+				Neffpoints[string] = obj.Neff
 			except AttributeError:
+				Neffpoints[string] = np.nan
 				missing += 1
-			else:
-				if write:
-					with open("grids/%s/Neff.dat"%args.gridname, "a") as _f:
-						_f.write("%.5e %.5e %.5e %.5e %.5e\n"%(dm41, Ue4sq, Um4sq, Ut4sq, obj.Neff))
 		objects.append(obj)
+	if write:
+		with open("grids/%s/Neff.dat"%args.gridname, "w") as _f:
+			_f.write("#dm41 Ue4sq Um4sq Ut4sq Neff\n")
+			for dm41, Ue4sq, Um4sq, Ut4sq in grid:
+				s = "%.5e_%.5e_%.5e_%.5e"%(dm41, Ue4sq, Um4sq, Ut4sq)
+				_f.write("%s %.5e\n"%(s.replace("_", " "), Neffpoints[s]))
 	if args.verbose:
 		print("\nMissing or incomplete points: %s\n"%missing)
 	else:
