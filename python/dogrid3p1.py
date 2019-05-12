@@ -933,6 +933,8 @@ def call_run(args):
 		files = newfiles
 	current = 0
 	files = sortFiles(files, args.from_heaviest)
+	if args.verbose:
+		print("\n".join(files))
 	for i, f in enumerate(files):
 		if i >= args.first_index and i < args.last_index:
 			if args.local:
