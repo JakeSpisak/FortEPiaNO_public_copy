@@ -34,6 +34,7 @@ finalizePlot(
 	)
 
 #energy densities
+fig = plt.figure(figsize=(5.1,3.4))
 a3nu.plotEnergyDensity(
 	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
 	skip=[False, False, False, False, True, True, False],
@@ -52,21 +53,21 @@ finalizePlot(
 	"plots/3p1/energyDensity.pdf",
 	xlab="$x$",
 	xlim=[1e-3, 35],
-	ylim=[0, 7],
+	ylim=[0, 8.5],
 	ylab=r"$\rho$",
 	xscale="log",
 	x_T=True,
-	legcol=3,
+	legcol=4,
 	)
 
 #entropy combined
+fig = plt.figure(figsize=(5.1,3.4))
 a3nu.plotEntropy(
 	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e,\nu_\mu,\nu_\tau$", "", "", r"$\nu_s$"],
 	skip=[False, False, False, False, True, True, False],
 	allstyles=":",
 	alllabels="",
 	lw=1,
-	gamma_e_mu=False,
 	)
 Um4h.plotEntropy(
 	labels=[r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$, $\nu_\mu$, $\nu_\tau$", "", "", r"$\nu_s$"],
@@ -74,17 +75,16 @@ Um4h.plotEntropy(
 	allstyles="-",
 	alllabels=None,
 	lw=2,
-	gamma_e_mu=False,
 	)
 finalizePlot(
 	"plots/3p1/entropy_combined.pdf",
 	xlab="$x$",
 	xlim=[1e-3, 35],
-	ylim=[0, 8.5],
+	ylim=[0, 9],
 	ylab=r"$s$",
 	xscale="log",
 	x_T=True,
-	legcol=3,
+	legcol=4,
 	)
 
 # rho diagonal for different y, only one run
