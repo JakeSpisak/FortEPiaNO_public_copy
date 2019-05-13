@@ -133,6 +133,11 @@ def setParser():
 		help='title for the plot',
 		)
 	parser_plot.add_argument(
+		'--textbox',
+		default="",
+		help='text to include as a textbox in the figure',
+		)
+	parser_plot.add_argument(
 		'--filename',
 		default="",
 		help='name of the file where to save the plot',
@@ -498,6 +503,7 @@ def contourplot(xv, yv, values, points,
 		lsn_contours=[], lsn_contours_convssq2th=True,
 		colorbar=True,
 		colorbar_fname=None,
+		textbox=None,
 		):
 	try:
 		zv = points.reshape((len(yv), len(xv)))
@@ -506,7 +512,7 @@ def contourplot(xv, yv, values, points,
 			+ "and what you fix, as the shapes of the arrays don't match.\n"
 			+ "x:%s, y:%s, z:%s"%(xv.shape, yv.shape, points.shape))
 		return
-	fig = plt.figure(figsize=(6,4))
+	fig = plt.figure(figsize=(4.5,3.))
 	cf = plt.contourf(xv, yv, zv,
 		levels=levels, cmap=matplotlib.cm.get_cmap('CMRmap'),
 		extend="both")
@@ -524,6 +530,8 @@ def contourplot(xv, yv, values, points,
 		plt.plot(bfx, bfy, color="g", marker=r"$\leftarrow$" if bfup else "*", markersize=10)
 	if title is not None:
 		plt.title(title, y=1.02)
+	if textbox is not None:
+		plt.text(8e-2, 40, textbox, color="k", horizontalalignment="right", bbox=dict(facecolor='white', alpha=0.6, boxstyle='round'))
 	ax=plt.gca()
 	ax.tick_params("both", which="both", direction="out",
 		left=True, right=True, top=True, bottom=True)
@@ -531,9 +539,9 @@ def contourplot(xv, yv, values, points,
 	plt.xscale("log")
 	plt.yscale("log")
 	if xlab is not None:
-		plt.xlabel(xlab)
+		plt.xlabel(xlab, fontsize="large")
 	if ylab is not None:
-		plt.ylabel(ylab)
+		plt.ylabel(ylab, fontsize="large")
 	if xlim is not None:
 		plt.xlim(xlim)
 	if ylim is not None:
@@ -541,7 +549,7 @@ def contourplot(xv, yv, values, points,
 	if not colorbar:
 		cbar.remove()
 		plt.draw()
-		plt.tight_layout(rect=(-0.03, -0.05, 1.2, 1.02))
+		plt.tight_layout(rect=(-0.04, -0.07, 1.19, 1.03))
 	else:
 		plt.tight_layout(rect=(-0.03, -0.05, 1.05, 1.02))
 	if fname is not None:
@@ -551,7 +559,7 @@ def contourplot(xv, yv, values, points,
 		plt.close()
 		plt.figure(figsize=(6.,1.))
 		cbar = plt.colorbar(cf, orientation='horizontal')
-		cbar.ax.set_xlabel(r"$N_{\rm eff}$")
+		cbar.ax.set_xlabel(r"$N_{\rm eff}$", fontsize="xx-large")
 		plt.tight_layout(rect=(-0.02, -0.08, 1.02, 3.))
 		plt.savefig(colorbar_fname)
 	plt.close()
@@ -785,6 +793,7 @@ def call_plot(args, gridContent=None):
 		colorbar=args.colorbar,
 		colorbar_fname=os.path.join("grids", args.gridname, "plots", args.colorbar_fname) \
 			if args.colorbar_fname != "" else None,
+		textbox=args.textbox if hasattr(args, "textbox") else None,
 		)
 	print("\nDone!\n\n")
 	return
