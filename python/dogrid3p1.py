@@ -1003,7 +1003,7 @@ def call_ternary(args, gridContent=None):
 	norm = plt.Normalize(vmin=vmin, vmax=vmax)
 	scale = mixings["Ue4sq_N"] - (0 if mixings["ternary"] else 1)
 	figure, tax = ternary.figure(scale=scale)
-	figure.set_size_inches(7.5, 5)
+	figure.set_size_inches(6, 4)
 	tax.gridlines(multiple=1, linewidth=1, linestyle=":",
 		horizontal_kwargs={"color": "k", "linestyle": ":",},
 		left_kwargs={"color": "k", "linestyle": "--",},
@@ -1068,25 +1068,24 @@ def call_ternary(args, gridContent=None):
 			if a == 'r':
 				loc1 = (scale - i, i, 0)
 				loc2 = (scale - i + offset, i, 0)
-				text_location = (scale - i + 1.6 * offset, i - 0.5 * offset, 0)
+				text_location = (scale - i + 1.6 * offset, i + 0.2 - 0.5 * offset, 0)
 				tick = ticks[index]
 				ha = "left"
 				ro = 0
 			elif a == 'l':
 				loc1 = (0, i, 0)
 				loc2 = (-offset, i + offset, 0)
-				text_location = (-offset, i + 0.5 * offset, 0)
+				text_location = (-offset, i + 0.3 + 0.2 * offset, 0)
 				tick = ticks[-(index+1)]
 				ha = "right"
 				ro = 0
 			elif a == 'b':
 				loc1 = (i, 0, 0)
 				loc2 = (i, -offset, 0)
-				text_location = (i + 0.5 * offset, - 0.35 - 0.035*scale, 0)
+				text_location = (i + 0.7 + 0.5 * offset, - 0.7 - 0.035*scale, 0)
 				tick = ticks[index]
 				ha = "center"
 				ro = 0#60
-			ternary.line(ax, loc1, loc2, color='k')
 			x, y = ternary.project_point(text_location)
 			regex = re.match("([0-9.]{3})e([0-9\-]+)", "%.1e"%tick)
 			base = float(regex.group(1))
@@ -1096,15 +1095,28 @@ def call_ternary(args, gridContent=None):
 			if ("%f"%base).startswith("1.0"):
 				ax.text(x, y, ticklab, horizontalalignment=ha,
 					color='k', fontsize=tfontsize, rotation=ro)
+				if a == 'r':
+					loc1 = (scale - i, i, 0)
+					loc2 = (scale - i + 4*offset, i, 0)
+				elif a == 'l':
+					loc1 = (0, i, 0)
+					loc2 = (-4*offset, i + 4*offset, 0)
+				elif a == 'b':
+					loc1 = (i, 0, 0)
+					loc2 = (i, -4*offset, 0)
+			ternary.line(ax, loc1, loc2, color='k')
 
 	# axis labels and colorbar
 	tax.clear_matplotlib_ticks()
 	tax.get_axes().axis('off')
 	fontsize = 14
 	offset = 0.15
-	tax.set_title(
+	ax.text(
+		-1, scale*0.85,
 		r"$\Delta m^2_{41} = %g$ eV$^2$"%mixings["dm41_pts"][args.fix_dm41],
-		pad=10,
+		# horizontalalignment=ha,
+		color='k',
+		fontsize=1.2*fontsize,
 		)
 	tax.bottom_axis_label(r"$|U_{e4}|^2$", fontsize=fontsize, offset=0.)
 	tax.left_axis_label(r"$|U_{\mu4}|^2$", fontsize=fontsize, offset=offset)
@@ -1113,7 +1125,7 @@ def call_ternary(args, gridContent=None):
 	sm._A = []
 	cb = plt.colorbar(sm, extend="both", ticks=[3.1, 3.3, 3.5, 3.7, 3.9])
 	cb.set_label(r"$N_{\rm eff}$", fontsize=fontsize)
-	plt.tight_layout(rect=(-0.02, -0.02, 1.07, 1.02))
+	plt.tight_layout(rect=(-0.03, -0.035, 1.055, 1.035))
 
 	# save and exit
 	tax.savefig(

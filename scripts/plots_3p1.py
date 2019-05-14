@@ -282,24 +282,27 @@ if True:
 
 # evolution of rho(y=5) for different cases
 if True:
-	fig = plt.figure(figsize=(5.1,3.4))
-	for i in range(4):
-		plt.plot(np.nan, ls=styles[i], color="k", label=r"$\alpha=%s$"%flavors[i])
+	fig = plt.figure(figsize=(5.4,3.6))
+	for j, i in enumerate([0, 3]):
+		plt.plot(np.nan, ls=styles[j], color="k", label=r"$\alpha=%s$"%flavors[i])
 	first_legend = plt.legend(loc='lower left')
 	ax = plt.gca()
 	ax.add_artist(first_legend)
-	for ir, r in enumerate([Ue4l, Um4l, Ut4l, None, Ue4h, Um4h, Ut4h]):
+	for ir, r in zip(
+			[4, 5, 6, 3, 0, 1, 2],
+			[Ue4l, Um4l, Ut4l, None, Ue4h, Um4h, Ut4h]
+			):
 		if r is not None:
 			plt.plot(np.nan, ls='-', color=colors[ir], label=r.label)
-			for i in range(4):
-				r.plotRhoDiagY(i, 5, styles[i], lc=colors[ir], y2=True, lab="")
+			for j, i in enumerate([0, 3]):
+				r.plotRhoDiagY(i, 5, styles[j], lc=colors[ir], y2=True, lab="")
 	hands, labs = ax.get_legend_handles_labels()
-	second_legend = plt.legend(hands[4:], labs[4:], loc='lower right', ncol=2)
+	second_legend = plt.legend(hands[2:], labs[2:], loc='lower right', ncol=2)
 	finalizePlot(
 		"plots/3p1/rho_diag_angles.pdf",
 		xlab="$x$",
 		ylab=r"$y^2\varrho_{\alpha\alpha}$",
-		xlim=(1e-3, 30),
+		xlim=(1e-3, 35),
 		ylim=(1e-3, 0.5),
 		xscale="log",
 		yscale="log",

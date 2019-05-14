@@ -80,9 +80,9 @@ def finalizePlot(fname,
 		ax.set_ylabel(r"$N_{\rm eff}^{\rm in}=\frac{8}{7}\frac{\rho_\nu}{\rho_\gamma}$")
 		lims = ax.get_ylim()
 		ax1=ax.twinx()
-		ax.tick_params("both", which="both", direction="out",
+		ax.tick_params("both", which="both", direction="in",
 			left=True, right=False, labelleft=True, labelright=False)
-		ax1.tick_params("both", which="both", direction="out",
+		ax1.tick_params("both", which="both", direction="in",
 			left=False, right=True, labelleft=False, labelright=True)
 		ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}=\frac{8}{7}\left(\frac{11}{4}\right)^{4/3}\;\frac{\rho_\nu}{\rho_\gamma}$")
 		ax1.set_ylim(np.asarray(lims)*(11./4)**(4./3))

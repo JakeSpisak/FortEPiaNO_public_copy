@@ -20,7 +20,7 @@ def convert_grid(convert_x, convert_y, pts):
 
 
 for order in ["no", "io"]:
-	fig = plt.figure(figsize=(6,4))
+	fig = plt.figure(figsize=(5.1, 3.4))
 	for ix, grid in enumerate(["e", "m", "t"]):
 		args = Namespace(
 			gridname="U%s4_%s"%(grid, order),
@@ -70,9 +70,9 @@ for order in ["no", "io"]:
 			linestyles=lstyles[ix],
 			extend="both")
 		plt.plot(np.nan, label=labels[grid], ls=lstyles[ix], c="k")
-	plt.text(1.2e-6, 30, r"$N_{\rm eff}\leq 3.1$", color=colors[1], bbox=bboxprop)
-	plt.text(3e-5, 30, r"$N_{\rm eff}\simeq 3.3$", color=colors[2], bbox=bboxprop)
-	plt.text(7e-4, 30, r"$N_{\rm eff}\geq 3.9$", color=colors[3], bbox=bboxprop)
+	plt.text(1.4e-6, 40, r"$N_{\rm eff}\leq 3.1$", color=colors[1], bbox=bboxprop)
+	plt.text(2e-5, 40, r"$N_{\rm eff}\simeq 3.3$", color=colors[2], bbox=bboxprop)
+	plt.text(4e-4, 40, r"$N_{\rm eff}\geq 3.9$", color=colors[3], bbox=bboxprop)
 	#electron disappearance
 	for constr_file in [
 			"/home/gariazzo/data/lsn/globalfit/1801.06469/fig4b-contours/cnt-9973-%d.dat"%i
@@ -95,7 +95,7 @@ for order in ["no", "io"]:
 	plt.ylabel(r"$\Delta m^2_{41}$ [eV$^2$]")
 	plt.xlim([1e-6, 3e-1])
 	plt.ylim([5e-3, 1e2] if order == "no" else [1e-4, 1e2])
-	plt.tight_layout(rect=(-0.03, -0.03, 1.02, 1.02))
+	plt.tight_layout(rect=(-0.035, -0.06, 1.025, 1.04))
 	plt.legend(loc="lower left")
-	plt.savefig("../plots/3p1/angles_%s.pdf"%order)
+	plt.savefig("plots/3p1/angles_%s.pdf"%order)
 	plt.close()
