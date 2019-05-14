@@ -26,7 +26,7 @@ try:
 except NameError:
 	FileNotFoundError = IOError
 
-colors = ["r", "g", "b", "k", "c", "m", "y", "#99ff33", "#ff9933"] *4
+colors = ["r", "g", "b", "k", "c", "m", "#ff9933", "y", "#99ff33"] *4
 styles = ["-", "--", ":", "-."] *2
 markers = [".", "+", "x", "^", "*", "h", "D"]
 
@@ -45,7 +45,7 @@ def finalizePlot(fname,
 		legend=True,
 		x_T=None,
 		Neff_axes=False,
-		tightrect=(-0.025, -0.025, 1.02, 1.02),
+		tightrect=(-0.035, -0.04, 1.025, 1.04),
 		):
 	plt.title(title)
 	ax=plt.gca()
@@ -74,6 +74,8 @@ def finalizePlot(fname,
 		ax1.set_xlim([0.5109989461/lims[0], 0.5109989461/lims[1]])
 		ax1.set_xscale("log")
 		ax1.set_xlabel("$T$ [MeV]")
+		ax1.tick_params("both", which="both", direction="in",
+			left=True, right=True, top=True, bottom=False)
 	if Neff_axes:
 		ax.set_ylabel(r"$N_{\rm eff}^{\rm in}=\frac{8}{7}\frac{\rho_\nu}{\rho_\gamma}$")
 		lims = ax.get_ylim()
