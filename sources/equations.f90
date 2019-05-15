@@ -36,7 +36,8 @@ module ndEquations
 		leptonDensities = 0.d0
 		ldf = leptDensFactor / x**6
 		leptonDensities(1,1) = ldf * electrons%energyDensity(x, z)
-		leptonDensities(2,2) = ldf * muons%energyDensity(x, z)
+		if (flavorNumber.gt.2) &
+			leptonDensities(2,2) = ldf * muons%energyDensity(x, z)
 
 		nuDensities%re = 0.d0
 		nuDensities%im = 0.d0
