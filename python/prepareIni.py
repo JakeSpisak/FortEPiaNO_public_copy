@@ -290,7 +290,7 @@ def oscParams(args):
 		osc["nnu"] = 2
 		if args.numodel in ["a+s", "as", "1p1", "1+1"]:
 			osc["sterile"] = [False, True]
-			osc["factors"] = [3, 1]
+			osc["factors"] = [1, 1]
 		elif args.numodel in ["2+0", "2nu", "2"]:
 			osc["sterile"] = [False, False]
 			osc["factors"] = [1, 2]

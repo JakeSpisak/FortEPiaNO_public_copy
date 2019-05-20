@@ -3,6 +3,8 @@
 import os
 import re
 try:
+	import matplotlib
+	matplotlib.use("agg")
 	import matplotlib.pyplot as plt
 	from matplotlib.ticker import AutoMinorLocator
 except ImportError:

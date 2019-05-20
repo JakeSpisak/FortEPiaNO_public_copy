@@ -504,6 +504,7 @@ def contourplot(xv, yv, values, points,
 		colorbar=True,
 		colorbar_fname=None,
 		textbox=None,
+		cbarlabel=r"$N_{\rm eff}$",
 		):
 	try:
 		zv = points.reshape((len(yv), len(xv)))
@@ -525,7 +526,7 @@ def contourplot(xv, yv, values, points,
 		else:
 			plt.plot(data[:,0], data[:,1], '-k')
 	cbar = plt.colorbar(cf)
-	cbar.ax.set_ylabel(r"$N_{\rm eff}$")
+	cbar.ax.set_ylabel(cbarlabel)
 	if bfx>0 and bfy>0:
 		plt.plot(bfx, bfy, color="g", marker=r"$\leftarrow$" if bfup else "*", markersize=10)
 	if title is not None:
@@ -559,7 +560,7 @@ def contourplot(xv, yv, values, points,
 		plt.close()
 		plt.figure(figsize=(6.,1.))
 		cbar = plt.colorbar(cf, orientation='horizontal')
-		cbar.ax.set_xlabel(r"$N_{\rm eff}$", fontsize="xx-large")
+		cbar.ax.set_xlabel(cbarlabel, fontsize="xx-large")
 		plt.tight_layout(rect=(-0.02, -0.08, 1.02, 3.))
 		plt.savefig(colorbar_fname)
 	plt.close()
@@ -1112,7 +1113,7 @@ def call_ternary(args, gridContent=None):
 	fontsize = 14
 	offset = 0.15
 	ax.text(
-		-1, scale*0.85,
+		-1, scale*0.75,
 		r"$\Delta m^2_{41} = %g$ eV$^2$"%mixings["dm41_pts"][args.fix_dm41],
 		# horizontalalignment=ha,
 		color='k',
