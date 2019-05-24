@@ -92,6 +92,30 @@ def setParser():
 		'fill',
 		help='fill points in the grid that do not need to be computed (you already know that Neff=4.05)'
 		)
+	parser_fill.add_argument(
+		'--fill_up_val',
+		type=float,
+		default=4.05,
+		help='reference value of Neff when fully thermalized 3+1 is considered',
+		)
+	parser_fill.add_argument(
+		'--fill_down_val',
+		type=float,
+		default=3.044,
+		help='reference value of Neff when only active neutrinos are considered',
+		)
+	parser_fill.add_argument(
+		'--fill_up_thres',
+		type=float,
+		default=4.,
+		help='threshold value of Neff for filling above when fully thermalized 3+1 is considered',
+		)
+	parser_fill.add_argument(
+		'--fill_down_thres',
+		type=float,
+		default=3.1,
+		help='threshold value of Neff for filling below when only active neutrinos are considered',
+		)
 	parser_fill.set_defaults(func=call_fill)
 
 	parser_plot = subparsers.add_parser(
@@ -505,6 +529,7 @@ def contourplot(xv, yv, values, points,
 		colorbar_fname=None,
 		textbox=None,
 		cbarlabel=r"$N_{\rm eff}$",
+		tightrect=(-0.03, -0.05, 1.05, 1.02),
 		):
 	try:
 		zv = points.reshape((len(yv), len(xv)))
@@ -552,7 +577,7 @@ def contourplot(xv, yv, values, points,
 		plt.draw()
 		plt.tight_layout(rect=(-0.04, -0.07, 1.19, 1.03))
 	else:
-		plt.tight_layout(rect=(-0.03, -0.05, 1.05, 1.02))
+		plt.tight_layout(rect=tightrect)
 	if fname is not None:
 		plt.savefig(fname)
 	if colorbar_fname is not None:
@@ -667,9 +692,9 @@ def call_fill(args):
 				is_missing = True
 				if Neffpoints[string] is not None:
 					is_missing = False
-					if fill_up and Neffpoints[string] > 4.:
+					if fill_up and Neffpoints[string] > args.fill_up_thres:
 						fill_4 = True
-					elif Neffpoints[string] < 3.1:
+					elif Neffpoints[string] < args.fill_down_thres:
 						fill_3 = True
 				if is_missing:
 					missing += 1
@@ -682,8 +707,8 @@ def call_fill(args):
 								_f.write("final w =  1.056\nfinal z =  1.479\n")
 								for i in range(1, 5):
 									_f.write("dRho_%d  =  0.\n"%i)
-								_f.write("Neff    =  4.05\n")
-							Neffpoints[string] = 4.05
+								_f.write("Neff    =  %s\n"%args.fill_up_val)
+							Neffpoints[string] = args.fill_up_val
 							filled += 1
 							missing -= 1
 						if fill_3 and not fill_up:
@@ -694,8 +719,8 @@ def call_fill(args):
 								_f.write("final w =  1.097\nfinal z =  1.536\n")
 								for i in range(1, 5):
 									_f.write("dRho_%d  =  0.\n"%i)
-								_f.write("Neff    =  3.044\n")
-							Neffpoints[string] = 3.044
+								_f.write("Neff    =  %s\n"%args.fill_down_val)
+							Neffpoints[string] = args.fill_down_val
 							filled += 1
 							missing -= 1
 	print("\n%s: total=%s, missing=%s, filled: %d\n"%(args.gridname, len(grid), missing, filled))
