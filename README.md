@@ -1,4 +1,4 @@
-# [FortEPiaNO](https://bitbucket.org/ahep_cosmo/fortepiano/)
+# [FortEPiaNO](https://bitbucket.org/ahep_cosmo/fortepiano_public/)
 FORTran-Evolved PrImordiAl Neutrino Oscillations  
 by S. Gariazzo (stefano.gariazzo@gmail.com) and P.F. de Salas ()
 
@@ -7,7 +7,7 @@ The code is written to flexible, it can work with two to six neutrinos (active o
 At the moment, no lepton asymmetries nor non-standard interactions are implemented.
 
 If you use this code for scientific publications, please cite the paper:  
-**some title**  
+**Thermalisation of sterile neutrinos in the early Universe in the 3+1 scheme with full mixing matrix**  
 _S. Gariazzo, P.F. de Salas, S. Pastor_  
 arxiv:...  
 submitted to...  
@@ -18,7 +18,7 @@ https://inspire....
 
 ## 1.Install and compile
 In order to install the code, the suggested option is to clone the git repository.  
-To do so, go to the webpage [https://bitbucket.org/ahep_cosmo/fortepiano/](https://bitbucket.org/ahep_cosmo/fortepiano/),
+To do so, go to the webpage [https://bitbucket.org/ahep_cosmo/fortepiano_public/](https://bitbucket.org/ahep_cosmo/fortepiano_public/),
 and use the button on the top right to obtain the clone link (...).  
 You can also download a compressed folder with all the content: in such case, uncompress it in a new folder.
 
@@ -39,6 +39,7 @@ Compiled modules are stored in the `build/` folder by default. You can however s
 If you set the build folder to `build_debug`, a set of options useful for debug will be used for compiling.
 
 Additional commands for the makefile include:
+
 * `make clean` to remove all compiled files.
 * `make tests` to compile a set of numerical tests (run them with `bin/tests`). If you modify the code, they will tell you if everything is still working as expected.
 
@@ -59,7 +60,9 @@ It can be used importing the main class `FortEPiaNORun`, for example:
 from fortepianoOutput import FortEPiaNORun
 run = FortEPiaNORun("output/folder/", nnu=4, plots=True)
 ```
+
 For possible plotting functions include:
+
 * `plotFD`: plot the Fermi-Dirac distribution computed in the current momentum grid;
 * `plotZ`: plot the evolution of the photon temperature `z` as a function of `x`;
 * `plotW`: plot the evolution of the effective neutrino temperature `w` as a function of `x`;
@@ -79,6 +82,7 @@ See `python python/dogrid3p1.py -h` for a detailled description of the accepted 
 
 ## 3.Source code
 Should you need to edit the source codes, this is more or less the content of each file:
+
 * `config.f90`: routines for the initialization;
 * `const.f90`: constants, variables, interfaces;
 * `cosmology.f90`: energy density of the various species;
@@ -88,6 +92,7 @@ Should you need to edit the source codes, this is more or less the content of ea
 * `tests.f90`: numerical tests for the software.
 
 Auxiliary files, which in principle you should not need to edit:
+
 * `bspline*`: spline interpolation utilities;
 * `errors.f90`: error and log management;
 * `heigensystem.f90`: complex matrix diagonalization;
