@@ -1,6 +1,6 @@
 # [FortEPiaNO](https://bitbucket.org/ahep_cosmo/fortepiano_public/)
 FORTran-Evolved PrImordiAl Neutrino Oscillations  
-by S. Gariazzo (stefano.gariazzo@gmail.com) and P.F. de Salas ()
+by S. Gariazzo (gariazzo@ific.uv.es) and P.F. de Salas (pablo.fernandez@fysik.su.se)
 
 FortEPiaNO is a Fortran code to compute the evolution of neutrino oscillations in the early universe.  
 The code is written to flexible, it can work with two to six neutrinos (active or sterile).  
@@ -16,10 +16,11 @@ https://inspire....
 @article{}
 ```
 
+
 ## 1.Install and compile
 In order to install the code, the suggested option is to clone the git repository.  
 To do so, go to the webpage [https://bitbucket.org/ahep_cosmo/fortepiano_public/](https://bitbucket.org/ahep_cosmo/fortepiano_public/),
-and use the button on the top right to obtain the clone link (...).  
+and use the button on the top right to obtain the clone link (`git clone https://bitbucket.org/ahep_cosmo/fortepiano_public.git`).  
 You can also download a compressed folder with all the content: in such case, uncompress it in a new folder.
 
 In either cases, when you have the source code, open the folder which contains it in a terminal.  
@@ -42,6 +43,7 @@ Additional commands for the makefile include:
 
 * `make clean` to remove all compiled files.
 * `make tests` to compile a set of numerical tests (run them with `bin/tests`). If you modify the code, they will tell you if everything is still working as expected.
+
 
 ## 2.Python scripts
 Some useful python scripts are delivered together with the main fortran code.
@@ -66,19 +68,25 @@ For possible plotting functions include:
 * `plotFD`: plot the Fermi-Dirac distribution computed in the current momentum grid;
 * `plotZ`: plot the evolution of the photon temperature `z` as a function of `x`;
 * `plotW`: plot the evolution of the effective neutrino temperature `w` as a function of `x`;
+* `plotZoverW`: plot the evolution of the ratio `z/w` as a function of `x`;
 * `plotDeltaZ`: plot the relative difference of the evolution of the photon temperature `z` as a function of `x`, with respect to some other given run;
 * `plotRhoDiagY`, `plotRhoOffDiagY`: plot the evolution of an element (diagonal or off-diagonal) of the neutrino density matrix at a fixed momentum `y`;
 * `plotdRhoOffDiagY`: plot a numerical estimate of the `x` derivative of an (off-diagonal) element of the neutrino density matrix at a fixed momentum `y`;
 * `plotRhoFin`: plot the momentum-dependence of the requested element of the neutrino density matrix at the final `x`;
 * `plotRhoX`: plot the momentum-dependence of the requested element of the neutrino density matrix, at a given `x`;
 * `plotNeff`: plot the evolution of the effective number of neutrinos, which is correctly normalized only at very early times or today;
+* `plotEnergyDensity`: plot the evolution of the energy density of the different components and their sum;
+* `plotEntropy`: plot the evolution of the entropy density of the different components and their sum;
 * `doAllPlots`: it will create a series of pdf plots in the output folder, calling
-`plotZ`, `plotRhoFin`, `plotRhoDiagY`, `plotRhoOffDiagY`, `plotdRhoOffDiagY`,
+`plotZ`, `plotW`, `plotRhoFin`, `plotRhoDiagY`, `plotRhoOffDiagY`, `plotdRhoOffDiagY`,
 for flavor and mass eigenstates if available.
+
+Additionally, the function `integrateRho_yn` provides a fast way to compute the integral of `y^n f(y)`, interpolating over the final energy density that was computed by `FortEPiaNO`.
 
 ### 2.3.`dogrid3p1.py`
 Functions to generate the ini files, submit runs, produce plots for a specific grid.
 See `python python/dogrid3p1.py -h` for a detailled description of the accepted arguments.
+
 
 ## 3.Source code
 Should you need to edit the source codes, this is more or less the content of each file:
@@ -103,6 +111,7 @@ Auxiliary files, which in principle you should not need to edit:
 * `stuff.f90`: old functions that were used in previous versions of the code and now enter only the tests;
 * `test_utils.f90`: assertion functions and test counts;
 * `utilities.f90`: utilities for integration, interpolation, checkpointing, log file manipulation, time measurements.
+
 
 ## 4.Acknowledgments
 This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Skłodowska-Curie grant agreement No 796941.
