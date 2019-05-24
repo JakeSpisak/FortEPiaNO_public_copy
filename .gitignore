@@ -5,7 +5,6 @@ OUT
 *.o
 *.mod
 *.a
-*.exe
 *.ini
 !ini/explanatory.ini
 *.log
@@ -17,4 +16,4 @@ bin/
 output*
 gmon.out
 *callgrind*
-.gitpub/
+grids/
