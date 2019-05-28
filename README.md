@@ -9,9 +9,9 @@ At the moment, no lepton asymmetries nor non-standard interactions are implement
 If you use this code for scientific publications, please cite the paper:  
 **Thermalisation of sterile neutrinos in the early Universe in the 3+1 scheme with full mixing matrix**  
 _S. Gariazzo, P.F. de Salas, S. Pastor_  
-[https://arxiv.org/abs/1905.11290](arxiv:1905.11290)  
-Submitted to JCAP  
-[https://inspirehep.net/record/1736955](INSPIRE)  
+Submitted to JCAP.  
+[arxiv:1905.11290](https://arxiv.org/abs/1905.11290),  
+see also on [INSPIRE](https://inspirehep.net/record/1736955).  
 ```
 @article{Gariazzo:2019gyi,
       author         = "Gariazzo, S. and de Salas, P. F. and Carpi, S. Pastor",
