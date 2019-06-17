@@ -36,6 +36,7 @@ module constants
 	real(dl), parameter :: sin2thW = 0.23129
 	real(dl), parameter :: cos2thW = 1.d0-sin2thW
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
+	real(dl), parameter :: electron_charge = sqrt(4*PI*alpha_fine)
 	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 
 	integer,  parameter :: maxFlavorNumber = 6
@@ -71,6 +72,7 @@ module variables
 	integer :: collision_offdiag
 	logical :: damping_read_zero
 	logical :: dme2_temperature_corr
+	logical :: dme2_ord3
 	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 	logical :: save_energy_entropy_evolution
 

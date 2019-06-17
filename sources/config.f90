@@ -323,6 +323,7 @@ module ndConfig
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
 			damping_read_zero = .true.
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
+			dme2_ord3 = read_ini_logical("dme2_ord3",.true.)
 
 			!settings for saving files
 			save_fd = read_ini_logical("save_fd", .true.)

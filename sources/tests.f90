@@ -22,7 +22,7 @@ program tests
 	call do_tests_dme2
 	call do_tests_cosmology
 	call do_test_nu_matrices
-	call do_tests_JKYG
+	call do_tests_JKG
 	call do_tests_dzodx
 	call do_tests_dme2
 	call do_tests_Di
@@ -86,6 +86,7 @@ program tests
 		collision_offdiag = 1
 		damping_read_zero = .false.
 		dme2_temperature_corr = .true.
+		dme2_ord3 = .false.
 		flavorNumber = 3
 		flavNumSqu = flavorNumber**2
 		call allocateStuff
@@ -541,7 +542,7 @@ program tests
 		call resetTestCounter
 	end subroutine do_tests_cosmology
 
-	subroutine do_tests_JKYG
+	subroutine do_tests_JKG
 		real(dl), dimension(2) :: res
 		integer :: ix
 
@@ -606,6 +607,9 @@ program tests
 		call assert_double_rel("G1 test 3", res(1), -0.000108111d0, 1d-5)
 		call assert_double_rel("G2 test 3", res(2), -0.000945107d0, 1d-5)
 
+		dme2_ord3 = .true.
+		dme2_ord3 = .false.
+
 		res = dzodxcoef_interp_func(0.01d0)
 		call assert_double("A test 1", res(1), 7.23268d0, 1d-5)
 		call assert_double("B test 1", res(2), 0.00919711d0, 1d-4)
@@ -617,7 +621,7 @@ program tests
 		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_JKYG
+	end subroutine do_tests_JKG
 
 	subroutine do_tests_dzodx
 		integer :: n
@@ -2602,7 +2606,6 @@ program tests
 
 	subroutine do_test_zin
 		call printTestBlockName("z_in solver")
-		dme2_temperature_corr = .false.
 		x_in=0.05d0
 		z_in=0.d0
 		call zin_solver
