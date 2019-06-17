@@ -193,109 +193,109 @@ module ndCosmology
 	end subroutine nonRelativistic_initialize
 
 	!functions derived from rho and drho/dx, for photon temperature evolution
-	pure function J_int(o, u)
+	pure function J_int(o, u, a)
 		real(dl) :: J_int, esuo
 		real(dl), intent(in) :: o, u
+		integer, intent(in) :: a
 
 		esuo=exp(sqrt(u*u+o*o))
-		J_int = esuo / ((1.d0+esuo)**2)
+		J_int = u**a * esuo / ((1.d0+esuo)**2)
 	end function J_int
 
-	pure function J_funcFull(o)
+	pure function J_funcFull(o, a)
 		real(dl) :: J_funcFull
 		real(dl), intent(in) :: o
+		integer, intent(in) :: a
 		integer :: i
 
-		J_funcFull = 0.d0
-		do i=1, N_opt_xoz
-			J_funcFull = J_funcFull + opt_xoz_w(i)*J_int(o, opt_xoz(i))
-		end do
-		J_funcFull = J_funcFull / PISQ
+		if (a.lt.2) then
+			J_funcFull = rombint_ri(o, a, J_int, zero, upper, toler_jkyg, maxiter) / PISQ
+		else
+			J_funcFull = 0.d0
+			do i=1, N_opt_xoz
+				J_funcFull = J_funcFull + opt_xoz_w(i)*J_int(o, opt_xoz(i), a-2)
+			end do
+			J_funcFull = J_funcFull / PISQ
+		end if
 	end function J_funcFull
 
-	pure function Jprime_int(o, u)
+	pure function Jprime_int(o, u, a)
 		real(dl) :: Jprime_int
 		real(dl), intent(in) :: o, u
+		integer, intent(in) :: a
 		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
 
 		uuoo=u*u+o*o
 		sqrtuuoo = sqrt(uuoo)
 		expsqrtuuoo = exp(sqrtuuoo)
 
-		Jprime_int = expsqrtuuoo * (1.d0-expsqrtuuoo) /(sqrtuuoo*(expsqrtuuoo+1)**3)
+		Jprime_int = u**a * expsqrtuuoo * (1.d0-expsqrtuuoo) /(sqrtuuoo*(expsqrtuuoo+1)**3)
 	end function Jprime_int
 
-	pure function JprimeFull(o)
+	pure function JprimeFull(o, a)
 		real(dl) :: JprimeFull
 		real(dl), intent(in) :: o
+		integer, intent(in) :: a
 		integer :: i
 
-		JprimeFull = 0.d0
-		do i=1, N_opt_xoz
-			JprimeFull = JprimeFull + opt_xoz_w(i)*Jprime_int(o, opt_xoz(i))
-		end do
-		JprimeFull = JprimeFull * o / PISQ
+		if (a.lt.2) then
+			JprimeFull = rombint_ri(o, a, Jprime_int, zero, upper, toler_jkyg, maxiter) * o / PISQ
+		else
+			JprimeFull = 0.d0
+			do i=1, N_opt_xoz
+				JprimeFull = JprimeFull + opt_xoz_w(i)*Jprime_int(o, opt_xoz(i), a-2)
+			end do
+			JprimeFull = JprimeFull * o / PISQ
+		end if
 	end function JprimeFull
 
-	pure function K_int(o, u)
+	pure function K_int(o, u, a)
 		real(dl) :: K_int,suo
 		real(dl), intent(in) :: o, u
+		integer, intent(in) :: a
 
 		suo=sqrt(u*u+o*o)
-		K_int = 1.d0 / (suo * (1.d0+exp(suo)))
+		K_int = u**a / (suo * (1.d0+exp(suo)))
 	end function K_int
 
-	pure function K_funcFull(o)
+	pure function K_funcFull(o, a)
 		real(dl) :: K_funcFull
 		real(dl), intent(in) :: o
+		integer, intent(in) :: a
 		integer :: i
 
-		K_funcFull = 0.d0
-		do i=1, N_opt_xoz
-			K_funcFull = K_funcFull + opt_xoz_w(i)*K_int(o, opt_xoz(i))
-		end do
-		K_funcFull = K_funcFull / PISQ
+		if (a.lt.2) then
+			K_funcFull = rombint_ri(o, a, K_int, zero, upper, toler_jkyg, maxiter) / PISQ
+		else
+			K_funcFull = 0.d0
+			do i=1, N_opt_xoz
+				K_funcFull = K_funcFull + opt_xoz_w(i)*K_int(o, opt_xoz(i), a-2)
+			end do
+			K_funcFull = K_funcFull / PISQ
+		end if
 	end function K_funcFull
 
-	pure function Kprime_int(o, u)
+	pure function Kprime_int(o, u, a)
 		real(dl) :: Kprime_int
 		real(dl), intent(in) :: o, u
+		integer, intent(in) :: a
 		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
 
 		uuoo=u*u+o*o
 		sqrtuuoo = sqrt(uuoo)
 		expsqrtuuoo = exp(sqrtuuoo)
 
-		Kprime_int = u*u / (uuoo*sqrtuuoo*(expsqrtuuoo+1)**2) * &
+		Kprime_int = u**a / (uuoo*sqrtuuoo*(expsqrtuuoo+1)**2) * &
 			(1.d0 + expsqrtuuoo*(sqrtuuoo+1.d0))
 	end function Kprime_int
 
-	pure function KprimeFull(o)
+	pure function KprimeFull(o, a)
 		real(dl) :: KprimeFull
 		real(dl), intent(in) :: o
+		integer, intent(in) :: a
 
-		KprimeFull = - rombint_re(o, Kprime_int, zero, upper, toler_jkyg, maxiter) * o / PISQ
+		KprimeFull = - rombint_ri(o, a, Kprime_int, zero, upper, toler_jkyg, maxiter) * o / PISQ
 	end function KprimeFull
-
-	pure function Y_int(o, u)
-		real(dl) :: Y_int, esuo
-		real(dl), intent(in) :: o, u
-
-		esuo=exp(sqrt(u*u+o*o))
-		Y_int = u**2 * esuo / ((1.d0+esuo)**2)
-	end function Y_int
-
-	pure function Y_funcFull(o)
-		real(dl) :: Y_funcFull
-		real(dl), intent(in) :: o
-		integer :: i
-
-		Y_funcFull = 0.d0
-		do i=1, N_opt_xoz
-			Y_funcFull = Y_funcFull + opt_xoz_w(i)*Y_int(o, opt_xoz(i))
-		end do
-		Y_funcFull = Y_funcFull / PISQ
-	end function Y_funcFull
 
 	pure function G12_funcFull(o)
 		real(dl), dimension(2) :: G12_funcFull
@@ -303,10 +303,10 @@ module ndCosmology
 		real(dl) :: ko, jo, kp, jp, tmp
 
 		if (dme2_temperature_corr) then
-			ko=k_funcFull(o)
-			jo=j_funcFull(o)
-			kp=kprimeFull(o)
-			jp=jprimeFull(o)
+			ko=k_funcFull(o, 2)
+			jo=j_funcFull(o, 2)
+			kp=kprimeFull(o, 2)
+			jp=jprimeFull(o, 2)
 			tmp = (kp/6.d0 - ko*kp + jp/6.d0 + jp*ko + jo*kp)
 
 			G12_funcFull(1) = PIx2*alpha_fine *(&
@@ -327,8 +327,8 @@ module ndCosmology
 		real(dl) :: j, y, o
 		o = xoz * cls%mass_factor
 		if (xoz .lt. cls%x_enDens_cut) then
-			j = J_funcFull(o)
-			y = Y_funcFull(o)
+			j = J_funcFull(o, 2)
+			y = J_funcFull(o, 4)
 		else
 			j = 0.d0
 			y = 0.d0

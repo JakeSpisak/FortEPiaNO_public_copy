@@ -254,7 +254,7 @@ module utilities
 		if (fstat == 0) close(8643, status='delete')
 	end subroutine deleteCheckpoints
 
-	pure function rombint_re(obj, f, a, b, tol, maxit)
+	pure function rombint_ri(obj1, obj2, f, a, b, tol, maxit)
 		use Precision
 		!  Rombint returns the integral from a to b of using Romberg integration.
 		!  The method converges provided that f(x) is continuous in (a,b).
@@ -263,8 +263,9 @@ module utilities
 		implicit none
 
 		interface
-			pure real(KIND(1.d0)) function f(a, b)
+			pure real(KIND(1.d0)) function f(a, b, c)
 				real(KIND(1.d0)), intent(in) :: a, b
+				integer, intent(in) :: c
 			end function
 		end interface
 
@@ -272,8 +273,9 @@ module utilities
 		integer :: MAXITER
 		integer, parameter :: MAXJ=5
 		dimension g(MAXJ+1)
-		real(dl), intent(in) :: obj
-		real(dl) :: rombint_re
+		real(dl), intent(in) :: obj1
+		integer, intent(in) :: obj2
+		real(dl) :: rombint_ri
 		real(dl), intent(in) :: a,b,tol
 		integer :: nint, i, k, jmax, j
 		real(dl) :: h, gmax, error, g, g0, g1, fourj
@@ -284,7 +286,7 @@ module utilities
 			MAXITER=20
 		end if
 		h=0.5d0*(b-a)
-		gmax=h*(f(obj,a)+f(obj,b))
+		gmax=h*(f(obj1, a, obj2)+f(obj1, b, obj2))
 		g(1)=gmax
 		nint=1
 		error=1.0d20
@@ -294,7 +296,7 @@ module utilities
 			go to 40
 		g0=0._dl
 		do 20 k=1,nint
-			g0=g0+f(obj,a+(k+k-1)*h)
+			g0=g0+f(obj1, a+(k+k-1)*h, obj2)
 20      continue
 		g0=0.5d0*g(1)+h*g0
 		h=0.5d0*h
@@ -315,8 +317,8 @@ module utilities
 		gmax=g0
 		g(jmax+1)=g0
 		go to 10
-40      rombint_re=g0
-	end function rombint_re
+40      rombint_ri=g0
+	end function rombint_ri
 
 	!Newton-Cotes method:
 	!approximate 1D/2D integrals using a linear interpolation inside bins
