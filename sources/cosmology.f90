@@ -264,7 +264,7 @@ module ndCosmology
 		integer, intent(in) :: a
 		integer :: i
 
-		if (a.lt.2) then
+		if (a.lt.2 .or. o.lt.5d-2) then
 			K_funcFull = rombint_ri(o, a, K_int, zero, upper, toler_jkyg, maxiter) / PISQ
 		else
 			K_funcFull = 0.d0
@@ -330,7 +330,7 @@ module ndCosmology
 						(2.d0*j2-4.d0*k2)/o &
 						- 2*j2p &
 						- osq* j0p &
-						- o*(2*j0+j0) &
+						- o*(2*k0+j0) &
 						- g33b * (o*(k0-j0) + k0p) &
 					)
 				G12_funcFull(2) = G12_funcFull(2) + &
