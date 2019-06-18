@@ -331,7 +331,7 @@ module ndCosmology
 						- 2*j2p &
 						- osq* j0p &
 						- o*(2*k0+j0) &
-						- g33b * (o*(k0-j0) + k0p) &
+						- g33b * (o*(k0-j0) + k2p) &
 					)
 				G12_funcFull(2) = G12_funcFull(2) + &
 					alpha_fine*electron_charge * g33a * ( &

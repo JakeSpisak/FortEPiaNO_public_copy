@@ -628,16 +628,16 @@ program tests
 
 		dme2_ord3 = .true.
 		res = G12_funcFull(1.d-3)
-		call assert_double("G1 o3 test 1", res(1), 0.0323076689d0, 1d-7)
-		call assert_double("G2 o3 test 1", res(2), -0.0087016543d0, 1d-8)
+		call assert_double("G1 o3 test 1", res(1), -9.19836d-6, 5d-8)
+		call assert_double_rel("G2 o3 test 1", res(2), -0.0087016543d0, 1d-6)
 		res = G12_funcFull(0.01d0)
-		call assert_double("G1 o3 test 2", res(1), 0.00316475594d0, 1d-7)
-		call assert_double("G2 o3 test 2", res(2), -0.00870124655d0, 1d-8)
+		call assert_double("G1 o3 test 2", res(1), -0.0000652361d0, 3d-9)
+		call assert_double_rel("G2 o3 test 2", res(2), -0.00870124655d0, 1d-5)
 		res = G12_funcFull(1.d0)
-		call assert_double_rel("G1 o3 test 3", res(1), -0.00109132d0, 1d-5)
+		call assert_double_rel("G1 o3 test 3", res(1), -0.00109638d0, 1d-5)
 		call assert_double_rel("G2 o3 test 3", res(2), -0.00724797d0, 1d-5)
 		res = G12_funcFull(5.d0)
-		call assert_double_rel("G1 o3 test 4", res(1), -0.0000934302d0, 1d-5)
+		call assert_double_rel("G1 o3 test 4", res(1), -0.0000926686d0, 1d-5)
 		call assert_double_rel("G2 o3 test 4", res(2), -0.00082098d0, 1d-5)
 		dme2_ord3 = .false.
 
