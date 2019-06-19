@@ -286,6 +286,10 @@ module ndConfig
 			allocate(x_arr(Nx))
 
 			x_in    = read_ini_real('x_in', 0.01d0)
+			if (x_in.lt.very_early_x) then
+				write(tmparg, multidblfmt) very_early_x
+				call criticalError("initial x is too early: x_in cannot be smaller than "//tmparg)
+			end if
 			x_fin   = read_ini_real('x_fin', 40.d0)
 			logx_in  = log10(x_in)
 			logx_fin = log10(x_fin)
