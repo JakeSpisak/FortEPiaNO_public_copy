@@ -101,7 +101,7 @@ that the collision terms vanish when considering the interactions corresponding
 only to sterile neutrinos.
 When more than one sterile neutrino is considered, the damping terms between the different sterile neutrinos are therefore set to zero.
 
-To summarise, the code computes the evolution of the
+The code computes the evolution of the
 $N\times N$ neutrino density matrix
 \begin{equation}\label{eq:varrho-B4}
 \varrho(x, y)
@@ -238,7 +238,27 @@ is much faster than computing an integral.
 
 The electromagnetic corrections to the electron mass are also taken into account in the calculations
 of the electron distribution function, where the electron mass enters.
-\todo[inline]{add eq12 from \cite{Mangano:2001iu}}.
+The contribution to the electron mass, in comoving coordinates, is obtained as \cite{Mangano:2001iu}:
+\begin{equation}
+\delta m_e^2(x, y, z)
+=
+\frac{2\pi\alpha z^2}{3}
++
+\frac{4\alpha}{\pi}
+\int_0^\infty{\rm d}k
+\frac{k^2}{E_k}
+\frac{1}{e^{E_k/z}+1}
+-
+\frac{2x^2\alpha}{\pi y}
+\int_0^\infty{\rm d}k
+\frac{k}{E_k}
+\log\left|\frac{y+k}{y-k}\right|
+\frac{1}{e^{E_k/z}+1}
+\,,
+\end{equation}
+where $E_k=\sqrt{k^2+x^2}$.
+Following \cite{Mangano:2001iu}, we neglect the last contribution, the one with the logarithmic term,
+which contributes for less than 10\% to the total $\delta m_e^2$.
 
 Finally, in order to estimate the effective comoving neutrino temperature $w\equiv T_\nu\,a$, which is
 not needed for the calculation but useful to understand the final results,
