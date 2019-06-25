@@ -238,7 +238,7 @@ is much faster than computing an integral.
 
 The electromagnetic corrections to the electron mass are also taken into account in the calculations
 of the electron distribution function, where the electron mass enters.
-The contribution to the electron mass, in comoving coordinates, is obtained as \cite{Mangano:2001iu}:
+The contribution to the electron mass, in comoving coordinates, is obtained as \cite{Fornengo:1997wa,Mangano:2001iu}:
 \begin{equation}
 \delta m_e^2(x, y, z)
 =
@@ -257,8 +257,16 @@ The contribution to the electron mass, in comoving coordinates, is obtained as \
 \,,
 \end{equation}
 where $E_k=\sqrt{k^2+x^2}$.
-Following \cite{Mangano:2001iu}, we neglect the last contribution, the one with the logarithmic term,
-which contributes for less than 10\% to the total $\delta m_e^2$.
+In addition, we also take into account the effective correction to the photon mass
+which affects the calculation of the photon energy density \cite{Fornengo:1997wa,Mangano:2001iu}:
+\begin{equation}
+\delta m_\gamma^2(z)
+=
+\frac{8\alpha}{\pi}
+\int_0^\infty{\rm d}k
+\frac{k}{e^{k/z}+1}
+\,.
+\end{equation}
 
 Finally, in order to estimate the effective comoving neutrino temperature $w\equiv T_\nu\,a$, which is
 not needed for the calculation but useful to understand the final results,
