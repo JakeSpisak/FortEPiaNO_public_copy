@@ -56,6 +56,7 @@ module ndCosmology
 	end function photonDensity_integrand
 
 	function photonDensityFull(x, z)
+		!not analytic expression because of electromagnetic corrections to photon mass
 		real(dl) :: photonDensityFull, dmg2
 		real(dl), intent(in) :: x, z
 		integer :: i

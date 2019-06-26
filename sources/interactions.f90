@@ -107,7 +107,7 @@ module ndInteractions
 
 	pure function dme2_e_i1(x, z, k)
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12 first integral
-	!equal to eq.13 integral
+	!equal to integral in eq.13
 		real(dl) :: dme2_e_i1
 		real(dl), intent(in) :: x, z, k
 		real(dl) :: Ekm
