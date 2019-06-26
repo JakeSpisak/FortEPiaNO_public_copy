@@ -220,6 +220,7 @@ module ndConfig
 
 	subroutine init_fermions	
 		call init_interp_dme2_e
+		call photons_initialize
 		call fermions(1)%initialize("electrons", .true., 1.d0, 1d3)
 		call fermions(2)%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
 		electrons => fermions(1)
@@ -327,6 +328,7 @@ module ndConfig
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
 			damping_read_zero = .true.
 			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
+			dme2_log_term = read_ini_logical("dme2_log_term",.true.)
 
 			!settings for saving files
 			save_fd = read_ini_logical("save_fd", .true.)
@@ -337,8 +339,9 @@ module ndConfig
 			save_z_evolution = read_ini_logical("save_z_evolution", .true.)
 
 			z_in=1.d0
-			allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
+			allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
 			interp_xvec = logspace(interp_logx_in, logx_fin, interp_nx)
+			interp_yvec = logspace(interp_logy_in, logy_fin, interp_ny)
 			interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 			interp_xozvec = logspace(log10(very_early_x/interp_zmax), logx_fin, interp_nxz)
 

@@ -245,12 +245,12 @@ The contribution to the electron mass, in comoving coordinates, is obtained as \
 \frac{2\pi\alpha z^2}{3}
 +
 \frac{4\alpha}{\pi}
-\int_0^\infty{\rm d}k
+\int_0^\infty{\rm d}k\,
 \frac{k^2}{E_k}
 \frac{1}{e^{E_k/z}+1}
 -
 \frac{2x^2\alpha}{\pi y}
-\int_0^\infty{\rm d}k
+\int_0^\infty{\rm d}k\,
 \frac{k}{E_k}
 \log\left|\frac{y+k}{y-k}\right|
 \frac{1}{e^{E_k/z}+1}
@@ -263,8 +263,9 @@ which affects the calculation of the photon energy density \cite{Fornengo:1997wa
 \delta m_\gamma^2(z)
 =
 \frac{8\alpha}{\pi}
-\int_0^\infty{\rm d}k
-\frac{k}{e^{k/z}+1}
+\int_0^\infty{\rm d}k\,
+\frac{k^2}{E_k}
+\frac{1}{e^{E_k/z}+1}
 \,.
 \end{equation}
 
