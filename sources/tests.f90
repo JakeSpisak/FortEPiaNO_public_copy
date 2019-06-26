@@ -86,6 +86,7 @@ program tests
 		collision_offdiag = 1
 		damping_read_zero = .false.
 		dme2_temperature_corr = .true.
+		dme2_log_term = .false.
 		flavorNumber = 3
 		flavNumSqu = flavorNumber**2
 		call allocateStuff
@@ -113,8 +114,9 @@ program tests
 		call setMixingMatrix()
 		call setMassMatrix()
 		call init_matrices
-		allocate(interp_xvec(interp_nx), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
+		allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
 		interp_xvec = logspace(logx_in, logx_fin, interp_nx)
+		interp_yvec = logspace(log10(y_min), log10(y_max), interp_ny)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
 		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
@@ -400,8 +402,12 @@ program tests
 		call assert_double_rel("elDens test 3", electrons%energyDensity(1.d1, 1.2d0), 0.0377464d0, 1d-2)
 		call assert_double_rel("elDens test 4", electrons%energyDensity(2.d1, 1.2d0), 0.0000421797d0, 2d-2)
 		call assert_double_rel("elDens test 5", electrons%energyDensity(3.d1, 1.2d0), 2.61396d-8, 5d-2)
-		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
-		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
+		call assert_double_rel("photDensF test 1", photonDensityFull(0.511d0, 1.002d0), 0.641423418d0, 1d-7)
+		call assert_double_rel("photDensF test 2", photonDensityFull(1.022d0, 1.34d0), 1.9762073190d0, 1d-7)
+		call assert_double_rel("photDensF test 3", photonDensityFull(0.05d0, 1.d0), 0.6565030086d0, 1d-7)
+		call assert_double_rel("photDens test 1", photonDensity(0.511d0, 1.002d0), 0.641423418d0, 1d-5)
+		call assert_double_rel("photDens test 2", photonDensity(1.022d0, 1.34d0), 1.9762073190d0, 1d-5)
+		call assert_double_rel("photDens test 3", photonDensity(0.05d0, 1.d0), 0.6565030086d0, 1d-5)
 
 		call assert_double_rel("nuDens test 1", nuDensity(1.d0, 1), 0.575727d0, 1d-4)
 		call assert_double_rel("nuDens test 2", nuDensity(1.076d0, 1), 0.575727d0, 1d-4)
@@ -655,7 +661,7 @@ program tests
 	end subroutine do_tests_dzodx
 
 	subroutine do_tests_dme2
-		call printTestBlockName("dme2")
+		call printTestBlockName("dme2 and dmg2")
 		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2F test 3", dme2_electronFull(0.5d0, 0.d0, 1.1d0), 0.0283696d0, 1d-5)
@@ -670,6 +676,17 @@ program tests
 		call assert_double("dme2 test 6", dme2_electron(35.d0, 0.d0, 1.39d0), 0.0295293d0, 1d-5)
 		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), 1.3d0, 1d-7)
 		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), 8.944272d0, 1d-7)
+
+		call assert_double("dmg2F test 1", dmg2_full(0.05d0, 1.0003d0), 0.0152455d0, 1d-7)
+		call assert_double("dmg2F test 2", dmg2_full(0.5d0, 1.1d0),     0.01632487d0, 1d-7)
+		call assert_double("dmg2F test 3", dmg2_full(1.23d0, 1.198d0),  0.01424147d0, 1d-7)
+		call assert_double("dmg2F test 4", dmg2_full(7.6d0, 1.3d0),     0.00029165836d0, 1d-8)
+		call assert_double("dmg2F test 5", dmg2_full(35.d0, 1.39d0),    2.6549558357805087d-12, 1d-13)
+		call assert_double("dmg2 test 1", dmg2_interp(0.05d0, 1.0003d0), 0.0152455d0, 1d-7)
+		call assert_double("dmg2 test 2", dmg2_interp(0.5d0, 1.1d0),     0.01632487d0, 1d-7)
+		call assert_double("dmg2 test 3", dmg2_interp(1.23d0, 1.198d0),  0.01424147d0, 1d-7)
+		call assert_double("dmg2 test 4", dmg2_interp(7.6d0, 1.3d0),     0.00029165836d0, 3d-7)
+		call assert_double("dmg2 test 5", dmg2_interp(35.d0, 1.39d0),    2.6549558357805087d-12, 1d-13)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_tests_dme2
@@ -2602,7 +2619,6 @@ program tests
 
 	subroutine do_test_zin
 		call printTestBlockName("z_in solver")
-		dme2_temperature_corr = .false.
 		x_in=0.05d0
 		z_in=0.d0
 		call zin_solver

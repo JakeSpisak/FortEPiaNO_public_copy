@@ -422,7 +422,7 @@ module ndEquations
 			end do
 			call openFile(iu, trim(outputFolder)//'/energyDensity.dat', firstWrite)
 			write(iu, multidblfmt) x, z, &
-				photonDensity(z), &
+				photonDensity(x, z), &
 				electrons%energyDensity(x, z), &
 				muons%energyDensity(x, z), &
 				nuEnDens(1:flavorNumber)
@@ -445,7 +445,7 @@ module ndEquations
 			close(iu)
 		end if
 		if (save_Neff) then
-			neff = allNuDensity()/photonDensity(vec(ntot)+1.d0)
+			neff = allNuDensity()/photonDensity(x, vec(ntot)+1.d0)
 			call openFile(iu, trim(outputFolder)//'/Neff.dat', firstWrite)
 			write(iu, multidblfmt) &
 				x, neff/0.875d0, zid**4*neff/0.875d0
