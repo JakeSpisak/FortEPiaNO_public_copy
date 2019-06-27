@@ -156,6 +156,7 @@ module ndInteractions
 			if (dme2_log_term) then
 				integr_2 = 0.d0
 				do i=1, N_opt_y
+					if (y .ne. opt_y(i)) &
 					integr_2 = integr_2 + opt_y_w(i)*dme2_e_i2(x, y, z, opt_y(i))/(opt_y(i)**2)
 				end do
 				dme2_electronFull = dme2_electronFull &

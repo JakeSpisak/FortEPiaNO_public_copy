@@ -550,6 +550,27 @@ program tests
 		call assert_double_rel("muEntropy test 2", muons%entropy(0.076d0, 1.d0), 4.87363d-5, 1d-2)
 		call assert_double_rel("muEntropy test 3", muons%entropy(0.076d0, 1.32d0), 0.0027439d0, 1d-3)
 		call assert_double("muEntropy test 4", muons%entropy(1.d1, 1.2d0), 0.d0, 1d-10)
+
+		dme2_log_term=.true.
+		write(*,*)
+		write(*,*) "now with log term in dme2"
+		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.061073977d0, 1d-4)
+		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.d0), 1.149044429d0, 1d-4)
+		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(0.076d0, 1.32d0), 3.489077192d0, 1d-4)
+		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(1.d1, 1.2d0), 0.037746475d0, 1d-4)
+		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0), 2.61357908d-8, 5d-3)
+		call assert_double_rel("elPress test 1", electrons%pressure(1.d0, 1.d0), 0.316533035d0, 1d-4)
+		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.d0), 0.38146325d0, 1d-4)
+		call assert_double_rel("elPress test 3", electrons%pressure(0.076d0, 1.32d0), 1.158708038d0, 2d-3)
+		call assert_double_rel("elPress test 4", electrons%pressure(1.d1, 1.2d0), 0.0037618874d0, 2d-4)
+		call assert_double("elPress test 5", electrons%pressure(3.d1, 1.2d0), 1d-9, 1d-10)
+		call assert_double_rel("elEntropy test 1", electrons%entropy(1.d0, 1.d0), 1.377607012d0, 1d-3)
+		call assert_double_rel("elEntropy test 2", electrons%entropy(0.076d0, 1.d0), 1.53050768d0, 2d-3)
+		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.521049417d0, 2d-3)
+		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0345903027d0, 2d-3)
+		call assert_double_rel("elEntropy test 4", electrons%entropy(3.d1, 1.2d0), 2.25d-8, 1d-1)
+		dme2_log_term=.false.
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_tests_cosmology

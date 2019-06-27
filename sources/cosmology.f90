@@ -154,7 +154,7 @@ module ndCosmology
 
 	pure function nonRelativistic_energyDensity_full(cls, x, z) result (nredf)!fermion + antifermion
 		class(nonRelativistic_fermion), intent(in) :: cls
-		real(dl) :: nredf, dme2
+		real(dl) :: nredf, dme2, tmp
 		real(dl), intent(in) :: x,z
 		integer :: i
 
@@ -166,8 +166,11 @@ module ndCosmology
 				else
 					dme2 = 0.d0
 				end if
-				nredf = nredf &
-					+ opt_y_w(i)*integrand_rho_nonRel(x*cls%mass_factor, z, dme2, opt_y(i))
+				tmp = integrand_rho_nonRel(x*cls%mass_factor, z, dme2, opt_y(i))
+				if (.not. isnan(tmp)) then
+					nredf = nredf &
+						+ opt_y_w(i)*tmp
+				end if
 			end do
 			nredf = nredf / PISQD2
 			!the factor is given by g = 2(elicity) * 2(f+\bar f)
