@@ -429,7 +429,7 @@ module ndEquations
 			close(iu)
 			call openFile(iu, trim(outputFolder)//'/entropy.dat', firstWrite)
 			write(iu, multidblfmt) x, z, &
-				photonEntropy(z), &
+				photonEntropy(x, z), &
 				electrons%entropy(x, z), &
 				muons%entropy(x, z), &
 				nuEnDens(1:flavorNumber)*four_thirds/w

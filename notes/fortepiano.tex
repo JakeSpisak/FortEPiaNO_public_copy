@@ -260,7 +260,7 @@ where $E_k=\sqrt{k^2+x^2}$.
 In addition, we also take into account the effective correction to the photon mass
 which affects the calculation of the photon energy density \cite{Fornengo:1997wa,Mangano:2001iu}:
 \begin{equation}
-\delta m_\gamma^2(z)
+\delta m_\gamma^2(x, z)
 =
 \frac{8\alpha}{\pi}
 \int_0^\infty{\rm d}k\,
@@ -269,10 +269,60 @@ which affects the calculation of the photon energy density \cite{Fornengo:1997wa
 \,.
 \end{equation}
 
-Finally, in order to estimate the effective comoving neutrino temperature $w\equiv T_\nu\,a$, which is
+In order to estimate the effective comoving neutrino temperature $w\equiv T_\nu\,a$, which is
 not needed for the calculation but useful to understand the final results,
 we use an equation similar to \eqref{eq:dz_dx_nxn},
 but considering only relativistic electrons, i.e.\ fixing $r_e=0$ in Eq.~\eqref{eq:dz_dx_nxn}.
+
+Also useful for understanding the results are the definitions of comoving energy density and pressure,
+which can be combined to obtain the comoving entropy density:
+\begin{eqnarray}
+\rho_i
+&=&
+g_i
+\int\frac{dp}{2\pi^2}\,
+p^2 E_p \frac{1}{e^{E_p/z}\pm1}
+\,,
+\\
+P
+&=&
+g_i
+\int\frac{dp}{2\pi^2}\,
+\frac{p^4}{3 E_p} \frac{1}{e^{E_p/z}\pm1}
+\,,
+\\
+s
+&=&
+\frac{\rho+P}{z}
+\,,
+\end{eqnarray}
+where the + (-) applies for fermions (bosons),
+$i$ denotes the species, which has $g_i$ degrees of freedoms,
+$p$ is the comoving momentum,
+$E_p=\sqrt{p^2 + x_i^2}$ with $x_i = m_i/m_e\, x$
+and $z$ must be substituted with $w$ in the case of neutrinos.
+When the electromagnetic corrections are taken into account, the photon will have a comoving mass
+$m_\gamma^2=\delta m_\gamma^2(x, z)$
+while the electron has a mass
+${m'_e}^2=m_e^2+\delta m_e^2(x, y, z)$, being $m_e$ its mass at zero temperature.
+
+Finally, the effective number of degrees of freedom that the code returns in output is defined as:
+\begin{eqnarray}
+\Neff^e
+&=&
+\frac{8}{7}
+\frac{\sum_i \rho_{\nu_i}}{\rho_\gamma}
+\qquad\text{at early times,}
+\\
+\Neff^l
+&=&
+\frac{8}{7}
+\left(\frac{11}{4}\right)^{4/3}
+\frac{\sum_i \rho_{\nu_i}}{\rho_\gamma}
+\qquad\text{at late times,}
+\end{eqnarray}
+being $\rho_\gamma$ the comoving energy density of photons and
+$\rho_{\nu_i}$ the one of the $i$-th neutrino.
 
 
 \section{Collision integrals}

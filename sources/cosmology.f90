@@ -55,6 +55,14 @@ module ndCosmology
 		photonDensity_integrand = Emk * boseEinstein(Emk/z)
 	end function photonDensity_integrand
 
+	elemental function photonPressure_integrand(x, z, dmg2, u)
+		real(dl) :: photonPressure_integrand, Emk
+		real(dl), intent(in) :: x, z, dmg2, u
+
+		Emk = Ebare_i_dme(u, x, dmg2)
+		photonPressure_integrand = u**2/3/Emk * boseEinstein(Emk/z)
+	end function photonPressure_integrand
+
 	function photonDensityFull(x, z)
 		!not analytic expression because of electromagnetic corrections to photon mass
 		real(dl) :: photonDensityFull, dmg2
@@ -76,10 +84,24 @@ module ndCosmology
 		call gaDens%evaluate(x, z, photonDensity)
 	end function photonDensity
 
-	elemental function photonEntropy(z)
+	function photonPressureFull(x, z)
+		!not analytic expression because of electromagnetic corrections to photon mass
+		real(dl) :: photonPressureFull, dmg2
+		real(dl), intent(in) :: x, z
+		integer :: i
+
+		photonPressureFull = 0.d0
+		dmg2 = dmg2_interp(x, z)
+		do i=1, N_opt_y
+			photonPressureFull = photonPressureFull + opt_y_w(i)*photonPressure_integrand(x, z, dmg2, opt_y(i))
+		end do
+		photonPressureFull = photonPressureFull / PISQ
+	end function photonPressureFull
+
+	function photonEntropy(x, z)
 		real(dl) :: photonEntropy
-		real(dl), intent(in) :: z
-		photonEntropy = four_thirds*PISQD15*z**3
+		real(dl), intent(in) :: x, z
+		photonEntropy = (photonDensityFull(x,z) + photonPressureFull(x, z))/z
 	end function photonEntropy
 
 	subroutine photons_initialize()

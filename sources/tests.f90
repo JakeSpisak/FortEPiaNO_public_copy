@@ -523,6 +523,13 @@ program tests
 		call assert_double("radDens test 4", totalRadiationDensity(0.01d0, 1.24d0), 8.16007d0, 1d-3)
 		deallocate(ndmv_re)
 
+		call assert_double_rel("photPresF test 1", photonPressureFull(0.511d0, 1.002d0), 0.204171232d0, 1d-7)
+		call assert_double_rel("photPresF test 2", photonPressureFull(1.022d0, 1.34d0), 0.6045744168d0, 1d-7)
+		call assert_double_rel("photPresF test 3", photonPressureFull(0.05d0, 1.d0), 0.2179624234d0, 1d-7)
+		call assert_double_rel("photEntrF test 1", photonEntropy(0.511d0, 1.002d0), 0.843906837d0, 1d-7)
+		call assert_double_rel("photEntrF test 2", photonEntropy(1.022d0, 1.34d0), 1.925956519d0, 1d-7)
+		call assert_double_rel("photEntrF test 3", photonEntropy(0.05d0, 1.d0), 0.874465432d0, 1d-7)
+
 		call assert_double_rel("elDens test 6", electrons%energyDensity(0.076d0, 1.d0), 1.14904d0, 1d-4)
 		call assert_double_rel("elPress test 1", electrons%pressure(0.076d0, 1.d0), 0.381462d0, 1d-4)
 		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.32d0), 1.15731d0, 2d-3)
