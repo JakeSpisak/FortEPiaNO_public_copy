@@ -725,6 +725,12 @@ program tests
 		call assert_double("dme2F w log test 4", dme2_electronFull(1.23d0, 0.01d0, 1.198d0), 0.024518372d0, 2d-5)
 		call assert_double("dme2F w log test 5", dme2_electronFull(7.6d0, 1.d0, 1.3d0), 0.025216151d0, 2d-5)
 		call assert_double("dme2F w log test 6", dme2_electronFull(35.d0, 0.88d0, 1.39d0), 0.029529326d0, 1d-6)
+		call assert_double("dme2nl test 1", dme2_nolog(0.05d0, 1.0003d0), 0.02292d0, 1d-5)
+		call assert_double("dme2nl test 2", dme2_nolog(0.05d0, 1.0003d0), 0.02292d0, 1d-5)
+		call assert_double("dme2nl test 3", dme2_nolog(0.5d0, 1.1d0),  0.026655522d0, 1d-5)
+		call assert_double("dme2nl test 4", dme2_nolog(1.23d0, 1.198d0), 0.02905573d0, 1d-5)
+		call assert_double("dme2nl test 5", dme2_nolog(7.6d0, 1.3d0), 0.025975010d0, 1d-5)
+		call assert_double("dme2nl test 6", dme2_nolog(35.d0, 1.39d0), 0.029529326d0, 1d-5)
 		dme2_log_term=.false.
 
 		call printTotalTests

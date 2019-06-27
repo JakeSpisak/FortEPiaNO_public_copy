@@ -8,7 +8,7 @@ module ndInteractions
 	use linear_interpolation_module
 	implicit none
 
-	type(linear_interp_2d) :: dmgCorr
+	type(linear_interp_2d) :: dmgCorr, dmeNLCorr
 	type(linear_interp_3d) :: dmeCorr
 
 	contains
@@ -19,6 +19,7 @@ module ndInteractions
 		integer :: ix, iy, iz, iflag
 		real(dl) :: x, z, t1, t2
 		real(8) :: timer1
+		logical :: initial
 
 		call addToLog("[interactions] Initializing interpolation for photon mass corrections...")
 		allocate(dmg_vec(interp_nx, interp_nz))
@@ -44,6 +45,19 @@ module ndInteractions
 		!$omp end parallel do
 		call dmeCorr%initialize(interp_xvec, interp_yvec, interp_zvec, dme_vec, iflag)!linear
 
+		!store dme2 without log term for use in collision terms
+		initial = dme2_log_term
+		dme2_log_term = .false.
+		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
+		do ix=1, interp_nx
+			do iz=1, interp_nz
+				dmg_vec(ix,iz) = dme2_electronFull(interp_xvec(ix), 0.d0, interp_zvec(iz))
+			end do
+		end do
+		!$omp end parallel do
+		call dmeNLCorr%initialize(interp_xvec, interp_zvec, dmg_vec, iflag)!linear
+		dme2_log_term = initial
+
 		call random_seed()
 		if (timing_tests) then
 			call tic(timer1)
@@ -54,7 +68,7 @@ module ndInteractions
 				call random_number(z)
 				x=(x_fin-x_in)*x + x_in
 				z=0.4d0*z + z_in
-				t1 = dme2_electron(x,0.d0,z)
+				t1 = dme2_nolog(x,z)
 			end do
 			call toc(timer1, "<interpolated>")
 
@@ -64,7 +78,7 @@ module ndInteractions
 				call random_number(z)
 				x=(x_fin-x_in)*x + x_in
 				z=0.4d0*z + z_in
-				t1 = dme2_electronFull(x,0.d0,z)
+				t1 = dme2_nolog(x,z)
 			end do
 			call toc(timer1, "<full>")
 		end if
@@ -182,6 +196,14 @@ module ndInteractions
 
 		call dmeCorr%evaluate(x, y, z, dme2_electron)
 	end function dme2_electron
+
+	function dme2_nolog(x, z)
+		real(dl) :: dme2_nolog
+		real(dl), intent(in) :: x, z
+		integer :: iflag
+
+		call dmeNLCorr%evaluate(x, z, dme2_nolog)
+	end function dme2_nolog
 
 	elemental function Ebare_i_dme(x, y, dme2)!for electrons
 		real(dl) :: Ebare_i_dme

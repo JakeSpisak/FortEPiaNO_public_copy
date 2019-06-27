@@ -659,7 +659,7 @@ module ndEquations
 		z = vars(n) + 1.d0
 		call vec_2_densMat(vars)
 
-		dme2 = dme2_electron(x, 0.d0, z)
+		dme2 = dme2_nolog(x, z)
 		sqrtraddens = sqrt(totalRadiationDensity(x, z))
 		call updateMatterDensities(x, z)
 
