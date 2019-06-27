@@ -662,18 +662,18 @@ program tests
 
 	subroutine do_tests_dme2
 		call printTestBlockName("dme2 and dmg2")
-		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
-		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
-		call assert_double("dme2F test 3", dme2_electronFull(0.5d0, 0.d0, 1.1d0), 0.0283696d0, 1d-5)
-		call assert_double("dme2F test 4", dme2_electronFull(1.23d0, 0.d0, 1.198d0), 0.0321547d0, 1d-5)
-		call assert_double("dme2F test 5", dme2_electronFull(7.6d0, 0.d0, 1.3d0), 0.0260756d0, 1d-5)
-		call assert_double("dme2F test 6", dme2_electronFull(35.d0, 0.d0, 1.39d0), 0.0295293d0, 1d-5)
+		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.022915468d0, 1d-6)
+		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.022915468d0, 1d-6)!here no log term, the flag is set to false
+		call assert_double("dme2F test 3", dme2_electronFull(0.5d0, 0.d0, 1.1d0), 0.026655522d0, 1d-6)
+		call assert_double("dme2F test 4", dme2_electronFull(1.23d0, 0.d0, 1.198d0), 0.02905573d0, 1d-6)
+		call assert_double("dme2F test 5", dme2_electronFull(7.6d0, 0.d0, 1.3d0), 0.025975010d0, 1d-6)
+		call assert_double("dme2F test 6", dme2_electronFull(35.d0, 0.d0, 1.39d0), 0.029529326d0, 1d-6)
 		call assert_double("dme2 test 1", dme2_electron(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2 test 2", dme2_electron(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
-		call assert_double("dme2 test 3", dme2_electron(0.5d0, 0.d0, 1.1d0), 0.0283696d0, 1d-5)
-		call assert_double("dme2 test 4", dme2_electron(1.23d0, 0.d0, 1.198d0), 0.0321547d0, 1d-5)
-		call assert_double("dme2 test 5", dme2_electron(7.6d0, 0.d0, 1.3d0), 0.0260756d0, 1d-5)
-		call assert_double("dme2 test 6", dme2_electron(35.d0, 0.d0, 1.39d0), 0.0295293d0, 1d-5)
+		call assert_double("dme2 test 3", dme2_electron(0.5d0, 0.d0, 1.1d0),  0.026655522d0, 1d-5)
+		call assert_double("dme2 test 4", dme2_electron(1.23d0, 0.d0, 1.198d0), 0.02905573d0, 1d-5)
+		call assert_double("dme2 test 5", dme2_electron(7.6d0, 0.d0, 1.3d0), 0.025975010d0, 1d-5)
+		call assert_double("dme2 test 6", dme2_electron(35.d0, 0.d0, 1.39d0), 0.029529326d0, 1d-5)
 		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), 1.3d0, 1d-7)
 		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), 8.944272d0, 1d-7)
 
@@ -687,6 +687,18 @@ program tests
 		call assert_double("dmg2 test 3", dmg2_interp(1.23d0, 1.198d0),  0.01424147d0, 1d-7)
 		call assert_double("dmg2 test 4", dmg2_interp(7.6d0, 1.3d0),     0.00029165836d0, 3d-7)
 		call assert_double("dmg2 test 5", dmg2_interp(35.d0, 1.39d0),    2.6549558357805087d-12, 1d-13)
+
+		dme2_log_term=.true.
+		write(*,*)
+		write(*,*) "now with log term in dme2"
+		call assert_double("dme2F w log test 1", dme2_electronFull(0.05d0, 0.01d0, 1.0003d0), 0.02287423036d0, 2d-6)
+		call assert_double("dme2F w log test 2", dme2_electronFull(0.05d0, 10.d0, 1.0003d0), 0.022915272d0, 1d-6)
+		call assert_double("dme2F w log test 3", dme2_electronFull(0.5d0, 0.1d0, 1.1d0), 0.025070069d0, 2d-5)
+		call assert_double("dme2F w log test 4", dme2_electronFull(1.23d0, 0.01d0, 1.198d0), 0.024518372d0, 2d-5)
+		call assert_double("dme2F w log test 5", dme2_electronFull(7.6d0, 1.d0, 1.3d0), 0.025216151d0, 2d-5)
+		call assert_double("dme2F w log test 6", dme2_electronFull(35.d0, 0.88d0, 1.39d0), 0.029529326d0, 1d-6)
+		dme2_log_term=.false.
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_tests_dme2

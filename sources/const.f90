@@ -132,8 +132,8 @@ module variables
 	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 1800
 	integer :: interp_nx, interp_nz, interp_nxz
 	integer, parameter :: interp_ny = 100
-	real(dl), parameter :: interp_logy_in = -2.
-	real(dl), parameter :: logy_fin = 1.5
+	real(dl), parameter :: interp_logy_min = -2.
+	real(dl), parameter :: interp_logy_max = 1.5
 	real(dl), parameter :: interp_zmin0 = 0.9d0, interp_zmax0 = 1.5d0
 	real(dl), parameter :: very_early_x=0.1*0.5109989461/105.6583745!initial temperature is 10 times the muon mass
 	real(dl), parameter :: interp_logx_in=log10(very_early_x)

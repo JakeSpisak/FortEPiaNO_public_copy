@@ -149,13 +149,15 @@ module ndInteractions
 
 		if (dme2_temperature_corr) then
 			integr_1 = 0.d0
-			integr_2 = 0.d0
 			do i=1, N_opt_y
 				integr_1 = integr_1 + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))
-				integr_2 = integr_2 + opt_y_w(i)*dme2_e_i2(x, y, z, opt_y(i))
 			end do
 			dme2_electronFull = 2. * alpha_fine * (z*z * PID3 + integr_1/PID2)
 			if (dme2_log_term) then
+				integr_2 = 0.d0
+				do i=1, N_opt_y
+					integr_2 = integr_2 + opt_y_w(i)*dme2_e_i2(x, y, z, opt_y(i))/(opt_y(i)**2)
+				end do
 				dme2_electronFull = dme2_electronFull &
 					- x*x* alpha_fine / y / PID2 * integr_2
 			end if
