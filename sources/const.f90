@@ -72,6 +72,7 @@ module variables
 	integer :: collision_offdiag
 	logical :: damping_read_zero
 	logical :: dme2_temperature_corr
+	logical :: dme2_log_term
 	logical :: dme2_ord3
 	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 	logical :: save_energy_entropy_evolution
@@ -132,12 +133,15 @@ module variables
 	!used for 2d interpolation:
 	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 1800
 	integer :: interp_nx, interp_nz, interp_nxz
-	integer, parameter :: interp_ny = 40!not used in real code, it's for interpolations of D and Pi functions
+	integer, parameter :: interp_ny = 100
+	real(dl), parameter :: interp_logy_min = -2.
+	real(dl), parameter :: interp_logy_max = 1.5
 	real(dl), parameter :: interp_zmin0 = 0.9d0, interp_zmax0 = 1.5d0
 	real(dl), parameter :: very_early_x=0.1*0.5109989461/105.6583745!initial temperature is 10 times the muon mass
 	real(dl), parameter :: interp_logx_in=log10(very_early_x)
 	real(dl) :: interp_zmin, interp_zmax
 	real(dl), dimension(:), allocatable :: interp_xvec
+	real(dl), dimension(:), allocatable :: interp_yvec
 	real(dl), dimension(:), allocatable :: interp_zvec
 	real(dl), dimension(:), allocatable :: interp_xozvec
 

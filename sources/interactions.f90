@@ -8,26 +8,55 @@ module ndInteractions
 	use linear_interpolation_module
 	implicit none
 
-	type(linear_interp_2d) :: dmeCorr
+	type(linear_interp_2d) :: dmgCorr, dmeNLCorr
+	type(linear_interp_3d) :: dmeCorr
 
 	contains
 
 	subroutine init_interp_dme2_e
-		real(dl), dimension(:,:), allocatable :: dme_vec
-		integer :: ix, iz, iflag
+		real(dl), dimension(:,:), allocatable :: dmg_vec
+		real(dl), dimension(:,:,:), allocatable :: dme_vec
+		integer :: ix, iy, iz, iflag
 		real(dl) :: x, z, t1, t2
 		real(8) :: timer1
+		logical :: initial
 
-		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
-		allocate(dme_vec(interp_nx, interp_nz))
+		call addToLog("[interactions] Initializing interpolation for photon mass corrections...")
+		allocate(dmg_vec(interp_nx, interp_nz))
 		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
 			do iz=1, interp_nz
-				dme_vec(ix,iz) = dme2_electronFull(interp_xvec(ix),0.d0,interp_zvec(iz))
+				dmg_vec(ix,iz) = dmg2_full(interp_xvec(ix),interp_zvec(iz))
 			end do
 		end do
 		!$omp end parallel do
-		call dmeCorr%initialize(interp_xvec, interp_zvec, dme_vec, iflag)!linear
+		call dmgCorr%initialize(interp_xvec, interp_zvec, dmg_vec, iflag)!linear
+
+		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
+		allocate(dme_vec(interp_nx, interp_ny, interp_nz))
+		!$omp parallel do default(shared) private(ix, iy, iz) schedule(dynamic)
+		do ix=1, interp_nx
+			do iy=1, interp_ny
+				do iz=1, interp_nz
+					dme_vec(ix,iy,iz) = dme2_electronFull(interp_xvec(ix),interp_yvec(iy),interp_zvec(iz))
+				end do
+			end do
+		end do
+		!$omp end parallel do
+		call dmeCorr%initialize(interp_xvec, interp_yvec, interp_zvec, dme_vec, iflag)!linear
+
+		!store dme2 without log term for use in collision terms
+		initial = dme2_log_term
+		dme2_log_term = .false.
+		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
+		do ix=1, interp_nx
+			do iz=1, interp_nz
+				dmg_vec(ix,iz) = dme2_electronFull(interp_xvec(ix), 0.d0, interp_zvec(iz))
+			end do
+		end do
+		!$omp end parallel do
+		call dmeNLCorr%initialize(interp_xvec, interp_zvec, dmg_vec, iflag)!linear
+		dme2_log_term = initial
 
 		call random_seed()
 		if (timing_tests) then
@@ -39,7 +68,7 @@ module ndInteractions
 				call random_number(z)
 				x=(x_fin-x_in)*x + x_in
 				z=0.4d0*z + z_in
-				t1 = dme2_electron(x,0.d0,z)
+				t1 = dme2_nolog(x,z)
 			end do
 			call toc(timer1, "<interpolated>")
 
@@ -49,7 +78,7 @@ module ndInteractions
 				call random_number(z)
 				x=(x_fin-x_in)*x + x_in
 				z=0.4d0*z + z_in
-				t1 = dme2_electronFull(x,0.d0,z)
+				t1 = dme2_nolog(x,z)
 			end do
 			call toc(timer1, "<full>")
 		end if
@@ -57,11 +86,17 @@ module ndInteractions
 		call random_number(z)
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
-		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x,z
-		t1 = dme2_electronFull(x,0.d0,z)
-		t2 = dme2_electron(x,0.d0,z)
+		write(*,"(' [interactions] test dmg2_interp in ',*(E12.5))") x,z
+		t1 = dmg2_full(x,z)
+		t2 = dmg2_interp(x,z)
 		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
 
+		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x, 0.01d0, z
+		t1 = dme2_electronFull(x, 0.01d0, z)
+		t2 = dme2_electron(x, 0.01d0, z)
+		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
+
+		deallocate(dmg_vec)
 		deallocate(dme_vec)
 		call addToLog("[interactions] ...done!")
 	end subroutine init_interp_dme2_e
@@ -72,46 +107,107 @@ module ndInteractions
 		E_k_m = sqrt(k*k+m*m)
 	end function E_k_m
 
+	elemental function boseEinstein(x)
+		real(dl) :: boseEinstein
+		real(dl), intent(in) :: x
+		boseEinstein = 1.d0/(exp(x) - 1.d0)
+	end function boseEinstein
+
 	elemental function fermiDirac(x)
 		real(dl) :: fermiDirac
 		real(dl), intent(in) :: x
 		fermiDirac = 1.d0/(exp(x) + 1.d0)
 	end function fermiDirac
 
-	pure function dme2_e_i1(x, z, y)
+	pure function dme2_e_i1(x, z, k)
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12 first integral
+	!equal to integral in eq.13
 		real(dl) :: dme2_e_i1
-		real(dl), intent(in) :: x, z, y
+		real(dl), intent(in) :: x, z, k
 		real(dl) :: Ekm
-		Ekm = E_k_m(y, x)
+		Ekm = E_k_m(k, x)
 		dme2_e_i1 = 1.d0/Ekm * fermiDirac(Ekm/z)
 	end function dme2_e_i1
-	
-	pure function dme2_electronFull(x, y, z)
-	!doi:10.1016/S0370-2693(02)01622-2 eq.12
-		real(dl) :: dme2_electronFull, tmp
-		real(dl), intent(in) :: x, y, z
-		real(dl), dimension(3) :: vec
+
+	pure function dme2_e_i2(x, y, z, k)
+		!doi:10.1016/S0370-2693(02)01622-2 eq.12 second integral
+		real(dl) :: dme2_e_i2
+		real(dl), intent(in) :: x, y, z, k
+		real(dl) :: m, T, p, Ekm
+
+		if (abs(y - k).gt.1d-6) then
+			Ekm = E_k_m(k, x)
+			dme2_e_i2 = k/Ekm * fermiDirac(Ekm/z)*log(abs((y+k)/(y-k)))
+		else
+			dme2_e_i2 = 0.d0
+		end if
+	end function dme2_e_i2
+
+	pure function dmg2_full(x, z)
+	!doi:10.1016/S0370-2693(02)01622-2 eq.13
+		real(dl) :: dmg2_full, integr_1
+		real(dl), intent(in) :: x, z
 		integer :: i
 
 		if (dme2_temperature_corr) then
-			tmp = 0.d0
+			integr_1 = 0.d0
 			do i=1, N_opt_y
-				tmp = tmp + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))
+				integr_1 = integr_1 + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))
 			end do
-			dme2_electronFull = 2. * alpha_fine * z*z * (PID3 + tmp/PID2)
+			dmg2_full = 8. * alpha_fine * integr_1 / PI
+		else
+			dmg2_full = 0.d0
+		end if
+	end function dmg2_full
+
+	pure function dme2_electronFull(x, y, z)
+	!doi:10.1016/S0370-2693(02)01622-2 eq.12
+		real(dl) :: dme2_electronFull, integr_1, integr_2
+		real(dl), intent(in) :: x, y, z
+		integer :: i
+
+		if (dme2_temperature_corr) then
+			integr_1 = 0.d0
+			do i=1, N_opt_y
+				integr_1 = integr_1 + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))
+			end do
+			dme2_electronFull = 2. * alpha_fine * (z*z * PID3 + integr_1/PID2)
+			if (dme2_log_term) then
+				integr_2 = 0.d0
+				do i=1, N_opt_y
+					integr_2 = integr_2 + opt_y_w(i)*dme2_e_i2(x, y, z, opt_y(i))/(opt_y(i)**2)
+				end do
+				dme2_electronFull = dme2_electronFull &
+					- x*x* alpha_fine / y / PID2 * integr_2
+			end if
 		else
 			dme2_electronFull = 0.d0
 		end if
 	end function dme2_electronFull
+
+	function dmg2_interp(x, z)
+		real(dl) :: dmg2_interp
+		real(dl), intent(in) :: x, z
+		integer :: iflag
+
+		call dmgCorr%evaluate(x, z, dmg2_interp)
+	end function dmg2_interp
 
 	function dme2_electron(x, y, z)
 		real(dl) :: dme2_electron
 		real(dl), intent(in) :: x, y, z
 		integer :: iflag
 
-		call dmeCorr%evaluate(x, z, dme2_electron)!linear
+		call dmeCorr%evaluate(x, y, z, dme2_electron)
 	end function dme2_electron
+
+	function dme2_nolog(x, z)
+		real(dl) :: dme2_nolog
+		real(dl), intent(in) :: x, z
+		integer :: iflag
+
+		call dmeNLCorr%evaluate(x, z, dme2_nolog)
+	end function dme2_nolog
 
 	elemental function Ebare_i_dme(x, y, dme2)!for electrons
 		real(dl) :: Ebare_i_dme

@@ -9,7 +9,7 @@ module ndCosmology
 
 	real(dl), parameter :: upper = 1.d2
 
-	type(linear_interp_2d) :: elDens, muDens
+	type(linear_interp_2d) :: elDens, muDens, gaDens
 
 	type nonRelativistic_fermion
 		character(len=20) :: fermionName
@@ -39,7 +39,7 @@ module ndCosmology
 		real(dl), intent(in) :: x,z
 		integer :: ix
 
-		rho_r = photonDensity(z) &
+		rho_r = photonDensity(x, z) &
 			+ allNuDensity()
 		do ix=1, fermions_number
 			rho_r = rho_r + fermions(ix)%energyDensity(x,z)
@@ -47,18 +47,92 @@ module ndCosmology
 	end function
 
 	!photons
-	elemental function photonDensity(z)
-		real(dl) :: photonDensity
-		real(dl), intent(in) :: z
+	elemental function photonDensity_integrand(z, dmg2, u)
+		real(dl) :: photonDensity_integrand, Emk
+		real(dl), intent(in) :: z, dmg2, u
 
-		photonDensity = PISQD15 * z**4
+		Emk = Ebare_i_dme(u, 0.d0, dmg2)
+		photonDensity_integrand = Emk * boseEinstein(Emk/z)
+	end function photonDensity_integrand
+
+	elemental function photonPressure_integrand(z, dmg2, u)
+		real(dl) :: photonPressure_integrand, Emk
+		real(dl), intent(in) :: z, dmg2, u
+
+		Emk = Ebare_i_dme(u, 0.d0, dmg2)
+		photonPressure_integrand = u**2/3/Emk * boseEinstein(Emk/z)
+	end function photonPressure_integrand
+
+	function photonDensityFull(x, z)
+		!not analytic expression because of electromagnetic corrections to photon mass
+		real(dl) :: photonDensityFull, dmg2
+		real(dl), intent(in) :: x, z
+		integer :: i
+
+		photonDensityFull = 0.d0
+		dmg2 = dmg2_interp(x, z)
+		do i=1, N_opt_y
+			photonDensityFull = photonDensityFull + opt_y_w(i)*photonDensity_integrand(z, dmg2, opt_y(i))
+		end do
+		photonDensityFull = photonDensityFull / PISQ
+	end function photonDensityFull
+
+	function photonDensity(x, z)
+		real(dl) :: photonDensity
+		real(dl), intent(in) :: x, z
+
+		call gaDens%evaluate(x, z, photonDensity)
 	end function photonDensity
 
-	elemental function photonEntropy(z)
+	function photonPressureFull(x, z)
+		!not analytic expression because of electromagnetic corrections to photon mass
+		real(dl) :: photonPressureFull, dmg2
+		real(dl), intent(in) :: x, z
+		integer :: i
+
+		photonPressureFull = 0.d0
+		dmg2 = dmg2_interp(x, z)
+		do i=1, N_opt_y
+			photonPressureFull = photonPressureFull + opt_y_w(i)*photonPressure_integrand(z, dmg2, opt_y(i))
+		end do
+		photonPressureFull = photonPressureFull / PISQ
+	end function photonPressureFull
+
+	function photonEntropy(x, z)
 		real(dl) :: photonEntropy
-		real(dl), intent(in) :: z
-		photonEntropy = four_thirds*PISQD15*z**3
+		real(dl), intent(in) :: x, z
+		photonEntropy = (photonDensityFull(x, z) + photonPressureFull(x, z))/z
 	end function photonEntropy
+
+	subroutine photons_initialize()
+		real(dl), dimension(:,:), allocatable :: gd_vec
+		integer :: ix, iz, iflag
+		real(dl) :: x,z, t1,t2
+		real(8) :: timer1
+
+		call addToLog("[cosmo] Initializing photons...")
+
+		allocate(gd_vec(interp_nx, interp_nz))
+		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
+		do ix=1, interp_nx
+			do iz=1, interp_nz
+				gd_vec(ix,iz) = photonDensityFull(interp_xvec(ix), interp_zvec(iz))
+			end do
+		end do
+		!$omp end parallel do
+		call gaDens%initialize(interp_xvec, interp_zvec, gd_vec, iflag)!linear
+
+		call random_seed()
+		call random_number(x)
+		call random_number(z)
+		x=(x_fin-x_in)*x + x_in
+		z=0.4d0*z + z_in
+		write(*,"(' [cosmo] test energyDensity interpolation in ',*(E12.5))") x, z
+		t1 = photonDensityFull(x, z)
+		t2 = photonDensity(x, z)
+		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
+		call addToLog("[cosmo] ...done!")
+	end subroutine photons_initialize
 
 	!functions for non relativistic particles
 	pure function integrand_rho_nonRel(x, z, dme2, y)
@@ -80,20 +154,22 @@ module ndCosmology
 
 	pure function nonRelativistic_energyDensity_full(cls, x, z) result (nredf)!fermion + antifermion
 		class(nonRelativistic_fermion), intent(in) :: cls
-		real(dl) :: nredf, dme2
+		real(dl) :: nredf, dme2, tmp
 		real(dl), intent(in) :: x,z
 		integer :: i
 
 		nredf = 0.d0
 		if (x .lt. cls%x_enDens_cut) then
-			if (cls%isElectron) then
-				dme2 = dme2_electronFull(x, 0.d0, z)
-			else
-				dme2 = 0.d0
-			end if
 			do i=1, N_opt_y
-				nredf = nredf &
-					+ opt_y_w(i)*integrand_rho_nonRel(x*cls%mass_factor, z, dme2, opt_y(i))
+				if (cls%isElectron) then
+					dme2 = dme2_electronFull(x, opt_y(i), z)
+				else
+					dme2 = 0.d0
+				end if
+				tmp = integrand_rho_nonRel(x*cls%mass_factor, z, dme2, opt_y(i))
+				if (.not. isnan(tmp)) then
+					nredf = nredf + opt_y_w(i)*tmp
+				end if
 			end do
 			nredf = nredf / PISQD2
 			!the factor is given by g = 2(elicity) * 2(f+\bar f)
@@ -108,15 +184,22 @@ module ndCosmology
 		call cls%enDensInterp%evaluate(x, z, ed)
 	end function nonRelativistic_energyDensity
 
-	pure function integrate_uX_Ek_nonRel(w, dm, n)
+	pure function integrate_uX_Ek_nonRel(cls, x, z, n)
+		class(nonRelativistic_fermion), intent(in) :: cls
 		!computes the integral of u**n/(sqrt(u**2+w**2)(1+exp(sqrt(u**2+w**2))))
 		!useful to get the pressure for non-relativistic species
-		real(dl) :: integrate_uX_Ek_nonRel
-		real(dl), intent(in) :: w, dm
+		real(dl) :: integrate_uX_Ek_nonRel, w, dm
+		real(dl), intent(in) :: x, z
 		integer, intent(in) :: n
 		integer :: i
+		w = cls%mass_factor*x/z
 		integrate_uX_Ek_nonRel = 0.d0
 		do i = 1, N_opt_xoz
+			if (cls%isElectron) then
+				dm = dme2_electronFull(x, opt_y(i), z) / z
+			else
+				dm = 0.d0
+			end if
 			integrate_uX_Ek_nonRel = integrate_uX_Ek_nonRel &
 				+ opt_y_w(i)*integrand_uX_Ek_nonRel(opt_y(i), w, dm, n-2)!n-2 because the weights already take into account y^2
 		end do
@@ -130,13 +213,7 @@ module ndCosmology
 		real(dl) :: t, dm
 
 		if (x .lt. cls%x_enDens_cut) then
-			if (cls%isElectron) then
-				dm = dme2_electronFull(x, 0.d0, z) / z
-			else
-				dm = 0.d0
-			end if
-			t = cls%mass_factor*x/z
-			press = 4.d0*z**4/3.d0*(integrate_uX_Ek_nonRel(t, dm, 4))
+			press = 4.d0*z**4/3.d0*(integrate_uX_Ek_nonRel(cls, x, z, 4))
 		else
 			press = 0.d0
 		end if
