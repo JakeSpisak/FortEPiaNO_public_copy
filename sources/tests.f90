@@ -2080,23 +2080,27 @@ program tests
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/605.541d0/fd, 15531.6d0, 73346.3d0/)
-		res%re(2,:) = (/15531.6d0, -2653.78d0/fd, -604.533d0/)
-		res%re(3,:) = (/73346.3d0, -604.533d0, 2048.24d0/fd/)
-		res%im(1,:) = (/0., 8489.27, 30142.1/)
-		res%im(2,:) = (/-8489.27, 0., -865.415/)
-		res%im(3,:) = (/-30142.1, 865.415, 0./)
+		res%re(1,:) = (/605.651d0/fd, 15538.5d0, 73380.3d0/)
+		res%re(2,:) = (/15538.5d0, -2654.26d0/fd, -604.243d0/)
+		res%re(3,:) = (/73380.3d0, -604.243d0, 2048.61d0/fd/)
+		res%im(1,:) = (/0., 8492.87, 30155.8/)
+		res%im(2,:) = (/-8492.87, 0., -864.307/)
+		res%im(3,:) = (/-30155.8, 864.307, 0./)
 		call drhoy_dx_fullMat(outp, x, z, iy, dme2, sqrtraddens, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx a ',2I1)") i,j
 				if (abs(res%re(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
+				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-3)
 				else
 					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
 				end if
 				if (abs(res%im(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
+				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-2)
 				else
 					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-4)
 				end if
@@ -2104,23 +2108,27 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/1394.47d0/fd, 16320.5d0, 74135.2d0/)
-		res%re(2,:) = (/16320.5d0, -1864.85d0/fd, 184.352d0/)
-		res%re(3,:) = (/74135.2d0, 184.352d0, 2837.16d0/fd/)
-		res%im(1,:) = (/0., 9278.19, 30931./)
-		res%im(2,:) = (/-9278.19, 0., -76.52251/)
-		res%im(3,:) = (/-30931., 76.52251, 0./)
+		res%re(1,:) = (/1394.72d0/fd, 16327.6d0, 74169.3d0/)
+		res%re(2,:) = (/16327.6d0, -1865.19d0/fd, 184.825d0/)
+		res%re(3,:) = (/74169.3d0, 184.825d0, 2837.68d0/fd/)
+		res%im(1,:) = (/0., 9281.94, 30944.9/)
+		res%im(2,:) = (/-9281.94, 0., -75.2387/)
+		res%im(3,:) = (/-30944.9, 75.2387, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint1)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx b ',2I1)") i,j
 				if (abs(res%re(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
+				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 3d-3)
 				else
 					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
 				end if
 				if (abs(res%im(i,j)).lt.1d-7) then
 					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
+				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-2)
 				else
 					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
 				end if
@@ -2145,12 +2153,12 @@ program tests
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/164543.d0/fd, 346799.d0, 481933.d0/)
-		res%re(2,:) = (/346799.d0, -721106.d0/fd, -83688.4d0/)
-		res%re(3,:) = (/481933.d0, -83688.4d0, 556564.d0/fd/)
-		res%im(1,:) = (/0., 369988., 411122./)
-		res%im(2,:) = (/-369988., 0., 6601.2/)
-		res%im(3,:) = (/-411122., -6601.2, 0./)
+		res%re(1,:) = (/164558.d0/fd, 346833.d0, 481979.d0/)
+		res%re(2,:) = (/346833.d0, -721175.d0/fd, -83696.4d0/)
+		res%re(3,:) = (/481979.d0, -83696.4d0, 556617.d0/fd/)
+		res%im(1,:) = (/0., 370024., 411161./)
+		res%im(2,:) = (/-370024., 0., 6601.83/)
+		res%im(3,:) = (/-411161., -6601.83, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2168,12 +2176,12 @@ program tests
 			end do
 		end do
 
-		res%re(1,:) = (/164693.d0/fd, 346950.d0, 482083.d0/)
-		res%re(2,:) = (/346950.d0, -720956.d0/fd, -83538.3d0/)
-		res%re(3,:) = (/482083.d0, -83538.3d0, 556714.d0/fd/)
-		res%im(1,:) = (/0., 370138., 411272./)
-		res%im(2,:) = (/-370138., 0., 6751.29/)
-		res%im(3,:) = (/-411272., -6751.29, 0./)
+		res%re(1,:) = (/164708.d0/fd, 346983.d0, 482129.d0/)
+		res%re(2,:) = (/346983.d0, -721025.d0/fd, -83546.3d0/)
+		res%re(3,:) = (/482129.d0, -83546.3d0, 556767.d0/fd/)
+		res%im(1,:) = (/0., 370174., 411311./)
+		res%im(2,:) = (/-370174., 0., 6751.93/)
+		res%im(3,:) = (/-411311., -6751.93, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollinty)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
