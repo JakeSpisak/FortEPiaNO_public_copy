@@ -91,9 +91,9 @@ module ndInteractions
 		t2 = dmg2_interp(x,z)
 		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
 
-		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x,z
-		t1 = dme2_electronFull(x,0.d0,z)
-		t2 = dme2_electron(x,0.d0,z)
+		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x, 0.01d0, z
+		t1 = dme2_electronFull(x, 0.01d0, z)
+		t2 = dme2_electron(x, 0.01d0, z)
 		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
 
 		deallocate(dmg_vec)
@@ -134,8 +134,13 @@ module ndInteractions
 		real(dl) :: dme2_e_i2
 		real(dl), intent(in) :: x, y, z, k
 		real(dl) :: m, T, p, Ekm
-		Ekm = E_k_m(k, x)
-		dme2_e_i2 = k/Ekm * fermiDirac(Ekm/z)*log(abs((y+k)/(y-k)))
+
+		if (abs(y - k).gt.1d-6) then
+			Ekm = E_k_m(k, x)
+			dme2_e_i2 = k/Ekm * fermiDirac(Ekm/z)*log(abs((y+k)/(y-k)))
+		else
+			dme2_e_i2 = 0.d0
+		end if
 	end function dme2_e_i2
 
 	pure function dmg2_full(x, z)
@@ -170,7 +175,6 @@ module ndInteractions
 			if (dme2_log_term) then
 				integr_2 = 0.d0
 				do i=1, N_opt_y
-					if (y .ne. opt_y(i)) &
 					integr_2 = integr_2 + opt_y_w(i)*dme2_e_i2(x, y, z, opt_y(i))/(opt_y(i)**2)
 				end do
 				dme2_electronFull = dme2_electronFull &

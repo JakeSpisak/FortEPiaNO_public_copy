@@ -168,8 +168,7 @@ module ndCosmology
 				end if
 				tmp = integrand_rho_nonRel(x*cls%mass_factor, z, dme2, opt_y(i))
 				if (.not. isnan(tmp)) then
-					nredf = nredf &
-						+ opt_y_w(i)*tmp
+					nredf = nredf + opt_y_w(i)*tmp
 				end if
 			end do
 			nredf = nredf / PISQD2
