@@ -47,19 +47,19 @@ module ndCosmology
 	end function
 
 	!photons
-	elemental function photonDensity_integrand(x, z, dmg2, u)
+	elemental function photonDensity_integrand(z, dmg2, u)
 		real(dl) :: photonDensity_integrand, Emk
-		real(dl), intent(in) :: x, z, dmg2, u
+		real(dl), intent(in) :: z, dmg2, u
 
-		Emk = Ebare_i_dme(u, x, dmg2)
+		Emk = Ebare_i_dme(u, 0.d0, dmg2)
 		photonDensity_integrand = Emk * boseEinstein(Emk/z)
 	end function photonDensity_integrand
 
-	elemental function photonPressure_integrand(x, z, dmg2, u)
+	elemental function photonPressure_integrand(z, dmg2, u)
 		real(dl) :: photonPressure_integrand, Emk
-		real(dl), intent(in) :: x, z, dmg2, u
+		real(dl), intent(in) :: z, dmg2, u
 
-		Emk = Ebare_i_dme(u, x, dmg2)
+		Emk = Ebare_i_dme(u, 0.d0, dmg2)
 		photonPressure_integrand = u**2/3/Emk * boseEinstein(Emk/z)
 	end function photonPressure_integrand
 
@@ -72,7 +72,7 @@ module ndCosmology
 		photonDensityFull = 0.d0
 		dmg2 = dmg2_interp(x, z)
 		do i=1, N_opt_y
-			photonDensityFull = photonDensityFull + opt_y_w(i)*photonDensity_integrand(x, z, dmg2, opt_y(i))
+			photonDensityFull = photonDensityFull + opt_y_w(i)*photonDensity_integrand(z, dmg2, opt_y(i))
 		end do
 		photonDensityFull = photonDensityFull / PISQ
 	end function photonDensityFull
@@ -93,7 +93,7 @@ module ndCosmology
 		photonPressureFull = 0.d0
 		dmg2 = dmg2_interp(x, z)
 		do i=1, N_opt_y
-			photonPressureFull = photonPressureFull + opt_y_w(i)*photonPressure_integrand(x, z, dmg2, opt_y(i))
+			photonPressureFull = photonPressureFull + opt_y_w(i)*photonPressure_integrand(z, dmg2, opt_y(i))
 		end do
 		photonPressureFull = photonPressureFull / PISQ
 	end function photonPressureFull
@@ -101,7 +101,7 @@ module ndCosmology
 	function photonEntropy(x, z)
 		real(dl) :: photonEntropy
 		real(dl), intent(in) :: x, z
-		photonEntropy = (photonDensityFull(x,z) + photonPressureFull(x, z))/z
+		photonEntropy = (photonDensityFull(x, z) + photonPressureFull(x, z))/z
 	end function photonEntropy
 
 	subroutine photons_initialize()
