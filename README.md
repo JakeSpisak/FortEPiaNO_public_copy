@@ -9,7 +9,7 @@ At the moment, no lepton asymmetries nor non-standard interactions are implement
 If you use this code for scientific publications, please cite the paper:  
 **Thermalisation of sterile neutrinos in the early Universe in the 3+1 scheme with full mixing matrix**  
 _S. Gariazzo, P.F. de Salas, S. Pastor_  
-Submitted to JCAP.  
+To appear in JCAP.  
 [arxiv:1905.11290](https://arxiv.org/abs/1905.11290),  
 see also on [INSPIRE](https://inspirehep.net/record/1736955).  
 ```
@@ -28,13 +28,11 @@ see also on [INSPIRE](https://inspirehep.net/record/1736955).
 
 ## 1.Install and compile
 In order to install the code, the suggested option is to clone the git repository.  
-To do so, go to the webpage [https://bitbucket.org/ahep_cosmo/fortepiano_public/](https://bitbucket.org/ahep_cosmo/fortepiano_public/),
-and use the button on the top right to obtain the clone link (`git clone https://bitbucket.org/ahep_cosmo/fortepiano_public.git`).  
+To do so, go to the webpage [https://bitbucket.org/ahep_cosmo/fortepiano_public/](https://bitbucket.org/ahep_cosmo/fortepiano_public/), and use the button on the top right to obtain the clone link (`git clone https://bitbucket.org/ahep_cosmo/fortepiano_public.git`).  
 You can also download a compressed folder with all the content: in such case, uncompress it in a new folder.
 
 In either cases, when you have the source code, open the folder which contains it in a terminal.  
-The main code can be compiled simply using `make` (see also the section below on more options for compiling),
-which will generate an executable `bin/fortepiano`.  
+The main code can be compiled simply using `make` (see also the section below on more options for compiling), which will generate an executable `bin/fortepiano`.  
 Your first test can be to use the explanatory configuration file, as: `bin/fortepiano ini/explanatory.ini`.
 
 The `ini/explanatory.ini` contains a detailled description of the various arguments that the fortran code accepts, and shows how to pass the neutrino mixing parameters.
@@ -52,6 +50,15 @@ Additional commands for the makefile include:
 
 * `make clean` to remove all compiled files.
 * `make tests` to compile a set of numerical tests (run them with `bin/tests`). If you modify the code, they will tell you if everything is still working as expected.
+
+### 1.2.Interpolations
+The code, in the default compilation setup, is designed to avoid computing several integrals at each step and to use an interpolation instead.
+This mostly concerns integrals of energy densities (photons, charged leptons) and of the functions that describe electromagnetic corrections, including the coefficients in the dz/dx and dw/dx expressions.
+
+In order to change this default behaviour and use the full expressions at each step, at the expense of slightly slowing down the calculation, one can compile the code using `make NOINTERPOLATION=1`, so that the interpolations will be disabled.
+For the default configuration in the `ini/explanatory.ini` file, the actual change in the final effective number of neutrinos is smaller than `1e-4` and the execution takes approximately 15% longer.
+
+**WARNING**: the test suite will not compile if the flag `NOINTERPOLATION=1` is activated, or if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
 
 
 ## 2.Python scripts
