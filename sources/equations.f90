@@ -13,9 +13,11 @@ module ndEquations
 	use ndInterfaces1
 	implicit none
 
+#ifndef NOINTERPOLATION
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
 	type(bspline_1d) :: dwodx_A_interp, dwodx_B_interp
 	type(bspline_1d) :: dzodx_eq_interp
+#endif
 
 	real(dl) :: deriv_counter
 
@@ -114,6 +116,7 @@ module ndEquations
 		end do
 	end subroutine vec_2_densMat
 
+#ifndef NOINTERPOLATION
 	subroutine init_interp_jkyg12
 		real(dl) :: num, den, xoz, numw, denw
 		real(dl), dimension(:), allocatable :: A, B
@@ -180,6 +183,7 @@ module ndEquations
 		call dwodx_A_interp%evaluate(o, 0, dwodxcoef_interp_func(1), iflag)
 		call dwodx_B_interp%evaluate(o, 0, dwodxcoef_interp_func(2), iflag)
 	end function dwodxcoef_interp_func
+#endif
 
 	subroutine dz_o_dx(x, w, z, ydot, n)
 		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
@@ -187,39 +191,70 @@ module ndEquations
 		real(dl), intent(in) :: w, x, z
 		integer, intent(in) :: n
 		real(dl), dimension(n), intent(inout) :: ydot
-		real(dl) :: tmp
+		real(dl) :: nudrho
 		real(dl), dimension(2) :: coeffs
 		integer :: ix, m
+#ifdef NOINTERPOLATION
+		integer :: j
+		real(dl) :: num, den, xoz, numw, denw
+		real(dl), dimension(2) :: g12, fContr, elContr0
+
+		elContr0 = electrons%dzodx_terms(interp_xozvec(1))
+#endif
 
 		if (use_gauss_laguerre) then
-			!$omp parallel do shared(fy_arr) private(tmp, m, ix)
+			!$omp parallel do shared(fy_arr) private(nudrho, m, ix)
 			do m=1, Ny
-				tmp = 0.d0
+				nudrho = 0.d0
 				do ix=1, flavorNumber
-					tmp = tmp + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
+					nudrho = nudrho + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 				end do
-				fy_arr(m) = tmp * fermiDirac(y_arr(m))
+				fy_arr(m) = nudrho * fermiDirac(y_arr(m))
 			end do
 			!$omp end parallel do
-			tmp = integral_GL_1d(w_gl_arr, fy_arr)
+			nudrho = integral_GL_1d(w_gl_arr, fy_arr)
 		else
-			!$omp parallel do shared(fy_arr) private(tmp, m, ix)
+			!$omp parallel do shared(fy_arr) private(nudrho, m, ix)
 			do m=1, Ny
-				tmp = 0.d0
+				nudrho = 0.d0
 				do ix=1, flavorNumber
-					tmp = tmp + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
+					nudrho = nudrho + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 				end do
-				fy_arr(m) = y_arr(m)**3 * tmp * fermiDirac(y_arr(m))
+				fy_arr(m) = y_arr(m)**3 * nudrho * fermiDirac(y_arr(m))
 			end do
 			!$omp end parallel do
-			tmp = integral_NC_1d(Ny, dy_arr, fy_arr)
+			nudrho = integral_NC_1d(Ny, dy_arr, fy_arr)
 		end if
+
+#ifdef NOINTERPOLATION
+		xoz = x/z
+		g12 = G12_funcFull(xoz)
+		num = g12(1)
+		den = PISQ/7.5d0 + g12(2)
+		do j=1, fermions_number
+			fContr = fermions(j)%dzodx_terms(xoz)
+			num = num + fContr(1)
+			den = den + fContr(2)
+		end do
+		numw = g12(1) + elContr0(1)
+		denw = PISQ/7.5d0 + g12(2) + elContr0(2)
+		do j=2, fermions_number
+			fContr = fermions(j)%dzodx_terms(xoz)
+			numw = numw + fContr(1)
+			denw = denw + fContr(2)
+		end do
+		!neutrino effective temperature
+		ydot(n-1) = numw / denw - nudrho / z**3 / (2.d0*PISQ*denw)
+		!photon temperature
+		ydot(n) = num/den - nudrho / z**3 / (2.d0*PISQ*den)
+#else
 		!neutrino effective temperature
 		coeffs = dwodxcoef_interp_func(x/z)
-		ydot(n-1) = coeffs(1) - coeffs(2) * tmp / z**3
+		ydot(n-1) = coeffs(1) - coeffs(2) * nudrho / z**3
 		!photon temperature
 		coeffs = dzodxcoef_interp_func(x/z)
-		ydot(n) = coeffs(1) - coeffs(2) * tmp / z**3
+		ydot(n) = coeffs(1) - coeffs(2) * nudrho / z**3
+#endif
 	end subroutine dz_o_dx
 
 	subroutine dz_o_dx_eq(n, x, vars, ydot)
@@ -230,11 +265,30 @@ module ndEquations
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
 		real(dl) :: z, xoz, coeff
+#ifdef NOINTERPOLATION
+		integer :: j
+		real(dl) :: num, den
+		real(dl), dimension(2) :: g12, fContr
+#else
 		integer :: iflag
+#endif
 
 		z = vars(n)+1.d0
 		xoz=x/z
+
+#ifdef NOINTERPOLATION
+		g12 = G12_funcFull(xoz)
+		num = g12(1)
+		den = PISQ/7.5d0 + g12(2)
+		do j=1, fermions_number
+			fContr = fermions(j)%dzodx_terms(xoz)
+			num = num + fContr(1)
+			den = den + fContr(2)
+		end do
+		coeff = num / (den + PISQ/7.5d0*0.875d0*tot_factor_active_nu)
+#else
 		call dzodx_eq_interp%evaluate(xoz, 0, coeff, iflag)
+#endif
 		ydot(n) = coeff
 	end subroutine dz_o_dx_eq
 
@@ -659,7 +713,11 @@ module ndEquations
 		z = vars(n) + 1.d0
 		call vec_2_densMat(vars)
 
+#ifdef NOINTERPOLATION
+		dme2 = dme2_electronFull(x, 0.d0, z, .false.)
+#else
 		dme2 = dme2_nolog(x, z)
+#endif
 		sqrtraddens = sqrt(totalRadiationDensity(x, z))
 		call updateMatterDensities(x, z)
 

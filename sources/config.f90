@@ -218,14 +218,18 @@ module ndConfig
 		deallocate(diag_el)
 	end subroutine init_matrices
 
-	subroutine init_fermions	
+	subroutine init_fermions
+#ifndef NOINTERPOLATION
 		call init_interp_dme2_e
 		call photons_initialize
+#endif
 		call fermions(1)%initialize("electrons", .true., 1.d0, 1d3)
 		call fermions(2)%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
 		electrons => fermions(1)
 		muons => fermions(2)
+#ifndef NOINTERPOLATION
 		call init_interp_jkyg12
+#endif
 	end subroutine init_fermions
 
 	subroutine initConfig()

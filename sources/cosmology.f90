@@ -9,7 +9,9 @@ module ndCosmology
 
 	real(dl), parameter :: upper = 1.d2
 
+#ifndef NOINTERPOLATION
 	type(linear_interp_2d) :: elDens, muDens, gaDens
+#endif
 
 	type nonRelativistic_fermion
 		character(len=20) :: fermionName
@@ -70,7 +72,11 @@ module ndCosmology
 		integer :: i
 
 		photonDensityFull = 0.d0
+#ifdef NOINTERPOLATION
+		dmg2 = dmg2_full(x, z)
+#else
 		dmg2 = dmg2_interp(x, z)
+#endif
 		do i=1, N_opt_y
 			photonDensityFull = photonDensityFull + opt_y_w(i)*photonDensity_integrand(z, dmg2, opt_y(i))
 		end do
@@ -81,7 +87,11 @@ module ndCosmology
 		real(dl) :: photonDensity
 		real(dl), intent(in) :: x, z
 
+#ifdef NOINTERPOLATION
+		photonDensity = photonDensityFull(x, z)
+#else
 		call gaDens%evaluate(x, z, photonDensity)
+#endif
 	end function photonDensity
 
 	function photonPressureFull(x, z)
@@ -91,7 +101,11 @@ module ndCosmology
 		integer :: i
 
 		photonPressureFull = 0.d0
+#ifdef NOINTERPOLATION
+		dmg2 = dmg2_full(x, z)
+#else
 		dmg2 = dmg2_interp(x, z)
+#endif
 		do i=1, N_opt_y
 			photonPressureFull = photonPressureFull + opt_y_w(i)*photonPressure_integrand(z, dmg2, opt_y(i))
 		end do
@@ -104,6 +118,7 @@ module ndCosmology
 		photonEntropy = (photonDensityFull(x, z) + photonPressureFull(x, z))/z
 	end function photonEntropy
 
+#ifndef NOINTERPOLATION
 	subroutine photons_initialize()
 		real(dl), dimension(:,:), allocatable :: gd_vec
 		integer :: ix, iz, iflag
@@ -133,6 +148,7 @@ module ndCosmology
 		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
 		call addToLog("[cosmo] ...done!")
 	end subroutine photons_initialize
+#endif
 
 	!functions for non relativistic particles
 	pure function integrand_rho_nonRel(x, z, dme2, y)
@@ -181,7 +197,11 @@ module ndCosmology
 		real(dl) :: ed
 		real(dl), intent(in) :: x, z
 
+#ifdef NOINTERPOLATION
+		ed = nonRelativistic_energyDensity_full(cls, x, z)
+#else
 		call cls%enDensInterp%evaluate(x, z, ed)
+#endif
 	end function nonRelativistic_energyDensity
 
 	pure function integrate_uX_Ek_nonRel(cls, x, z, n)
@@ -247,6 +267,7 @@ module ndCosmology
 		cls%mass_factor = mass_factor
 		cls%x_enDens_cut = xcut
 
+#ifndef NOINTERPOLATION
 		allocate(ed_vec(interp_nx, interp_nz))
 		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
@@ -266,6 +287,7 @@ module ndCosmology
 		t1 = cls%energyDensityFull(x, z)
 		t2 = cls%energyDensity(x, z)
 		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
+#endif
 		call addToLog("[cosmo] ...done!")
 	end subroutine nonRelativistic_initialize
 

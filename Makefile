@@ -5,6 +5,8 @@ EXECNAME = fortepiano
 TESTSPEED ?=
 # define FULL_F_AB=1 to compute full matrix product in F_AB functions (by default assumes diagonal G matrices)
 FULL_F_AB ?=
+# define NOINTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
+NOINTERPOLATION ?=
 F90 ?= ifort
 
 ifeq ("$(F90)","gfortran")
@@ -31,6 +33,9 @@ ifeq ($(TESTSPEED), 1)
 endif
 ifeq ($(FULL_F_AB), 1)
 	F90FLAGS += -DFULLFAB=1
+endif
+ifeq ($(NOINTERPOLATION), 1)
+	F90FLAGS += -DNOINTERPOLATION=1
 endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \

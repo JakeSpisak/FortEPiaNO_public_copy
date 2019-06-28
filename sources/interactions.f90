@@ -8,11 +8,14 @@ module ndInteractions
 	use linear_interpolation_module
 	implicit none
 
+#ifndef NOINTERPOLATION
 	type(linear_interp_2d) :: dmgCorr, dmeNLCorr
 	type(linear_interp_3d) :: dmeCorr
+#endif
 
 	contains
 
+#ifndef NOINTERPOLATION
 	subroutine init_interp_dme2_e
 		real(dl), dimension(:,:), allocatable :: dmg_vec
 		real(dl), dimension(:,:,:), allocatable :: dme_vec
@@ -100,6 +103,7 @@ module ndInteractions
 		deallocate(dme_vec)
 		call addToLog("[interactions] ...done!")
 	end subroutine init_interp_dme2_e
+#endif
 
 	elemental function E_k_m(k,m)
 		real(dl), intent(in) :: k, m
@@ -160,19 +164,26 @@ module ndInteractions
 		end if
 	end function dmg2_full
 
-	pure function dme2_electronFull(x, y, z)
+	pure function dme2_electronFull(x, y, z, logt)
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12
 		real(dl) :: dme2_electronFull, integr_1, integr_2
 		real(dl), intent(in) :: x, y, z
+		logical, intent(in), optional :: logt
 		integer :: i
+		logical :: uselog
 
+		if (present(logt)) then
+			uselog = dme2_log_term .and. logt
+		else
+			uselog = dme2_log_term
+		end if
 		if (dme2_temperature_corr) then
 			integr_1 = 0.d0
 			do i=1, N_opt_y
 				integr_1 = integr_1 + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))
 			end do
 			dme2_electronFull = 2. * alpha_fine * (z*z * PID3 + integr_1/PID2)
-			if (dme2_log_term) then
+			if (uselog) then
 				integr_2 = 0.d0
 				do i=1, N_opt_y
 					integr_2 = integr_2 + opt_y_w(i)*dme2_e_i2(x, y, z, opt_y(i))/(opt_y(i)**2)
@@ -185,6 +196,7 @@ module ndInteractions
 		end if
 	end function dme2_electronFull
 
+#ifndef NOINTERPOLATION
 	function dmg2_interp(x, z)
 		real(dl) :: dmg2_interp
 		real(dl), intent(in) :: x, z
@@ -192,7 +204,9 @@ module ndInteractions
 
 		call dmgCorr%evaluate(x, z, dmg2_interp)
 	end function dmg2_interp
+#endif
 
+#ifndef NOINTERPOLATION
 	function dme2_electron(x, y, z)
 		real(dl) :: dme2_electron
 		real(dl), intent(in) :: x, y, z
@@ -200,7 +214,9 @@ module ndInteractions
 
 		call dmeCorr%evaluate(x, y, z, dme2_electron)
 	end function dme2_electron
+#endif
 
+#ifndef NOINTERPOLATION
 	function dme2_nolog(x, z)
 		real(dl) :: dme2_nolog
 		real(dl), intent(in) :: x, z
@@ -208,6 +224,7 @@ module ndInteractions
 
 		call dmeNLCorr%evaluate(x, z, dme2_nolog)
 	end function dme2_nolog
+#endif
 
 	elemental function Ebare_i_dme(x, y, dme2)!for electrons
 		real(dl) :: Ebare_i_dme
