@@ -9,7 +9,7 @@ module ndInteractions
 	implicit none
 
 #ifndef NOINTERPOLATION
-	type(linear_interp_2d) :: dmgCorr, dmeNLCorr
+	type(linear_interp_2d) :: dmeNLCorr
 	type(linear_interp_3d) :: dmeCorr
 #endif
 
@@ -23,17 +23,6 @@ module ndInteractions
 		real(dl) :: x, z, t1, t2
 		real(8) :: timer1
 		logical :: initial
-
-		call addToLog("[interactions] Initializing interpolation for photon mass corrections...")
-		allocate(dmg_vec(interp_nx, interp_nz))
-		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
-		do ix=1, interp_nx
-			do iz=1, interp_nz
-				dmg_vec(ix,iz) = dmg2_full(interp_xvec(ix),interp_zvec(iz))
-			end do
-		end do
-		!$omp end parallel do
-		call dmgCorr%initialize(interp_xvec, interp_zvec, dmg_vec, iflag)!linear
 
 		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
 		allocate(dme_vec(interp_nx, interp_ny, interp_nz))
@@ -51,6 +40,7 @@ module ndInteractions
 		!store dme2 without log term for use in collision terms
 		initial = dme2_log_term
 		dme2_log_term = .false.
+		allocate(dmg_vec(interp_nx, interp_nz))
 		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
 			do iz=1, interp_nz
@@ -59,7 +49,6 @@ module ndInteractions
 		end do
 		!$omp end parallel do
 		call dmeNLCorr%initialize(interp_xvec, interp_zvec, dmg_vec, iflag)!linear
-		dme2_log_term = initial
 
 		call random_seed()
 		if (timing_tests) then
@@ -81,19 +70,15 @@ module ndInteractions
 				call random_number(z)
 				x=(x_fin-x_in)*x + x_in
 				z=0.4d0*z + z_in
-				t1 = dme2_nolog(x,z)
+				t1 = dme2_electronFull(x,0.d0,z)
 			end do
 			call toc(timer1, "<full>")
 		end if
+		dme2_log_term = initial
 		call random_number(x)
 		call random_number(z)
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
-		write(*,"(' [interactions] test dmg2_interp in ',*(E12.5))") x,z
-		t1 = dmg2_full(x,z)
-		t2 = dmg2_interp(x,z)
-		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
-
 		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x, 0.01d0, z
 		t1 = dme2_electronFull(x, 0.01d0, z)
 		t2 = dme2_electron(x, 0.01d0, z)
@@ -111,25 +96,19 @@ module ndInteractions
 		E_k_m = sqrt(k*k+m*m)
 	end function E_k_m
 
-	elemental function boseEinstein(x)
-		real(dl) :: boseEinstein
-		real(dl), intent(in) :: x
-		boseEinstein = 1.d0/(exp(x) - 1.d0)
-	end function boseEinstein
-
 	elemental function fermiDirac(x)
 		real(dl) :: fermiDirac
 		real(dl), intent(in) :: x
 		fermiDirac = 1.d0/(exp(x) + 1.d0)
 	end function fermiDirac
 
-	pure function dme2_e_i1(x, z, k)
+	pure function dme2_e_i1(x, z, y)
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12 first integral
 	!equal to integral in eq.13
 		real(dl) :: dme2_e_i1
-		real(dl), intent(in) :: x, z, k
+		real(dl), intent(in) :: x, z, y
 		real(dl) :: Ekm
-		Ekm = E_k_m(k, x)
+		Ekm = E_k_m(y, x)
 		dme2_e_i1 = 1.d0/Ekm * fermiDirac(Ekm/z)
 	end function dme2_e_i1
 
@@ -146,23 +125,6 @@ module ndInteractions
 			dme2_e_i2 = 0.d0
 		end if
 	end function dme2_e_i2
-
-	pure function dmg2_full(x, z)
-	!doi:10.1016/S0370-2693(02)01622-2 eq.13
-		real(dl) :: dmg2_full, integr_1
-		real(dl), intent(in) :: x, z
-		integer :: i
-
-		if (dme2_temperature_corr) then
-			integr_1 = 0.d0
-			do i=1, N_opt_y
-				integr_1 = integr_1 + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))
-			end do
-			dmg2_full = 8. * alpha_fine * integr_1 / PI
-		else
-			dmg2_full = 0.d0
-		end if
-	end function dmg2_full
 
 	pure function dme2_electronFull(x, y, z, logt)
 	!doi:10.1016/S0370-2693(02)01622-2 eq.12
@@ -195,16 +157,6 @@ module ndInteractions
 			dme2_electronFull = 0.d0
 		end if
 	end function dme2_electronFull
-
-#ifndef NOINTERPOLATION
-	function dmg2_interp(x, z)
-		real(dl) :: dmg2_interp
-		real(dl), intent(in) :: x, z
-		integer :: iflag
-
-		call dmgCorr%evaluate(x, z, dmg2_interp)
-	end function dmg2_interp
-#endif
 
 #ifndef NOINTERPOLATION
 	function dme2_electron(x, y, z)

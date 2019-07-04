@@ -242,7 +242,7 @@ we use an equation similar to \eqref{eq:dz_dx_nxn},
 but considering only relativistic electrons, i.e.\ fixing $r_e=0$ in Eq.~\eqref{eq:dz_dx_nxn}.
 
 The electromagnetic corrections to the electron mass are also taken into account in the calculations
-of the electron distribution function, where the electron mass enters.
+of the electron mass, used in the collision terms.
 The contribution to the electron mass, in comoving coordinates, is obtained as \cite{Fornengo:1997wa,Mangano:2001iu}:
 \begin{equation}
 \delta m_e^2(x, y, z)
@@ -262,20 +262,11 @@ The contribution to the electron mass, in comoving coordinates, is obtained as \
 \,,
 \end{equation}
 where $E_k=\sqrt{k^2+x^2}$.
-In addition, we also take into account the effective correction to the photon mass
-which affects the calculation of the photon energy density \cite{Fornengo:1997wa,Mangano:2001iu}:
-\begin{equation}
-\delta m_\gamma^2(x, z)
-=
-\frac{8\alpha}{\pi}
-\int_0^\infty{\rm d}k\,
-\frac{k^2}{E_k}
-\frac{1}{e^{E_k/z}+1}
-\,.
-\end{equation}
+We ignore the log term that depends on $y$ in the calculation of the collision integrals.
 
-These two quantities affect the definitions of comoving energy density and pressure,
-which can be combined to obtain the comoving entropy density:
+The definitions of comoving energy density and pressure,
+which can be combined to obtain the comoving entropy density,
+are written as:
 \begin{eqnarray}
 \rho_i
 &=&
@@ -299,12 +290,9 @@ s
 where the + (-) applies for fermions (bosons),
 $i$ denotes the species, which has $g_i$ degrees of freedoms,
 $p$ is the comoving momentum,
-$E_p=\sqrt{p^2 + M_i^2}$ with $M_i = m_i\, a$ (the comoving mass of the particle)
+$E_p=\sqrt{p^2 + m_i^2}$, being $m_i$ the comoving mass of the particle,
 and $z$ must be substituted with $w$ in the case of neutrinos.
-When the electromagnetic corrections are taken into account, the photon has a comoving mass
-$(M^T_\gamma)^2=\delta m_\gamma^2(x, z)$
-while for the electron
-$(M^T_e)^2=x^2+\delta m_e^2(x, y, z)$.
+\todo[inline]{add formulas for rho and P corrections}
 
 Finally, the effective number of degrees of freedom that the code returns in output is defined as:
 \begin{eqnarray}

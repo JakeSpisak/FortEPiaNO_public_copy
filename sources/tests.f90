@@ -296,7 +296,7 @@ program tests
 		end do
 		!A
 		call updateMatterDensities(0.076d0, 1.32d0)
-		m(1,:) = (/-0.0026772086/1.22, 0., 0./)
+		m(1,:) = (/-0.0026817/1.22, 0., 0./)
 		m(2,:) = (/0.,-2.58816e-6/1.22,0./)
 		m(3,:) = (/0.,0.,0./)
 		er = (/5d-5,1d-3,0.d0/)
@@ -321,7 +321,7 @@ program tests
 		end do
 		call updateMatterDensities(0.0176d0, 1.d0)
 		write(*,*)""
-		m(1,:) = (/-4.6873496d0, 0.d0, 0.d0/)
+		m(1,:) = (/-4.6952d0, 0.d0, 0.d0/)
 		m(2,:) = (/0.,-1.63431,0./)
 		m(3,:) = (/0.,0.,0./)
 		nr(1,:) = (/-1.80466,-1.80466,-1.80466/)
@@ -351,7 +351,7 @@ program tests
 			nuDensMatVecFD(iy)%im = 0.4d0*exp(-y_arr(iy))
 		end do
 		call updateMatterDensities(2.d1, 1.2d0)
-		m(1,:) = (/-1.7572758d-23/0.22d0, 0.d0, 0.d0/)
+		m(1,:) = (/-1.75797d-23/0.22d0, 0.d0, 0.d0/)
 		m(2,:) = (/0.,0.,0./)
 		m(3,:) = (/0.,0.,0./)
 		nr(1,:) = (/1.d0, 1.d0, 1.d0/)
@@ -392,22 +392,18 @@ program tests
 		end do
 
 		call printTestBlockName("Cosmology")
-		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.06102d0, 1d-4)
-		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.32d0), 3.48908d0, 1d-4)
-		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(1.d1, 1.2d0), 0.0377464d0, 1d-4)
-		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(2.d1, 1.2d0), 0.0000421797d0, 1d-4)
-		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0), 2.61396d-8, 5d-3)
-		call assert_double_rel("elDens test 1", electrons%energyDensity(1.d0, 1.d0), 1.06102d0, 1d-4)
-		call assert_double_rel("elDens test 2", electrons%energyDensity(0.076d0, 1.32d0), 3.48908d0, 1d-4)
-		call assert_double_rel("elDens test 3", electrons%energyDensity(1.d1, 1.2d0), 0.0377464d0, 1d-2)
-		call assert_double_rel("elDens test 4", electrons%energyDensity(2.d1, 1.2d0), 0.0000421797d0, 2d-2)
-		call assert_double_rel("elDens test 5", electrons%energyDensity(3.d1, 1.2d0), 2.61396d-8, 5d-2)
-		call assert_double_rel("photDensF test 1", photonDensityFull(0.511d0, 1.002d0), 0.66215174d0, 1d-7)
-		call assert_double_rel("photDensF test 2", photonDensityFull(1.022d0, 1.34d0), 2.11832303d0, 1d-7)
-		call assert_double_rel("photDensF test 3", photonDensityFull(0.05d0, 1.d0), 0.65670951d0, 1d-7)
-		call assert_double_rel("photDens test 1", photonDensity(0.511d0, 1.002d0), 0.66215174d0, 1d-5)
-		call assert_double_rel("photDens test 2", photonDensity(1.022d0, 1.34d0), 2.11832303d0, 1d-5)
-		call assert_double_rel("photDens test 3", photonDensity(0.05d0, 1.d0), 0.65670951d0, 1d-5)
+		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.06283d0, 1d-4)
+		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.32d0), 3.49493d0, 1d-4)
+		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(1.d1, 1.2d0), 0.0377723d0, 1d-4)
+		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(2.d1, 1.2d0), 0.0000421964d0, 1d-4)
+		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0), 2.61468d-8, 5d-3)
+		call assert_double_rel("elDens test 1", electrons%energyDensity(1.d0, 1.d0), 1.06283d0, 1d-4)
+		call assert_double_rel("elDens test 2", electrons%energyDensity(0.076d0, 1.32d0), 3.49493d0, 1d-4)
+		call assert_double_rel("elDens test 3", electrons%energyDensity(1.d1, 1.2d0), 0.0377723d0, 1d-2)
+		call assert_double_rel("elDens test 4", electrons%energyDensity(2.d1, 1.2d0), 0.0000421964d0, 2d-2)
+		call assert_double_rel("elDens test 5", electrons%energyDensity(3.d1, 1.2d0), 2.61468d-8, 5d-2)
+		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
+		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
 
 		call assert_double_rel("nuDens test 1", nuDensity(1.d0, 1), 0.575727d0, 1d-4)
 		call assert_double_rel("nuDens test 2", nuDensity(1.076d0, 1), 0.575727d0, 1d-4)
@@ -466,40 +462,40 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double("radDens test 1", totalRadiationDensity(0.7d0, 1.04d0), 3.79406d0, 1d-3)
-		call assert_double("radDens test 2", totalRadiationDensity(1.d0, 1.04d0), 3.74499d0, 1d-3)
-		call assert_double("radDens test 3", totalRadiationDensity(1.d0, 1.24d0), 5.86267d0, 3d-3)
+		call assert_double("radDens test 1", totalRadiationDensity(0.7d0, 1.04d0), 3.79748d0, 1d-3)
+		call assert_double("radDens test 2", totalRadiationDensity(1.d0, 1.04d0), 3.74812d0, 1d-3)
+		call assert_double("radDens test 3", totalRadiationDensity(1.d0, 1.24d0), 5.86933d0, 1d-3)
 
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double_rel("Neff test 1", Neff_from_rho_z(1.d0, zid), 3.0d0, 1d-5)
+		call assert_double_rel("Neff test 1", Neff_from_rho_z(zid), 3.0d0, 1d-5)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double_rel("Neff test 2", Neff_from_rho_z(1.d0, 1.39975d0), 3.011d0, 1d-4)
+		call assert_double_rel("Neff test 2", Neff_from_rho_z(1.39975d0), 3.011d0, 1d-4)
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 1) = 1.2d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(2, 2) = 1.d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double_rel("Neff test 3", Neff_from_rho_z(1.d0, zid), 3.2d0, 1d-5)
+		call assert_double_rel("Neff test 3", Neff_from_rho_z(zid), 3.2d0, 1d-5)
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 1) = 1.00920d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(2, 2) = 1.00392d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.00392d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double("Neff test 4", Neff_from_rho_z(1.d0, 1.397843d0), 3.045d0, 1d-3)
+		call assert_double("Neff test 4", Neff_from_rho_z(1.397843d0), 3.045d0, 1d-3)
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 1) = 1.00699d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(2, 2) = 1.00511d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.00519d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double("Neff test 5", Neff_from_rho_z(1.d0, 1.39779d0), 3.045d0, 1d-3)
+		call assert_double("Neff test 5", Neff_from_rho_z(1.39779d0), 3.045d0, 1d-3)
 
 		call assert_double("muonDensF test 1", muons%energyDensityFull(1.d0, 1.d0), 0.d0, 1d-15)
 		call assert_double_rel("muonDensF test 2", muons%energyDensityFull(0.1d0, 1.32d0), 0.000146007d0, 1d-4)
@@ -520,21 +516,18 @@ program tests
 			nuDensMatVecFD(iy)%re(2, 2) = 1.d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double("radDens test 4", totalRadiationDensity(0.01d0, 1.24d0), 8.1579d0, 1d-3)
+		call assert_double("radDens test 4", totalRadiationDensity(0.01d0, 1.24d0), 8.16544d0, 1d-3)
 		deallocate(ndmv_re)
 
-		call assert_double_rel("photPresF test 1", photonPressureFull(0.511d0, 1.002d0), 0.2200540225d0, 1d-7)
-		call assert_double_rel("photPresF test 2", photonPressureFull(1.022d0, 1.34d0), 0.704228705d0, 1d-7)
-		call assert_double_rel("photPresF test 3", photonPressureFull(0.05d0, 1.d0), 0.218147570d0, 1d-7)
-		call assert_double_rel("photEntrF test 1", photonEntropy(0.511d0, 1.002d0), 0.8804448730d0, 1d-7)
-		call assert_double_rel("photEntrF test 2", photonEntropy(1.022d0, 1.34d0), 2.1063818948d0, 1d-7)
-		call assert_double_rel("photEntrF test 3", photonEntropy(0.05d0, 1.d0), 0.87485708d0, 1d-7)
+		call assert_double_rel("photEntrF test 1", photonEntropy(1.002d0), 0.882572492d0, 1d-7)
+		call assert_double_rel("photEntrF test 2", photonEntropy(1.34d0), 2.11087063d0, 1d-7)
+		call assert_double_rel("photEntrF test 3", photonEntropy(1.d0), 0.877298169d0, 1d-7)
 
-		call assert_double_rel("elDens test 6", electrons%energyDensity(0.076d0, 1.d0), 1.14904d0, 1d-4)
-		call assert_double_rel("elPress test 1", electrons%pressure(0.076d0, 1.d0), 0.381462d0, 1d-4)
-		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.32d0), 1.15871d0, 2d-3)
-		call assert_double_rel("elPress test 3", electrons%pressure(1.d1, 1.2d0), 0.00376189d0, 2d-3)
-		call assert_double_rel("elPress test 4", electrons%pressure(2.d1, 1.2d0), 2.3083d-6, 1d-2)
+		call assert_double_rel("elDens test 6", electrons%energyDensity(0.076d0, 1.d0), 1.15097d0, 1d-4)
+		call assert_double_rel("elPress test 1", electrons%pressure(0.076d0, 1.d0), 0.383338d0, 1d-4)
+		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.32d0), 1.16442d0, 2d-3)
+		call assert_double_rel("elPress test 3", electrons%pressure(1.d1, 1.2d0), 0.00376481d0, 2d-3)
+		call assert_double_rel("elPress test 4", electrons%pressure(2.d1, 1.2d0), 2.30927d-6, 1d-2)
 		call assert_double("elPress test 5", electrons%pressure(3.d1, 1.2d0), 1d-9, 1d-10)
 		call assert_double_rel("muPress test 1", muons%pressure(0.01d0, 1.d0), 0.195024d0, 1d-4)
 		call assert_double_rel("muPress test 2", muons%pressure(0.076d0, 1.d0), 2.659d-6, 1d-2)
@@ -542,35 +535,14 @@ program tests
 		call assert_double("muPress test 4", muons%pressure(1.d1, 1.2d0), 0.d0, 1d-10)
 		call assert_double_rel("muPress test 5", muons%pressure(1.d-3, 1.1d0), 0.557706d0, 1d-4)
 
-		call assert_double_rel("elEntropy test 1", electrons%entropy(0.001d0, 1.d0), 1.53146d0, 1d-3)
-		call assert_double_rel("elEntropy test 2", electrons%entropy(0.076d0, 1.d0), 1.53051d0, 2d-3)
-		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.52105d0, 2d-3)
-		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0345903d0, 2d-3)
+		call assert_double_rel("elEntropy test 1", electrons%entropy(0.001d0, 1.d0), 1.53527d0, 1d-3)
+		call assert_double_rel("elEntropy test 2", electrons%entropy(0.076d0, 1.d0), 1.53431d0, 2d-3)
+		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.52981d0, 2d-3)
+		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0346143d0, 2d-3)
 		call assert_double_rel("muEntropy test 1", muons%entropy(0.001d0, 1.d0), 1.52817d0, 1d-4)
 		call assert_double_rel("muEntropy test 2", muons%entropy(0.076d0, 1.d0), 4.87363d-5, 1d-2)
 		call assert_double_rel("muEntropy test 3", muons%entropy(0.076d0, 1.32d0), 0.0027439d0, 1d-3)
 		call assert_double("muEntropy test 4", muons%entropy(1.d1, 1.2d0), 0.d0, 1d-10)
-
-		dme2_log_term=.true.
-		write(*,*)
-		write(*,*) "now with log term in dme2"
-		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.061073977d0, 1d-4)
-		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.d0), 1.149044429d0, 1d-4)
-		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(0.076d0, 1.32d0), 3.489077192d0, 1d-4)
-		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(1.d1, 1.2d0), 0.037746475d0, 1d-4)
-		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0), 2.61357908d-8, 5d-3)
-		call assert_double_rel("elPress test 1", electrons%pressure(1.d0, 1.d0), 0.316533035d0, 1d-4)
-		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.d0), 0.38146325d0, 1d-4)
-		call assert_double_rel("elPress test 3", electrons%pressure(0.076d0, 1.32d0), 1.158708038d0, 2d-3)
-		call assert_double_rel("elPress test 4", electrons%pressure(1.d1, 1.2d0), 0.0037618874d0, 2d-4)
-		call assert_double("elPress test 5", electrons%pressure(3.d1, 1.2d0), 1d-9, 1d-10)
-		call assert_double_rel("elEntropy test 1", electrons%entropy(1.d0, 1.d0), 1.377607012d0, 1d-3)
-		call assert_double_rel("elEntropy test 2", electrons%entropy(0.076d0, 1.d0), 1.53050768d0, 2d-3)
-		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.521049417d0, 2d-3)
-		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0345903027d0, 2d-3)
-		call assert_double_rel("elEntropy test 4", electrons%entropy(3.d1, 1.2d0), 2.25d-8, 1d-1)
-		dme2_log_term=.false.
-
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_tests_cosmology
@@ -689,7 +661,7 @@ program tests
 	end subroutine do_tests_dzodx
 
 	subroutine do_tests_dme2
-		call printTestBlockName("dme2 and dmg2")
+		call printTestBlockName("dme2")
 		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.022915468d0, 1d-6)
 		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.022915468d0, 1d-6)!here no log term, the flag is set to false
 		call assert_double("dme2F test 3", dme2_electronFull(0.5d0, 0.d0, 1.1d0), 0.026655522d0, 1d-6)
@@ -704,17 +676,6 @@ program tests
 		call assert_double("dme2 test 6", dme2_electron(35.d0, 0.d0, 1.39d0), 0.029529326d0, 1d-5)
 		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), 1.3d0, 1d-7)
 		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), 8.944272d0, 1d-7)
-
-		call assert_double("dmg2F test 1", dmg2_full(0.05d0, 1.0003d0), 0.0152455d0, 1d-7)
-		call assert_double("dmg2F test 2", dmg2_full(0.5d0, 1.1d0),     0.01632487d0, 1d-7)
-		call assert_double("dmg2F test 3", dmg2_full(1.23d0, 1.198d0),  0.01424147d0, 1d-7)
-		call assert_double("dmg2F test 4", dmg2_full(7.6d0, 1.3d0),     0.00029165836d0, 1d-8)
-		call assert_double("dmg2F test 5", dmg2_full(35.d0, 1.39d0),    2.6549558357805087d-12, 1d-13)
-		call assert_double("dmg2 test 1", dmg2_interp(0.05d0, 1.0003d0), 0.0152455d0, 1d-7)
-		call assert_double("dmg2 test 2", dmg2_interp(0.5d0, 1.1d0),     0.01632487d0, 1d-7)
-		call assert_double("dmg2 test 3", dmg2_interp(1.23d0, 1.198d0),  0.01424147d0, 1d-7)
-		call assert_double("dmg2 test 4", dmg2_interp(7.6d0, 1.3d0),     0.00029165836d0, 3d-7)
-		call assert_double("dmg2 test 5", dmg2_interp(35.d0, 1.39d0),    2.6549558357805087d-12, 1d-13)
 
 		dme2_log_term=.true.
 		write(*,*)
@@ -2109,12 +2070,12 @@ program tests
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/605.651d0/fd, 15538.5d0, 73380.3d0/)
-		res%re(2,:) = (/15538.5d0, -2654.26d0/fd, -604.243d0/)
-		res%re(3,:) = (/73380.3d0, -604.243d0, 2048.61d0/fd/)
-		res%im(1,:) = (/0., 8492.87, 30155.8/)
-		res%im(2,:) = (/-8492.87, 0., -864.307/)
-		res%im(3,:) = (/-30155.8, 864.307, 0./)
+		res%re(1,:) = (/605.275d0/fd, 15552.9d0, 73454.6d0/)
+		res%re(2,:) = (/15552.9d0, -2652.61d0/fd, -603.868d0/)
+		res%re(3,:) = (/73454.6d0, -603.868d0, 2047.34d0/fd/)
+		res%im(1,:) = (/0., 8499.59, 30185./)
+		res%im(2,:) = (/-8499.59, 0., -863.771/)
+		res%im(3,:) = (/-30185., 863.771, 0./)
 		call drhoy_dx_fullMat(outp, x, z, iy, dme2, sqrtraddens, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2137,12 +2098,12 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/1394.72d0/fd, 16327.6d0, 74169.3d0/)
-		res%re(2,:) = (/16327.6d0, -1865.19d0/fd, 184.825d0/)
-		res%re(3,:) = (/74169.3d0, 184.825d0, 2837.68d0/fd/)
-		res%im(1,:) = (/0., 9281.94, 30944.9/)
-		res%im(2,:) = (/-9281.94, 0., -75.2387/)
-		res%im(3,:) = (/-30944.9, 75.2387, 0./)
+		res%re(1,:) = (/1393.85d0/fd, 16341.4d0, 74243.2d0/)
+		res%re(2,:) = (/16341.4d0, -1864.03d0/fd, 184.711d0/)
+		res%re(3,:) = (/74243.2d0, 184.711d0, 2835.92d0/fd/)
+		res%im(1,:) = (/0., 9288.17, 30973.6/)
+		res%im(2,:) = (/-9288.17, 0., -75.192/)
+		res%im(3,:) = (/-30973.6, 75.192, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint1)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2182,12 +2143,12 @@ program tests
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/164558.d0/fd, 346833.d0, 481979.d0/)
-		res%re(2,:) = (/346833.d0, -721175.d0/fd, -83696.4d0/)
-		res%re(3,:) = (/481979.d0, -83696.4d0, 556617.d0/fd/)
-		res%im(1,:) = (/0., 370024., 411161./)
-		res%im(2,:) = (/-370024., 0., 6601.83/)
-		res%im(3,:) = (/-411161., -6601.83, 0./)
+		res%re(1,:) = (/164474.d0/fd, 346654.d0, 481731.d0/)
+		res%re(2,:) = (/346654.d0, -720804.d0/fd, -83653.3d0/)
+		res%re(3,:) = (/481731.d0, -83653.3d0, 556331.d0/fd/)
+		res%im(1,:) = (/0., 369833., 410950./)
+		res%im(2,:) = (/-369833., 0., 6598.44/)
+		res%im(3,:) = (/-410950., -6598.44, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -2205,12 +2166,12 @@ program tests
 			end do
 		end do
 
-		res%re(1,:) = (/164708.d0/fd, 346983.d0, 482129.d0/)
-		res%re(2,:) = (/346983.d0, -721025.d0/fd, -83546.3d0/)
-		res%re(3,:) = (/482129.d0, -83546.3d0, 556767.d0/fd/)
-		res%im(1,:) = (/0., 370174., 411311./)
-		res%im(2,:) = (/-370174., 0., 6751.93/)
-		res%im(3,:) = (/-411311., -6751.93, 0./)
+		res%re(1,:) = (/164624.d0/fd, 346804.d0, 481881.d0/)
+		res%re(2,:) = (/346804.d0, -720654.d0/fd, -83503.3d0/)
+		res%re(3,:) = (/481881.d0, -83503.3d0, 556481.d0/fd/)
+		res%im(1,:) = (/0., 369983., 411100./)
+		res%im(2,:) = (/-369983., 0., 6748.46/)
+		res%im(3,:) = (/-411100., -6748.46, 0./)
 		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollinty)
 		do i=1, flavorNumber
 			do j=1, flavorNumber

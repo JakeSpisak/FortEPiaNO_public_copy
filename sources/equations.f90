@@ -476,14 +476,14 @@ module ndEquations
 			end do
 			call openFile(iu, trim(outputFolder)//'/energyDensity.dat', firstWrite)
 			write(iu, multidblfmt) x, z, &
-				photonDensity(x, z), &
+				photonDensity(z), &
 				electrons%energyDensity(x, z), &
 				muons%energyDensity(x, z), &
 				nuEnDens(1:flavorNumber)
 			close(iu)
 			call openFile(iu, trim(outputFolder)//'/entropy.dat', firstWrite)
 			write(iu, multidblfmt) x, z, &
-				photonEntropy(x, z), &
+				photonEntropy(z), &
 				electrons%entropy(x, z), &
 				muons%entropy(x, z), &
 				nuEnDens(1:flavorNumber)*four_thirds/w
@@ -499,10 +499,10 @@ module ndEquations
 			close(iu)
 		end if
 		if (save_Neff) then
-			neff = allNuDensity()/photonDensity(x, vec(ntot)+1.d0)
+			neff = Neff_from_rho_z(vec(ntot)+1.d0)
 			call openFile(iu, trim(outputFolder)//'/Neff.dat', firstWrite)
 			write(iu, multidblfmt) &
-				x, neff/0.875d0, zid**4*neff/0.875d0
+				x, neff/zid**4, neff
 			close(iu)
 		end if
 		firstWrite=.false.
@@ -743,20 +743,11 @@ module ndEquations
 		!necessary for dlsoda but not needed
 	end subroutine jdum
 
-	function Neff_from_rho_z(w, z)
+	function Neff_from_rho_z(z)
 		real(dl) :: Neff_from_rho_z
-		real(dl), intent(in) :: w, z
-		real(dl) :: rhototnu, ndeq, totf
-		integer :: ix
+		real(dl), intent(in) :: z
 
-		totf=0.d0
-		do ix=1, flavorNumber
-			if(.not.sterile(ix)) totf = totf + nuFactor(ix)
-		end do
-		ndeq=nuDensityEq(w)
-		rhototnu = (allNuDensity() - totf*ndeq)/ndeq
-		Neff_from_rho_z = (w*zid/z)**4 * &
-			(tot_factor_active_nu + rhototnu)
+		Neff_from_rho_z = (zid)**4 * allNuDensity()/photonDensity(z) / 0.875d0
 	end function Neff_from_rho_z
 
 	subroutine finalresults
@@ -800,7 +791,7 @@ module ndEquations
 			write(*,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
 		end do
-		tmp = Neff_from_rho_z(1.d0, z)
+		tmp = Neff_from_rho_z(z)
 		write(*,"('Neff    = ',F9.6)") tmp
 		write(9876,"('Neff    = ',F9.6)") tmp
 		close(9876)
