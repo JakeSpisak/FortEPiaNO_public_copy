@@ -315,9 +315,9 @@ module ndCosmology
 				o * ga &
 				- 4.d0*((k2+j2)/6.d0 + k2*j2 - k2*k2/2.d0))
 			if (ftqed_log_term) then
-				tmp=0.d0!to edit
+				ga=0.d0!to edit
 			end if
-			if (dme2_ord3) then
+			if (ftqed_ord3) then
 				osq = o*o
 				k0=k_funcFull(o, 0)
 				j0=j_funcFull(o, 0)

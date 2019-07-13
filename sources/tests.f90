@@ -545,7 +545,7 @@ program tests
 		call assert_double_rel("muEntropy test 3", muons%entropy(0.076d0, 1.32d0), 0.0027439d0, 1d-3)
 		call assert_double("muEntropy test 4", muons%entropy(1.d1, 1.2d0), 0.d0, 1d-10)
 
-		dme2_log_term=.true.
+		ftqed_log_term=.true.
 		write(*,*)
 		write(*,*) "now with log term in dme2"
 		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.061073977d0, 1d-4)
@@ -563,7 +563,7 @@ program tests
 		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.521049417d0, 2d-3)
 		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0345903027d0, 2d-3)
 		call assert_double_rel("elEntropy test 4", electrons%entropy(3.d1, 1.2d0), 2.25d-8, 1d-1)
-		dme2_log_term=.false.
+		ftqed_log_term=.false.
 
 		call printTotalTests
 		call resetTestCounter
@@ -653,7 +653,7 @@ program tests
 		call assert_double_rel("G1 test 4", res(1), -0.000108111d0, 1d-5)
 		call assert_double_rel("G2 test 4", res(2), -0.000945107d0, 1d-5)
 
-		dme2_ord3 = .true.
+		ftqed_ord3 = .true.
 		res = G12_funcFull(1.d-3)
 		call assert_double("G1 o3 test 1", res(1), -9.19836d-6, 5d-8)
 		call assert_double_rel("G2 o3 test 1", res(2), -0.0087016543d0, 1d-6)
@@ -666,7 +666,7 @@ program tests
 		res = G12_funcFull(5.d0)
 		call assert_double_rel("G1 o3 test 4", res(1), -0.0000926686d0, 1d-5)
 		call assert_double_rel("G2 o3 test 4", res(2), -0.00082098d0, 1d-5)
-		dme2_ord3 = .false.
+		ftqed_ord3 = .false.
 
 		res = dzodxcoef_interp_func(0.01d0)
 		call assert_double("A test 1", res(1), 7.23268d0, 1d-5)
