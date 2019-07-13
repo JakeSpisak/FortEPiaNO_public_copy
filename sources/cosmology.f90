@@ -262,7 +262,7 @@ module ndCosmology
 		integer, intent(in) :: a
 		integer :: i
 
-		if (a.lt.2) then
+		if (a.lt.2 .or. o.lt.5d-2) then
 			K_funcFull = rombint_ri(o, a, K_int, zero, upper, toler_jkyg, maxiter) / PISQ
 		else
 			K_funcFull = 0.d0
@@ -298,23 +298,48 @@ module ndCosmology
 	pure function G12_funcFull(o)
 		real(dl), dimension(2) :: G12_funcFull
 		real(dl), intent(in) :: o
-		real(dl) :: ko, jo, kp, jp, tmp
+		real(dl) :: k2, j2, k2p, j2p, ga
+		real(dl) :: k0, j0, k0p, j0p, j4p, gb, gc, osq
 
 		if (ftqed_temperature_corr) then
-			ko=k_funcFull(o, 2)
-			jo=j_funcFull(o, 2)
-			kp=kprimeFull(o, 2)
-			jp=jprimeFull(o, 2)
-			tmp = (kp/6.d0 - ko*kp + jp/6.d0 + jp*ko + jo*kp)
+			k2=k_funcFull(o, 2)
+			j2=j_funcFull(o, 2)
+			k2p=KprimeFull(o, 2)
+			j2p=JprimeFull(o, 2)
+			ga = (k2p/6.d0 - k2*k2p + j2p/6.d0 + j2p*k2 + j2*k2p)
 
 			G12_funcFull(1) = PIx2*alpha_fine *(&
-				(ko/3.d0 + 2.d0*ko*ko - jo/6.d0 - ko*jo)/o + &
-				tmp )
+				(k2/3.d0 + 2.d0*k2*k2 - j2/6.d0 - k2*j2)/o + &
+				ga )
 			G12_funcFull(2) = PIx2*alpha_fine*( &
-				o * tmp &
-				- 4.d0*((ko+jo)/6.d0 + ko*jo - ko*ko/2.d0))
+				o * ga &
+				- 4.d0*((k2+j2)/6.d0 + k2*j2 - k2*k2/2.d0))
 			if (ftqed_log_term) then
 				tmp=0.d0!to edit
+			end if
+			if (dme2_ord3) then
+				osq = o*o
+				k0=k_funcFull(o, 0)
+				j0=j_funcFull(o, 0)
+				k0p=KprimeFull(o, 0)
+				j0p=JprimeFull(o, 0)
+				j4p=JprimeFull(o, 4)
+				gb = sqrt(k2 + osq*k0/2.d0)
+				gc = 0.5*(2*j2 + osq*j0)/(2*k2 + osq*k0)
+				G12_funcFull(1) = G12_funcFull(1) + &
+					alpha_fine*electron_charge * gb * ( &
+						(2.d0*j2-4.d0*k2)/o &
+						- 2*j2p &
+						- osq* j0p &
+						- o*(2*k0+j0) &
+						- gc * (o*(k0-j0) + k2p) &
+					)
+				G12_funcFull(2) = G12_funcFull(2) + &
+					alpha_fine*electron_charge * gb * ( &
+						gc*(2*j2 + osq*j0) &
+						- 2*j4p/o &
+						- o*(3*j2p+osq*j0p) &
+					)
 			end if
 		else
 			G12_funcFull = 0.d0

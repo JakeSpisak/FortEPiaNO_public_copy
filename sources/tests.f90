@@ -22,7 +22,7 @@ program tests
 	call do_tests_dme2
 	call do_tests_cosmology
 	call do_test_nu_matrices
-	call do_tests_JKYG
+	call do_tests_JKG
 	call do_tests_dzodx
 	call do_tests_dme2
 	call do_tests_Di
@@ -87,6 +87,7 @@ program tests
 		damping_read_zero = .false.
 		ftqed_temperature_corr = .true.
 		ftqed_log_term = .false.
+		ftqed_ord3 = .false.
 		flavorNumber = 3
 		flavNumSqu = flavorNumber**2
 		call allocateStuff
@@ -543,48 +544,85 @@ program tests
 		call assert_double_rel("muEntropy test 2", muons%entropy(0.076d0, 1.d0), 4.87363d-5, 1d-2)
 		call assert_double_rel("muEntropy test 3", muons%entropy(0.076d0, 1.32d0), 0.0027439d0, 1d-3)
 		call assert_double("muEntropy test 4", muons%entropy(1.d1, 1.2d0), 0.d0, 1d-10)
+
+		dme2_log_term=.true.
+		write(*,*)
+		write(*,*) "now with log term in dme2"
+		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.061073977d0, 1d-4)
+		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.d0), 1.149044429d0, 1d-4)
+		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(0.076d0, 1.32d0), 3.489077192d0, 1d-4)
+		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(1.d1, 1.2d0), 0.037746475d0, 1d-4)
+		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0), 2.61357908d-8, 5d-3)
+		call assert_double_rel("elPress test 1", electrons%pressure(1.d0, 1.d0), 0.316533035d0, 1d-4)
+		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.d0), 0.38146325d0, 1d-4)
+		call assert_double_rel("elPress test 3", electrons%pressure(0.076d0, 1.32d0), 1.158708038d0, 2d-3)
+		call assert_double_rel("elPress test 4", electrons%pressure(1.d1, 1.2d0), 0.0037618874d0, 2d-4)
+		call assert_double("elPress test 5", electrons%pressure(3.d1, 1.2d0), 1d-9, 1d-10)
+		call assert_double_rel("elEntropy test 1", electrons%entropy(1.d0, 1.d0), 1.377607012d0, 1d-3)
+		call assert_double_rel("elEntropy test 2", electrons%entropy(0.076d0, 1.d0), 1.53050768d0, 2d-3)
+		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.521049417d0, 2d-3)
+		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0345903027d0, 2d-3)
+		call assert_double_rel("elEntropy test 4", electrons%entropy(3.d1, 1.2d0), 2.25d-8, 1d-1)
+		dme2_log_term=.false.
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_tests_cosmology
 
-	subroutine do_tests_JKYG
+	subroutine do_tests_JKG
 		real(dl), dimension(2) :: res
 		integer :: ix
 
 		call printTestBlockName("JKG")
-		call assert_double_rel("J0 test 1", J_funcFull(.01d0, 0), 0.050659512d0, 1d-7)
-		call assert_double_rel("J0 test 2", J_funcFull(1.0d0, 0), 0.041253398d0, 1d-7)
-		call assert_double_rel("J0 test 3", J_funcFull(5.0d0, 0), 0.0020302829d0, 1d-7)
-		call assert_double_rel("J2 test 1", J_funcFull(.01d0, 2), 0.16666413d0, 1d-7)
-		call assert_double_rel("J2 test 2", J_funcFull(1.0d0, 2), 0.143797172d0, 1d-7)
-		call assert_double_rel("J2 test 3", J_funcFull(5.0d0, 2), 0.0133935079d0, 1d-7)
-		call assert_double_rel("J4 test 1", J_funcFull(.01d0, 4), 2.30288269d0, 1d-7)
-		call assert_double_rel("J4 test 2", J_funcFull(1.0d0, 4), 2.070646778d0, 1d-7)
-		call assert_double_rel("J4 test 3", J_funcFull(5.0d0, 4), 0.3145333371d0, 1d-7)
+		call assert_double_rel("J0 test 1", J_funcFull(1.d-3, 0), 0.050660581d0, 1d-7)
+		call assert_double_rel("J0 test 2", J_funcFull(.01d0, 0), 0.050659512d0, 1d-7)
+		call assert_double_rel("J0 test 3", J_funcFull(1.0d0, 0), 0.041253398d0, 1d-7)
+		call assert_double_rel("J0 test 4", J_funcFull(5.0d0, 0), 0.0020302829d0, 1d-7)
 
-		call assert_double_rel("J0' test 1", JprimeFull(.01d0, 0), -0.00021594889d0, 1d-7)
-		call assert_double_rel("J0' test 2", JprimeFull(1.0d0, 0), -0.016349106d0, 1d-7)
-		call assert_double_rel("J0' test 3", JprimeFull(5.0d0, 0), -0.0018343454d0, 1d-7)
-		call assert_double_rel("J2' test 1", JprimeFull(.01d0, 2), -0.000506595121d0, 1d-7)
-		call assert_double_rel("J2' test 2", JprimeFull(1.0d0, 2), -0.0412533987d0, 1d-7)
-		call assert_double_rel("J2' test 3", JprimeFull(5.0d0, 2), -0.0101514145d0, 1d-7)
-		call assert_double_rel("J4' test 1", JprimeFull(.01d0, 4), -0.004999924d0, 1d-7)
-		call assert_double_rel("J4' test 2", JprimeFull(1.0d0, 4), -0.43139151d0, 1d-7)
-		call assert_double_rel("J4' test 3", JprimeFull(5.0d0, 4), -0.200902618d0, 1d-7)
+		call assert_double_rel("J2 test 1", J_funcFull(1.d-3, 2), 0.166666641d0, 1d-7)
+		call assert_double_rel("J2 test 2", J_funcFull(.01d0, 2), 0.16666413d0, 1d-7)
+		call assert_double_rel("J2 test 3", J_funcFull(1.0d0, 2), 0.143797172d0, 1d-7)
+		call assert_double_rel("J2 test 4", J_funcFull(5.0d0, 2), 0.0133935079d0, 1d-7)
 
-		call assert_double_rel("K0 test 1", K_funcFull(.01d0, 0), 0.262051793d0, 1d-7)
-		call assert_double_rel("K0 test 2", K_funcFull(1.0d0, 0), 0.033787933d0, 1d-7)
-		call assert_double_rel("K0 test 3", K_funcFull(5.0d0, 0), 0.00037219484d0, 1d-7)
-		call assert_double_rel("K2 test 1", K_funcFull(.01d0, 2), 0.083318964d0, 5d-7)
-		call assert_double_rel("K2 test 2", K_funcFull(1.0d0, 2), 0.055004619d0, 1d-7)
-		call assert_double_rel("K2 test 3", K_funcFull(5.0d0, 2), 0.0020443184d0, 1d-7)
+		call assert_double_rel("J4 test 1", J_funcFull(1.d-3, 4), 2.30290744d0, 1d-7)
+		call assert_double_rel("J4 test 2", J_funcFull(.01d0, 4), 2.30288269d0, 1d-7)
+		call assert_double_rel("J4 test 3", J_funcFull(1.0d0, 4), 2.070646778d0, 1d-7)
+		call assert_double_rel("J4 test 4", J_funcFull(5.0d0, 4), 0.3145333371d0, 1d-7)
 
-		call assert_double_rel("K0' test 1", KprimeFull(.01d0, 0), -5.065951206d0, 1d-7)
-		call assert_double_rel("K0' test 2", KprimeFull(1.0d0, 0), -0.0412533987d0, 1d-7)
-		call assert_double_rel("K0' test 3", KprimeFull(5.0d0, 0), -0.0004060565805d0, 1d-7)
-		call assert_double_rel("K2' test 1", KprimeFull(.01d0, 2), -0.0026205179d0, 1d-7)
-		call assert_double_rel("K2' test 2", KprimeFull(1.0d0, 2), -0.0337879339d0, 1d-7)
-		call assert_double_rel("K2' test 3", KprimeFull(5.0d0, 2), -0.00186097423d0, 1d-7)
+		call assert_double_rel("J0' test 1", JprimeFull(1.d-3, 0), -0.0000215955097d0, 1d-7)
+		call assert_double_rel("J0' test 2", JprimeFull(.01d0, 0), -0.00021594889d0, 1d-7)
+		call assert_double_rel("J0' test 3", JprimeFull(1.0d0, 0), -0.016349106d0, 1d-7)
+		call assert_double_rel("J0' test 4", JprimeFull(5.0d0, 0), -0.0018343454d0, 1d-7)
+
+		call assert_double_rel("J2' test 1", JprimeFull(1.d-3, 2), -0.000050660581d0, 1d-7)
+		call assert_double_rel("J2' test 2", JprimeFull(.01d0, 2), -0.000506595121d0, 1d-7)
+		call assert_double_rel("J2' test 3", JprimeFull(1.0d0, 2), -0.0412533987d0, 1d-7)
+		call assert_double_rel("J2' test 4", JprimeFull(5.0d0, 2), -0.0101514145d0, 1d-7)
+
+		call assert_double_rel("J4' test 1", JprimeFull(1.d-3, 4), -0.0005d0, 3d-7)
+		call assert_double_rel("J4' test 2", JprimeFull(.01d0, 4), -0.004999924d0, 1d-7)
+		call assert_double_rel("J4' test 3", JprimeFull(1.0d0, 4), -0.43139151d0, 1d-7)
+		call assert_double_rel("J4' test 4", JprimeFull(5.0d0, 4), -0.200902618d0, 1d-7)
+
+		call assert_double_rel("K0 test 1", K_funcFull(1.d-3, 0), 0.378701582d0, 1d-7)
+		call assert_double_rel("K0 test 2", K_funcFull(.01d0, 0), 0.262051793d0, 1d-7)
+		call assert_double_rel("K0 test 3", K_funcFull(1.0d0, 0), 0.033787933d0, 1d-7)
+		call assert_double_rel("K0 test 4", K_funcFull(5.0d0, 0), 0.00037219484d0, 1d-7)
+
+		call assert_double_rel("K2 test 1", K_funcFull(1.d-3, 2), 0.0833331313d0, 1d-7)
+		call assert_double_rel("K2 test 2", K_funcFull(.01d0, 2), 0.083318964d0, 1d-7)
+		call assert_double_rel("K2 test 3", K_funcFull(1.0d0, 2), 0.055004619d0, 1d-7)
+		call assert_double_rel("K2 test 4", K_funcFull(5.0d0, 2), 0.0020443184d0, 1d-7)
+
+		call assert_double_rel("K0' test 1", KprimeFull(1.d-3, 0), -50.6605810d0, 1d-7)
+		call assert_double_rel("K0' test 2", KprimeFull(.01d0, 0), -5.065951206d0, 1d-7)
+		call assert_double_rel("K0' test 3", KprimeFull(1.0d0, 0), -0.0412533987d0, 1d-7)
+		call assert_double_rel("K0' test 4", KprimeFull(5.0d0, 0), -0.0004060565805d0, 1d-7)
+
+		call assert_double_rel("K2' test 1", KprimeFull(1.d-3, 2), -0.0003787015d0, 3d-7)
+		call assert_double_rel("K2' test 2", KprimeFull(.01d0, 2), -0.0026205179d0, 1d-7)
+		call assert_double_rel("K2' test 3", KprimeFull(1.0d0, 2), -0.0337879339d0, 1d-7)
+		call assert_double_rel("K2' test 4", KprimeFull(5.0d0, 2), -0.00186097423d0, 1d-7)
 
 		res = electrons%dzodx_terms(0.01d0)
 		call assert_double_rel("elContr test 1a", res(1), 0.0016666413d0, 1d-7)
@@ -602,15 +640,33 @@ program tests
 		call assert_double("muContr test 2a", res(1), 0d0, 1d-7)
 		call assert_double("muContr test 2b", res(2), 0d0, 1d-7)
 
+		res = G12_funcFull(1.d-3)
+		call assert_double("G1 test 1", res(1), -9.26305205d-6, 1d-7)
+		call assert_double("G2 test 1", res(2), -0.0095522067d0, 1d-8)
 		res = G12_funcFull(0.01d0)
-		call assert_double("G1 test 1", res(1), -0.0000658825d0, 1d-7)
-		call assert_double("G2 test 1", res(2), -0.0095518d0, 1d-8)
+		call assert_double("G1 test 2", res(1), -0.0000658825d0, 1d-7)
+		call assert_double("G2 test 2", res(2), -0.0095518d0, 1d-8)
 		res = G12_funcFull(1.d0)
-		call assert_double_rel("G1 test 2", res(1), -0.00115846d0, 1d-5)
-		call assert_double_rel("G2 test 2", res(2), -0.00806502d0, 1d-5)
+		call assert_double_rel("G1 test 3", res(1), -0.00115846d0, 1d-5)
+		call assert_double_rel("G2 test 3", res(2), -0.00806502d0, 1d-5)
 		res = G12_funcFull(5.d0)
-		call assert_double_rel("G1 test 3", res(1), -0.000108111d0, 1d-5)
-		call assert_double_rel("G2 test 3", res(2), -0.000945107d0, 1d-5)
+		call assert_double_rel("G1 test 4", res(1), -0.000108111d0, 1d-5)
+		call assert_double_rel("G2 test 4", res(2), -0.000945107d0, 1d-5)
+
+		dme2_ord3 = .true.
+		res = G12_funcFull(1.d-3)
+		call assert_double("G1 o3 test 1", res(1), -9.19836d-6, 5d-8)
+		call assert_double_rel("G2 o3 test 1", res(2), -0.0087016543d0, 1d-6)
+		res = G12_funcFull(0.01d0)
+		call assert_double("G1 o3 test 2", res(1), -0.0000652361d0, 3d-9)
+		call assert_double_rel("G2 o3 test 2", res(2), -0.00870124655d0, 1d-5)
+		res = G12_funcFull(1.d0)
+		call assert_double_rel("G1 o3 test 3", res(1), -0.00109638d0, 1d-5)
+		call assert_double_rel("G2 o3 test 3", res(2), -0.00724797d0, 1d-5)
+		res = G12_funcFull(5.d0)
+		call assert_double_rel("G1 o3 test 4", res(1), -0.0000926686d0, 1d-5)
+		call assert_double_rel("G2 o3 test 4", res(2), -0.00082098d0, 1d-5)
+		dme2_ord3 = .false.
 
 		res = dzodxcoef_interp_func(0.01d0)
 		call assert_double("A test 1", res(1), 7.23268d0, 1d-5)
@@ -623,7 +679,7 @@ program tests
 		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_JKYG
+	end subroutine do_tests_JKG
 
 	subroutine do_tests_dzodx
 		integer :: n
