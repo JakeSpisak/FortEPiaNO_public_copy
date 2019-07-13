@@ -316,7 +316,7 @@ theta34 = {th34:}
 dm41 = {dm41:}
 
 collision_offdiag = {coll_offdiag:}
-dme2_temperature_corr = T
+ftqed_temperature_corr = T
 
 Nx = {Nx:}
 x_in = {x_in:}

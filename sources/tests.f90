@@ -85,8 +85,8 @@ program tests
 		dy_arr(Ny) = 0.d0
 		collision_offdiag = 1
 		damping_read_zero = .false.
-		dme2_temperature_corr = .true.
-		dme2_log_term = .false.
+		ftqed_temperature_corr = .true.
+		ftqed_log_term = .false.
 		flavorNumber = 3
 		flavNumSqu = flavorNumber**2
 		call allocateStuff
@@ -677,7 +677,7 @@ program tests
 		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), 1.3d0, 1d-7)
 		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), 8.944272d0, 1d-7)
 
-		dme2_log_term=.true.
+		ftqed_log_term=.true.
 		write(*,*)
 		write(*,*) "now with log term in dme2"
 		call assert_double("dme2F w log test 1", dme2_electronFull(0.05d0, 0.01d0, 1.0003d0), 0.02287423036d0, 2d-6)
@@ -694,7 +694,7 @@ program tests
 		call assert_double("dme2nl test 6", dme2_nolog(35.d0, 1.39d0), 0.029529326d0, 1d-5)
 		call assert_double("dme2F logt test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0, .false.), 0.022915468d0, 1d-6)
 		call assert_double("dme2F logt test 2", dme2_electronFull(0.05d0, 10.d0, 1.0003d0, .false.), 0.022915468d0, 1d-6)
-		dme2_log_term=.false.
+		ftqed_log_term=.false.
 
 		call printTotalTests
 		call resetTestCounter

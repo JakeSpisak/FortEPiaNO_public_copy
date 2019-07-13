@@ -300,7 +300,7 @@ module ndCosmology
 		real(dl), intent(in) :: o
 		real(dl) :: ko, jo, kp, jp, tmp
 
-		if (dme2_temperature_corr) then
+		if (ftqed_temperature_corr) then
 			ko=k_funcFull(o, 2)
 			jo=j_funcFull(o, 2)
 			kp=kprimeFull(o, 2)
@@ -313,6 +313,9 @@ module ndCosmology
 			G12_funcFull(2) = PIx2*alpha_fine*( &
 				o * tmp &
 				- 4.d0*((ko+jo)/6.d0 + ko*jo - ko*ko/2.d0))
+			if (ftqed_log_term) then
+				tmp=0.d0!to edit
+			end if
 		else
 			G12_funcFull = 0.d0
 		end if
@@ -340,12 +343,26 @@ module ndCosmology
 		real(dl) :: deltaRhoTot_em
 		real(dl), intent(in) :: x, z
 		deltaRhoTot_em = 0.d0
+		
+		if (ftqed_temperature_corr) then
+			deltaRhoTot_em = 0.d0!to edit
+			if (ftqed_log_term) then
+				deltaRhoTot_em = 0.d0!to edit
+			end if
+		end if
 	end function deltaRhoTot_em
 
 	pure function deltaPTot_em(x, z)
 		real(dl) :: deltaPTot_em
 		real(dl), intent(in) :: x, z
 		deltaPTot_em = 0.d0
+		
+		if (ftqed_temperature_corr) then
+			deltaPTot_em = 0.d0!to edit
+			if (ftqed_log_term) then
+				deltaPTot_em = 0.d0!to edit
+			end if
+		end if
 	end function deltaPTot_em
 
 	pure function deltaEntropyTot_em(x, z)

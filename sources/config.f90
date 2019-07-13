@@ -330,8 +330,8 @@ module ndConfig
 			!settings for collisional
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
 			damping_read_zero = .true.
-			dme2_temperature_corr = read_ini_logical("dme2_temperature_corr",.true.)
-			dme2_log_term = read_ini_logical("dme2_log_term",.true.)
+			ftqed_temperature_corr = read_ini_logical("ftqed_temperature_corr",.true.)
+			ftqed_log_term = read_ini_logical("ftqed_log_term",.true.)
 
 			!settings for saving files
 			save_fd = read_ini_logical("save_fd", .true.)

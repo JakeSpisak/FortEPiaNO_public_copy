@@ -38,8 +38,8 @@ module ndInteractions
 		call dmeCorr%initialize(interp_xvec, interp_yvec, interp_zvec, dme_vec, iflag)!linear
 
 		!store dme2 without log term for use in collision terms
-		initial = dme2_log_term
-		dme2_log_term = .false.
+		initial = ftqed_log_term
+		ftqed_log_term = .false.
 		allocate(dmg_vec(interp_nx, interp_nz))
 		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
@@ -74,7 +74,7 @@ module ndInteractions
 			end do
 			call toc(timer1, "<full>")
 		end if
-		dme2_log_term = initial
+		ftqed_log_term = initial
 		call random_number(x)
 		call random_number(z)
 		x=(x_fin-x_in)*x + x_in
@@ -135,11 +135,11 @@ module ndInteractions
 		logical :: uselog
 
 		if (present(logt)) then
-			uselog = dme2_log_term .and. logt
+			uselog = ftqed_log_term .and. logt
 		else
-			uselog = dme2_log_term
+			uselog = ftqed_log_term
 		end if
-		if (dme2_temperature_corr) then
+		if (ftqed_temperature_corr) then
 			integr_1 = 0.d0
 			do i=1, N_opt_y
 				integr_1 = integr_1 + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))

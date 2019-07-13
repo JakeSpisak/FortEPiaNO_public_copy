@@ -70,8 +70,8 @@ module variables
 
 	integer :: collision_offdiag
 	logical :: damping_read_zero
-	logical :: dme2_temperature_corr
-	logical :: dme2_log_term
+	logical :: ftqed_temperature_corr
+	logical :: ftqed_log_term
 	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 	logical :: save_energy_entropy_evolution
 
