@@ -448,7 +448,7 @@ not needed for the calculation but useful to understand the final results,
 we use an equation similar to \eqref{eq:dz_dx_nxn},
 but considering only relativistic electrons, i.e.\ fixing $r_e=0$ in Eq.~\eqref{eq:dz_dx_nxn}.
 
-The finite-temperature electromagnetic corrections are also taken into account in the calculations
+The finite-temperature electromagnetic corrections are also taken into account in the calculation
 of the electron mass, used in the collision terms.
 The contribution to the electron mass, in comoving coordinates, is obtained as \cite{Fornengo:1997wa,Mangano:2001iu,...}:
 \begin{equation}
@@ -466,9 +466,10 @@ The contribution to the electron mass, in comoving coordinates, is obtained as \
 \frac{k}{E_k}
 \log\left|\frac{y+k}{y-k}\right|
 \mathcal{N}_k
-\,.
+\,,
 \end{equation}
-We ignore the log term that depends on $y$ in the calculation of the collision integrals.
+so that the comoving electron mass must be replaced using $x^2\rightarrow x^2+\delta m_e^2$.
+In the calculation of the collision integrals we ignore the log term that depends on $y$.
 
 Finally, the effective number of degrees of freedom that the code returns in output is defined as:
 \begin{eqnarray}
