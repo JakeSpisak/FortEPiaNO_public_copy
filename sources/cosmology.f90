@@ -307,16 +307,21 @@ module ndCosmology
 			k2p=KprimeFull(o, 2)
 			j2p=JprimeFull(o, 2)
 			ga = (k2p/6.d0 - k2*k2p + j2p/6.d0 + j2p*k2 + j2*k2p)
-
 			G12_funcFull(1) = PIx2*alpha_fine *(&
 				(k2/3.d0 + 2.d0*k2*k2 - j2/6.d0 - k2*j2)/o + &
 				ga )
 			G12_funcFull(2) = PIx2*alpha_fine*( &
 				o * ga &
 				- 4.d0*((k2+j2)/6.d0 + k2*j2 - k2*k2/2.d0))
+
 			if (ftqed_log_term) then
-				ga=0.d0!to edit
+				!to edit
+				G12_funcFull(1) = G12_funcFull(1) + &
+					0.d0
+				G12_funcFull(2) = G12_funcFull(2) + &
+					0.d0
 			end if
+
 			if (ftqed_ord3) then
 				osq = o*o
 				k0=k_funcFull(o, 0)
@@ -365,14 +370,32 @@ module ndCosmology
 
 	!corrections to total energy and pressure
 	pure function deltaRhoTot_em(x, z)
-		real(dl) :: deltaRhoTot_em
+		real(dl) :: deltaRhoTot_em, z4, o, k2, j2, k0, j0, osqd
 		real(dl), intent(in) :: x, z
 		deltaRhoTot_em = 0.d0
 		
 		if (ftqed_temperature_corr) then
-			deltaRhoTot_em = 0.d0!to edit
+			z4 = z**4
+			o = x/z
+			k2 = k_funcFull(o, 2)
+			j2 = j_funcFull(o, 2)
+			deltaRhoTot_em = electron_charge_sq * z4 * ( &
+				k2**2/2.d0 - (k2+j2)/6.d0 - k2*j2
+			)
+
 			if (ftqed_log_term) then
-				deltaRhoTot_em = 0.d0!to edit
+				deltaRhoTot_em = deltaRhoTot_em + &
+					0.d0 !to edit
+			end if
+
+			if (ftqed_ord3) then
+				osq = o*o/2.d0
+				k0 = k_funcFull(o, 0)
+				j0 = j_funcFull(o, 0)
+				deltaRhoTot_em = deltaRhoTot_em &
+					+ electron_charge_cub * z4 * &
+					* sqrt(k2 + osqd*k0) &
+					* (j2 + osqd*j0)
 			end if
 		end if
 	end function deltaRhoTot_em

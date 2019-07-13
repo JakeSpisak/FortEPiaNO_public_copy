@@ -37,6 +37,8 @@ module constants
 	real(dl), parameter :: cos2thW = 1.d0-sin2thW
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: electron_charge = sqrt(4*PI*alpha_fine)
+	real(dl), parameter :: electron_charge_sq = electron_charge ** 2
+	real(dl), parameter :: electron_charge_cub = electron_charge ** 3
 	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 
 	integer,  parameter :: maxFlavorNumber = 6

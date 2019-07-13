@@ -175,14 +175,14 @@ J_a(r)
 &=&
 \frac{1}{\pi^2}
 \int_0^\infty {\rm d}u \, u^a
-\frac{\exp(\sqrt{u^2+r^2})}{\left[\exp(\sqrt{u^2+r^2})+1\right]^2}
+\frac{\exp(\sqrt{u^2+r^2})}{\Big[\exp(\sqrt{u^2+r^2})+1\Big]^2}
 \label{eq:j}
 \,,\\
 K_a(r)
 &=&
 \frac{1}{\pi^2}
 \int_0^\infty {\rm d}u \, 
-\frac{u^a}{\sqrt{u^2+r^2}}
+\frac{u^a}{\sqrt{u^2+r^2}}\,
 \frac{1}{\exp(\sqrt{u^2+r^2})+1}
 \label{eq:k}\,.
 \end{eqnarray}
@@ -227,10 +227,10 @@ e^2 z^4
 \left|
 \frac{y+k}{y-k}
 \right|
-\left(
+\Big(
 2z \partial_z \mathcal{N}_k
 - \mathcal{N}_k
-\right)
+\Big)
 \,,\\
 \delta\rho^{(3)}
 &=&
@@ -255,7 +255,7 @@ we have to compute both the derivative of $\varrho$ (as a function of the moment
 and of the comoving photon temperature $z$
 with respect to our time parameter $x$.
 The differential equations which the code solves are the following
-\cite{deSalas:2016ztq,Mirizzi:2012we,Saviano:2013ktj,Mangano:2001iu,...}:
+\cite{deSalas:2016ztq,Mirizzi:2012we,Saviano:2013ktj,Mangano:2001iu}:
 %
 \begin{eqnarray}\label{eq:drho_dx_nxn}
 \frac{{\rm d}\varrho(y)}{{\rm d}x}
@@ -290,17 +290,17 @@ The differential equations which the code solves are the following
     {\displaystyle \int_0^\infty \mathrm{d}y\,y^3\sum_{\alpha=e}^{s_{N_s}^{}}\cfrac{\mathrm{d}\varrho_{\alpha \alpha}}{\mathrm{d}x}}
 }{
 {\displaystyle \sum_{\ell=e,\mu}}
-\left[
+\Big[
 r^2_\ell J_2(r_\ell)
 + J_4(r_\ell)
-\right]
+\Big]
 + G_2(r)
 + \cfrac{2\pi^2}{15}
 }\,,
 \end{eqnarray}
 where $r_\ell=m_\ell/m_e\,r$.
 The expressions for the $G_1$ and $G_2$ functions,
-which again take into account the FTQED corrections are written as
+which again take into account the FTQED corrections, are written as
 \cite{Mangano:2001iu,...}:
 %
 \begin{eqnarray}
@@ -580,7 +580,7 @@ D_2(a,b,c,d)
 -\frac{16}{\pi}
 \int_0^\infty
 \frac{{\rm d}\lambda}{\lambda^4}
-\prod_{i=a,b}\left[\lambda i \cos(\lambda i)-\sin(\lambda i)\right]
+\prod_{i=a,b}\Big[\lambda i \cos(\lambda i)-\sin(\lambda i)\Big]
 \prod_{j=c,d}\sin(\lambda j)
 \,,\\
 D_3(a,b,c,d)
@@ -588,7 +588,7 @@ D_3(a,b,c,d)
 \frac{16}{\pi}
 \int_0^\infty
 \frac{\mathrm{d}\lambda}{\lambda^6}
-\prod_{i=a,b,c,d}\left[\lambda i \cos(\lambda i)-\sin(\lambda i)\right]
+\prod_{i=a,b,c,d}\Big[\lambda i \cos(\lambda i)-\sin(\lambda i)\Big]
 \,.
 \end{eqnarray}
 The three functions can be written in a more efficient way for the calculation,
@@ -598,17 +598,17 @@ Finally, the functions that define the phase space factors in the collision term
 \begin{eqnarray}
 F_{\rm sc}^{ab}\left(\varrho^{(1)}, f_e^{(2)}, \varrho^{(3)}, f_e^{(4)}\right)
 &=&
-f_e^{(4)}(1-f_e^{(2)})\left(G^a\varrho^{(3)}G^b(1-\varrho^{(1)})+(1-\varrho^{(1)})G^b\varrho^{(3)}G^a\right)
+f_e^{(4)}(1-f_e^{(2)})\left[G^a\varrho^{(3)}G^b(1-\varrho^{(1)})+(1-\varrho^{(1)})G^b\varrho^{(3)}G^a\right]
 \nonumber\\
 &-&
-f_e^{(2)}(1-f_e^{(4)})\left(\varrho^{(1)}G^b(1-\varrho^{(3)})G^a+G^a(1-\varrho^{(3)})G^b\varrho^{(1)}\right),
+f_e^{(2)}(1-f_e^{(4)})\left[\varrho^{(1)}G^b(1-\varrho^{(3)})G^a+G^a(1-\varrho^{(3)})G^b\varrho^{(1)}\right],
 \label{eq:F_ab_sc}\\
 F_{\rm ann}^{ab}\left(\varrho^{(1)}, \varrho^{(2)}, f_e^{(3)}, f_e^{(4)}\right)
 &=&
-f_e^{(3)}f_e^{(4)}\left(G^a(1-\varrho^{(2)})G^b(1-\varrho^{(1)})+(1-\varrho^{(1)})G^b(1-\varrho^{(2)})G^a\right)
+f_e^{(3)}f_e^{(4)}\left[G^a(1-\varrho^{(2)})G^b(1-\varrho^{(1)})+(1-\varrho^{(1)})G^b(1-\varrho^{(2)})G^a\right]
 \nonumber\\
 &-&
-(1-f_e^{(3)})(1-f_e^{(4)})\left(G^a\varrho^{(2)}G^b\varrho^{(1)}+\varrho^{(1)}G^b\varrho^{(2)}G^a\right),
+(1-f_e^{(3)})(1-f_e^{(4)})\left[G^a\varrho^{(2)}G^b\varrho^{(1)}+\varrho^{(1)}G^b\varrho^{(2)}G^a\right],
 \label{eq:F_ab_ann}
 \end{eqnarray}
 where $\varrho^{(i)}=\varrho(y_i)$ and $f_e^{(i)}=f_{\rm FD}(y_i, z)$ represent the momentum distribution function
@@ -712,7 +712,7 @@ $y_i$ are the $N$ roots of the Laguerre polynomial $L_N$ of order $N$, and $w_i$
  which are obtained using
 \begin{equation}
 w_i^{(\alpha)}=
-\frac{y_i}{(N+1)^2[L^{(\alpha)}_{N+1}(y_i)]^2}.
+\frac{y_i}{\left(N+1\right)^2\left[L^{(\alpha)}_{N+1}(y_i)\right]^2}.
 \end{equation}
 The weights can be computed for example using the \texttt{gaulag} routine from \cite{NR}.
 Since our momentum distribution function is not directly proportional to $e^{-y}$,
