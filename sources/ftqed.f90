@@ -392,8 +392,8 @@ module ftqed
 			z4 = z**4
 			o = x/z
 			k2 = k_funcFull(o, 2)
-			deltaPTot_em = - 0.25d0 * electron_charge_sq * z4 * &
-				k2 * (one_third + 0.5d0 * k2)
+			deltaPTot_em = - electron_charge_sq * z4 * &
+				k2 * (one_sixth + 0.5d0 * k2)
 
 			if (ftqed_log_term) then
 				allocate(fval(ln_2dint_Npts, ln_2dint_Npts))
@@ -417,8 +417,8 @@ module ftqed
 
 			if (ftqed_ord3) then
 				k2rk0 = k2 + o*o/2.d0 * k_funcFull(o, 0)
-				deltaPTot_em = 2.d0 * &
-					electron_charge_cub * z4 / (3.d0*PI) * &
+				deltaPTot_em = deltaPTot_em + &
+					2.d0 * electron_charge_cub * z4 / (3.d0*PI) * &
 					sqrt(k2rk0) * k2rk0
 			end if
 		end if
