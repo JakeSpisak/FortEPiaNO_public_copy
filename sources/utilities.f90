@@ -185,6 +185,14 @@ module utilities
 		return
 	end function logspace
 
+	pure function geomspace(minv, maxv, numb)
+		real(dl), intent(in) :: minv, maxv
+		integer,  intent(in) :: numb
+		real(dl), dimension(numb) :: geomspace
+
+		geomspace = logspace(log10(minv), log10(maxv), numb)
+	end function geomspace
+
 	elemental function E_k_m(k, m)
 		real(dl), intent(in) :: k, m
 		real(dl) :: E_k_m
