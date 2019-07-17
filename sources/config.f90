@@ -16,7 +16,7 @@ module fpConfig
 	contains
 
 	subroutine allocateStuff()
-		integer :: nf
+		integer :: nf, ix
 		nf = flavorNumber
 		allocate(nuMasses(nf), nuFactor(nf), sterile(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
@@ -26,6 +26,12 @@ module fpConfig
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 		allocate(massSplittings(nf))
 		allocate(mixingAngles(nf,nf))
+
+		allocate(ln_2dint_y(ln_2dint_Npts), ln_2dint_dy(ln_2dint_Npts))
+		ln_2dint_y = geomspace(ln_2dint_lower, ln_2dint_upper, ln_2dint_Npts)
+		do ix = 1, ln_2dint_Npts-1
+			ln_2dint_dy(ix) = ln_2dint_y(ix+1) - ln_2dint_y(ix)
+		end do
 	end subroutine allocateStuff
 
 	subroutine setMassMatrix()

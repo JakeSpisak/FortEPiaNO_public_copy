@@ -133,6 +133,12 @@ module variables
 	real(dl), parameter :: opt_y_cut = 100.d0
 	real(dl), dimension(:), allocatable :: opt_y, opt_y_w
 
+	!2D integrals for log terms of ftqed functions
+	integer, parameter :: ln_2dint_Npts = 100
+	real(dl), parameter :: ln_2dint_lower = 0.001d0
+	real(dl), parameter :: ln_2dint_upper = 30.d0
+	real(dl), dimension(:), allocatable :: ln_2dint_y, ln_2dint_dy
+
 	!used for 2d interpolation:
 	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 1800
 	integer :: interp_nx, interp_nz, interp_nxz

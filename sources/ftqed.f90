@@ -120,80 +120,90 @@ module ftqed
 		KprimeFull = - rombint_ri(o, a, Kprime_int, zero, upper, toler_jkyg, maxiter) * o / PISQ
 	end function KprimeFull
 
-	pure function G1_ln_integrand(x, y, z, k)
+	pure function G1_ln_integrand(x, z, y, k)
 		real(dl) :: G1_ln_integrand
 		real(dl), intent(in) :: x, y, z, k
 		real(dl) :: Eksq, Eysq, Ek, Ey, Ekoz, Eyoz, Eekoz, Eeyoz, Nfk, Nfy
 		real(dl) :: pxNk, pzNk, pxpzNk, pxNy
 
-		Eksq = x*x + k*k
-		Ek = sqrt(Eksq)
-		Ekoz = Ek/z
-		Eekoz = exp(Ekoz)
-		Nfk = fermiDirac(Ekoz)
+		G1_ln_integrand = 0.d0
+		if (abs(y-k) .gt. 1d-7) then
+			Eksq = x*x + k*k
+			Ek = sqrt(Eksq)
+			Ekoz = Ek/z
+			Eekoz = exp(Ekoz)
+			Nfk = 2.*fermiDirac(Ekoz)
 
-		Eysq = x*x + y*y
-		Ey = sqrt(Eysq)
-		Eyoz = Ey/z
-		Eeyoz = exp(Eyoz)
-		Nfy = fermiDirac(Eyoz)
+			Eysq = x*x + y*y
+			Ey = sqrt(Eysq)
+			Eyoz = Ey/z
+			Eeyoz = exp(Eyoz)
+			Nfy = 2.*fermiDirac(Eyoz)
 
-		pxNk = - x*Eekoz * Nfk**2 / (Ek*z)
-		pzNk = Eekoz * Nfk**2 * Ek / (z**2)
-		pxpzNk = x * Eekoz * Nfk**2 / (z**3) * (1 - 2*Eekoz*Nfk + z/Ek)
-		pxNy = - x*Eeyoz * Nfy**2 / (Ey*z)
+			pxNk = - x*Eekoz * Nfk**2 / (Ek*z)
+			pzNk = Eekoz * Nfk**2 * Ek / (z**2)
+			pxpzNk = x * Eekoz * Nfk**2 / (z**3) * (1 - 2*Eekoz*Nfk + z/Ek)
+			pxNy = - x*Eeyoz * Nfy**2 / (Ey*z)
 
-		G1_ln_integrand = &
-			y * k / (Ey * Ek) * log( abs((y+k) / (y-k)) ) * &
-			( &
-				! -x(z( ... ) - ... )
-				-x * ( &
-					z * ( &
-						pxNy*pzNk + Nfy*pxpzNk &
+			G1_ln_integrand = &
+				y * k / (Ey * Ek) * log( abs((y+k) / (y-k)) ) * &
+				( &
+					! -x(z( ... ) - ... )
+					-x * ( &
+						z * ( &
+							pxNy*pzNk + Nfy*pxpzNk &
+						) &
+						- Nfy*pxNk &
 					) &
-					- Nfy*pxNk &
-				) &
-				!N_y N_k
-				- Nfy*Nfk &
-				!z N_y \partial_z N_k
-				- z * Nfy * pzNk &
-				! - x^2 ...
-				- x**2 * (Eksq+Eysq)/(2*Eksq*Eysq) * ( &
-					2*z*Nfy*pzNk - Nfy*Nfk &
-				) &
-			)
+					!N_y N_k
+					- Nfy*Nfk &
+					!z N_y \partial_z N_k
+					- z * Nfy * pzNk &
+					! - x^2 ...
+					- x**2 * (Eksq+Eysq)/(2*Eksq*Eysq) * ( &
+						2*z*Nfy*pzNk - Nfy*Nfk &
+					) &
+				)
+		end if
 	end function G1_ln_integrand
 
-	pure function G2_ln_integrand(x, y, z, k)
+	pure function G2_ln_integrand(x, z, y, k)
 		real(dl) :: G2_ln_integrand
 		real(dl), intent(in) :: x, y, z, k
 		real(dl) :: Eksq, Eysq, Ek, Ey, Ekoz, Eyoz, Nfk, Nfy, NfEek
 
-		Eksq = x*x + k*k
-		Ek = sqrt(Eksq)
-		Ekoz = Ek/z
-		Nfk = fermiDirac(Ekoz)
-		NfEek = Nfk * exp(Ekoz)
+		G2_ln_integrand = 0.d0
+		if (abs(y-k) .gt. 1d-7) then
+			Eksq = x*x + k*k
+			Ek = sqrt(Eksq)
+			Ekoz = Ek/z
+			Nfk = 2.*fermiDirac(Ekoz)
+			NfEek = Nfk * exp(Ekoz)
 
-		Eysq = x*x + y*y
-		Ey = sqrt(Eysq)
-		Eyoz = Ey/z
-		Nfy = fermiDirac(Eyoz)
+			Eysq = x*x + y*y
+			Ey = sqrt(Eysq)
+			Eyoz = Ey/z
+			Nfy = 2.*fermiDirac(Eyoz)
 
-		G2_ln_integrand = &
-			y * k / Ey * log( abs((y+k) / (y-k)) ) * &
-			Nfk * Nfy * NfEek / z**4 * &
-			(2.d0*Ek*NfEek - Ek + Nfy*exp(Eyoz)*Ey - 2.d0*z)
+			G2_ln_integrand = &
+				y * k / Ey * log( abs((y+k) / (y-k)) ) * &
+				Nfk * Nfy * NfEek / z**4 * &
+				(2.d0*Ek*NfEek - Ek + Nfy*exp(Eyoz)*Ey - 2.d0*z)
+		end if
 	end function G2_ln_integrand
 
-	pure function G12_funcFull(o)
+	pure function G12_funcFull(x, z)
 		real(dl), dimension(2) :: G12_funcFull
-		real(dl), intent(in) :: o
+		real(dl), intent(in) :: x, z
+		real(dl) :: o
 		real(dl) :: k2, j2, k2p, j2p, ga
 		real(dl) :: k0, j0, k0p, j0p, j4p, gb, gc, osq
 		real(dl) :: coeff, integ
+		integer :: ix, iy
+		real(dl), dimension(:,:), allocatable :: fval
 
 		if (ftqed_temperature_corr) then
+			o = x/z
 			k2=k_funcFull(o, 2)
 			j2=j_funcFull(o, 2)
 			k2p=KprimeFull(o, 2)
@@ -207,13 +217,39 @@ module ftqed
 				- 4.d0*((k2+j2)/6.d0 + k2*j2 - k2*k2/2.d0))
 
 			if (ftqed_log_term) then
-				coeff = electron_charge**2 !* x / (PIx2**4*z**3)
-!				!to edit, need to integrate G1_ln_integrand
-!				integ = 0.d0
-!				G12_funcFull(1) = G12_funcFull(1) + coeff * integ
-!				!to edit, need to integrate G2_ln_integrand
-!				integ = 0.d0
-!				G12_funcFull(2) = G12_funcFull(2) + x*z*coeff * integ
+				coeff = electron_charge**2 * x / (PIx2**4*z**3)
+				allocate(fval(ln_2dint_Npts, ln_2dint_Npts))
+				!G1
+				do ix=1,ln_2dint_Npts
+					do iy=1,ln_2dint_Npts
+						fval(ix, iy) = &
+							G1_ln_integrand(x, z, ln_2dint_y(ix), ln_2dint_y(iy))
+					end do
+				end do
+				integ = integral_NC_2d(&
+						ln_2dint_Npts, &
+						ln_2dint_Npts, &
+						ln_2dint_dy, &
+						ln_2dint_dy, &
+						fval &
+						)
+				G12_funcFull(1) = G12_funcFull(1) + coeff * integ
+				!G2
+				do ix=1,ln_2dint_Npts
+					do iy=1,ln_2dint_Npts
+						fval(ix, iy) = &
+							G2_ln_integrand(x, z, ln_2dint_y(ix), ln_2dint_y(iy))
+					end do
+				end do
+				integ = integral_NC_2d(&
+						ln_2dint_Npts, &
+						ln_2dint_Npts, &
+						ln_2dint_dy, &
+						ln_2dint_dy, &
+						fval &
+						)
+				G12_funcFull(2) = G12_funcFull(2) + x*z*coeff * integ
+				deallocate(fval)
 			end if
 
 			if (ftqed_ord3) then
@@ -245,6 +281,156 @@ module ftqed
 		end if
 	end function G12_funcFull
 
+	!corrections to total energy and pressure
+	pure function deltaRho_ln_integrand(x, z, y, k)
+		real(dl) :: deltaRho_ln_integrand
+		real(dl), intent(in) :: x, y, z, k
+		real(dl) :: Eksq, Eysq, Ek, Ey, Ekoz, Eyoz, Nfk, Nfy
+
+		deltaRho_ln_integrand = 0.d0
+		if (abs(y-k) .gt. 1d-7) then
+			Eksq = x*x + k*k
+			Ek = sqrt(Eksq)
+			Ekoz = Ek/z
+			Nfk = 2.*fermiDirac(Ekoz)
+
+			Eysq = x*x + y*y
+			Ey = sqrt(Eysq)
+			Eyoz = Ey/z
+			Nfy = 2.*fermiDirac(Eyoz)
+
+			deltaRho_ln_integrand = &
+				y * k / (Ek * Ey) * log( abs((y+k) / (y-k)) ) * &
+				Nfy * Nfk * ( &
+					2. * Nfk * exp(Ekoz) * Ek / z - 1.d0 &
+				)
+		end if
+	end function deltaRho_ln_integrand
+
+	pure function deltaP_ln_integrand(x, z, y, k)
+		real(dl) :: deltaP_ln_integrand
+		real(dl), intent(in) :: x, y, z, k
+		real(dl) :: Eksq, Eysq, Ek, Ey, Ekoz, Eyoz, Nfk, Nfy
+
+		deltaP_ln_integrand = 0.d0
+		if (abs(y-k) .gt. 1d-7) then
+			Eksq = x*x + k*k
+			Ek = sqrt(Eksq)
+			Ekoz = Ek/z
+			Nfk = 2.*fermiDirac(Ekoz)
+
+			Eysq = x*x + y*y
+			Ey = sqrt(Eysq)
+			Eyoz = Ey/z
+			Nfy = 2.*fermiDirac(Eyoz)
+
+			deltaP_ln_integrand = &
+				y * k / (Ek * Ey) * log( abs((y+k) / (y-k)) ) * &
+				Nfk * Nfy
+		end if
+	end function deltaP_ln_integrand
+
+	pure function deltaRhoTot_em(x, z)
+		real(dl) :: deltaRhoTot_em, z4, o, k2, j2, k0, j0, osqd
+		real(dl), intent(in) :: x, z
+		integer :: ix, iy
+		real(dl), dimension(:,:), allocatable :: fval
+
+		deltaRhoTot_em = 0.d0
+		
+		if (ftqed_temperature_corr) then
+			z4 = z**4
+			o = x/z
+			k2 = k_funcFull(o, 2)
+			j2 = j_funcFull(o, 2)
+			deltaRhoTot_em = electron_charge_sq * z4 * ( &
+				k2**2/2.d0 - (k2+j2)/6.d0 - k2*j2 &
+			)
+
+			if (ftqed_log_term) then
+				allocate(fval(ln_2dint_Npts, ln_2dint_Npts))
+				do ix=1,ln_2dint_Npts
+					do iy=1,ln_2dint_Npts
+						fval(ix, iy) = &
+							deltaRho_ln_integrand(x, z, ln_2dint_y(ix), ln_2dint_y(iy))
+					end do
+				end do
+				deltaRhoTot_em = deltaRhoTot_em + &
+					electron_charge_sq * x**2 /(16.d0*PISQ*PISQ) &
+					* integral_NC_2d(&
+						ln_2dint_Npts, &
+						ln_2dint_Npts, &
+						ln_2dint_dy, &
+						ln_2dint_dy, &
+						fval &
+						)
+				deallocate(fval)
+			end if
+
+			if (ftqed_ord3) then
+				osqd = o*o/2.d0
+				k0 = k_funcFull(o, 0)
+				j0 = j_funcFull(o, 0)
+				deltaRhoTot_em = deltaRhoTot_em &
+					+ electron_charge_cub * z4 / PI &
+					* sqrt(k2 + osqd*k0) &
+					* (j2 + osqd*j0)
+			end if
+		end if
+	end function deltaRhoTot_em
+
+	pure function deltaPTot_em(x, z)
+		real(dl) :: deltaPTot_em
+		real(dl) :: z4, o, k2, k2rk0
+		real(dl), intent(in) :: x, z
+		integer :: ix, iy
+		real(dl), dimension(:,:), allocatable :: fval
+
+		deltaPTot_em = 0.d0
+		
+		if (ftqed_temperature_corr) then
+			z4 = z**4
+			o = x/z
+			k2 = k_funcFull(o, 2)
+			deltaPTot_em = - 0.25d0 * electron_charge_sq * z4 * &
+				k2 * (one_third + 0.5d0 * k2)
+
+			if (ftqed_log_term) then
+				allocate(fval(ln_2dint_Npts, ln_2dint_Npts))
+				do ix=1,ln_2dint_Npts
+					do iy=1,ln_2dint_Npts
+						fval(ix, iy) = &
+							deltaP_ln_integrand(x, z, ln_2dint_y(ix), ln_2dint_y(iy))
+					end do
+				end do
+				deltaPTot_em = deltaPTot_em + &
+					electron_charge_sq * x**2 /(16.d0*PISQ*PISQ) &
+					* integral_NC_2d(&
+						ln_2dint_Npts, &
+						ln_2dint_Npts, &
+						ln_2dint_dy, &
+						ln_2dint_dy, &
+						fval &
+						)
+				deallocate(fval)
+			end if
+
+			if (ftqed_ord3) then
+				k2rk0 = k2 + o*o/2.d0 * k_funcFull(o, 0)
+				deltaPTot_em = 2.d0 * &
+					electron_charge_cub * z4 / (3.d0*PI) * &
+					sqrt(k2rk0) * k2rk0
+			end if
+		end if
+	end function deltaPTot_em
+
+	pure function deltaEntropyTot_em(x, z)
+		real(dl) :: deltaEntropyTot_em
+		real(dl), intent(in) :: x, z
+		deltaEntropyTot_em = (deltaRhoTot_em(x,z) + deltaPTot_em(x,z)) / z
+	end function deltaEntropyTot_em
+
+	!electron mass corrections for collision integrals
 #ifndef NOINTERPOLATION
 	subroutine init_interp_dme2_e
 		real(dl), dimension(:,:), allocatable :: dmg_vec

@@ -144,6 +144,11 @@ program tests
 			write(tmparg, '("tarr log ",I2)') ix
 			call assert_double_rel(tmparg, tarr(ix), 10.d0**(ix-6), 1d-7)
 		end do
+		tarr = geomspace(1.d-5, 1.d6, N)
+		do ix=1, N
+			write(tmparg, '("tarr geom ",I2)') ix
+			call assert_double_rel(tmparg, tarr(ix), 10.d0**(ix-6), 1d-7)
+		end do
 		tarr = loglinspace(0.01d0, 1.d0, 10.d0, N, 3)
 		call assert_double_rel("tarr linlog 1", tarr(1), 0.01d0, 1d-7)
 		call assert_double_rel("tarr linlog 2", tarr(2), 0.1d0, 1d-7)
@@ -642,30 +647,45 @@ program tests
 		call assert_double("muContr test 2a", res(1), 0d0, 1d-7)
 		call assert_double("muContr test 2b", res(2), 0d0, 1d-7)
 
-		res = G12_funcFull(1.d-3)
+		res = G12_funcFull(1.d-3, 1.d0)
 		call assert_double("G1 test 1", res(1), -9.26305205d-6, 1d-7)
 		call assert_double("G2 test 1", res(2), -0.0095522067d0, 1d-8)
-		res = G12_funcFull(0.01d0)
+		res = G12_funcFull(0.1d0, 10.d0)
 		call assert_double("G1 test 2", res(1), -0.0000658825d0, 1d-7)
 		call assert_double("G2 test 2", res(2), -0.0095518d0, 1d-8)
-		res = G12_funcFull(1.d0)
+		res = G12_funcFull(1.5d0, 1.5d0)
 		call assert_double_rel("G1 test 3", res(1), -0.00115846d0, 1d-5)
 		call assert_double_rel("G2 test 3", res(2), -0.00806502d0, 1d-5)
-		res = G12_funcFull(5.d0)
+		res = G12_funcFull(0.5d0, 0.1d0)
 		call assert_double_rel("G1 test 4", res(1), -0.000108111d0, 1d-5)
 		call assert_double_rel("G2 test 4", res(2), -0.000945107d0, 1d-5)
 
-		ftqed_ord3 = .true.
-		res = G12_funcFull(1.d-3)
+		ftqed_log_term = .true.
+		res = G12_funcFull(1.d-3, 1.d0)
 		call assert_double("G1 o3 test 1", res(1), -9.19836d-6, 5d-8)
 		call assert_double_rel("G2 o3 test 1", res(2), -0.0087016543d0, 1d-6)
-		res = G12_funcFull(0.01d0)
+		res = G12_funcFull(0.1d0, 10.d0)
 		call assert_double("G1 o3 test 2", res(1), -0.0000652361d0, 3d-9)
 		call assert_double_rel("G2 o3 test 2", res(2), -0.00870124655d0, 1d-5)
-		res = G12_funcFull(1.d0)
+		res = G12_funcFull(1.5d0, 1.5d0)
 		call assert_double_rel("G1 o3 test 3", res(1), -0.00109638d0, 1d-5)
 		call assert_double_rel("G2 o3 test 3", res(2), -0.00724797d0, 1d-5)
-		res = G12_funcFull(5.d0)
+		res = G12_funcFull(0.5d0, 0.1d0)
+		call assert_double_rel("G1 o3 test 4", res(1), -0.0000926686d0, 1d-5)
+		call assert_double_rel("G2 o3 test 4", res(2), -0.00082098d0, 1d-5)
+		ftqed_log_term = .false.
+
+		ftqed_ord3 = .true.
+		res = G12_funcFull(1.d-3, 1.d0)
+		call assert_double("G1 o3 test 1", res(1), -9.19836d-6, 5d-8)
+		call assert_double_rel("G2 o3 test 1", res(2), -0.0087016543d0, 1d-6)
+		res = G12_funcFull(0.1d0, 10.d0)
+		call assert_double("G1 o3 test 2", res(1), -0.0000652361d0, 3d-9)
+		call assert_double_rel("G2 o3 test 2", res(2), -0.00870124655d0, 1d-5)
+		res = G12_funcFull(1.5d0, 1.5d0)
+		call assert_double_rel("G1 o3 test 3", res(1), -0.00109638d0, 1d-5)
+		call assert_double_rel("G2 o3 test 3", res(2), -0.00724797d0, 1d-5)
+		res = G12_funcFull(0.5d0, 0.1d0)
 		call assert_double_rel("G1 o3 test 4", res(1), -0.0000926686d0, 1d-5)
 		call assert_double_rel("G2 o3 test 4", res(2), -0.00082098d0, 1d-5)
 		ftqed_ord3 = .false.
@@ -676,7 +696,7 @@ program tests
 		res = dzodxcoef_interp_func(1.d0)
 		call assert_double_rel("A test 2", res(1), 0.0404956d0, 1d-5)
 		call assert_double_rel("B test 2", res(2), 0.0143827d0, 1d-5)
-		res = dzodxcoef_interp_func(5.d0)
+		res = dzodxcoef_interp_func(5d0)
 		call assert_double_rel("A test 3", res(1), 0.034036d0, 1d-5)
 		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
 		call printTotalTests

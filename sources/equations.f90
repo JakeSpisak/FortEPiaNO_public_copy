@@ -132,10 +132,13 @@ module fpEquations
 		allocate(Aw(nx), Bw(nx))
 		allocate(eq(nx))
 		elContr0 = electrons%dzodx_terms(interp_xozvec(1))
+		if (ftqed_log_term) then
+			call criticalError("log term FTQED corrections not supported when interpolating")
+		end if
 		!$omp parallel do default(private) shared(A, B, Aw, Bw, eq, nx, interp_xozvec, fermions, elContr0, tot_factor_active_nu) schedule(dynamic)
 		do ix=1, nx
 			xoz = interp_xozvec(ix)
-			g12 = G12_funcFull(xoz)
+			g12 = G12_funcFull(xoz, 1.d0)
 			num = g12(1)
 			den = PISQ/7.5d0 + g12(2)
 			do j=1, fermions_number

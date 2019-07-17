@@ -206,68 +206,6 @@ module fpCosmology
 		oj(2) = o**2 * j + y
 	end function
 
-	!corrections to total energy and pressure
-	pure function deltaRhoTot_em(x, z)
-		real(dl) :: deltaRhoTot_em, z4, o, k2, j2, k0, j0, osqd
-		real(dl), intent(in) :: x, z
-		deltaRhoTot_em = 0.d0
-		
-		if (ftqed_temperature_corr) then
-			z4 = z**4
-			o = x/z
-			k2 = k_funcFull(o, 2)
-			j2 = j_funcFull(o, 2)
-			deltaRhoTot_em = electron_charge_sq * z4 * ( &
-				k2**2/2.d0 - (k2+j2)/6.d0 - k2*j2 &
-			)
-
-			if (ftqed_log_term) then
-				deltaRhoTot_em = deltaRhoTot_em + &
-					0.d0 !to edit
-			end if
-
-			if (ftqed_ord3) then
-				osqd = o*o/2.d0
-				k0 = k_funcFull(o, 0)
-				j0 = j_funcFull(o, 0)
-				deltaRhoTot_em = deltaRhoTot_em &
-					+ electron_charge_cub * z4 / PI &
-					* sqrt(k2 + osqd*k0) &
-					* (j2 + osqd*j0)
-			end if
-		end if
-	end function deltaRhoTot_em
-
-	pure function deltaPTot_em(x, z)
-		real(dl) :: deltaPTot_em
-		real(dl) :: z4, o, k2, k2rk0
-		real(dl), intent(in) :: x, z
-		deltaPTot_em = 0.d0
-		
-		if (ftqed_temperature_corr) then
-			z4 = z**4
-			o = x/z
-			k2 = k_funcFull(o, 2)
-			deltaPTot_em = - 0.25d0 * electron_charge_sq * z4 * &
-				k2 * (one_third + 0.5d0 * k2)
-			if (ftqed_log_term) then
-				deltaPTot_em = 0.d0!to edit
-			end if
-			if (ftqed_ord3) then
-				k2rk0 = k2 + o*o/2.d0 * k_funcFull(o, 0)
-				deltaPTot_em = 2.d0 * &
-					electron_charge_cub * z4 / (3.d0*PI) * &
-					sqrt(k2rk0) * k2rk0
-			end if
-		end if
-	end function deltaPTot_em
-
-	pure function deltaEntropyTot_em(x, z)
-		real(dl) :: deltaEntropyTot_em
-		real(dl), intent(in) :: x, z
-		deltaEntropyTot_em = (deltaRhoTot_em(x,z) + deltaPTot_em(x,z)) / z
-	end function deltaEntropyTot_em
-
 	!functions for neutrino energy density
 	function nuDensityNC(i1, i2, reim)
 		real(dl) :: nuDensityNC, y
