@@ -11,6 +11,7 @@ module constants
 
 	real(dl), parameter :: one_third = 1.d0/3.d0
 	real(dl), parameter :: four_thirds = 4.d0/3.d0
+	real(dl), parameter :: one_sixth = 1.d0/6.d0
 	real(dl), parameter :: SQRT2 = sqrt(2.d0)
 	real(dl), parameter :: PI  =3.141592653589793238463d0
 	real(dl), parameter :: PIx2=2.d0*PI

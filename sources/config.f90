@@ -337,7 +337,7 @@ module fpConfig
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
 			damping_read_zero = .true.
 			ftqed_temperature_corr = read_ini_logical("ftqed_temperature_corr",.true.)
-			ftqed_log_term = read_ini_logical("ftqed_log_term",.true.)
+			ftqed_log_term = read_ini_logical("ftqed_log_term",.false.)
 			ftqed_ord3 = read_ini_logical("ftqed_ord3",.true.)
 
 			!settings for saving files
