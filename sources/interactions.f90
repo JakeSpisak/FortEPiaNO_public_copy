@@ -1,182 +1,15 @@
-module ndInteractions
+module fpInteractions
 	use precision
 	use constants
 	use variables
 	use utilities
-	use ndErrors
-	use ndMatrices
+	use ftqed
+	use fpErrors
+	use fpMatrices
 	use linear_interpolation_module
 	implicit none
 
-#ifndef NOINTERPOLATION
-	type(linear_interp_2d) :: dmeNLCorr
-	type(linear_interp_3d) :: dmeCorr
-#endif
-
 	contains
-
-#ifndef NOINTERPOLATION
-	subroutine init_interp_dme2_e
-		real(dl), dimension(:,:), allocatable :: dmg_vec
-		real(dl), dimension(:,:,:), allocatable :: dme_vec
-		integer :: ix, iy, iz, iflag
-		real(dl) :: x, z, t1, t2
-		real(8) :: timer1
-		logical :: initial
-
-		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
-		allocate(dme_vec(interp_nx, interp_ny, interp_nz))
-		!$omp parallel do default(shared) private(ix, iy, iz) schedule(dynamic)
-		do ix=1, interp_nx
-			do iy=1, interp_ny
-				do iz=1, interp_nz
-					dme_vec(ix,iy,iz) = dme2_electronFull(interp_xvec(ix),interp_yvec(iy),interp_zvec(iz))
-				end do
-			end do
-		end do
-		!$omp end parallel do
-		call dmeCorr%initialize(interp_xvec, interp_yvec, interp_zvec, dme_vec, iflag)!linear
-
-		!store dme2 without log term for use in collision terms
-		initial = ftqed_log_term
-		ftqed_log_term = .false.
-		allocate(dmg_vec(interp_nx, interp_nz))
-		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
-		do ix=1, interp_nx
-			do iz=1, interp_nz
-				dmg_vec(ix,iz) = dme2_electronFull(interp_xvec(ix), 0.d0, interp_zvec(iz))
-			end do
-		end do
-		!$omp end parallel do
-		call dmeNLCorr%initialize(interp_xvec, interp_zvec, dmg_vec, iflag)!linear
-
-		call random_seed()
-		if (timing_tests) then
-			call tic(timer1)
-			write (*,*) "[interactions] now doing some timing..."
-			call tic(timer1)
-			do ix=1, 1000000
-				call random_number(x)
-				call random_number(z)
-				x=(x_fin-x_in)*x + x_in
-				z=0.4d0*z + z_in
-				t1 = dme2_nolog(x,z)
-			end do
-			call toc(timer1, "<interpolated>")
-
-			call tic(timer1)
-			do ix=1, 1000000
-				call random_number(x)
-				call random_number(z)
-				x=(x_fin-x_in)*x + x_in
-				z=0.4d0*z + z_in
-				t1 = dme2_electronFull(x,0.d0,z)
-			end do
-			call toc(timer1, "<full>")
-		end if
-		ftqed_log_term = initial
-		call random_number(x)
-		call random_number(z)
-		x=(x_fin-x_in)*x + x_in
-		z=0.4d0*z + z_in
-		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x, 0.01d0, z
-		t1 = dme2_electronFull(x, 0.01d0, z)
-		t2 = dme2_electron(x, 0.01d0, z)
-		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
-
-		deallocate(dmg_vec)
-		deallocate(dme_vec)
-		call addToLog("[interactions] ...done!")
-	end subroutine init_interp_dme2_e
-#endif
-
-	elemental function E_k_m(k,m)
-		real(dl), intent(in) :: k, m
-		real(dl) :: E_k_m
-		E_k_m = sqrt(k*k+m*m)
-	end function E_k_m
-
-	elemental function fermiDirac(x)
-		real(dl) :: fermiDirac
-		real(dl), intent(in) :: x
-		fermiDirac = 1.d0/(exp(x) + 1.d0)
-	end function fermiDirac
-
-	pure function dme2_e_i1(x, z, y)
-	!doi:10.1016/S0370-2693(02)01622-2 eq.12 first integral
-	!equal to integral in eq.13
-		real(dl) :: dme2_e_i1
-		real(dl), intent(in) :: x, z, y
-		real(dl) :: Ekm
-		Ekm = E_k_m(y, x)
-		dme2_e_i1 = 1.d0/Ekm * fermiDirac(Ekm/z)
-	end function dme2_e_i1
-
-	pure function dme2_e_i2(x, y, z, k)
-		!doi:10.1016/S0370-2693(02)01622-2 eq.12 second integral
-		real(dl) :: dme2_e_i2
-		real(dl), intent(in) :: x, y, z, k
-		real(dl) :: m, T, p, Ekm
-
-		if (abs(y - k).gt.1d-6) then
-			Ekm = E_k_m(k, x)
-			dme2_e_i2 = k/Ekm * fermiDirac(Ekm/z)*log(abs((y+k)/(y-k)))
-		else
-			dme2_e_i2 = 0.d0
-		end if
-	end function dme2_e_i2
-
-	pure function dme2_electronFull(x, y, z, logt)
-	!doi:10.1016/S0370-2693(02)01622-2 eq.12
-		real(dl) :: dme2_electronFull, integr_1, integr_2
-		real(dl), intent(in) :: x, y, z
-		logical, intent(in), optional :: logt
-		integer :: i
-		logical :: uselog
-
-		if (present(logt)) then
-			uselog = ftqed_log_term .and. logt
-		else
-			uselog = ftqed_log_term
-		end if
-		if (ftqed_temperature_corr) then
-			integr_1 = 0.d0
-			do i=1, N_opt_y
-				integr_1 = integr_1 + opt_y_w(i)*dme2_e_i1(x, z, opt_y(i))
-			end do
-			dme2_electronFull = 2. * alpha_fine * (z*z * PID3 + integr_1/PID2)
-			if (uselog) then
-				integr_2 = 0.d0
-				do i=1, N_opt_y
-					integr_2 = integr_2 + opt_y_w(i)*dme2_e_i2(x, y, z, opt_y(i))/(opt_y(i)**2)
-				end do
-				dme2_electronFull = dme2_electronFull &
-					- x*x* alpha_fine / y / PID2 * integr_2
-			end if
-		else
-			dme2_electronFull = 0.d0
-		end if
-	end function dme2_electronFull
-
-#ifndef NOINTERPOLATION
-	function dme2_electron(x, y, z)
-		real(dl) :: dme2_electron
-		real(dl), intent(in) :: x, y, z
-		integer :: iflag
-
-		call dmeCorr%evaluate(x, y, z, dme2_electron)
-	end function dme2_electron
-#endif
-
-#ifndef NOINTERPOLATION
-	function dme2_nolog(x, z)
-		real(dl) :: dme2_nolog
-		real(dl), intent(in) :: x, z
-		integer :: iflag
-
-		call dmeNLCorr%evaluate(x, z, dme2_nolog)
-	end function dme2_nolog
-#endif
 
 	elemental function Ebare_i_dme(x, y, dme2)!for electrons
 		real(dl) :: Ebare_i_dme
@@ -731,7 +564,7 @@ module ndInteractions
 	!integrands of collision terms
 	pure function coll_nue_3_ann_int(iy2, y4, obj, F_ab)
 		!annihilation
-		use ndInterfaces1
+		use fpInterfaces1
 		procedure (F_annihilation) :: F_ab
 		integer, intent(in) :: iy2
 		real(dl), intent(in) :: y4
@@ -776,7 +609,7 @@ module ndInteractions
 
 	pure function coll_nue_3_sc_int(iy3, y2, obj, F_ab)
 		!scattering, summing positron and electrons
-		use ndInterfaces1
+		use fpInterfaces1
 		procedure (F_scattering) :: F_ab
 		integer, intent(in) :: iy3
 		real(dl), intent(in) :: y2
@@ -822,7 +655,7 @@ module ndInteractions
 	end function coll_nue_3_sc_int
 
 	pure function coll_nue_3_int(iy, yx, obj, F_ab_ann, F_ab_sc)
-		use ndInterfaces1
+		use fpInterfaces1
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
 		integer, intent(in) :: iy
@@ -836,8 +669,8 @@ module ndInteractions
 
 	!integrate collision terms
 	pure function integrate_coll_int_NC(f, obj, F_ab_ann, F_ab_sc)
-		use ndInterfaces1
-		use ndInterfaces2
+		use fpInterfaces1
+		use fpInterfaces2
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
@@ -860,8 +693,8 @@ module ndInteractions
 	end function integrate_coll_int_NC
 
 	pure function integrate_coll_int_GL(f, obj, F_ab_ann, F_ab_sc)
-		use ndInterfaces1
-		use ndInterfaces2
+		use fpInterfaces1
+		use fpInterfaces2
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
@@ -883,8 +716,8 @@ module ndInteractions
 	end function integrate_coll_int_GL
 
 	pure function get_collision_terms(collArgsIn, Fint)
-		use ndInterfaces2
-		use ndInterfaces3
+		use fpInterfaces2
+		use fpInterfaces3
 		implicit None
 		procedure (collision_integrand) :: Fint
 		type(cmplxMatNN) :: get_collision_terms

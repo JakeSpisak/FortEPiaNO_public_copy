@@ -1,11 +1,13 @@
 program tests
 	use precision
 	use variables
-	use ndConfig
-	use ndErrors
-	use ndEquations
-	use ndstuff
+	use fpConfig
+	use fpErrors
+	use fpEquations
+	use fpCosmology
+	use fpStuff
 	use sgTestUtils
+	use ftqed
 	implicit none
 
 	call openLogFile

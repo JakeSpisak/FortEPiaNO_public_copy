@@ -1,8 +1,8 @@
 program fortepiano
 	use precision
-	use ndConfig
-	use ndErrors
-	use ndEquations
+	use fpConfig
+	use fpErrors
+	use fpEquations
 	implicit none
 
 	call initConfig

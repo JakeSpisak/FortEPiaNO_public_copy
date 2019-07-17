@@ -1,11 +1,11 @@
-module ndstuff
+module fpStuff
 	use precision
 	use constants
 	use utilities
-	use ndErrors
-	use ndInteractions
-	use ndequations
-	use ndcosmology
+	use fpErrors
+	use fpInteractions
+	use fpEquations
+	use fpCosmology
 	use linear_interpolation_module
 
 	type nuDensArgs
@@ -839,7 +839,7 @@ enddo                                                   !SG-PF
 		interface
 			pure real(dl) function f(a, b)
 				use precision
-				use sg_interpolate
+				use fpInterpolate
 				type(spline_class), intent(in) :: a
 				real(KIND(1.d0)), intent(in) :: b
 			end function
@@ -1566,7 +1566,7 @@ enddo                                                   !SG-PF
 	end function coll_nue_int_im
 
 	pure function coll_nue_3_ann_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
-		use ndInterfaces1
+		use fpInterfaces1
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
@@ -1578,7 +1578,7 @@ enddo                                                   !SG-PF
 	end function coll_nue_3_ann_int_w
 
 	pure function coll_nue_3_sc_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
-		use ndInterfaces1
+		use fpInterfaces1
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
@@ -1599,4 +1599,4 @@ enddo                                                   !SG-PF
 		d = y_max
 		RETURN
 	END SUBROUTINE region
-end module ndstuff
+end module fpStuff

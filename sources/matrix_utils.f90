@@ -1,6 +1,6 @@
-module ndMatrices
+module fpMatrices
 	use precision
-	use ndErrors
+	use fpErrors
 	implicit none
 
 	contains
@@ -269,4 +269,4 @@ module ndMatrices
 		write (frmt,"('(',I4,'(E14.6))')") n
 		write(*,trim(frmt)) vec(:)
 	end subroutine printVec
-end module ndMatrices
+end module fpMatrices

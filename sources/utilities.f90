@@ -1,4 +1,4 @@
-module sg_interpolate
+module fpInterpolate
 	use precision
 
 	implicit none
@@ -109,13 +109,13 @@ module sg_interpolate
 		b=(x-xa(klo))/h
 		y=a*ya(klo)+b*ya(khi)+((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.
 	end subroutine splint
-end module sg_interpolate
+end module fpInterpolate
 
 module utilities
 	use precision
-	use ndErrors
+	use fpErrors
 	use variables
-	use sg_interpolate
+	use fpInterpolate
 
     integer, parameter :: GI = DL
     integer, parameter :: sp_acc = DL
@@ -184,6 +184,18 @@ module utilities
 		end do
 		return
 	end function logspace
+
+	elemental function E_k_m(k, m)
+		real(dl), intent(in) :: k, m
+		real(dl) :: E_k_m
+		E_k_m = sqrt(k*k+m*m)
+	end function E_k_m
+
+	elemental function fermiDirac(x)
+		real(dl) :: fermiDirac
+		real(dl), intent(in) :: x
+		fermiDirac = 1.d0/(exp(x) + 1.d0)
+	end function fermiDirac
 
 	subroutine openFile(u, fname, overwrite)
 		integer :: u

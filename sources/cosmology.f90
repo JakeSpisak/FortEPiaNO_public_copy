@@ -1,13 +1,12 @@
-module ndCosmology
+module fpCosmology
 	use precision
 	use constants
 	use utilities
-	use ndErrors
-	use ndInteractions
+	use fpErrors
+	use ftqed
+	use fpInteractions
 	use linear_interpolation_module
 	implicit none
-
-	real(dl), parameter :: upper = 1.d2
 
 #ifndef NOINTERPOLATION
 	type(linear_interp_2d) :: elDens, muDens
@@ -190,167 +189,6 @@ module ndCosmology
 		call addToLog("[cosmo] ...done!")
 	end subroutine nonRelativistic_initialize
 
-	!functions derived from rho and drho/dx, for photon temperature evolution
-	pure function J_int(o, u, a)
-		real(dl) :: J_int, esuo
-		real(dl), intent(in) :: o, u
-		integer, intent(in) :: a
-
-		esuo=exp(sqrt(u*u+o*o))
-		J_int = u**a * esuo / ((1.d0+esuo)**2)
-	end function J_int
-
-	pure function J_funcFull(o, a)
-		real(dl) :: J_funcFull
-		real(dl), intent(in) :: o
-		integer, intent(in) :: a
-		integer :: i
-
-		if (a.lt.2) then
-			J_funcFull = rombint_ri(o, a, J_int, zero, upper, toler_jkyg, maxiter) / PISQ
-		else
-			J_funcFull = 0.d0
-			do i=1, N_opt_xoz
-				J_funcFull = J_funcFull + opt_xoz_w(i)*J_int(o, opt_xoz(i), a-2)
-			end do
-			J_funcFull = J_funcFull / PISQ
-		end if
-	end function J_funcFull
-
-	pure function Jprime_int(o, u, a)
-		real(dl) :: Jprime_int
-		real(dl), intent(in) :: o, u
-		integer, intent(in) :: a
-		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
-
-		uuoo=u*u+o*o
-		sqrtuuoo = sqrt(uuoo)
-		expsqrtuuoo = exp(sqrtuuoo)
-
-		Jprime_int = u**a * expsqrtuuoo * (1.d0-expsqrtuuoo) /(sqrtuuoo*(expsqrtuuoo+1)**3)
-	end function Jprime_int
-
-	pure function JprimeFull(o, a)
-		real(dl) :: JprimeFull
-		real(dl), intent(in) :: o
-		integer, intent(in) :: a
-		integer :: i
-
-		if (a.lt.2) then
-			JprimeFull = rombint_ri(o, a, Jprime_int, zero, upper, toler_jkyg, maxiter) * o / PISQ
-		else
-			JprimeFull = 0.d0
-			do i=1, N_opt_xoz
-				JprimeFull = JprimeFull + opt_xoz_w(i)*Jprime_int(o, opt_xoz(i), a-2)
-			end do
-			JprimeFull = JprimeFull * o / PISQ
-		end if
-	end function JprimeFull
-
-	pure function K_int(o, u, a)
-		real(dl) :: K_int,suo
-		real(dl), intent(in) :: o, u
-		integer, intent(in) :: a
-
-		suo=sqrt(u*u+o*o)
-		K_int = u**a / (suo * (1.d0+exp(suo)))
-	end function K_int
-
-	pure function K_funcFull(o, a)
-		real(dl) :: K_funcFull
-		real(dl), intent(in) :: o
-		integer, intent(in) :: a
-		integer :: i
-
-		if (a.lt.2 .or. o.lt.5d-2) then
-			K_funcFull = rombint_ri(o, a, K_int, zero, upper, toler_jkyg, maxiter) / PISQ
-		else
-			K_funcFull = 0.d0
-			do i=1, N_opt_xoz
-				K_funcFull = K_funcFull + opt_xoz_w(i)*K_int(o, opt_xoz(i), a-2)
-			end do
-			K_funcFull = K_funcFull / PISQ
-		end if
-	end function K_funcFull
-
-	pure function Kprime_int(o, u, a)
-		real(dl) :: Kprime_int
-		real(dl), intent(in) :: o, u
-		integer, intent(in) :: a
-		real(dl) :: uuoo, sqrtuuoo, expsqrtuuoo
-
-		uuoo=u*u+o*o
-		sqrtuuoo = sqrt(uuoo)
-		expsqrtuuoo = exp(sqrtuuoo)
-
-		Kprime_int = u**a / (uuoo*sqrtuuoo*(expsqrtuuoo+1)**2) * &
-			(1.d0 + expsqrtuuoo*(sqrtuuoo+1.d0))
-	end function Kprime_int
-
-	pure function KprimeFull(o, a)
-		real(dl) :: KprimeFull
-		real(dl), intent(in) :: o
-		integer, intent(in) :: a
-
-		KprimeFull = - rombint_ri(o, a, Kprime_int, zero, upper, toler_jkyg, maxiter) * o / PISQ
-	end function KprimeFull
-
-	pure function G12_funcFull(o)
-		real(dl), dimension(2) :: G12_funcFull
-		real(dl), intent(in) :: o
-		real(dl) :: k2, j2, k2p, j2p, ga
-		real(dl) :: k0, j0, k0p, j0p, j4p, gb, gc, osq
-
-		if (ftqed_temperature_corr) then
-			k2=k_funcFull(o, 2)
-			j2=j_funcFull(o, 2)
-			k2p=KprimeFull(o, 2)
-			j2p=JprimeFull(o, 2)
-			ga = (k2p/6.d0 - k2*k2p + j2p/6.d0 + j2p*k2 + j2*k2p)
-			G12_funcFull(1) = PIx2*alpha_fine *(&
-				(k2/3.d0 + 2.d0*k2*k2 - j2/6.d0 - k2*j2)/o + &
-				ga )
-			G12_funcFull(2) = PIx2*alpha_fine*( &
-				o * ga &
-				- 4.d0*((k2+j2)/6.d0 + k2*j2 - k2*k2/2.d0))
-
-			if (ftqed_log_term) then
-				!to edit
-				G12_funcFull(1) = G12_funcFull(1) + &
-					0.d0
-				G12_funcFull(2) = G12_funcFull(2) + &
-					0.d0
-			end if
-
-			if (ftqed_ord3) then
-				osq = o*o
-				k0=k_funcFull(o, 0)
-				j0=j_funcFull(o, 0)
-				k0p=KprimeFull(o, 0)
-				j0p=JprimeFull(o, 0)
-				j4p=JprimeFull(o, 4)
-				gb = sqrt(k2 + osq*k0/2.d0)
-				gc = 0.5*(2*j2 + osq*j0)/(2*k2 + osq*k0)
-				G12_funcFull(1) = G12_funcFull(1) + &
-					alpha_fine*electron_charge * gb * ( &
-						(2.d0*j2-4.d0*k2)/o &
-						- 2*j2p &
-						- osq* j0p &
-						- o*(2*k0+j0) &
-						- gc * (o*(k0-j0) + k2p) &
-					)
-				G12_funcFull(2) = G12_funcFull(2) + &
-					alpha_fine*electron_charge * gb * ( &
-						gc*(2*j2 + osq*j0) &
-						- 2*j4p/o &
-						- o*(3*j2p+osq*j0p) &
-					)
-			end if
-		else
-			G12_funcFull = 0.d0
-		end if
-	end function G12_funcFull
-
 	pure function nonRelativistic_dzodx_terms(cls, xoz) result(oj)
 		real(dl), dimension(2) :: oj
 		class(nonRelativistic_fermion), intent(in) :: cls
@@ -380,7 +218,7 @@ module ndCosmology
 			k2 = k_funcFull(o, 2)
 			j2 = j_funcFull(o, 2)
 			deltaRhoTot_em = electron_charge_sq * z4 * ( &
-				k2**2/2.d0 - (k2+j2)/6.d0 - k2*j2
+				k2**2/2.d0 - (k2+j2)/6.d0 - k2*j2 &
 			)
 
 			if (ftqed_log_term) then
@@ -389,11 +227,11 @@ module ndCosmology
 			end if
 
 			if (ftqed_ord3) then
-				osq = o*o/2.d0
+				osqd = o*o/2.d0
 				k0 = k_funcFull(o, 0)
 				j0 = j_funcFull(o, 0)
 				deltaRhoTot_em = deltaRhoTot_em &
-					+ electron_charge_cub * z4 * &
+					+ electron_charge_cub * z4 / PI &
 					* sqrt(k2 + osqd*k0) &
 					* (j2 + osqd*j0)
 			end if
@@ -402,13 +240,24 @@ module ndCosmology
 
 	pure function deltaPTot_em(x, z)
 		real(dl) :: deltaPTot_em
+		real(dl) :: z4, o, k2, k2rk0
 		real(dl), intent(in) :: x, z
 		deltaPTot_em = 0.d0
 		
 		if (ftqed_temperature_corr) then
-			deltaPTot_em = 0.d0!to edit
+			z4 = z**4
+			o = x/z
+			k2 = k_funcFull(o, 2)
+			deltaPTot_em = - 0.25d0 * electron_charge_sq * z4 * &
+				k2 * (one_third + 0.5d0 * k2)
 			if (ftqed_log_term) then
 				deltaPTot_em = 0.d0!to edit
+			end if
+			if (ftqed_ord3) then
+				k2rk0 = k2 + o*o/2.d0 * k_funcFull(o, 0)
+				deltaPTot_em = 2.d0 * &
+					electron_charge_cub * z4 / (3.d0*PI) * &
+					sqrt(k2rk0) * k2rk0
 			end if
 		end if
 	end function deltaPTot_em
@@ -459,7 +308,7 @@ module ndCosmology
 	end function nuDensityGL
 
 	function allNuDensity()
-		use ndInterfaces1
+		use fpInterfaces1
 		real(dl) :: allNuDensity
 		integer :: ix
 		procedure (nuDensity_integrator), pointer :: nuDensityInt

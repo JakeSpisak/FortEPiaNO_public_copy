@@ -9,6 +9,7 @@ module constants
 	use precision
 	implicit none
 
+	real(dl), parameter :: one_third = 1.d0/3.d0
 	real(dl), parameter :: four_thirds = 4.d0/3.d0
 	real(dl), parameter :: SQRT2 = sqrt(2.d0)
 	real(dl), parameter :: PI  =3.141592653589793238463d0
@@ -161,7 +162,7 @@ module variables
 	end subroutine allocateCmplxMat
 end module variables
 
-module ndInterfaces1
+module fpInterfaces1
 	implicit None
 	interface
 		pure real(dl) function F_annihilation(n1, n2, f3, f4, a, b, i, j)
@@ -188,14 +189,14 @@ module ndInterfaces1
 			logical, intent(in), optional :: reim
 		end function
 	end interface
-end module ndInterfaces1
+end module fpInterfaces1
 
-module ndInterfaces2
+module fpInterfaces2
 	interface
 		pure real(dl) function collision_integrand(a, b, o, F_ab_ann, F_ab_sc)
 			use precision
 			use variables
-			use ndInterfaces1
+			use fpInterfaces1
 			procedure (F_annihilation) :: F_ab_ann
 			procedure (F_scattering) :: F_ab_sc
 			integer, intent(in) :: a
@@ -203,15 +204,15 @@ module ndInterfaces2
 			type(coll_args), intent(in) :: o
 		end function
 	end interface
-end module ndInterfaces2
+end module fpInterfaces2
 
-module ndInterfaces3
+module fpInterfaces3
 	interface
 		pure real(dl) function collision_integrator(f, obj, F_ab_ann, F_ab_sc)
 			use precision
 			use variables
-			use ndInterfaces1
-			use ndInterfaces2
+			use fpInterfaces1
+			use fpInterfaces2
 			implicit None
 			procedure (F_annihilation) :: F_ab_ann
 			procedure (F_scattering) :: F_ab_sc
@@ -219,4 +220,4 @@ module ndInterfaces3
 			type(coll_args), intent(in) :: obj
 		end function
 	end interface
-end module ndInterfaces3
+end module fpInterfaces3

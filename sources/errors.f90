@@ -1,4 +1,4 @@
-module ndErrors
+module fpErrors
 	use precision
 	use variables
 	implicit none

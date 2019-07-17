@@ -1,12 +1,12 @@
-module ndConfig
+module fpConfig
 	use precision
 	use constants
 	use variables
-	use ndErrors
+	use fpErrors
 	use FileIni
-	use ndMatrices
-	use ndInteractions
-	use ndEquations
+	use fpMatrices
+	use fpInteractions
+	use fpEquations
 	use utilities
 	implicit none
 
@@ -434,4 +434,4 @@ module ndConfig
 		call rename(trim(args(1))//".log", trim(outputFolder)//'/ini.log')
 		call addToLog("[config] Read configuration from ini file: complete.")
 	end subroutine initconfig
-end module ndConfig
+end module fpConfig

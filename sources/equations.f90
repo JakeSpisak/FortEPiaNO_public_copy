@@ -1,16 +1,17 @@
-module ndEquations
+module fpEquations
 	use precision
 	use variables
 	use utilities
 	use constants
-	use ndErrors
-	use ndinteractions
-	use ndcosmology
 	use bspline_module
 	use linear_interpolation_module
-	use sg_interpolate
+	use fpInterpolate
 	use diagonalize
-	use ndInterfaces1
+	use fpErrors
+	use fpInteractions
+	use ftqed
+	use fpCosmology
+	use fpInterfaces1
 	implicit none
 
 #ifndef NOINTERPOLATION
@@ -611,7 +612,7 @@ module ndEquations
 	end subroutine solver
 
 	pure subroutine drhoy_dx_fullMat(matrix, x, z, iy, dme2, sqrtraddens, Fint)
-		use ndInterfaces2
+		use fpInterfaces2
 		procedure (collision_integrand) :: Fint
 		type(cmplxMatNN), intent(out) :: matrix
 		real(dl), intent(in) :: x, z, dme2, sqrtraddens
@@ -751,7 +752,7 @@ module ndEquations
 	end function Neff_from_rho_z
 
 	subroutine finalresults
-		use ndInterfaces1
+		use fpInterfaces1
 		procedure (nuDensity_integrator), pointer :: nuDensityInt
 		real(dl) :: ndeq, tmp, w, z
 		real(dl), dimension(:), allocatable :: tmpvec
@@ -796,4 +797,4 @@ module ndEquations
 		write(9876,"('Neff    = ',F9.6)") tmp
 		close(9876)
 	end subroutine finalresults
-end module ndEquations
+end module fpEquations
