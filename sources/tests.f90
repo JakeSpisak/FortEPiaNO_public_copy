@@ -2196,6 +2196,7 @@ program tests
 		integer :: i, j, iy
 		real(dl), dimension(:,:,:), allocatable :: GLR_vectmp
 
+		ftqed_temperature_corr = .false.
 		allocate(GLR_vectmp(2, flavorNumber, flavorNumber))
 		GLR_vectmp = GLR_vec
 		GLR_vec = 0.d0
@@ -2340,6 +2341,7 @@ program tests
 		end do
 		GLR_vec = GLR_vectmp
 		deallocate(GLR_vectmp)
+		ftqed_temperature_corr = .true.
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_drho_dx

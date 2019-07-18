@@ -305,7 +305,7 @@ module ftqed
 		real(dl), intent(in) :: x, z
 
 		deltaRhoTot_em = 0.d0
-		
+
 		if (ftqed_temperature_corr) then
 			z4 = z**4
 			o = x/z

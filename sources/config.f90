@@ -27,7 +27,8 @@ module fpConfig
 		allocate(massSplittings(nf))
 		allocate(mixingAngles(nf,nf))
 
-		allocate(ln_2dint_y(ln_2dint_Npts), ln_2dint_dy(ln_2dint_Npts))
+		if (.not.allocated(ln_2dint_y)) &
+			allocate(ln_2dint_y(ln_2dint_Npts), ln_2dint_dy(ln_2dint_Npts))
 		ln_2dint_y = geomspace(ln_2dint_lower, ln_2dint_upper, ln_2dint_Npts)
 		do ix = 1, ln_2dint_Npts-1
 			ln_2dint_dy(ix) = ln_2dint_y(ix+1) - ln_2dint_y(ix)
