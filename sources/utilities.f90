@@ -116,6 +116,7 @@ module utilities
 	use fpErrors
 	use variables
 	use fpInterpolate
+	use fpInterfaces1
 
     integer, parameter :: GI = DL
     integer, parameter :: sp_acc = DL
@@ -515,4 +516,53 @@ module utilities
 				+ sum(wx(ix) * wy(:) * f(ix, :))
 		end do
 	end function integral_GL_2d
+
+	pure function integrate_ftqed_ln(func, x, z)
+		real(dl) :: integrate_ftqed_ln
+		real(dl), intent(in) :: x, z
+		procedure (ftqed_ln_integrand) :: func
+		real(dl) :: y, k
+		integer :: ix, iy
+		real(dl), dimension(:,:), allocatable :: fval
+
+		allocate(fval(ln_2dint_Npts, ln_2dint_Npts))
+		do ix=1, ln_2dint_Npts
+			do iy=1, ln_2dint_Npts
+				y = (ln_2dint_y(ix) + ln_2dint_y(iy)) / 2.
+				k = (ln_2dint_y(ix) - ln_2dint_y(iy)) / 2.
+				if (k.ge.0 .and. y.ge.0) then
+					fval(ix, iy) = func(x, z, y, k)
+				else
+					fval(ix, iy) = 0.d0
+				end if
+			end do
+		end do
+		integrate_ftqed_ln = integral_NC_2d(&
+			ln_2dint_Npts, &
+			ln_2dint_Npts, &
+			ln_2dint_dy, &
+			ln_2dint_dy, &
+			fval &
+			)
+		do ix=1, ln_2dint_Npts
+			do iy=1, ln_2dint_Npts
+				y = (ln_2dint_y(ix) - ln_2dint_y(iy)) / 2.
+				k = (ln_2dint_y(ix) + ln_2dint_y(iy)) / 2.
+				if (k.ge.0 .and. y.ge.0) then
+					fval(ix, iy) = func(x, z, y, k)
+				else
+					fval(ix, iy) = 0.d0
+				end if
+			end do
+		end do
+		integrate_ftqed_ln = integrate_ftqed_ln + integral_NC_2d(&
+			ln_2dint_Npts, &
+			ln_2dint_Npts, &
+			ln_2dint_dy, &
+			ln_2dint_dy, &
+			fval &
+			)
+		deallocate(fval)
+		integrate_ftqed_ln = integrate_ftqed_ln / 2.d0
+	end function integrate_ftqed_ln
 end module utilities

@@ -140,10 +140,10 @@ module ftqed
 			Eeyoz = exp(Eyoz)
 			Nfy = 2.*fermiDirac(Eyoz)
 
-			pxNk = - x*Eekoz * Nfk**2 / (Ek*z)
-			pzNk = Eekoz * Nfk**2 * Ek / (z**2)
-			pxpzNk = x * Eekoz * Nfk**2 / (z**3) * (1 - 2*Eekoz*Nfk + z/Ek)
-			pxNy = - x*Eeyoz * Nfy**2 / (Ey*z)
+			pxNk = - x*Eekoz * Nfk**2 / (2*Ek*z)
+			pzNk = Eekoz * Nfk**2 * Ek / (2*z**2)
+			pxpzNk = x * Eekoz * Nfk**2 / (2*z**3) * (1 - Eekoz*Nfk + z/Ek)
+			pxNy = - x*Eeyoz * Nfy**2 / (2*Ey*z)
 
 			G1_ln_integrand = &
 				y * k / (Ey * Ek) * log( abs((y+k) / (y-k)) ) * &
@@ -199,8 +199,6 @@ module ftqed
 		real(dl) :: k2, j2, k2p, j2p, ga
 		real(dl) :: k0, j0, k0p, j0p, j4p, gb, gc, osq
 		real(dl) :: coeff, integ
-		integer :: ix, iy
-		real(dl), dimension(:,:), allocatable :: fval
 
 		if (ftqed_temperature_corr) then
 			o = x/z
@@ -218,38 +216,10 @@ module ftqed
 
 			if (ftqed_log_term) then
 				coeff = electron_charge**2 * x / (PIx2**4*z**3)
-				allocate(fval(ln_2dint_Npts, ln_2dint_Npts))
-				!G1
-				do ix=1,ln_2dint_Npts
-					do iy=1,ln_2dint_Npts
-						fval(ix, iy) = &
-							G1_ln_integrand(x, z, ln_2dint_y(ix), ln_2dint_y(iy))
-					end do
-				end do
-				integ = integral_NC_2d(&
-						ln_2dint_Npts, &
-						ln_2dint_Npts, &
-						ln_2dint_dy, &
-						ln_2dint_dy, &
-						fval &
-						)
-				G12_funcFull(1) = G12_funcFull(1) + coeff * integ
-				!G2
-				do ix=1,ln_2dint_Npts
-					do iy=1,ln_2dint_Npts
-						fval(ix, iy) = &
-							G2_ln_integrand(x, z, ln_2dint_y(ix), ln_2dint_y(iy))
-					end do
-				end do
-				integ = integral_NC_2d(&
-						ln_2dint_Npts, &
-						ln_2dint_Npts, &
-						ln_2dint_dy, &
-						ln_2dint_dy, &
-						fval &
-						)
-				G12_funcFull(2) = G12_funcFull(2) + x*z*coeff * integ
-				deallocate(fval)
+				G12_funcFull(1) = G12_funcFull(1) + &
+					coeff * integrate_ftqed_ln(G1_ln_integrand, x, z)
+				G12_funcFull(2) = G12_funcFull(2) + &
+					x*z*coeff * integrate_ftqed_ln(G2_ln_integrand, x, z)
 			end if
 
 			if (ftqed_ord3) then
@@ -333,8 +303,6 @@ module ftqed
 	pure function deltaRhoTot_em(x, z)
 		real(dl) :: deltaRhoTot_em, z4, o, k2, j2, k0, j0, osqd
 		real(dl), intent(in) :: x, z
-		integer :: ix, iy
-		real(dl), dimension(:,:), allocatable :: fval
 
 		deltaRhoTot_em = 0.d0
 		
@@ -348,23 +316,9 @@ module ftqed
 			)
 
 			if (ftqed_log_term) then
-				allocate(fval(ln_2dint_Npts, ln_2dint_Npts))
-				do ix=1,ln_2dint_Npts
-					do iy=1,ln_2dint_Npts
-						fval(ix, iy) = &
-							deltaRho_ln_integrand(x, z, ln_2dint_y(ix), ln_2dint_y(iy))
-					end do
-				end do
 				deltaRhoTot_em = deltaRhoTot_em + &
 					electron_charge_sq * x**2 /(16.d0*PISQ*PISQ) &
-					* integral_NC_2d(&
-						ln_2dint_Npts, &
-						ln_2dint_Npts, &
-						ln_2dint_dy, &
-						ln_2dint_dy, &
-						fval &
-						)
-				deallocate(fval)
+					* integrate_ftqed_ln(deltaRho_ln_integrand, x, z)
 			end if
 
 			if (ftqed_ord3) then
@@ -383,8 +337,6 @@ module ftqed
 		real(dl) :: deltaPTot_em
 		real(dl) :: z4, o, k2, k2rk0
 		real(dl), intent(in) :: x, z
-		integer :: ix, iy
-		real(dl), dimension(:,:), allocatable :: fval
 
 		deltaPTot_em = 0.d0
 		
@@ -396,23 +348,9 @@ module ftqed
 				k2 * (one_sixth + 0.5d0 * k2)
 
 			if (ftqed_log_term) then
-				allocate(fval(ln_2dint_Npts, ln_2dint_Npts))
-				do ix=1,ln_2dint_Npts
-					do iy=1,ln_2dint_Npts
-						fval(ix, iy) = &
-							deltaP_ln_integrand(x, z, ln_2dint_y(ix), ln_2dint_y(iy))
-					end do
-				end do
 				deltaPTot_em = deltaPTot_em + &
 					electron_charge_sq * x**2 /(16.d0*PISQ*PISQ) &
-					* integral_NC_2d(&
-						ln_2dint_Npts, &
-						ln_2dint_Npts, &
-						ln_2dint_dy, &
-						ln_2dint_dy, &
-						fval &
-						)
-				deallocate(fval)
+					* integrate_ftqed_ln(deltaP_ln_integrand, x, z)
 			end if
 
 			if (ftqed_ord3) then

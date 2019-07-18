@@ -196,6 +196,12 @@ module fpInterfaces1
 			logical, intent(in), optional :: reim
 		end function
 	end interface
+	interface
+		pure real(dl) function ftqed_ln_integrand(x, z, y, k)
+			use precision
+			real(dl), intent(in) :: x, y, z, k
+		end function
+	end interface
 end module fpInterfaces1
 
 module fpInterfaces2
