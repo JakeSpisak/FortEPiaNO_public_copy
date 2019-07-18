@@ -135,9 +135,9 @@ module variables
 	real(dl), dimension(:), allocatable :: opt_y, opt_y_w
 
 	!2D integrals for log terms of ftqed functions
-	integer, parameter :: ln_2dint_Npts = 100
+	integer, parameter :: ln_2dint_Npts = 100 !cannot use too many nor too few
 	real(dl), parameter :: ln_2dint_lower = 0.001d0
-	real(dl), parameter :: ln_2dint_upper = 30.d0
+	real(dl), parameter :: ln_2dint_upper = 100.d0 !must be high enough to catch features of G1/G2
 	real(dl), dimension(:), allocatable :: ln_2dint_y, ln_2dint_dy
 
 	!used for 2d interpolation:

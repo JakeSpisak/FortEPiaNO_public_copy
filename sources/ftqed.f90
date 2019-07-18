@@ -188,7 +188,7 @@ module ftqed
 			G2_ln_integrand = &
 				y * k / Ey * log( abs((y+k) / (y-k)) ) * &
 				Nfk * Nfy * NfEek / z**4 * &
-				(2.d0*Ek*NfEek - Ek + Nfy*exp(Eyoz)*Ey - 2.d0*z)
+				(Ek*NfEek/2.d0 - Ek/2.d0 + Nfy*exp(Eyoz)*Ey/4.d0 - z)
 		end if
 	end function G2_ln_integrand
 
@@ -272,7 +272,7 @@ module ftqed
 			deltaRho_ln_integrand = &
 				y * k / (Ek * Ey) * log( abs((y+k) / (y-k)) ) * &
 				Nfy * Nfk * ( &
-					2. * Nfk * exp(Ekoz) * Ek / z - 1.d0 &
+					Nfk * exp(Ekoz) * Ek / z - 1.d0 &
 				)
 		end if
 	end function deltaRho_ln_integrand

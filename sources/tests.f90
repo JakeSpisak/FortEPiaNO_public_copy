@@ -195,6 +195,27 @@ program tests
 		end do
 		call assert_double_rel("intLin2D 2", integral_NC_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr), 111.967d0, 0.003d0)
 
+		call assert_double_rel("lnP test 1", &
+			integrate_ftqed_ln(deltaP_ln_integrand, 1.d0, 1.d0), 0.542467d0, 1d-3)
+		call assert_double_rel("lnP test 2", &
+			integrate_ftqed_ln(deltaP_ln_integrand, 0.01d0, 1.d0), 2.01577d0, 5d-3)
+		call assert_double_rel("lnP test 3", &
+			integrate_ftqed_ln(deltaP_ln_integrand, 0.2d0, 1.3d0), 3.05627d0, 1d-3)
+
+		call assert_double_rel("lnG1 test 1", &
+			integrate_ftqed_ln(G1_ln_integrand, 0.1d0, 10.d0), -403.3d0, 1d-3)
+		call assert_double_rel("lnG1 test 2", &
+			integrate_ftqed_ln(G1_ln_integrand, 1.5d0, 1.5d0), -3.655d0, 3d-3)
+		call assert_double_rel("lnG1 test 3", &
+			integrate_ftqed_ln(G1_ln_integrand, 0.5d0, 0.9d0), -2.2618d0, 5d-4)
+
+		call assert_double_rel("lnG2 test 1", &
+			integrate_ftqed_ln(G2_ln_integrand, 0.1d0, 10.d0), 2.01577d0, 5d-2)
+		call assert_double_rel("lnG2 test 2", &
+			integrate_ftqed_ln(G2_ln_integrand, 1.5d0, 1.5d0), 2.073d0, 5d-2)
+		call assert_double_rel("lnG2 test 3", &
+			integrate_ftqed_ln(G2_ln_integrand, 0.5d0, 0.9d0), 2.204d0, 1d-2)
+
 		deallocate(fy1_arr)
 		deallocate(fy2_arr)
 		call printTotalTests
@@ -476,17 +497,17 @@ program tests
 		call assert_double_rel("dRhoft o23 test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00860629d0, 1d-5)
 		call assert_double_rel("dRhoft o23 test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0102149d0, 1d-5)
 		call assert_double_rel("dRhoft o23 test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.00028862d0, 1d-5)
-!		ftqed_log_term = .true.
-!		ftqed_ord3 = .false.
-!		call assert_double_rel("dRhoft o2l test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00859633d0, 1d-5)
-!		call assert_double_rel("dRhoft o2l test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.0170808d0, 1d-5)
-!		call assert_double_rel("dRhoft o2l test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0205183d0, 1d-5)
-!		call assert_double_rel("dRhoft o2l test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.000594094d0, 1d-5)
-!		ftqed_ord3 = .true.
-!		call assert_double_rel("dRhoft o23l test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00859633d0, 1d-5)
-!		call assert_double_rel("dRhoft o23l test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.0170808d0, 1d-5)
-!		call assert_double_rel("dRhoft o23l test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0205183d0, 1d-5)
-!		call assert_double_rel("dRhoft o23l test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.000594094d0, 1d-5)
+		ftqed_log_term = .true.
+		ftqed_ord3 = .false.
+		call assert_double_rel("dRhoft o2l test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00477571d0, 1d-5)
+		call assert_double_rel("dRhoft o2l test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00945221d0, 1d-5)
+		call assert_double_rel("dRhoft o2l test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0111961d0, 4d-5)
+		call assert_double_rel("dRhoft o2l test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.000312169d0, 3d-5)
+		ftqed_ord3 = .true.
+		call assert_double_rel("dRhoft o23l test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00435043d0, 1d-5)
+		call assert_double_rel("dRhoft o23l test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00857792d0, 1d-5)
+		call assert_double_rel("dRhoft o23l test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0100411d0, 5d-5)
+		call assert_double_rel("dRhoft o23l test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.000286758d0, 3d-5)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 		call assert_double_rel("dPft o2 test 1", deltaPTot_em(0.01d0, 1.d0), -0.00159171d0, 1d-5)
@@ -498,20 +519,21 @@ program tests
 		call assert_double_rel("dPft o23 test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00272757d0, 1d-5)
 		call assert_double_rel("dPft o23 test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00289651d0, 1d-5)
 		call assert_double_rel("dPft o23 test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000317678d0, 1d-5)
-!		ftqed_log_term = .true.
-!		ftqed_ord3 = .false.
-!		call assert_double_rel("dPft o2l test 1", deltaPTot_em(0.01d0, 1.d0), -0.00159169d0, 1d-5)
-!		call assert_double_rel("dPft o2l test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00299430d0, 1d-5)
-!		call assert_double_rel("dPft o2l test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00317157d0, 1d-5)
-!		call assert_double_rel("dPft o2l test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000339254d0, 1d-5)
-!		ftqed_ord3 = .true.
-!		call assert_double_rel("dPft o23l test 1", deltaPTot_em(0.01d0, 1.d0), -0.00144994d0, 1d-5)
-!		call assert_double_rel("dPft o23l test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00270768d0, 1d-5)
-!		call assert_double_rel("dPft o23l test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00281788d0, 1d-5)
-!		call assert_double_rel("dPft o23l test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000316376d0, 1d-5)
+		ftqed_log_term = .true.
+		ftqed_ord3 = .false.
+		call assert_double_rel("dPft o2l test 1", deltaPTot_em(0.01d0, 1.d0), -0.00159169d0, 1d-5)
+		call assert_double_rel("dPft o2l test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00299430d0, 1d-5)
+		call assert_double_rel("dPft o2l test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00317157d0, 4d-5)
+		call assert_double_rel("dPft o2l test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000339254d0, 2d-5)
+		ftqed_ord3 = .true.
+		call assert_double_rel("dPft o23l test 1", deltaPTot_em(0.01d0, 1.d0), -0.00144994d0, 1d-5)
+		call assert_double_rel("dPft o23l test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00270768d0, 1d-5)
+		call assert_double_rel("dPft o23l test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00281788d0, 4d-5)
+		call assert_double_rel("dPft o23l test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000316376d0, 2d-5)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
+		ftqed_temperature_corr = .false.
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
@@ -598,26 +620,14 @@ program tests
 		call assert_double_rel("muEntropy test 2", muons%entropy(0.076d0, 1.d0), 4.87363d-5, 1d-2)
 		call assert_double_rel("muEntropy test 3", muons%entropy(0.076d0, 1.32d0), 0.0027439d0, 1d-3)
 		call assert_double("muEntropy test 4", muons%entropy(1.d1, 1.2d0), 0.d0, 1d-10)
+		ftqed_temperature_corr = .true.
 
-		ftqed_log_term=.true.
-		write(*,*)
-		write(*,*) "now with log term in dme2"
-		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.061073977d0, 1d-4)
-		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.d0), 1.149044429d0, 1d-4)
-		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(0.076d0, 1.32d0), 3.489077192d0, 1d-4)
-		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(1.d1, 1.2d0), 0.037746475d0, 1d-4)
-		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0), 2.61357908d-8, 5d-3)
-		call assert_double_rel("elPress test 1", electrons%pressure(1.d0, 1.d0), 0.316533035d0, 1d-4)
-		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.d0), 0.38146325d0, 1d-4)
-		call assert_double_rel("elPress test 3", electrons%pressure(0.076d0, 1.32d0), 1.158708038d0, 2d-3)
-		call assert_double_rel("elPress test 4", electrons%pressure(1.d1, 1.2d0), 0.0037618874d0, 2d-4)
-		call assert_double("elPress test 5", electrons%pressure(3.d1, 1.2d0), 1d-9, 1d-10)
-		call assert_double_rel("elEntropy test 1", electrons%entropy(1.d0, 1.d0), 1.377607012d0, 1d-3)
-		call assert_double_rel("elEntropy test 2", electrons%entropy(0.076d0, 1.d0), 1.53050768d0, 2d-3)
-		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.521049417d0, 2d-3)
-		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0345903027d0, 2d-3)
-		call assert_double_rel("elEntropy test 4", electrons%entropy(3.d1, 1.2d0), 2.25d-8, 1d-1)
-		ftqed_log_term=.false.
+		do i=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
+			end do
+		end do
+		call assert_double("radDens test ftqed", totalRadiationDensity(0.7d0, 1.04d0), 3.79748d0-0.00430398d0, 1d-3)
 
 		call printTotalTests
 		call resetTestCounter
@@ -695,60 +705,60 @@ program tests
 		call assert_double("muContr test 2b", res(2), 0d0, 1d-7)
 
 		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 test 1", res(1), -9.26305205d-6, 1d-7)
-		call assert_double("G2 test 1", res(2), -0.0095522067d0, 1d-8)
+		call assert_double("G1 o2 test 1", res(1), -9.26305205d-6, 1d-7)
+		call assert_double("G2 o2 test 1", res(2), -0.0095522067d0, 1d-8)
 		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 test 2", res(1), -0.0000658825d0, 1d-7)
-		call assert_double("G2 test 2", res(2), -0.0095518d0, 1d-8)
+		call assert_double("G1 o2 test 2", res(1), -0.0000658825d0, 1d-7)
+		call assert_double("G2 o2 test 2", res(2), -0.0095518d0, 1d-8)
 		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 test 3", res(1), -0.00115846d0, 1d-5)
-		call assert_double_rel("G2 test 3", res(2), -0.00806502d0, 1d-5)
+		call assert_double_rel("G1 o2 test 3", res(1), -0.00115846d0, 1d-5)
+		call assert_double_rel("G2 o2 test 3", res(2), -0.00806502d0, 1d-5)
 		res = G12_funcFull(0.5d0, 0.1d0)
-		call assert_double_rel("G1 test 4", res(1), -0.000108111d0, 1d-5)
-		call assert_double_rel("G2 test 4", res(2), -0.000945107d0, 1d-5)
+		call assert_double_rel("G1 o2 test 4", res(1), -0.000108111d0, 1d-5)
+		call assert_double_rel("G2 o2 test 4", res(2), -0.000945107d0, 1d-5)
 
-!		ftqed_log_term = .true.
-!		res = G12_funcFull(1.d-3, 1.d0)
-!		call assert_double("G1 o3 test 1", res(1), -9.19836d-6, 5d-8)
-!		call assert_double_rel("G2 o3 test 1", res(2), -0.0087016543d0, 1d-6)
-!		res = G12_funcFull(0.1d0, 10.d0)
-!		call assert_double("G1 o3 test 2", res(1), -0.0000652361d0, 3d-9)
-!		call assert_double_rel("G2 o3 test 2", res(2), -0.00870124655d0, 1d-5)
-!		res = G12_funcFull(1.5d0, 1.5d0)
-!		call assert_double_rel("G1 o3 test 3", res(1), -0.00109638d0, 1d-5)
-!		call assert_double_rel("G2 o3 test 3", res(2), -0.00724797d0, 1d-5)
-!		res = G12_funcFull(0.5d0, 0.1d0)
-!		call assert_double_rel("G1 o3 test 4", res(1), -0.0000926686d0, 1d-5)
-!		call assert_double_rel("G2 o3 test 4", res(2), -0.00082098d0, 1d-5)
-!		ftqed_log_term = .false.
+		ftqed_log_term = .true.
+		res = G12_funcFull(1.d-3, 1.d0)
+		call assert_double("G1 o2l test 1", res(1), -9.50063d-6, 5d-8)
+		call assert_double_rel("G2 o2l test 1", res(2), -0.00955221d0, 1d-6)
+		res = G12_funcFull(0.1d0, 10.d0)
+		call assert_double("G1 o2l test 2", res(1), -0.0000682554d0, 4d-9)
+		call assert_double_rel("G2 o2l test 2", res(2), -0.00955178d0, 1d-5)
+		res = G12_funcFull(1.5d0, 1.5d0)
+		call assert_double_rel("G1 o2l test 3", res(1), -0.00125404d0, 2d-4)
+		call assert_double_rel("G2 o2l test 3", res(2), -0.00794302d0, 5d-5)
+		res = G12_funcFull(0.5d0, 0.9d0)
+		call assert_double_rel("G1 o2l test 4", res(1), -0.00113237d0, 4d-5)
+		call assert_double_rel("G2 o2l test 4", res(2), -0.00894517d0, 2d-5)
+		ftqed_log_term = .false.
 
 		ftqed_ord3 = .true.
 		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o3 test 1", res(1), -9.19836d-6, 5d-8)
-		call assert_double_rel("G2 o3 test 1", res(2), -0.0087016543d0, 1d-6)
+		call assert_double("G1 o23 test 1", res(1), -9.19836d-6, 5d-8)
+		call assert_double_rel("G2 o23 test 1", res(2), -0.0087016543d0, 1d-6)
 		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o3 test 2", res(1), -0.0000652361d0, 3d-9)
-		call assert_double_rel("G2 o3 test 2", res(2), -0.00870124655d0, 1d-5)
+		call assert_double("G1 o23 test 2", res(1), -0.0000652361d0, 3d-9)
+		call assert_double_rel("G2 o23 test 2", res(2), -0.00870124655d0, 1d-5)
 		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o3 test 3", res(1), -0.00109638d0, 1d-5)
-		call assert_double_rel("G2 o3 test 3", res(2), -0.00724797d0, 1d-5)
+		call assert_double_rel("G1 o23 test 3", res(1), -0.00109638d0, 1d-5)
+		call assert_double_rel("G2 o23 test 3", res(2), -0.00724797d0, 1d-5)
 		res = G12_funcFull(0.5d0, 0.1d0)
-		call assert_double_rel("G1 o3 test 4", res(1), -0.0000926686d0, 1d-5)
-		call assert_double_rel("G2 o3 test 4", res(2), -0.00082098d0, 1d-5)
+		call assert_double_rel("G1 o23 test 4", res(1), -0.0000926686d0, 1d-5)
+		call assert_double_rel("G2 o23 test 4", res(2), -0.00082098d0, 1d-5)
 
-!		ftqed_log_term = .true.
-!		res = G12_funcFull(1.d-3, 1.d0)
-!		call assert_double("G1 o3 test 1", res(1), -9.19836d-6, 5d-8)
-!		call assert_double_rel("G2 o3 test 1", res(2), -0.0087016543d0, 1d-6)
-!		res = G12_funcFull(0.1d0, 10.d0)
-!		call assert_double("G1 o3 test 2", res(1), -0.0000652361d0, 3d-9)
-!		call assert_double_rel("G2 o3 test 2", res(2), -0.00870124655d0, 1d-5)
-!		res = G12_funcFull(1.5d0, 1.5d0)
-!		call assert_double_rel("G1 o3 test 3", res(1), -0.00109638d0, 1d-5)
-!		call assert_double_rel("G2 o3 test 3", res(2), -0.00724797d0, 1d-5)
-!		res = G12_funcFull(0.5d0, 0.1d0)
-!		call assert_double_rel("G1 o3 test 4", res(1), -0.0000926686d0, 1d-5)
-!		call assert_double_rel("G2 o3 test 4", res(2), -0.00082098d0, 1d-5)
+		ftqed_log_term = .true.
+		res = G12_funcFull(1.d-3, 1.d0)
+		call assert_double("G1 o23l test 1", res(1), -9.43594d-6, 5d-8)
+		call assert_double_rel("G2 o23l test 1", res(2), -0.0087016543d0, 1d-6)
+		res = G12_funcFull(0.1d0, 10.d0)
+		call assert_double("G1 o23l test 2", res(1), -0.0000676091d0, 4d-9)
+		call assert_double_rel("G2 o23l test 2", res(2), -0.00870123d0, 1d-5)
+		res = G12_funcFull(1.5d0, 1.5d0)
+		call assert_double_rel("G1 o23l test 3", res(1), -0.00119196d0, 2d-4)
+		call assert_double_rel("G2 o23l test 3", res(2), -0.00712597d0, 6d-5)
+		res = G12_funcFull(0.5d0, 0.9d0)
+		call assert_double_rel("G1 o23l test 4", res(1), -0.00109663d0, 4d-5)
+		call assert_double_rel("G2 o23l test 4", res(2), -0.00810463d0, 2d-5)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
