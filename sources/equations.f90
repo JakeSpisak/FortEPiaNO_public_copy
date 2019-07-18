@@ -232,7 +232,7 @@ module fpEquations
 
 #ifdef NOINTERPOLATION
 		xoz = x/z
-		g12 = G12_funcFull(xoz)
+		g12 = G12_funcFull(x, z)
 		num = g12(1)
 		den = PISQ/7.5d0 + g12(2)
 		do j=1, fermions_number
@@ -281,7 +281,7 @@ module fpEquations
 		xoz=x/z
 
 #ifdef NOINTERPOLATION
-		g12 = G12_funcFull(xoz)
+		g12 = G12_funcFull(x, z)
 		num = g12(1)
 		den = PISQ/7.5d0 + g12(2)
 		do j=1, fermions_number
