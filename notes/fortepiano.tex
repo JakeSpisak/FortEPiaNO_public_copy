@@ -159,17 +159,24 @@ and $z$ must be substituted with $w$ in the case of neutrinos.
 
 To take into account finite temperature QED (FTQED) corrections
 \cite{Fornengo:1997wa,Mangano:2001iu,...},
-we have to modify the total energy density of the fluid:
-\begin{equation}
+we have to modify the total pressure and energy density of the fluid:
+\begin{eqnarray}
+P
+&=&
+\sum_{i=\gamma,{\nu_i},e,\mu}P_i
++
+\delta P(x,z)
+\,,\\
 \rho
-=
+&=&
 \sum_{i=\gamma,{\nu_i},e,\mu}\rho_i
 +
 \delta\rho(x,z)
 \,,
-\end{equation}
-where the $\delta\rho$ is a contribution that can be computed using FTQED
-in term of the following functions:
+\end{eqnarray}
+where $\delta P$ and $\delta\rho$ are contributions that can be computed using FTQED.
+It is convenient to define them
+in terms of the following functions:
 \begin{eqnarray}
 J_a(r)
 &=&
@@ -186,9 +193,7 @@ K_a(r)
 \frac{1}{\exp(\sqrt{u^2+r^2})+1}
 \label{eq:k}\,.
 \end{eqnarray}
-The contribution $\delta\rho$ can be expanded as a function of powers of the electron charge
-$e^2=4\pi\alpha$, where $\alpha$ is the fine structure constant.
-Let us define for convenience:
+Let us also define for convenience:
 \begin{eqnarray}
 \mathcal{N}_p
 &=&
@@ -220,20 +225,22 @@ Let us define for convenience:
 \right)
 \,.
 \end{eqnarray}
+The contributions $\delta P$ and $\delta\rho$ can be expanded as a series of powers of the electron charge
+$e^2=4\pi\alpha$, where $\alpha$ is the fine structure constant.
 Taking into account the first orders of the expansion, and using $r=x/z$, for the pressure one has \cite{...}
 %
 \begin{eqnarray}
 \delta P(x,z)
 &=&
-\delta P^{(2)}(x,z)
+\delta P^{(2)}(x/z)
 +
 \delta P^{(2+\ln)}(x,z)
 +
-\delta P^{(3)}(x,z)
+\delta P^{(3)}(x/z)
 +\ldots
 \,,
 \\
-\delta P^{(2)}
+\delta P^{(2)}(r)
 &=&
 -
 e^2 z^4\,K_2
@@ -242,7 +249,7 @@ e^2 z^4\,K_2
  +\frac{K_2}{2}
 \right)
 \,,\\
-\delta P^{(2+\ln)}
+\delta P^{(2+\ln)}(x,z)
 &=&
 \frac{e^2 x^2}{16\pi^4}
 \int\!\!\!\int_0^\infty
@@ -256,7 +263,7 @@ e^2 z^4\,K_2
 \mathcal{N}_y\,
 \mathcal{N}_k
 \,,\\
-\delta P^{(3)}
+\delta P^{(3)}(r)
 &=&
 \frac{2e^3z^4}{3\pi}
 \left(
@@ -266,19 +273,19 @@ K_2
 \right)^{3/2}
 \,,
 \end{eqnarray}
-while for the energy density we have
+while for the energy density the various terms are
 \begin{eqnarray}
 \delta\rho(x,z)
 &=&
-\delta\rho^{(2)}(x,z)
+\delta\rho^{(2)}(x/z)
 +
 \delta\rho^{(2+\ln)}(x,z)
 +
-\delta\rho^{(3)}(x,z)
+\delta\rho^{(3)}(x/z)
 +\ldots
 \,,
 \\
-\delta\rho^{(2)}
+\delta\rho^{(2)}(r)
 &=&
 e^2 z^4
 \left(
@@ -287,7 +294,7 @@ e^2 z^4
 -K_2 J_2
 \right)
 \,,\\
-\delta\rho^{(2+\ln)}
+\delta\rho^{(2+\ln)}(x,z)
 &=&
 \frac{e^2 x^2}{16\pi^4}
 \int\!\!\!\int_0^\infty
@@ -304,7 +311,7 @@ e^2 z^4
 - \mathcal{N}_k
 \Big)
 \,,\\
-\delta\rho^{(3)}
+\delta\rho^{(3)}(r)
 &=&
 \frac{e^3z^4}{\pi}
 \left(
@@ -374,20 +381,20 @@ which again take into account the FTQED corrections, are written as
 \cite{Mangano:2001iu,...}:
 %
 \begin{eqnarray}
-G_{1,2}(r)
+G_{1,2}(x,z)
 &=&
-G_{1,2}^{(2)}(r)
+G_{1,2}^{(2)}(x/z)
 +
-G_{1,2}^{(2+\ln)}(r)
+G_{1,2}^{(2+\ln)}(x,z)
 +
-G_{1,2}^{(3)}(r)
+G_{1,2}^{(3)}(x/z)
 +
 \ldots
 \,,
 \end{eqnarray}
 %
 \begin{eqnarray}
-G_a
+G_a(r)
 &=&
 \frac{K_2'}{6}
 -K_2K_2'
@@ -395,7 +402,7 @@ G_a
 +K_2'J_2
 +K_2J_2'
 \,,\\
-G_1^{(2)}
+G_1^{(2)}(r)
 &=&
 2\pi\alpha
 \left[
@@ -411,7 +418,7 @@ G_1^{(2)}
 \right]
 \label{eq:g1}
 \,,\\
-G_2^{(2)}
+G_2^{(2)}(r)
 &=&
 -8\pi\alpha
 \left(
@@ -428,7 +435,7 @@ G_a
 \end{eqnarray}
 %
 \begin{eqnarray}
-G_1^{(2+\ln)}
+G_1^{(2+\ln)}(x,z)
 &=&
 \frac{e^2 x}{16\pi^4 z^3}
 \int\!\!\!\int_0^\infty
@@ -457,7 +464,7 @@ G_1^{(2+\ln)}
 \Big)
 \Bigg\}
 \,,\\
-G_2^{(2+\ln)}
+G_2^{(2+\ln)}(x,z)
 &=&
 \frac{e^2 x^2}{16\pi^4 z^2}
 \int\!\!\!\int_0^\infty
@@ -475,15 +482,15 @@ G_2^{(2+\ln)}
 \end{eqnarray}
 %
 \begin{eqnarray}
-G_b
+G_b(r)
 &=&
 \sqrt{K_2 + r^2 \frac{K_0}{2}}
 \,,\\
-G_c
+G_c(r)
 &=&
 \frac{2J_2 + r^2 J_0}{2\Big(2K_2 + r^2 K_0\Big)}
 \,,\\
-G_1^{(3)}
+G_1^{(3)}(r)
 &=&
 \frac{e^3}{4\pi} G_b
 \left\{
@@ -494,7 +501,7 @@ G_1^{(3)}
  -G_c\Big[r(K_0-J_0)+K_2'\Big]
 \right\}
 \,,\\
-G_2^{(3)}
+G_2^{(3)}(r)
 &=&
 \frac{e^3}{4\pi} G_b
 \left[
@@ -512,12 +519,13 @@ which do not depend on the neutrino density matrix
 at the initialisation stage, and compute their values through interpolation during the real calculation.
 The same happens for the energy densities of charged leptons, for which performing an interpolation
 is much faster than computing an integral.
-The interpolation, however, can be disabled at compilation time (see the \texttt{README}).
+The interpolation, however, can be disabled during compilation (see the \texttt{README}),
+with a $\lesssim20$\% increase of the running time.
 
 In order to estimate the effective comoving neutrino temperature $w$, which is
 not needed for the calculation but useful to understand the final results,
-we use an equation similar to \eqref{eq:dz_dx_nxn},
-but considering only relativistic electrons, i.e.\ fixing $r_e=0$ in Eq.~\eqref{eq:dz_dx_nxn}.
+we use an equation similar to Eq.~\eqref{eq:dz_dx_nxn},
+but considering only relativistic electrons, i.e.\ fixing $r_e=0$ in the equation.
 
 The finite-temperature electromagnetic corrections are also taken into account in the calculation
 of the electron mass, used in the collision terms.
@@ -926,6 +934,14 @@ starts to oscillate significantly with the active ones.
 Smaller values, on the contrary, may create numerical problems in \dlsoda\
 due to the very small initial value $z_{\rm in}-1$,
 and are never really required for our purposes.
+
+
+\acknowledgments
+We thank J.J.~Bennett and G.~Buldgen for helping spotting
+some issue in the treatment of finite temperature corrections
+and for support in implementing the higher order correction terms.
+
+This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska-Curie grant agreement No 796941.
 
 
 \bibliographystyle{JHEP}
