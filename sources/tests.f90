@@ -205,9 +205,9 @@ program tests
 		call assert_double_rel("lnG1 test 1", &
 			integrate_ftqed_ln(G1_ln_integrand, 0.1d0, 10.d0), -403.3d0, 1d-3)
 		call assert_double_rel("lnG1 test 2", &
-			integrate_ftqed_ln(G1_ln_integrand, 1.5d0, 1.5d0), -3.655d0, 3d-3)
+			integrate_ftqed_ln(G1_ln_integrand, 1.5d0, 1.5d0), -1.998d0, 3d-3)
 		call assert_double_rel("lnG1 test 3", &
-			integrate_ftqed_ln(G1_ln_integrand, 0.5d0, 0.9d0), -2.2618d0, 5d-4)
+			integrate_ftqed_ln(G1_ln_integrand, 0.5d0, 0.9d0), -1.901d0, 5d-4)
 
 		call assert_double_rel("lnG2 test 1", &
 			integrate_ftqed_ln(G2_ln_integrand, 0.1d0, 10.d0), 2.01577d0, 5d-2)
@@ -722,13 +722,13 @@ program tests
 		call assert_double("G1 o2l test 1", res(1), -9.50063d-6, 5d-8)
 		call assert_double_rel("G2 o2l test 1", res(2), -0.00955221d0, 1d-6)
 		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o2l test 2", res(1), -0.0000682554d0, 4d-9)
+		call assert_double("G1 o2l test 2", res(1), -0.0000682571d0, 4d-9)
 		call assert_double_rel("G2 o2l test 2", res(2), -0.00955178d0, 1d-5)
 		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o2l test 3", res(1), -0.00125404d0, 2d-4)
+		call assert_double_rel("G1 o2l test 3", res(1), -0.00121073d0, 2d-4)
 		call assert_double_rel("G2 o2l test 3", res(2), -0.00794302d0, 5d-5)
 		res = G12_funcFull(0.5d0, 0.9d0)
-		call assert_double_rel("G1 o2l test 4", res(1), -0.00113237d0, 4d-5)
+		call assert_double_rel("G1 o2l test 4", res(1), -0.00111783d0, 4d-5)
 		call assert_double_rel("G2 o2l test 4", res(2), -0.00894517d0, 2d-5)
 		ftqed_log_term = .false.
 
@@ -748,16 +748,16 @@ program tests
 
 		ftqed_log_term = .true.
 		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o23l test 1", res(1), -9.43594d-6, 5d-8)
+		call assert_double("G1 o23l test 1", res(1), -9.43595d-6, 5d-8)
 		call assert_double_rel("G2 o23l test 1", res(2), -0.0087016543d0, 1d-6)
 		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o23l test 2", res(1), -0.0000676091d0, 4d-9)
+		call assert_double("G1 o23l test 2", res(1), -0.0000676107d0, 4d-9)
 		call assert_double_rel("G2 o23l test 2", res(2), -0.00870123d0, 1d-5)
 		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o23l test 3", res(1), -0.00119196d0, 2d-4)
+		call assert_double_rel("G1 o23l test 3", res(1), -0.00114865d0, 2d-4)
 		call assert_double_rel("G2 o23l test 3", res(2), -0.00712597d0, 6d-5)
 		res = G12_funcFull(0.5d0, 0.9d0)
-		call assert_double_rel("G1 o23l test 4", res(1), -0.00109663d0, 4d-5)
+		call assert_double_rel("G1 o23l test 4", res(1), -0.00108209d0, 4d-5)
 		call assert_double_rel("G2 o23l test 4", res(2), -0.00810463d0, 2d-5)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.

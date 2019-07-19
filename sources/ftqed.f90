@@ -159,8 +159,8 @@ module ftqed
 					- Nfy*Nfk &
 					!z N_y \partial_z N_k
 					- z * Nfy * pzNk &
-					! - x^2 ...
-					- x**2 * (Eksq+Eysq)/(2*Eksq*Eysq) * ( &
+					! + x^2 ...
+					+ x**2 * (Eksq+Eysq)/(2*Eksq*Eysq) * ( &
 						2*z*Nfy*pzNk - Nfy*Nfk &
 					) &
 				)
