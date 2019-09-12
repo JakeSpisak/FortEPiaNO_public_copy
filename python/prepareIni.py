@@ -4,6 +4,11 @@ import argparse
 
 
 def setParser():
+	"""Prepare the parser for reading the command line arguments
+
+	Output:
+		the parser
+	"""
     parser = argparse.ArgumentParser(prog="prepareIni.py")
     parser.add_argument(
         "inifile",
@@ -167,6 +172,15 @@ def setParser():
 
 
 def oscParams(args):
+	"""Read part of the settings and prepare the configuration
+	for the number of neutrinos and the oscillation parameters
+
+	Parameters:
+		args: the output of parse_args
+
+	Output:
+		a dictionary
+	"""
     osc = {}
     osc["use_sinsq"] = "T" if args.use_sinsq else "F"
     if args.numodel in ["3p1", "3+1"]:
@@ -256,6 +270,16 @@ def oscParams(args):
 
 
 def getIniValues(args):
+	"""Read the input namespace (or args from argparser)
+	and prepare a dictionary for later use
+	in the writing of the ini file
+
+	Parameters:
+		args: the output of parse_args
+
+	Output:
+		a dictionary
+	"""
     values = oscParams(args)
     values["verbose"] = args.verbose
     values["factors"] = "\n".join(
@@ -298,6 +322,13 @@ def getIniValues(args):
 
 
 def writeIni(filename, values):
+	"""Use the information already prepared
+	to write an ini file for FortEPiaNO
+
+	Parameters:
+		filename: the name of the output ini file
+		values: a dictionary with the settings for the ini file
+	"""
     iniText = """###run setttings
 flavorNumber = {nnu:}
 
