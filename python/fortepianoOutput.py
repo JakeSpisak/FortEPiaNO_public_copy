@@ -53,30 +53,30 @@ def finalizePlot(
     Neff_axes=False,
     tightrect=(-0.035, -0.04, 1.025, 1.04),
 ):
-	"""Prepare the final configuration of the plot
-	(legends, labels, limits, axes and so on)
-	before saving the figure and closing the plot
+    """Prepare the final configuration of the plot
+    (legends, labels, limits, axes and so on)
+    before saving the figure and closing the plot
 
-	Parameters:
-		fname: the filename where to save the figure
-		lloc (default "best"): the position for the legend
-		title (default ""): the title to add to the figure
-		xlab, ylab (default None): main labels for the x and y axes
-		xscale, yscale (default None): scale ("linear" or "log")
-			for the x and y axes
-		xlim, ylim (default None):
-			the limits to use for the x and y axes
-		legcol (default 1): the number of columns to use in the legend
-		legend (default True): if True, add a legend to the plot
-		x_T (default False): if True, add a twin x axis
-			in the upper part of the plot,
-			with the conversion betwen x and T
-		Neff_axes (default False): if True, the y axis on the left
-			will show Neff normalized in the early universe,
-			while its twin on the right the final Neff
-		tightrect (default (-0.035, -0.04, 1.025, 1.04)):
-			the rect parameter to use in tight_plot
-	"""
+    Parameters:
+        fname: the filename where to save the figure
+        lloc (default "best"): the position for the legend
+        title (default ""): the title to add to the figure
+        xlab, ylab (default None): main labels for the x and y axes
+        xscale, yscale (default None): scale ("linear" or "log")
+            for the x and y axes
+        xlim, ylim (default None):
+            the limits to use for the x and y axes
+        legcol (default 1): the number of columns to use in the legend
+        legend (default True): if True, add a legend to the plot
+        x_T (default False): if True, add a twin x axis
+            in the upper part of the plot,
+            with the conversion betwen x and T
+        Neff_axes (default False): if True, the y axis on the left
+            will show Neff normalized in the early universe,
+            while its twin on the right the final Neff
+        tightrect (default (-0.035, -0.04, 1.025, 1.04)):
+            the rect parameter to use in tight_plot
+    """
     plt.title(title)
     ax = plt.gca()
     if not Neff_axes:
@@ -155,13 +155,13 @@ def finalizePlot(
 
 def stripRepeated(data, ix1, ix2):
     """Strip the repeated points from an output file,
-	to avoid steps in the plots
+    to avoid steps in the plots
 
-	Parameters:
-		data: the np.ndarray with all the plot data
-		ix1: the index that corresponds to the x axis in the plot
-		ix2: the index that corresponds to the y axis in the plot
-	"""
+    Parameters:
+        data: the np.ndarray with all the plot data
+        ix1: the index that corresponds to the x axis in the plot
+        ix2: the index that corresponds to the y axis in the plot
+    """
     x = []
     y = []
     for d in data:
@@ -181,28 +181,26 @@ class FortEPiaNORun:
     compute integrals of the density matrix or other things
     """
 
-    def __init__(
-        self, folder, nnu=3, full=True, label="", plots=False, verbose=True
-    ):
-		"""Read the entire output of FortEPiaNO from a specific folder.
-		It will ignore non-existing files and store all the available
-		information for further processing (plots, ...)
+    def __init__(self, folder, nnu=3, full=True, label="", plots=False, verbose=True):
+        """Read the entire output of FortEPiaNO from a specific folder.
+        It will ignore non-existing files and store all the available
+        information for further processing (plots, ...)
 
-		Parameters:
-			folder: the name of the folder to consider
-			nnu (default 3): number of neutrinos to consider
-				(if more rows/columns of the density matrix exist,
-				they will be ignored)
-			full (default True): if True, read also all the off-diagonal
-				density matrix elements, otherwise ignore them
-				(to save time if not needed in the plots, for example)
-			label (default ""): a label to assign
-				to the current FortEPiaNO point in the plots
-			plots (default False): if True, produce a series of plots
-				after having read all the files
-			verbose (default True): if True, print more error messages
-				(e.g. when the folder is not found or w is not saved)
-		"""
+        Parameters:
+            folder: the name of the folder to consider
+            nnu (default 3): number of neutrinos to consider
+                (if more rows/columns of the density matrix exist,
+                they will be ignored)
+            full (default True): if True, read also all the off-diagonal
+                density matrix elements, otherwise ignore them
+                (to save time if not needed in the plots, for example)
+            label (default ""): a label to assign
+                to the current FortEPiaNO point in the plots
+            plots (default False): if True, produce a series of plots
+                after having read all the files
+            verbose (default True): if True, print more error messages
+                (e.g. when the folder is not found or w is not saved)
+        """
         self.folder = folder
         self.full = full
         self.label = label
@@ -301,26 +299,26 @@ class FortEPiaNORun:
             self.doAllPlots()
 
     def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False, mass=False):
-		"""Interpolate any entry of the density matrix at a given y,
-		and return its value for all the saved x points.
-		Repeated points with the same f(x, y) at different x
-		will be reported only once, at the earlier x.
+        """Interpolate any entry of the density matrix at a given y,
+        and return its value for all the saved x points.
+        Repeated points with the same f(x, y) at different x
+        will be reported only once, at the earlier x.
 
-		Parameters:
-			i1: row index of the density matrix to consider
-			i2: column index of the density matrix to consider
-			y: the y value at which to interpolate
-			ri (default 0): it 0, use real part, if 1 the imaginary one
-				(only for off-diagonal entries of the density matrix)
-			y2 (default False): if True, multiply the output by y**2
-			mass (default False): if True, use the density matrix
-				in the mass basis
+        Parameters:
+            i1: row index of the density matrix to consider
+            i2: column index of the density matrix to consider
+            y: the y value at which to interpolate
+            ri (default 0): it 0, use real part, if 1 the imaginary one
+                (only for off-diagonal entries of the density matrix)
+            y2 (default False): if True, multiply the output by y**2
+            mass (default False): if True, use the density matrix
+                in the mass basis
 
-		Output:
-			two 1D np.ndarrays of the same size,
-			one with the x points and
-			one with the values of the function at each y
-		"""
+        Output:
+            two 1D np.ndarrays of the same size,
+            one with the x points and
+            one with the values of the function at each y
+        """
         if mass:
             rho = self.rhoM
         else:
@@ -340,24 +338,24 @@ class FortEPiaNORun:
         return xv, yv
 
     def interpolateRhoIJ_x(self, i1, i2, x, ri=0, y2=False, mass=False):
-		"""Interpolate any entry of the density matrix at a given x,
-		and return its value for all the y grid points
+        """Interpolate any entry of the density matrix at a given x,
+        and return its value for all the y grid points
 
-		Parameters:
-			i1: row index of the density matrix to consider
-			i2: column index of the density matrix to consider
-			x: the x value at which to interpolate
-			ri (default 0): it 0, use real part, if 1 the imaginary one
-				(only for off-diagonal entries of the density matrix)
-			y2 (default False): if True, multiply the output by y**2
-			mass (default False): if True, use the density matrix
-				in the mass basis
+        Parameters:
+            i1: row index of the density matrix to consider
+            i2: column index of the density matrix to consider
+            x: the x value at which to interpolate
+            ri (default 0): it 0, use real part, if 1 the imaginary one
+                (only for off-diagonal entries of the density matrix)
+            y2 (default False): if True, multiply the output by y**2
+            mass (default False): if True, use the density matrix
+                in the mass basis
 
-		Output:
-			two 1D np.ndarrays of the same size,
-			one with the y grid and
-			one with the values of the function at each y
-		"""
+        Output:
+            two 1D np.ndarrays of the same size,
+            one with the y grid and
+            one with the values of the function at each y
+        """
         if mass:
             rho = self.rhoM
         else:
@@ -371,12 +369,12 @@ class FortEPiaNORun:
         return self.yv, ov
 
     def printTableLine(self):
-		"""Print a summary of the current point in a latex table format.
-		It will contain the label, the final z, all the deltaRho
-		computed for the diagonal elements, and the final Neff.
-		If the run was not complete, print just the label and a message
-		on the last step that was saved
-		"""
+        """Print a summary of the current point in a latex table format.
+        It will contain the label, the final z, all the deltaRho
+        computed for the diagonal elements, and the final Neff.
+        If the run was not complete, print just the label and a message
+        on the last step that was saved
+        """
         if not self.verbose:
             return
         if self.hasResume:
@@ -396,19 +394,19 @@ class FortEPiaNORun:
             )
 
     def plotFD(self, ls="-", lc="k", lab=None, rescale=1.0, fac=1.0):
-		"""Plot a Fermi-Dirac distribution in the adopted momentum grid.
-		It may be rescaledappropriately
+        """Plot a Fermi-Dirac distribution in the adopted momentum grid.
+        It may be rescaledappropriately
 
-		Parameters:
-			ls (default "-"): the line style
-			lc (default "k"): the line color
-			lab (default None): if not None, the line label
-			rescale (default 1.0): a rescaling factor of the temperature
-				for the Fermi-Dirac distribution
-				{enters as f in 1/[exp(y/f) + 1] }
-			fac (default 1.0): a constant normalization factor
-				for the function that is plotted
-		"""
+        Parameters:
+            ls (default "-"): the line style
+            lc (default "k"): the line color
+            lab (default None): if not None, the line label
+            rescale (default 1.0): a rescaling factor of the temperature
+                for the Fermi-Dirac distribution
+                {enters as f in 1/[exp(y/f) + 1] }
+            fac (default 1.0): a constant normalization factor
+                for the function that is plotted
+        """
         if rescale != 1.0:
             fd = self.fd * (np.exp(self.yv) + 1.0) / (np.exp(self.yv / rescale) + 1.0)
         else:
@@ -427,13 +425,13 @@ class FortEPiaNORun:
         plt.ylabel(r"$y^2 f(y)$")
 
     def plotZ(self, ls="-", lc="k", lab=None):
-		"""Plot z as a function of x
+        """Plot z as a function of x
 
-		Parameters:
-			ls (default "-"): the line style
-			lc (default "k"): the line color
-			lab (default None): if not None, the line label
-		"""
+        Parameters:
+            ls (default "-"): the line style
+            lc (default "k"): the line color
+            lab (default None): if not None, the line label
+        """
         plt.plot(
             *stripRepeated(self.zdat, 0, 1),
             label=self.label if lab is None else lab,
@@ -445,13 +443,13 @@ class FortEPiaNORun:
         plt.ylabel(r"$z$")
 
     def plotW(self, ls="-", lc="k", lab=None):
-		"""Plot w as a function of x
+        """Plot w as a function of x
 
-		Parameters:
-			ls (default "-"): the line style
-			lc (default "k"): the line color
-			lab (default None): if not None, the line label
-		"""
+        Parameters:
+            ls (default "-"): the line style
+            lc (default "k"): the line color
+            lab (default None): if not None, the line label
+        """
         try:
             self.zdat[0, 2]
         except IndexError:
@@ -468,13 +466,13 @@ class FortEPiaNORun:
         plt.ylabel(r"$w$")
 
     def plotZoverW(self, ls="-", lc="k", lab=None):
-		"""Plot the ratio w/z as a function of x
+        """Plot the ratio w/z as a function of x
 
-		Parameters:
-			ls (default "-"): the line style
-			lc (default "k"): the line color
-			lab (default None): if not None, the line label
-		"""
+        Parameters:
+            ls (default "-"): the line style
+            lc (default "k"): the line color
+            lab (default None): if not None, the line label
+        """
         try:
             self.zdat[0, 2]
         except IndexError:
@@ -491,14 +489,14 @@ class FortEPiaNORun:
         plt.ylabel(r"$w$")
 
     def plotDeltaZ(self, ref, ls="-", lc="k"):
-		"""Plot the difference in z with respect
-		to a different FortEPiaNO point, as a function of x
+        """Plot the difference in z with respect
+        to a different FortEPiaNO point, as a function of x
 
-		Parameters:
-			ref: a different FortEPiaNORun instance
-			ls (default "-"): the line style
-			lc (default "k"): the line color
-		"""
+        Parameters:
+            ref: a different FortEPiaNORun instance
+            ls (default "-"): the line style
+            lc (default "k"): the line color
+        """
         mex, mey = stripRepeated(self.zdat, 0, 1)
         mef = interp1d(mex, mey)
         refx, refy = stripRepeated(ref.zdat, 0, 1)
@@ -509,18 +507,18 @@ class FortEPiaNORun:
         plt.ylabel(r"$z-z_{\rm ref}$")
 
     def plotRhoDiag(self, inu, iy, ls, lc="k", mass=False):
-		"""Plot one diagonal element of the density matrix
-		at a given point (index iy) in the momentum grid,
-		as a function of x
+        """Plot one diagonal element of the density matrix
+        at a given point (index iy) in the momentum grid,
+        as a function of x
 
-		Parameters:
-			inu: diagonal index of the density matrix entry to consider
-			iy: the index of the requested momentum in the momentum grid
-			ls: the line style
-			lc (default "k"): the line color
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            inu: diagonal index of the density matrix entry to consider
+            iy: the index of the requested momentum in the momentum grid
+            ls: the line style
+            lc (default "k"): the line color
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         if mass:
             rho = self.rhoM
         else:
@@ -536,19 +534,19 @@ class FortEPiaNORun:
         plt.ylabel(r"$\rho_{\alpha\alpha}$")
 
     def plotdRhoDiag(self, inu, iy, ls, lc="k", mass=False):
-		"""Plot the x derivative (np.gradient)
-		of one diagonal element of the density matrix
-		at a given point (index iy) in the momentum grid,
-		as a function of x
+        """Plot the x derivative (np.gradient)
+        of one diagonal element of the density matrix
+        at a given point (index iy) in the momentum grid,
+        as a function of x
 
-		Parameters:
-			inu: diagonal index of the density matrix entry to consider
-			iy: the index of the requested momentum in the momentum grid
-			ls: the line style
-			lc (default "k"): the line color
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            inu: diagonal index of the density matrix entry to consider
+            iy: the index of the requested momentum in the momentum grid
+            ls: the line style
+            lc (default "k"): the line color
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         if mass:
             rho = self.rhoM
         else:
@@ -566,19 +564,19 @@ class FortEPiaNORun:
         plt.ylabel(r"$d\rho_{\alpha\alpha}/dt$")
 
     def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True, mass=False):
-		"""Plot one off-diagonal element of the density matrix
-		at a given point (index iy) in the momentum grid,
-		as a function of x
+        """Plot one off-diagonal element of the density matrix
+        at a given point (index iy) in the momentum grid,
+        as a function of x
 
-		Parameters:
-			i1: row index of the density matrix to consider
-			i2: column index of the density matrix to consider
-			iy: the index of the requested momentum in the momentum grid
-			lc (default "k"): the line color
-			im (default True): add plot of the imaginary part
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            i1: row index of the density matrix to consider
+            i2: column index of the density matrix to consider
+            iy: the index of the requested momentum in the momentum grid
+            lc (default "k"): the line color
+            im (default True): add plot of the imaginary part
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         if not self.full:
             print("no offdiagonal loaded")
             return
@@ -604,20 +602,20 @@ class FortEPiaNORun:
         plt.ylabel(r"$\rho_{\alpha\beta}$")
 
     def plotdRhoOffDiag(self, i1, i2, iy, lc="k", im=True, mass=False):
-		"""Plot the x derivative (np.gradient)
-		of one off-diagonal element of the density matrix
-		at a given point (index iy) in the momentum grid,
-		as a function of x
+        """Plot the x derivative (np.gradient)
+        of one off-diagonal element of the density matrix
+        at a given point (index iy) in the momentum grid,
+        as a function of x
 
-		Parameters:
-			i1: row index of the density matrix to consider
-			i2: column index of the density matrix to consider
-			iy: the index of the requested momentum in the momentum grid
-			lc (default "k"): the line color
-			im (default True): add plot of the imaginary part
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            i1: row index of the density matrix to consider
+            i2: column index of the density matrix to consider
+            iy: the index of the requested momentum in the momentum grid
+            lc (default "k"): the line color
+            im (default True): add plot of the imaginary part
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         if not self.full:
             print("no offdiagonal loaded")
             return
@@ -649,24 +647,24 @@ class FortEPiaNORun:
     def plotRhoFin(
         self, ix, iy=None, ri=0, ls="-", lc="k", y2=False, lab=None, mass=False
     ):
-		"""Plot the y dependence of an element of the density matrix
-		at the final x
+        """Plot the y dependence of an element of the density matrix
+        at the final x
 
-		Parameters:
-			ix: diagonal element of the density matrix to consider
-			iy (default None): if not None, the column index
-				of the requested density matrix element.
-				If None, fix iy = ix and use a diagonal element
-			ri (default 0): it 0, use real part, if 1 the imaginary one
-				(only for off-diagonal entries of the density matrix)
-			ls (default "-"): the line style
-			lc (default "k"): the line color
-			y2 (default False): if True,
-				multiply the diagonal elements times y**2
-			lab (default None): if not None, the line label
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            ix: diagonal element of the density matrix to consider
+            iy (default None): if not None, the column index
+                of the requested density matrix element.
+                If None, fix iy = ix and use a diagonal element
+            ri (default 0): it 0, use real part, if 1 the imaginary one
+                (only for off-diagonal entries of the density matrix)
+            ls (default "-"): the line style
+            lc (default "k"): the line color
+            y2 (default False): if True,
+                multiply the diagonal elements times y**2
+            lab (default None): if not None, the line label
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         if mass:
             rho = self.rhoM
         else:
@@ -687,24 +685,24 @@ class FortEPiaNORun:
         plt.ylabel(r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$" % ("y^2" if y2 else ""))
 
     def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k", y2=False, mass=False):
-		"""Plot the y dependence of an element of the density matrix
-		at a given x
+        """Plot the y dependence of an element of the density matrix
+        at a given x
 
-		Parameters:
-			i1: row index of the density matrix entry to consider
-			x: the x value at which the density matrix is interpolated
-			i2 (default None): if not None, the column index
-				of the requested density matrix element.
-				If None, fix i2 = i1 and use a diagonal element
-			ri (default 0): it 0, use real part, if 1 the imaginary one
-				(only for off-diagonal entries of the density matrix)
-			ls (default "-"): the line style
-			lc (default "k"): the line color
-			y2 (default False): if True,
-				multiply the diagonal elements times y**2
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            i1: row index of the density matrix entry to consider
+            x: the x value at which the density matrix is interpolated
+            i2 (default None): if not None, the column index
+                of the requested density matrix element.
+                If None, fix i2 = i1 and use a diagonal element
+            ri (default 0): it 0, use real part, if 1 the imaginary one
+                (only for off-diagonal entries of the density matrix)
+            ls (default "-"): the line style
+            lc (default "k"): the line color
+            y2 (default False): if True,
+                multiply the diagonal elements times y**2
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         if i2 is None:
             i2 = i1
         if ri not in [0, 1]:
@@ -720,20 +718,20 @@ class FortEPiaNORun:
         plt.ylabel(r"$%s\rho_{\alpha\beta}(y)$" % ("y^2" if y2 else ""))
 
     def plotRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False, mass=False):
-		"""Plot one diagonal element of the density matrix at a given y
-		as a function of x
+        """Plot one diagonal element of the density matrix at a given y
+        as a function of x
 
-		Parameters:
-			inu: diagonal element of the density matrix to consider
-			y: the y value at which the density matrix is interpolated
-			ls: the line style
-			lc (default "k"): the line color
-			lab (default None): if not None, the line label
-			y2 (default False): if True,
-				multiply the diagonal elements times y**2
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            inu: diagonal element of the density matrix to consider
+            y: the y value at which the density matrix is interpolated
+            ls: the line style
+            lc (default "k"): the line color
+            lab (default None): if not None, the line label
+            y2 (default False): if True,
+                multiply the diagonal elements times y**2
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
         label = lab if lab is not None else "%s \alpha=%d" % (self.label, inu + 1)
         plt.plot(x, np.asarray(yv) * (y ** 2 if y2 else 1.0), label=label, ls=ls, c=lc)
@@ -742,21 +740,21 @@ class FortEPiaNORun:
         plt.ylabel(r"$%s\rho_{\alpha\alpha}$" % ("y^2" if y2 else ""))
 
     def plotdRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False, mass=False):
-		"""Plot the x derivative (np.gradient)
-		of one diagonal element of the density matrix at a given y
-		as a function of x
+        """Plot the x derivative (np.gradient)
+        of one diagonal element of the density matrix at a given y
+        as a function of x
 
-		Parameters:
-			inu: diagonal element of the density matrix to consider
-			y: the y value at which the density matrix is interpolated
-			ls: the line style
-			lc (default "k"): the line color
-			lab (default None): if not None, the line label
-			y2 (default False): if True,
-				multiply the diagonal elements times y**2
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            inu: diagonal element of the density matrix to consider
+            y: the y value at which the density matrix is interpolated
+            ls: the line style
+            lc (default "k"): the line color
+            lab (default None): if not None, the line label
+            y2 (default False): if True,
+                multiply the diagonal elements times y**2
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
         label = lab if lab is not None else "%s \alpha=%d" % (self.label, inu + 1)
         plt.plot(
@@ -771,20 +769,20 @@ class FortEPiaNORun:
         plt.ylabel(r"$d\rho_{\alpha\alpha}/dt$")
 
     def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
-		"""Plot one off-diagonal element of the density matrix
-		at a given y as a function of x
+        """Plot one off-diagonal element of the density matrix
+        at a given y as a function of x
 
-		Parameters:
-			i1: row index of the density matrix to consider
-			i2: column index of the density matrix to consider
-			y: the y value at which the density matrix is interpolated
-			lc (default "k"): the line color
-			ls (default "-"): the line style
-			im (default True): add plot of the imaginary part
-			lab (default None): if not None, the line label
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            i1: row index of the density matrix to consider
+            i2: column index of the density matrix to consider
+            y: the y value at which the density matrix is interpolated
+            lc (default "k"): the line color
+            ls (default "-"): the line style
+            im (default True): add plot of the imaginary part
+            lab (default None): if not None, the line label
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         if not self.full:
             print("no offdiagonal loaded")
             return
@@ -812,21 +810,21 @@ class FortEPiaNORun:
     def plotdRhoOffDiagY(
         self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False
     ):
-		"""Plot the x derivative (np.gradient)
-		of one off-diagonal element of the density matrix at a given y
-		as a function of x
+        """Plot the x derivative (np.gradient)
+        of one off-diagonal element of the density matrix at a given y
+        as a function of x
 
-		Parameters:
-			i1: row index of the density matrix to consider
-			i2: column index of the density matrix to consider
-			y: the y value at which the density matrix is interpolated
-			lc (default "k"): the line color
-			ls (default "-"): the line style
-			im (default True): add plot of the imaginary part
-			lab (default None): if not None, the line label
-			mass (default False): if True, use the density matrix
-				in the mass basis
-		"""
+        Parameters:
+            i1: row index of the density matrix to consider
+            i2: column index of the density matrix to consider
+            y: the y value at which the density matrix is interpolated
+            lc (default "k"): the line color
+            ls (default "-"): the line style
+            im (default True): add plot of the imaginary part
+            lab (default None): if not None, the line label
+            mass (default False): if True, use the density matrix
+                in the mass basis
+        """
         if not self.full:
             print("no offdiagonal loaded")
             return
@@ -862,18 +860,18 @@ class FortEPiaNORun:
         plt.ylabel(r"$d\rho_{\alpha\beta}/dt$")
 
     def plotNeff(self, lc="k", ls="-", lab=None, nefflims=[0.5, 4.5], axes=True):
-		"""Plot the evolution of Neff as a function of x.
-		If not available from Neff.dat,
-		compute it directly from the density matrix
+        """Plot the evolution of Neff as a function of x.
+        If not available from Neff.dat,
+        compute it directly from the density matrix
 
-		Parameters:
-			lc (default "k"): the line color
-			ls (default "-"): the line style
-			lab (default None): if not None, the line label
-			nefflims (default [0.5, 4.5]): range for the y axis
-			axes (default True): if True, create a twin y axis
-				with Neff^now in addition to the one with Neff^initial
-		"""
+        Parameters:
+            lc (default "k"): the line color
+            ls (default "-"): the line style
+            lab (default None): if not None, the line label
+            nefflims (default [0.5, 4.5]): range for the y axis
+            axes (default True): if True, create a twin y axis
+                with Neff^now in addition to the one with Neff^initial
+        """
         if not np.isnan(self.Neffdat[0, 0]):
             data = self.Neffdat
         else:
@@ -934,45 +932,45 @@ class FortEPiaNORun:
         allstyles=False,
         alllabels=None,
     ):
-		"""Plot the evolution of the single components
-		and of the total energy density
+        """Plot the evolution of the single components
+        and of the total energy density
 
-		Parameters:
-			gamma_e (default True): it True, plot the sum
-				of the energies of photons and electrons
-			gec (default "#00ccff"): color for the line of the sum
-				of the energies of photons and electrons
-			ges (default ":"): style for the line of the sum
-				of the energies of photons and electrons
-			gamma_e_mu (default True):it True, plot the sum
-				of the energies of photons, electrons and muons
-			gemc (default "#6666ff"): color for the line of the sum
-				of the energies of photons, electrons and muons
-			gems (default "--"): style for the line of the sum
-				of the energies of photons, electrons and muons
-			labels (default [
-					r"$\gamma$",
-					"$e$",
-					r"$\mu$",
-					r"$\nu_e$",
-					r"$\nu_\mu$",
-					r"$\nu_\tau$",
-					r"$\nu_s$",
-				]):
-				the list of labels for all the lines
-			colors (default
-				["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]):
-				a list of colors for each line
-			styles (default ["-", "-", "-", ":", "-.", "--", "-"]):
-				a list of styles for each line
-			skip (default [False]*7): True or False for each line
-				to skip it and do not plot it
-			lw (default 1): line width for the lines
-			allstyles (default False): if it evaluates to True,
-				a common line style for the all the lines
-			alllabels (default None): if it evaluates to True,
-				a common label for all the lines
-		"""
+        Parameters:
+            gamma_e (default True): it True, plot the sum
+                of the energies of photons and electrons
+            gec (default "#00ccff"): color for the line of the sum
+                of the energies of photons and electrons
+            ges (default ":"): style for the line of the sum
+                of the energies of photons and electrons
+            gamma_e_mu (default True):it True, plot the sum
+                of the energies of photons, electrons and muons
+            gemc (default "#6666ff"): color for the line of the sum
+                of the energies of photons, electrons and muons
+            gems (default "--"): style for the line of the sum
+                of the energies of photons, electrons and muons
+            labels (default [
+                    r"$\gamma$",
+                    "$e$",
+                    r"$\mu$",
+                    r"$\nu_e$",
+                    r"$\nu_\mu$",
+                    r"$\nu_\tau$",
+                    r"$\nu_s$",
+                ]):
+                the list of labels for all the lines
+            colors (default
+                ["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]):
+                a list of colors for each line
+            styles (default ["-", "-", "-", ":", "-.", "--", "-"]):
+                a list of styles for each line
+            skip (default [False]*7): True or False for each line
+                to skip it and do not plot it
+            lw (default 1): line width for the lines
+            allstyles (default False): if it evaluates to True,
+                a common line style for the all the lines
+            alllabels (default None): if it evaluates to True,
+                a common label for all the lines
+        """
         plt.plot(
             self.endens[:, 0],
             np.asarray([np.sum(cl[2:]) for cl in self.endens]),
@@ -1037,45 +1035,45 @@ class FortEPiaNORun:
         allstyles=False,
         alllabels=None,
     ):
-		"""Plot the evolution of the single components
-		and of the total entropy density
+        """Plot the evolution of the single components
+        and of the total entropy density
 
-		Parameters:
-			gamma_e (default True): it True, plot the sum
-				of the entropies of photons and electrons
-			gec (default "#00ccff"): color for the line of the sum
-				of the entropies of photons and electrons
-			ges (default ":"): style for the line of the sum
-				of the entropies of photons and electrons
-			gamma_e_mu (default True):it True, plot the sum
-				of the entropies of photons, electrons and muons
-			gemc (default "#6666ff"): color for the line of the sum
-				of the entropies of photons, electrons and muons
-			gems (default "--"): style for the line of the sum
-				of the entropies of photons, electrons and muons
-			labels (default [
-					r"$\gamma$",
-					"$e$",
-					r"$\mu$",
-					r"$\nu_e$",
-					r"$\nu_\mu$",
-					r"$\nu_\tau$",
-					r"$\nu_s$",
-				]):
-				the list of labels for all the lines
-			colors (default
-				["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]):
-				a list of colors for each line
-			styles (default ["-", "-", "-", ":", "-.", "--", "-"]):
-				a list of styles for each line
-			skip (default [False]*7): True or False for each line
-				to skip it and do not plot it
-			lw (default 1): line width for the lines
-			allstyles (default False): if it evaluates to True,
-				a common line style for the all the lines
-			alllabels (default None): if it evaluates to True,
-				a common label for all the lines
-		"""
+        Parameters:
+            gamma_e (default True): it True, plot the sum
+                of the entropies of photons and electrons
+            gec (default "#00ccff"): color for the line of the sum
+                of the entropies of photons and electrons
+            ges (default ":"): style for the line of the sum
+                of the entropies of photons and electrons
+            gamma_e_mu (default True):it True, plot the sum
+                of the entropies of photons, electrons and muons
+            gemc (default "#6666ff"): color for the line of the sum
+                of the entropies of photons, electrons and muons
+            gems (default "--"): style for the line of the sum
+                of the entropies of photons, electrons and muons
+            labels (default [
+                    r"$\gamma$",
+                    "$e$",
+                    r"$\mu$",
+                    r"$\nu_e$",
+                    r"$\nu_\mu$",
+                    r"$\nu_\tau$",
+                    r"$\nu_s$",
+                ]):
+                the list of labels for all the lines
+            colors (default
+                ["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]):
+                a list of colors for each line
+            styles (default ["-", "-", "-", ":", "-.", "--", "-"]):
+                a list of styles for each line
+            skip (default [False]*7): True or False for each line
+                to skip it and do not plot it
+            lw (default 1): line width for the lines
+            allstyles (default False): if it evaluates to True,
+                a common line style for the all the lines
+            alllabels (default None): if it evaluates to True,
+                a common label for all the lines
+        """
         plt.plot(
             self.entropy[:, 0],
             np.asarray([np.sum(cl[2:]) for cl in self.entropy]),
@@ -1118,13 +1116,13 @@ class FortEPiaNORun:
             )
 
     def doAllPlots(self, yref=5.0, color="k"):
-		"""Produce a series of plots for the given simulation
+        """Produce a series of plots for the given simulation
 
-		Parameters:
-			yref (default 5.0): the reference value of y
-				to use in the plots
-			color (default 'k'): color to use in the z and w plot
-		"""
+        Parameters:
+            yref (default 5.0): the reference value of y
+                to use in the plots
+            color (default 'k'): color to use in the z and w plot
+        """
         plt.close()
         self.plotZ(lc=color, lab="z")
         self.plotW(lc=color, ls=":", lab="w")
@@ -1172,22 +1170,22 @@ class FortEPiaNORun:
 
     def integrateRho_yn(self, inu, n, ix=-1, show=False, mass=False):
         """Compute the integral
-		Int_0^Inf dy y^n f(y)/Pi^2
-		for the requested eigenstate at the given x
+        Int_0^Inf dy y^n f(y)/Pi^2
+        for the requested eigenstate at the given x
 
-		Parameters:
-			inu: the neutrino eigenstate index
-			n: the power to use in the exponential
-			ix (default -1): the index of the requested x
-				from the FortEPiaNO output
-			show (default False): if True, print the result
-				before returning it
-			mass (default False): if True, use the density matrix
-				in the mass basis instead of in the flavor one
+        Parameters:
+            inu: the neutrino eigenstate index
+            n: the power to use in the exponential
+            ix (default -1): the index of the requested x
+                from the FortEPiaNO output
+            show (default False): if True, print the result
+                before returning it
+            mass (default False): if True, use the density matrix
+                in the mass basis instead of in the flavor one
 
-		Output:
-			the result of the integral
-		"""
+        Output:
+            the result of the integral
+        """
         if mass:
             rho = self.rhoM
         else:
