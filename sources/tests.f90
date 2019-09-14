@@ -59,7 +59,9 @@ program tests
 		outputFolder = ""
 		maxiter = 100
 		toler_jkyg = 1.d-7
-		dlsoda_atol = 1.d-6
+		dlsoda_atol_z = 1.d-6
+		dlsoda_atol_d = 1.d-6
+		dlsoda_atol_o = 1.d-6
 		dlsoda_rtol = 1.d-6
 		Nx = 100
 		Ny = 100

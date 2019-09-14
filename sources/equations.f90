@@ -526,6 +526,7 @@ module fpEquations
 		integer,dimension(8) :: values
 		integer, parameter :: timefileu = 8970
 		character(len=*), parameter :: timefilen = '/time.log'
+        integer :: m, i, j, k
 
 		deriv_counter = 0
 
@@ -542,7 +543,24 @@ module fpEquations
 		lrw=22+ntot*(ntot+9)
 		liw=20+ntot
 		allocate(atol(ntot), rwork(lrw), iwork(liw))
-		atol=dlsoda_atol
+		k = 1
+		do m = 1, Ny
+			do i = 1, flavorNumber
+				atol(k+i-1) = dlsoda_atol_d
+			end do
+			k = k + flavorNumber
+			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+				do i = 1, flavorNumber-1
+					do j = i+1, flavorNumber
+						atol(k) = dlsoda_atol_o
+						atol(k+1) = dlsoda_atol_o
+						k=k+2
+					end do
+				end do
+			end if
+		end do
+		atol(ntot-1) = dlsoda_atol_z
+		atol(ntot) = dlsoda_atol_z
 		rwork=0.
 		iwork=0
 		iwork(6)=99999999

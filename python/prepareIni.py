@@ -135,7 +135,34 @@ def setParser():
     )
     parser.add_argument("--y_max", type=float, default=20, help="maximum value of y")
     parser.add_argument(
-        "--dlsoda_atol", type=float, default=1e-6, help="absolute tolerance for DLSODA"
+        "--dlsoda_atol",
+        type=float,
+        default=1e-6,
+        help="absolute tolerance for all the differential equations in DLSODA. "
+        + "See also dlsoda_atol_z, dlsoda_atol_d, dlsoda_atol_o",
+    )
+    parser.add_argument(
+        "--dlsoda_atol_z",
+        type=float,
+        default=1e-6,
+        help="absolute tolerance for the dz/dx, dw/dx differential equations in DLSODA. "
+        + "See also dlsoda_atol, dlsoda_atol_d, dlsoda_atol_o",
+    )
+    parser.add_argument(
+        "--dlsoda_atol_d",
+        type=float,
+        default=1e-6,
+        help="absolute tolerance for the differential equations drho_{ii}/dx"
+        + "of the diagonal matrix elements in DLSODA. "
+        + "See also dlsoda_atol, dlsoda_atol_z, dlsoda_atol_o",
+    )
+    parser.add_argument(
+        "--dlsoda_atol_o",
+        type=float,
+        default=1e-6,
+        help="absolute tolerance for the differential equations drho_{ij}/dx"
+        + "of the off-diagonal matrix elements in DLSODA. "
+        + "See also dlsoda_atol, dlsoda_atol_z, dlsoda_atol_d",
     )
     parser.add_argument(
         "--dlsoda_rtol", type=float, default=1e-6, help="relative tolerance for DLSODA"
@@ -308,7 +335,23 @@ def getIniValues(args):
     values["y_min"] = args.y_min
     values["y_cen"] = args.y_cen
     values["y_max"] = args.y_max
-    values["dlsoda_atol"] = args.dlsoda_atol
+    if any(
+        [
+            a != 1e-6
+            for a in [args.dlsoda_atol_z, args.dlsoda_atol_d, args.dlsoda_atol_o]
+        ]
+    ):
+        values["dlsoda_atol"] = (
+            "dlsoda_atol_z = %s\n" % args.dlsoda_atol_z
+            + "dlsoda_atol_d = %s\n" % args.dlsoda_atol_d
+            + "dlsoda_atol_o = %s\n" % args.dlsoda_atol_o
+        )
+    else:
+        values["dlsoda_atol"] = (
+            "dlsoda_atol_z = %s\n" % args.dlsoda_atol
+            + "dlsoda_atol_d = %s\n" % args.dlsoda_atol
+            + "dlsoda_atol_o = %s\n" % args.dlsoda_atol
+        )
     values["dlsoda_rtol"] = args.dlsoda_rtol
     values["folder"] = args.outputfolder
     values["Nprintderivs"] = args.verbose_deriv_freq
@@ -369,7 +412,7 @@ save_nuDens_evolution = {save_nuDens:}
 save_z_evolution = {save_z:}
 save_energy_entropy_evolution = {save_energy_entropy:}
 
-dlsoda_atol = {dlsoda_atol:}
+{dlsoda_atol:}
 dlsoda_rtol = {dlsoda_rtol:}
 
 verbose = {verbose:}

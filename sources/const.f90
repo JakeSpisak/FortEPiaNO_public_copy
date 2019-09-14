@@ -124,7 +124,9 @@ module variables
 	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr, w_gl_arr2
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter
-	real(dl) :: toler_jkyg, dlsoda_atol, dlsoda_rtol
+	real(dl) :: toler_jkyg
+	real(dl) :: dlsoda_rtol
+	real(dl) :: dlsoda_atol_z, dlsoda_atol_d, dlsoda_atol_o
 
 	integer, parameter :: N_opt_xoz = 63
 	real(dl), parameter :: opt_xoz_cut = 30.d0

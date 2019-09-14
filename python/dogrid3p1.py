@@ -337,7 +337,34 @@ def setParser():
         help="Add this number to the exponent, only for ternary grid",
     )
     parser_prepare.add_argument(
-        "--tolerance", type=float, default=1e-5, help="tolerance for DLSODA"
+        "--tolerance",
+        type=float,
+        default=1e-5,
+        help="tolerance for DLSODA (set all to the same value)",
+    )
+    parser_prepare.add_argument(
+        "--rel_tolerance",
+        type=float,
+        default=1e-5,
+        help="relative tolerance for DLSODA",
+    )
+    parser_prepare.add_argument(
+        "--abs_tolerance_z",
+        type=float,
+        default=1e-5,
+        help="absolute tolerance for DLSODA, dz/dx and dw/dx equations",
+    )
+    parser_prepare.add_argument(
+        "--abs_tolerance_d",
+        type=float,
+        default=1e-5,
+        help="absolute tolerance for DLSODA, drho_{ii}/dx equations",
+    )
+    parser_prepare.add_argument(
+        "--abs_tolerance_o",
+        type=float,
+        default=1e-5,
+        help="absolute tolerance for DLSODA, drho_{ij}/dx equations",
     )
     for a, l, mi, ma, n in [
         ["dm41", r"\Delta m^2_{41}", 1e-5, 1e2, 8],
@@ -1143,8 +1170,18 @@ def call_prepare(args):
             % (args.gridname, dm41, Ue4sq, Um4sq, Ut4sq),
             "3+1",
             "damping",
-            "--dlsoda_rtol=%s" % args.tolerance,
-            "--dlsoda_atol=%s" % args.tolerance,
+            "--dlsoda_rtol=%s" % args.tolerance
+            if args.rel_tolerance == 1e-5
+            else args.rel_tolerance,
+            "--dlsoda_atol_z=%s" % args.tolerance
+            if args.abs_tolerance_z == 1e-5
+            else args.abs_tolerance_z,
+            "--dlsoda_atol_d=%s" % args.tolerance
+            if args.abs_tolerance_d == 1e-5
+            else args.abs_tolerance_d,
+            "--dlsoda_atol_o=%s" % args.tolerance
+            if args.abs_tolerance_o == 1e-5
+            else args.abs_tolerance_o,
             "--Nx=%s" % args.Nx,
             "--Ny=%s" % args.Ny,
             "--Nylog=%s" % args.Nylog,
