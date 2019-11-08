@@ -238,7 +238,14 @@ def oscParams(args):
             osc["nnu"] = 3
             osc["sterile"] = [False, False, False]
             osc["factors"] = [1, 1, 1]
-        if args.numodel in ["3p1", "3+1", "3p0", "3+0", "3nu", "3"]:
+        if args.numodel in [
+            "3p1",
+            "3+1",
+            "3p0",
+            "3+0",
+            "3nu",
+            "3",
+        ] and args.default_active in ["VLC", "Bari", "NuFit"]:
             if args.default_active == "VLC":
                 osc["dm21"] = 7.55e-05
                 osc["th12"] = 0.32
