@@ -398,6 +398,8 @@ dm41 = {dm41:}
 
 collision_offdiag = {coll_offdiag:}
 ftqed_temperature_corr = T
+ftqed_ord3 = T
+ftqed_log_term = F
 
 Nx = {Nx:}
 x_in = {x_in:}
