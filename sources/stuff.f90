@@ -29,7 +29,7 @@ module fpStuff
 		deallocate(nuMasses, nuFactor, sterile)
 		deallocate(mixMat, mixMatInv)
 		deallocate(nuMassesMat, leptonDensities)
-		deallocate(dampTermMatrixCoeff)
+		deallocate(dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu)
 		deallocate(GL_mat, GR_mat, GLR_vec)
 		deallocate(mixingAngles, massSplittings)
 	end subroutine deallocateStuff

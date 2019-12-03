@@ -22,7 +22,8 @@ module fpConfig
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		call allocateCmplxMat(nuDensities)
-		allocate(dampTermMatrixCoeff(nf,nf))
+		allocate(dampTermMatrixCoeffNue(nf,nf))
+		allocate(dampTermMatrixCoeffNunu(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 		allocate(massSplittings(nf))
 		allocate(mixingAngles(nf,nf))
@@ -89,67 +90,89 @@ module fpConfig
 
 	subroutine setDampingFactorCoeffs
 		integer :: ix, iy
-		real(dl) :: nue_nux, nue_nus, numu_nutau, nux_nus
+		real(dl) :: nue_nue_nux, nue_nue_nus, nue_numu_nutau, nue_nux_nus
+		real(dl) :: nunu_nue_nux, nunu_nue_nus, nunu_numu_nutau, nunu_nux_nus
 		character(len=300) :: tmpstr
 
-		dampTermMatrixCoeff = 0.d0
+		dampTermMatrixCoeffNue = 0.d0
+		dampTermMatrixCoeffNunu = 0.d0
 		!numbers from McKellar:1992ja
+		!terms for scattering, annihilation with electrons
 		!nu_e - nu_X
-		nue_nux = &
+		nue_nue_nux = &
 			8.d0 &!e+nu -> e+nu
-			+ 6.d0 &!nu+(b)nu -> nu+(b)nu
 			+ (8.d0*sin2thW**2 + 1.d0)!nu+bnu -> e+e-
 		!nu_mu - nu_tau
-		numu_nutau = &
-			6.d0 &!nu+(b)nu -> nu+(b)nu
-			+ (8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)!nu+bnu -> e+e-
+		nue_numu_nutau = &
+			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)!nu+bnu -> e+e-
 		!nu_e - nu_s
-		nue_nus = 2.d0*(&
+		nue_nue_nus = 2.d0*(&
 			(8.d0*sin2thW**2 + 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
-			+ 13.d0 &!nu+(b)nu -> nu+(b)nu
-			+ (4.d0*sin2thW**2 + 2.d0*sin2thW + 0.5d0))!nu+bnu -> e+e-
+			+ (4.d0*sin2thW**2 + 2.d0*sin2thW + 0.5d0) &!nu+bnu -> e+e-
+		)
 		!nu_X - nu_s
-		nux_nus = 2.d0*(&
+		nue_nux_nus = 2.d0*(&
 			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
-			+ 13.d0 &!nu+(b)nu -> nu+(b)nu
-			+ (4.d0*sin2thW**2 - 2.d0*sin2thW + 0.5d0))!nu+bnu -> e+e-
+			+ (4.d0*sin2thW**2 - 2.d0*sin2thW + 0.5d0) &!nu+bnu -> e+e-
+		)
+		!terms for nunu scattering
+		!nu_e - nu_X
+		nunu_nue_nux = 6.d0 !nu+(b)nu -> nu+(b)nu
+		!nu_mu - nu_tau
+		nunu_numu_nutau = 6.d0 !nu+(b)nu -> nu+(b)nu
+		!nu_e - nu_s
+		nunu_nue_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
+		!nu_X - nu_s
+		nunu_nux_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
 		if (flavorNumber .ge. 2) then
 			if (sterile(2)) then
-				dampTermMatrixCoeff(1, 2) = nue_nus
+				dampTermMatrixCoeffNue(1, 2) = nue_nue_nus
+				dampTermMatrixCoeffNunu(1, 2) = nunu_nue_nus
 			else
-				dampTermMatrixCoeff(1, 2) = nue_nux
+				dampTermMatrixCoeffNue(1, 2) = nue_nue_nux
+				dampTermMatrixCoeffNunu(1, 2) = nunu_nue_nux
 			end if
 		end if
 		if (flavorNumber .ge. 3) then
 			if (sterile(3)) then
-				dampTermMatrixCoeff(1, 3) = nue_nus
-				dampTermMatrixCoeff(2, 3) = nux_nus
+				dampTermMatrixCoeffNue(1, 3) = nue_nue_nus
+				dampTermMatrixCoeffNue(2, 3) = nue_nux_nus
+				dampTermMatrixCoeffNunu(1, 3) = nunu_nue_nus
+				dampTermMatrixCoeffNunu(2, 3) = nunu_nux_nus
 			else
-				dampTermMatrixCoeff(1, 3) = nue_nux
-				dampTermMatrixCoeff(2, 3) = numu_nutau
+				dampTermMatrixCoeffNue(1, 3) = nue_nue_nux
+				dampTermMatrixCoeffNue(2, 3) = nue_numu_nutau
+				dampTermMatrixCoeffNunu(1, 3) = nunu_nue_nux
+				dampTermMatrixCoeffNunu(2, 3) = nunu_numu_nutau
 			end if
 		end if
 		if (damping_read_zero) then
 			do ix=4, flavorNumber
 				write(tmpstr,"('damping_',2I1,'_zero')") 1, ix
 				if (.not. read_ini_logical(trim(tmpstr), .false.)) &
-					dampTermMatrixCoeff(1, ix) = nue_nus
+					dampTermMatrixCoeffNue(1, ix) = nue_nue_nus
+					dampTermMatrixCoeffNunu(1, ix) = nunu_nue_nus
 				do iy=2, ix-1
 					write(tmpstr,"('damping_',2I1,'_zero')") iy, ix
 					if (.not. read_ini_logical(trim(tmpstr), .false.)) &
-						dampTermMatrixCoeff(iy, ix) = nux_nus
+						dampTermMatrixCoeffNue(iy, ix) = nue_nux_nus
+						dampTermMatrixCoeffNunu(iy, ix) = nunu_nux_nus
 				end do
 			end do
 		else
 			do ix=4, flavorNumber
-				dampTermMatrixCoeff(1, ix) = nue_nus
+				dampTermMatrixCoeffNue(1, ix) = nue_nue_nus
+				dampTermMatrixCoeffNunu(1, ix) = nunu_nue_nus
 				do iy=2, ix-1
-					dampTermMatrixCoeff(iy, ix) = nux_nus
+					dampTermMatrixCoeffNue(iy, ix) = nue_nux_nus
+					dampTermMatrixCoeffNunu(iy, ix) = nunu_nux_nus
 				end do
 			end do
 		end if
-		write(*,*)"Damping factors:"
-		call printMat(dampTermMatrixCoeff)
+		write(*,*)"Damping factors (Nue):"
+		call printMat(dampTermMatrixCoeffNue)
+		write(*,*)"Damping factors (NuNu):"
+		call printMat(dampTermMatrixCoeffNunu)
 	end subroutine setDampingFactorCoeffs
 
 	subroutine init_matrices
