@@ -764,10 +764,12 @@ module fpInteractions
 					collArgs%ix2 = j
 					get_collision_terms%re(i,j) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
 					get_collision_terms%im(i,j) = integrator(Fint, collArgs, F_ab_ann_im, F_ab_sc_im)
+#ifndef DO_TESTS
 					get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
                         + dampTermFactor * dampTermMatrixCoeffNunu(i,j) * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
 					get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
                         + dampTermFactor * dampTermMatrixCoeffNunu(i,j) * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
+#endif
 				end do
 			else if (collision_offdiag.eq.2) then
 				do j=i+1, flavorNumber

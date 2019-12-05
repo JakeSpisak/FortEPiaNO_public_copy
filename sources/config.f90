@@ -283,10 +283,11 @@ module fpConfig
 			call addToLog("[config] reading additional configuration from "//trim(args(1)))
 			call ini_file_open(trim(args(1)), trim(args(1))//".log")
 
+			force_replace = read_ini_logical('force_replace', .false.)
 			tmparg=trim(read_ini_char('outputFolder'))
 			if (trim(tmparg)/="") outputFolder=tmparg
 			inquire(file=trim(outputFolder)//"/resume.dat", exist=file_exist)
-			if (file_exist) then
+			if (file_exist .and. .not. force_replace) then
 				call criticalError("[config] resume.dat already exists! No need to proceed.")
 			end if
 			call addToLog("[config] Writing to: "//trim(outputFolder)//"/...")

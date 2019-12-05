@@ -34,10 +34,15 @@ module constants
 	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
 	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
 	real(dl), parameter :: x_muon_cut = 0.5d0!do not compute mu densities above this value, to avoid float overflow
-	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
 	real(dl), parameter :: G_F = 1.1663787d-5/(Gev2eV*Gev2eV)
 	real(dl), parameter :: G_Fsq = G_F * G_F
+#ifndef DO_TESTS
 	real(dl), parameter :: sin2thW = 0.23122
+	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
+#else
+	real(dl), parameter :: sin2thW = 0.23129
+	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
+#endif
 	real(dl), parameter :: cos2thW = 1.d0-sin2thW
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: electron_charge = sqrt(4*PI*alpha_fine)
@@ -74,6 +79,7 @@ module variables
 	logical :: firstWrite = .true.
 	logical :: firstPoint = .false.
 	logical :: checkpoint = .false.
+	logical :: force_replace = .false.
 
 	integer :: collision_offdiag
 	logical :: damping_read_zero

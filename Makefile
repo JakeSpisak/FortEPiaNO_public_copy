@@ -1,5 +1,4 @@
 # FLAGS
-BUILD_DIR ?= build
 EXECNAME = fortepiano
 # define TESTSPEED=1 to compute the time required for the first 1000 derivatives
 TESTSPEED ?=
@@ -91,20 +90,24 @@ $(BUILD_DIR)/tests.o: $(OBJ_TESTS)
 
 all: fortepiano
 
+fortepiano: BUILD_DIR ?= build
+tests: BUILD_DIR ?= buildtest
+tests: TESTFLAGS = -DDO_TESTS=1
+
 directories:
 	mkdir -p bin/ log/ $(BUILD_DIR)
 
 fortepiano: directories Makefile $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o
-	$(F90) -o bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS)
+	$(F90) -o bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS) $(TESTFLAGS)
 
 tests: directories Makefile $(OBJ_TESTS) $(BUILD_DIR)/tests.o
-	$(F90) -o bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS)
+	$(F90) -o bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS) $(TESTFLAGS)
 
 clean: 
-	rm -rf bin/* $(BUILD_DIR)*/ build*/
+	rm -rf bin/* build*/
 
 $(BUILD_DIR)/%.o: sources/%.f90 Makefile
-	$(F90) $(FFLAGS) -c sources/$*.f90 -o $(BUILD_DIR)/$*.o
+	$(F90) $(FFLAGS) $(TESTFLAGS) -c sources/$*.f90 -o $(BUILD_DIR)/$*.o
 
 $(BUILD_DIR)/%.o: sources/%.f Makefile
-	$(F90) $(FFLAGS) $(stdFlag) -c sources/$*.f -o $(BUILD_DIR)/$*.o
+	$(F90) $(FFLAGS) $(TESTFLAGS) $(stdFlag) -c sources/$*.f -o $(BUILD_DIR)/$*.o
