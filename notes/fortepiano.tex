@@ -936,6 +936,43 @@ Smaller values, on the contrary, may create numerical problems in \dlsoda\
 due to the very small initial value $z_{\rm in}-1$,
 and are never really required for our purposes.
 
+More details on the precision of numerical calculations and the dependence of \Neff\ on physical parameters
+(including Fermi constant, Weinberg angle, $W$ boson mass and neutrino mixing parameters)
+are discussed in \cite{Bennett:inprep}, considering the three-neutrino case only.
+We report here some of the main results, summarized in the various panels of Fig.~\ref{fig:precision}.
+In order to study the accuracy of the numerical calculations as functions of the physical parameters,
+the tolerance for \dlsoda\ has been set to $10^{-7}$.
+Considering variations for the physical parameters in the allowed $3\sigma$ range
+(from \cite{deSalas:2017kay} for the neutrino mixing parameters,
+from \cite{Tanabashi:2018oca} for the weak interaction parameters),
+we see that the stability of \Neff\ is at the $10^{-4}$ level or better (upper left panel).
+A similar precision is obtained when changing the way the off-diagonal terms (upper right panel).
+Altering $x_{\rm in}$ (lower left panel), which controls the initial time in the code,
+only affects \Neff\ at the $10^{-5}$ level.
+More critical is the dependence on $N_y$ (lower right panel),
+which controls the number and the position of the nodes of the momentum grid.
+Varying $N_y$ between 25 and 50 only alters the final result at the $10^{-4}$ level,
+so that it is safe to quote our suggested number $\Neff=3.0430$ when considering 3 neutrinos.
+An estimate of the theoretical and numerical uncertainty on this number is of order $10^{-4}$.
+
+
+\begin{figure}
+\centering
+\includegraphics[width=0.49\textwidth]{plots/combined}
+\includegraphics[width=0.49\textwidth]{plots/od}
+\includegraphics[width=0.49\textwidth]{plots/xin}
+\includegraphics[width=0.49\textwidth]{plots/ny}
+\caption{
+\label{fig:precision}
+Absolute variations of \Neff\ as a function of the physical parameters (upper left)
+or of some crucial numerical settings:
+the different contributions to the off-diagonal terms of the collision integrals (upper right),
+the initial value $x_{\rm in}$ (lower left),
+the number of nodes in the $y$ grid (lower right).
+}
+\end{figure}
+
+
 
 \acknowledgments
 We thank J.J.~Bennett and G.~Buldgen for helping spotting
