@@ -316,8 +316,6 @@ module fpConfig
 			Nx = read_ini_int('Nx',100)
 			use_gauss_laguerre = read_ini_logical('use_gauss_laguerre', .true.)
 			Ny = read_ini_int('Ny',100)
-			if (use_gauss_laguerre .and. Ny.gt.50) &
-				call criticalError("Ny>50 cannot be used with the Gauss-Laguerre method")
 
 			Nylog = read_ini_int('Nylog',7)
 			allocate(x_arr(Nx))
