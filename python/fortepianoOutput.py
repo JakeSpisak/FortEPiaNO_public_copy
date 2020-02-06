@@ -2,6 +2,7 @@
 
 import os
 import re
+import traceback
 
 try:
     import matplotlib
@@ -149,7 +150,11 @@ def finalizePlot(
         minorLocatorX = AutoMinorLocator(2)
         ax1.yaxis.set_minor_locator(minorLocatorX)
     plt.tight_layout(rect=tightrect)
-    plt.savefig(fname)
+    try:
+        plt.savefig(fname)
+    except FileNotFoundError:
+        print(traceback.format_exc())
+        return
     plt.close()
 
 
@@ -205,6 +210,7 @@ class FortEPiaNORun:
         self.full = full
         self.label = label
         self.verbose = verbose
+        self.nnu = nnu
         if not os.path.exists(folder):
             if verbose:
                 print("non-existing folder: %s" % folder)
@@ -233,7 +239,6 @@ class FortEPiaNORun:
             self.entropy = np.loadtxt("%s/entropy.dat" % folder)
         except (IOError, OSError):
             self.entropy = np.nan
-        self.nnu = nnu
         self.rho = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         try:
@@ -245,7 +250,12 @@ class FortEPiaNORun:
         else:
             self.hasResume = True
         if self.hasResume:
-            self.Neff = float(re.match("Neff[ =]*([-\d.]*)", self.resume[-1]).group(1))
+            try:
+                self.Neff = float(
+                    re.match("Neff[ =]*([-\d.]*)", self.resume[-1]).group(1)
+                )
+            except ValueError:
+                self.Neff = np.nan
             try:
                 self.wfin = float(
                     re.match("final w[ =]*([-\d.]*)", self.resume[0]).group(1)
@@ -254,22 +264,34 @@ class FortEPiaNORun:
                 if verbose:
                     print("final w is not in resume.dat")
                 zlineindex = 0
+                self.wfin = np.nan
+            except ValueError:
+                if verbose:
+                    print("error reading w in resume.dat")
+                zlineindex = 1
+                self.wfin = np.nan
             else:
                 zlineindex = 1
-            self.zfin = float(
-                re.match("final z[ =]*([-\d.]*)", self.resume[zlineindex]).group(1)
-            )
+            try:
+                self.zfin = float(
+                    re.match("final z[ =]*([-\d.]*)", self.resume[zlineindex]).group(1)
+                )
+            except ValueError:
+                self.zfin = np.nan
         self.deltarhofin = []
         for i in range(self.nnu):
             if self.hasResume:
-                self.deltarhofin.append(
-                    float(
-                        re.match(
-                            "dRho_%s[ =]*([-\d.]*)" % (i + 1),
-                            self.resume[i + 1 + zlineindex],
-                        ).group(1)
+                try:
+                    self.deltarhofin.append(
+                        float(
+                            re.match(
+                                "dRho_%s[ =]*([-\d.]*)" % (i + 1),
+                                self.resume[i + 1 + zlineindex],
+                            ).group(1)
+                        )
                     )
-                )
+                except (AttributeError, IndexError):
+                    self.deltarhofin.append(np.nan)
             try:
                 self.rho[i, i, 0] = np.loadtxt("%s/nuDens_diag%d.dat" % (folder, i + 1))
             except (IOError, OSError):
@@ -407,6 +429,11 @@ class FortEPiaNORun:
             fac (default 1.0): a constant normalization factor
                 for the function that is plotted
         """
+        try:
+            self.fd, self.yv
+        except AttributeError:
+            print(traceback.format_exc())
+            return
         if rescale != 1.0:
             fd = self.fd * (np.exp(self.yv) + 1.0) / (np.exp(self.yv / rescale) + 1.0)
         else:
@@ -432,6 +459,11 @@ class FortEPiaNORun:
             lc (default "k"): the line color
             lab (default None): if not None, the line label
         """
+        try:
+            self.zdat
+        except AttributeError:
+            print(traceback.format_exc())
+            return
         plt.plot(
             *stripRepeated(self.zdat, 0, 1),
             label=self.label if lab is None else lab,
@@ -452,7 +484,7 @@ class FortEPiaNORun:
         """
         try:
             self.zdat[0, 2]
-        except IndexError:
+        except (AttributeError, IndexError):
             print("w is not in z.dat")
             return
         plt.plot(
@@ -475,7 +507,7 @@ class FortEPiaNORun:
         """
         try:
             self.zdat[0, 2]
-        except IndexError:
+        except (AttributeError, IndexError):
             print("w is not in z.dat")
             return
         plt.plot(
@@ -497,6 +529,11 @@ class FortEPiaNORun:
             ls (default "-"): the line style
             lc (default "k"): the line color
         """
+        try:
+            self.zdat, ref.zdat
+        except AttributeError:
+            print(traceback.format_exc())
+            return
         mex, mey = stripRepeated(self.zdat, 0, 1)
         mef = interp1d(mex, mey)
         refx, refy = stripRepeated(ref.zdat, 0, 1)
@@ -519,10 +556,19 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        if mass:
-            rho = self.rhoM
-        else:
-            rho = self.rho
+        try:
+            if mass:
+                rho = self.rhoM
+            else:
+                rho = self.rho
+        except AttributeError:
+            print(traceback.format_exc())
+            return
+        try:
+            rho[inu, inu, 0][:]
+        except TypeError:
+            print(traceback.format_exc())
+            return
         plt.plot(
             *stripRepeated(rho[inu, inu, 0], 0, iy),
             label="%s \alpha=%d" % (self.label, inu + 1),
@@ -547,10 +593,19 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        if mass:
-            rho = self.rhoM
-        else:
-            rho = self.rho
+        try:
+            if mass:
+                rho = self.rhoM
+            else:
+                rho = self.rho
+        except AttributeError:
+            print(traceback.format_exc())
+            return
+        try:
+            rho[inu, inu, 0][:]
+        except TypeError:
+            print(traceback.format_exc())
+            return
         dijrex, dijrey = stripRepeated(rho[inu, inu, 0], 0, iy)
         plt.plot(
             dijrex,
@@ -580,10 +635,19 @@ class FortEPiaNORun:
         if not self.full:
             print("no offdiagonal loaded")
             return
-        if mass:
-            rho = self.rhoM
-        else:
-            rho = self.rho
+        try:
+            if mass:
+                rho = self.rhoM
+            else:
+                rho = self.rho
+        except AttributeError:
+            print(traceback.format_exc())
+            return
+        try:
+            rho[i1, i2, 0][:]
+        except TypeError:
+            print(traceback.format_exc())
+            return
         plt.plot(
             *stripRepeated(rho[i1, i2, 0], 0, iy),
             ls="-",
@@ -619,11 +683,15 @@ class FortEPiaNORun:
         if not self.full:
             print("no offdiagonal loaded")
             return
-        if mass:
-            rho = self.rhoM
-        else:
-            rho = self.rho
-        dijrex, dijrey = stripRepeated(rho[i1, i2, 0], 0, iy)
+        try:
+            if mass:
+                rho = self.rhoM
+            else:
+                rho = self.rho
+            dijrex, dijrey = stripRepeated(rho[i1, i2, 0], 0, iy)
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
         plt.plot(
             dijrex,
             np.gradient(dijrey, dijrex),
@@ -665,14 +733,23 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        if mass:
-            rho = self.rhoM
-        else:
-            rho = self.rho
         if iy is None:
             iy = ix
         if ri not in [0, 1]:
             ri = 0
+        try:
+            if mass:
+                rho = self.rhoM
+            else:
+                rho = self.rho
+        except AttributeError:
+            print(traceback.format_exc())
+            return
+        try:
+            rho[ix, iy, ri][-1, 1:]
+        except TypeError:
+            print(traceback.format_exc())
+            return
         label = (
             "%s \alpha\beta=%d%d %s"
             % (self.label, ix + 1, iy + 1, "re" if ri == 0 else "im")
@@ -707,8 +784,13 @@ class FortEPiaNORun:
             i2 = i1
         if ri not in [0, 1]:
             ri = 0
+        try:
+            interp = self.interpolateRhoIJ_x(i1, i2, x, ri, y2=y2, mass=mass)
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
         plt.plot(
-            *self.interpolateRhoIJ_x(i1, i2, x, ri, y2=y2, mass=mass),
+            *interp,
             ls=ls,
             c=lc,
             label="%s \alpha\beta=%d%d %s x=%f"
@@ -732,7 +814,11 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
+        try:
+            x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
         label = lab if lab is not None else "%s \alpha=%d" % (self.label, inu + 1)
         plt.plot(x, np.asarray(yv) * (y ** 2 if y2 else 1.0), label=label, ls=ls, c=lc)
         plt.xscale("log")
@@ -755,7 +841,11 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
+        try:
+            x, yv = self.interpolateRhoIJ(inu, inu, y, ri=0, mass=mass)
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
         label = lab if lab is not None else "%s \alpha=%d" % (self.label, inu + 1)
         plt.plot(
             x,
@@ -786,8 +876,13 @@ class FortEPiaNORun:
         if not self.full:
             print("no offdiagonal loaded")
             return
+        try:
+            interp = self.interpolateRhoIJ(i1, i2, y, ri=0, mass=mass)
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
         plt.plot(
-            *self.interpolateRhoIJ(i1, i2, y, ri=0, mass=mass),
+            *interp,
             ls=ls,
             c=lc,
             label="%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
@@ -795,8 +890,13 @@ class FortEPiaNORun:
             else lab
         )
         if im:
+            try:
+                interpIm = self.interpolateRhoIJ(i1, i2, y, ri=1)
+            except AttributeError:
+                print(traceback.format_exc())
+                return
             plt.plot(
-                *self.interpolateRhoIJ(i1, i2, y, ri=1),
+                *interpIm,
                 ls=":",
                 c=lc,
                 label="%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
@@ -828,7 +928,11 @@ class FortEPiaNORun:
         if not self.full:
             print("no offdiagonal loaded")
             return
-        dijrex, dijrey = self.interpolateRhoIJ(i1, i2, y, ri=0, mass=mass)
+        try:
+            dijrex, dijrey = self.interpolateRhoIJ(i1, i2, y, ri=0, mass=mass)
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
         try:
             plt.plot(
                 dijrex,
@@ -842,7 +946,11 @@ class FortEPiaNORun:
         except IndexError:
             pass
         if im:
-            dijimx, dijimy = self.interpolateRhoIJ(i1, i2, y, ri=1, mass=mass)
+            try:
+                dijimx, dijimy = self.interpolateRhoIJ(i1, i2, y, ri=1, mass=mass)
+            except AttributeError:
+                print(traceback.format_exc())
+                return
             try:
                 plt.plot(
                     dijimx,
@@ -872,10 +980,16 @@ class FortEPiaNORun:
             axes (default True): if True, create a twin y axis
                 with Neff^now in addition to the one with Neff^initial
         """
-        if not np.isnan(self.Neffdat[0, 0]):
+        if hasattr(self, "Neffdat") and not np.isnan(self.Neffdat[0, 0]):
             data = self.Neffdat
         else:
             data = []
+            try:
+                [self.rho[inu, inu, 0][:] for inu in range(self.nnu)]
+                self.zdat[:, 0:2][:]
+            except (AttributeError, TypeError):
+                print(traceback.format_exc())
+                return
             for ix, [x, z] in enumerate(self.zdat[:, 0:2]):
                 rhogamma = PISQD15 * z ** 4
                 rhonu = np.sum(
@@ -971,6 +1085,11 @@ class FortEPiaNORun:
             alllabels (default None): if it evaluates to True,
                 a common label for all the lines
         """
+        try:
+            self.endens[:, 0]
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
         plt.plot(
             self.endens[:, 0],
             np.asarray([np.sum(cl[2:]) for cl in self.endens]),
@@ -1074,6 +1193,11 @@ class FortEPiaNORun:
             alllabels (default None): if it evaluates to True,
                 a common label for all the lines
         """
+        try:
+            self.entropy[:, 0]
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
         plt.plot(
             self.entropy[:, 0],
             np.asarray([np.sum(cl[2:]) for cl in self.entropy]),
