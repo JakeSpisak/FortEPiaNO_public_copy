@@ -111,3 +111,6 @@ $(BUILD_DIR)/%.o: sources/%.f90 Makefile
 
 $(BUILD_DIR)/%.o: sources/%.f Makefile
 	$(F90) $(FFLAGS) $(TESTFLAGS) $(stdFlag) -c sources/$*.f -o $(BUILD_DIR)/$*.o
+
+installpython:
+	python setup.py install --user

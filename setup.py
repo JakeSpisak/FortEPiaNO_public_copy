@@ -26,5 +26,7 @@ setup(
         "numpy",
         "scipy",
         "python-ternary",
+        'mock;python_version<"3"',
+        'unittest2;python_version<"3"',
     ],
 )
