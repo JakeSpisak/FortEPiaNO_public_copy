@@ -272,7 +272,8 @@ class TestFortepianoOutput(FPTestCase):
                     ),
                     call(
                         r"$N_{\rm eff}^{\rm now}="
-                        + r"\frac{8}{7}\left(\frac{11}{4}\right)^{4/3}\;\frac{\rho_\nu}{\rho_\gamma}$"
+                        + r"\frac{8}{7}\left(\frac{11}{4}\right)^{4/3}\;"
+                        + r"\frac{\rho_\nu}{\rho_\gamma}$"
                     ),
                 ]
             )
@@ -308,7 +309,9 @@ class TestFortEPiaNORun(FPTestCase):
     def setUpClass(self):
         """Set maxDiff to None and load the output of explanatory.ini"""
         self.maxDiff = None
+        self.emptyRun = fpom.FortEPiaNORun("/nonexistent")
         self.explanatory = fpom.FortEPiaNORun("output/", label="label")
+        self.failedRun = fpom.FortEPiaNORun("output/no/")
 
     def runAllPlots(self, run):
         """Call all the plotting function from FortEPiaNORun"""
@@ -471,7 +474,43 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_plotFD(self):
         """test plotFD"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotFD"))
+        with patch("matplotlib.pyplot.plot") as _p:
+            self.emptyRun.plotFD()
+            self.assertEqual(_p.call_count, 0)
+        run = self.explanatory
+        with patch("matplotlib.pyplot.plot") as _p, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.yscale") as _ys, patch(
+            "matplotlib.pyplot.xlabel"
+        ) as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotFD()
+            self.assertEqual(_p.call_count, 1)
+            self.assertEqualArray(_p.call_args[0], [run.yv, run.fd])
+            self.assertEqual(
+                _p.call_args[1], {"label": "label", "ls": "-", "marker": ".", "c": "k",}
+            )
+            _xl.assert_called_once_with("$y$")
+            _yl.assert_called_once_with(r"$y^2 f(y)$")
+            _xs.assert_called_once_with("log")
+            _ys.assert_called_once_with("log")
+            self.explanatory.plotFD(ls=":", lc="r", lab="l", rescale=1.1, fac=2.0)
+            self.assertEqualArray(
+                _p.call_args[0],
+                [
+                    run.yv,
+                    2.0
+                    * run.fd
+                    * (np.exp(run.yv) + 1.0)
+                    / (np.exp(run.yv / 1.1) + 1.0),
+                ],
+            )
+            self.assertEqual(
+                _p.call_args[1], {"label": "l", "ls": ":", "marker": ".", "c": "r",}
+            )
+            self.failedRun.plotFD()
+            self.assertEqualArray(_p.call_args[0], [np.nan, np.nan])
 
     def test_plotZ(self):
         """test plotZ"""
