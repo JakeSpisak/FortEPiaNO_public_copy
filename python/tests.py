@@ -24,6 +24,27 @@ import dogrid3p1 as dgm
 import fortepianoOutput as fpom
 import prepareIni as pim
 
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
+allPlots = True
+
+
+class FPTestCase(unittest.TestCase):
+    """additional test functions"""
+
+    def assertEqualArray(self, a, b):
+        # type: (np.ndarray, np.ndarray) -> None
+        """Assert that two np.ndarrays (a, b) are equal
+        using np.all(a == b)
+
+        Parameters:
+            a, b: the two np.ndarrays to compare
+        """
+        self.assertTrue(np.allclose(a, b, equal_nan=True))
+
 
 class TestDogrid3p1(unittest.TestCase):
     """Testing the dogrid3p1 module"""
@@ -75,7 +96,7 @@ class TestDogrid3p1(unittest.TestCase):
         self.assertTrue(hasattr(dgm, "call_ternary"))
 
 
-class TestFortepianoOutput(unittest.TestCase):
+class TestFortepianoOutput(FPTestCase):
     """Testing some content of the FortepianoOutput module"""
 
     def test_attributes(self):
@@ -87,12 +108,200 @@ class TestFortepianoOutput(unittest.TestCase):
 
     def test_finalizePlot(self):
         """test finalizePlot"""
+        plt.figure()
+        ax = plt.gca()
+        ax1 = ax.twiny()
+        with patch("matplotlib.pyplot.title") as _tit, patch(
+            "matplotlib.pyplot.gca", return_value=ax
+        ) as _gca, patch("matplotlib.pyplot.Axes.tick_params") as _tpa, patch(
+            "matplotlib.pyplot.legend"
+        ) as _leg, patch(
+            "matplotlib.pyplot.xlabel"
+        ) as _xla, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yla, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xsc, patch(
+            "matplotlib.pyplot.yscale"
+        ) as _ysc, patch(
+            "matplotlib.pyplot.xlim"
+        ) as _xli, patch(
+            "matplotlib.pyplot.ylim"
+        ) as _yli, patch(
+            "matplotlib.pyplot.tight_layout"
+        ) as _tig, patch(
+            "matplotlib.pyplot.savefig", side_effect=[None, None, FileNotFoundError]
+        ) as _sfi, patch(
+            "matplotlib.pyplot.close"
+        ) as _clo:
+            fpom.finalizePlot("fname", legend=False)
+            _tit.assert_called_once_with("")
+            _gca.assert_called_once_with()
+            _tpa.assert_called_once_with(
+                "both",
+                which="both",
+                direction="in",
+                left=True,
+                right=True,
+                top=True,
+                bottom=True,
+            )
+            self.assertEqual(_leg.call_count, 0)
+            self.assertEqual(_xla.call_count, 0)
+            self.assertEqual(_yla.call_count, 0)
+            self.assertEqual(_xsc.call_count, 0)
+            self.assertEqual(_ysc.call_count, 0)
+            self.assertEqual(_xli.call_count, 0)
+            self.assertEqual(_yli.call_count, 0)
+            _tig.assert_called_once_with(rect=(-0.035, -0.04, 1.025, 1.04))
+            _sfi.assert_called_once_with("fname")
+            _clo.assert_called_once_with()
+            fpom.finalizePlot(
+                "fname",
+                title="tit",
+                xlab="x",
+                ylab="y",
+                xscale="log",
+                yscale="log",
+                xlim=[0, 1],
+                ylim=[10, 11],
+                tightrect=(0, 1, 2, 3),
+            )
+            _tit.assert_any_call("tit")
+            _leg.assert_called_once_with(loc="best", ncol=1)
+            _xla.assert_called_once_with("x")
+            _yla.assert_called_once_with("y")
+            _xsc.assert_called_once_with("log")
+            _ysc.assert_called_once_with("log")
+            _xli.assert_called_once_with([0, 1])
+            _yli.assert_called_once_with([10, 11])
+            _tig.assert_any_call(rect=(0, 1, 2, 3))
+            self.assertEqual(_tpa.call_count, 2)
+            fpom.finalizePlot(
+                "fname", legcol=3, lloc="upper right",
+            )
+            _leg.assert_any_call(loc="upper right", ncol=3)
+
+        # x_T
+        lims = [5, 10]
+        with patch("matplotlib.pyplot.title") as _tit, patch(
+            "matplotlib.pyplot.gca", return_value=ax
+        ) as _gca, patch("matplotlib.pyplot.Axes.tick_params") as _tpa, patch(
+            "matplotlib.pyplot.Axes.get_xlim", return_value=lims
+        ) as _gxl, patch(
+            "matplotlib.pyplot.Axes.set_xscale"
+        ) as _sxs, patch(
+            "matplotlib.pyplot.Axes.set_xlabel"
+        ) as _sxb, patch(
+            "matplotlib.pyplot.Axes.twiny", return_value=ax1
+        ) as _twy, patch(
+            "matplotlib.pyplot.Axes.set_xlim"
+        ) as _sxi, patch(
+            "matplotlib.pyplot.tight_layout"
+        ) as _tig, patch(
+            "matplotlib.pyplot.savefig", side_effect=[None, None, FileNotFoundError]
+        ) as _sfi, patch(
+            "matplotlib.pyplot.close"
+        ) as _clo:
+            fpom.finalizePlot("fname", x_T=True)
+            _tpa.assert_any_call(
+                "both",
+                which="both",
+                direction="in",
+                left=True,
+                right=True,
+                top=True,
+                bottom=True,
+            )
+            _gxl.assert_called_once_with()
+            _twy.assert_called_once_with()
+            _sxb.assert_has_calls([call("$x$"), call("$T$ [MeV]")])
+            _sxs.assert_has_calls([call("log"), call("log")])
+            _sxi.assert_called_once_with(
+                [0.5109989461 / lims[0], 0.5109989461 / lims[1]]
+            )
+
+        # Neff_axes
+        with patch("matplotlib.pyplot.title") as _tit, patch(
+            "matplotlib.pyplot.gca", return_value=ax
+        ) as _gca, patch("matplotlib.pyplot.Axes.tick_params") as _tpa, patch(
+            "matplotlib.pyplot.Axes.set_ylabel"
+        ) as _syb, patch(
+            "matplotlib.pyplot.Axes.get_ylim", return_value=lims
+        ) as _gyi, patch(
+            "matplotlib.pyplot.Axes.twinx", return_value=ax1
+        ) as _twx, patch(
+            "matplotlib.pyplot.Axes.set_ylim"
+        ) as _syi, patch(
+            "matplotlib.pyplot.tight_layout"
+        ) as _tig, patch(
+            "matplotlib.pyplot.savefig", side_effect=[None, None, FileNotFoundError]
+        ) as _sfi, patch(
+            "matplotlib.pyplot.close"
+        ) as _clo:
+            fpom.finalizePlot("fname", Neff_axes=True)
+            _gyi.assert_called_once_with()
+            _twx.assert_called_once_with()
+            self.assertEqual(_tpa.call_count, 2)
+            _tpa.assert_has_calls(
+                [
+                    call(
+                        "both",
+                        which="both",
+                        direction="in",
+                        left=True,
+                        right=False,
+                        labelleft=True,
+                        labelright=False,
+                    ),
+                    call(
+                        "both",
+                        which="both",
+                        direction="in",
+                        left=False,
+                        right=True,
+                        labelleft=False,
+                        labelright=True,
+                    ),
+                ]
+            )
+            _syb.assert_has_calls(
+                [
+                    call(
+                        r"$N_{\rm eff}^{\rm in}=\frac{8}{7}\frac{\rho_\nu}{\rho_\gamma}$"
+                    ),
+                    call(
+                        r"$N_{\rm eff}^{\rm now}="
+                        + r"\frac{8}{7}\left(\frac{11}{4}\right)^{4/3}\;\frac{\rho_\nu}{\rho_\gamma}$"
+                    ),
+                ]
+            )
+            self.assertEqualArray(
+                _syi.call_args[0][0], np.asarray(lims) * (11.0 / 4) ** (4.0 / 3)
+            )
 
     def test_stripRepeated(self):
         """test stripRepeated"""
+        data = [[0, 1, 2, 3], [10, 11, 12, 13], [20, 11, 22, 23], [30, 31, 22, 33]]
+        x, y = fpom.stripRepeated(data, 0, 1)
+        self.assertIsInstance(x, np.ndarray)
+        self.assertIsInstance(y, np.ndarray)
+        self.assertEqualArray(x, [0, 10, 30])
+        self.assertEqualArray(y, [1, 11, 31])
+        x, y = fpom.stripRepeated(data, 3, 1)
+        self.assertEqualArray(x, [3, 13, 33])
+        self.assertEqualArray(y, [1, 11, 31])
+        x, y = fpom.stripRepeated(data, 3, 2)
+        self.assertEqualArray(x, [3, 13, 23, 33])
+        self.assertEqualArray(y, [2, 12, 22, 22])
+        x, y = fpom.stripRepeated(data, 0, 4)
+        self.assertIsInstance(x, np.ndarray)
+        self.assertIsInstance(y, np.ndarray)
+        self.assertEqualArray(x, [np.nan])
+        self.assertEqualArray(y, [np.nan])
 
 
-class TestFortEPiaNORun(unittest.TestCase):
+class TestFortEPiaNORun(FPTestCase):
     """Testing the FortEPiaNORun class"""
 
     @classmethod
@@ -101,18 +310,10 @@ class TestFortEPiaNORun(unittest.TestCase):
         self.maxDiff = None
         self.explanatory = fpom.FortEPiaNORun("output/", label="label")
 
-    def assertEqualArray(self, a, b):
-        # type: (np.ndarray, np.ndarray) -> None
-        """Assert that two np.ndarrays (a, b) are equal
-        using np.all(a == b)
-
-        Parameters:
-            a, b: the two np.ndarrays to compare
-        """
-        self.assertTrue(np.allclose(a, b, equal_nan=True))
-
     def runAllPlots(self, run):
         """Call all the plotting function from FortEPiaNORun"""
+        if not allPlots:
+            return
         run.plotFD()
         run.doAllPlots()
         run.plotZoverW()
@@ -184,7 +385,7 @@ class TestFortEPiaNORun(unittest.TestCase):
         self.assertFalse(hasattr(run, "fd"))
         self.assertFalse(hasattr(run, "zdat"))
         self.assertFalse(hasattr(run, "Neffdat"))
-        self.assertFalse(hasattr(run, "eldens"))
+        self.assertFalse(hasattr(run, "endens"))
         self.assertFalse(hasattr(run, "entropy"))
         self.assertFalse(hasattr(run, "Neff"))
         self.assertFalse(hasattr(run, "wfin"))
@@ -208,6 +409,23 @@ class TestFortEPiaNORun(unittest.TestCase):
         self.assertTrue(np.isnan(run.Neff))
         self.assertTrue(np.isnan(run.wfin))
         self.assertEqual(run.zfin, 1.5)
+        self.assertTrue(np.isnan(run.endens))
+        self.assertTrue(np.isnan(run.entropy))
+        self.assertEqual(len(run.rho), 3)
+        self.assertEqual(len(run.rho[0]), 3)
+        self.assertEqual(len(run.rho), 3)
+        self.assertEqual(len(run.rho[0]), 3)
+        for i in range(run.nnu):
+            self.assertTrue(np.isnan(run.rho[i, i, 0]))
+            self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            for j in range(i + 1, run.nnu):
+                self.assertTrue(np.isnan(run.rho[i, j, 0]))
+                self.assertTrue(np.isnan(run.rho[i, j, 1]))
+        with open("%s/resume.dat" % folder) as _f:
+            resume = _f.readlines()
+        self.assertEqual(run.resume, resume)
+        self.assertTrue(run.hasResume)
+        self.assertEqualArray(run.deltarhofin, [np.nan, np.nan, np.nan])
         self.runAllPlots(run)
 
     def test_init(self):

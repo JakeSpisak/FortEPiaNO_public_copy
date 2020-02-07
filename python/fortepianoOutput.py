@@ -154,7 +154,6 @@ def finalizePlot(
         plt.savefig(fname)
     except FileNotFoundError:
         print(traceback.format_exc())
-        return
     plt.close()
 
 
@@ -169,15 +168,20 @@ def stripRepeated(data, ix1, ix2):
     """
     x = []
     y = []
-    for d in data:
-        if len(y) == 0:
-            x.append(d[ix1])
-            y.append(d[ix2])
-        if y[-1] != d[ix2]:
-            x.append(d[ix1])
-            y.append(d[ix2])
-    x.append(data[-1][ix1])
-    y.append(data[-1][ix2])
+    try:
+        for d in data:
+            if len(y) == 0:
+                x.append(d[ix1])
+                y.append(d[ix2])
+            if y[-1] != d[ix2]:
+                x.append(d[ix1])
+                y.append(d[ix2])
+        if x[-1] != data[-1][ix1] or y[-1] != data[-1][ix2]:
+            x.append(data[-1][ix1])
+            y.append(data[-1][ix2])
+    except IndexError:
+        print(traceback.format_exc())
+        return np.asarray([np.nan]), np.asarray([np.nan])
     return np.asarray(x), np.asarray(y)
 
 
