@@ -761,11 +761,180 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_doAllPlots(self):
         """test doAllPlots"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "doAllPlots"))
+        run = self.explanatory
+        with patch("matplotlib.pyplot.close") as _cl, patch(
+            "fortepianoOutput.finalizePlot"
+        ) as _fp, patch("fortepianoOutput.FortEPiaNORun.plotZ") as _plZ, patch(
+            "fortepianoOutput.FortEPiaNORun.plotW"
+        ) as _plW, patch(
+            "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
+        ) as _plRdy, patch(
+            "fortepianoOutput.FortEPiaNORun.plotRhoFin"
+        ) as _plRf, patch(
+            "fortepianoOutput.FortEPiaNORun.plotRhoOffDiagY"
+        ) as _plRoy, patch(
+            "fortepianoOutput.FortEPiaNORun.plotdRhoOffDiagY"
+        ) as _plDRoy:
+            run.doAllPlots()
+            _cl.assert_called_once_with()
+            _plZ.assert_called_once_with(lc="k", lab="z")
+            _plW.assert_called_once_with(lc="k", ls=":", lab="w")
+            self.assertEqual(_plRdy.call_count, 6)
+            for i in range(run.nnu):
+                _plRdy.assert_any_call(i, 5.0, fpom.styles[i], lc=fpom.colors[i])
+                _plRdy.assert_any_call(
+                    i, 5.0, fpom.styles[i], lc=fpom.colors[i], mass=True
+                )
+            self.assertEqual(_plRf.call_count, 6)
+            for i in range(run.nnu):
+                _plRf.assert_any_call(i, ls=fpom.styles[i], lc=fpom.colors[i], y2=True)
+                _plRf.assert_any_call(
+                    i, ls=fpom.styles[i], lc=fpom.colors[i], y2=True, mass=True
+                )
+            self.assertEqual(_plRoy.call_count, 3)
+            self.assertEqual(_plDRoy.call_count, 3)
+            for i in range(run.nnu):
+                for j in range(i + 1, run.nnu):
+                    _plRoy.assert_any_call(i, j, 5.0, lc=fpom.colors[2 * i + j - 1])
+                    _plDRoy.assert_any_call(i, j, 5.0, lc=fpom.colors[2 * i + j - 1])
+            _fp.assert_has_calls(
+                [
+                    call(
+                        "%s/z.pdf" % run.folder, xlab="$x$", ylab=r"$z$", xscale="log"
+                    ),
+                    call(
+                        "%s/rho_diag.pdf" % run.folder,
+                        xlab="$x$",
+                        ylab=r"$\rho$",
+                        xscale="log",
+                        yscale="log",
+                    ),
+                    call(
+                        "%s/rho_mass_diag.pdf" % run.folder,
+                        xlab="$x$",
+                        ylab=r"$\rho$",
+                        xscale="log",
+                        yscale="log",
+                    ),
+                    call(
+                        "%s/rhofin_diag.pdf" % run.folder, xscale="linear", yscale="log"
+                    ),
+                    call(
+                        "%s/rhofin_mass_diag.pdf" % run.folder,
+                        xscale="linear",
+                        yscale="log",
+                    ),
+                    call("%s/rho_offdiag.pdf" % run.folder),
+                    call("%s/drho_offdiag.pdf" % run.folder),
+                ]
+            )
+
+        with patch("matplotlib.pyplot.close") as _cl, patch(
+            "fortepianoOutput.finalizePlot"
+        ) as _fp, patch("fortepianoOutput.FortEPiaNORun.plotZ") as _plZ, patch(
+            "fortepianoOutput.FortEPiaNORun.plotW"
+        ) as _plW, patch(
+            "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
+        ) as _plRdy, patch(
+            "fortepianoOutput.FortEPiaNORun.plotRhoFin"
+        ) as _plRf, patch(
+            "fortepianoOutput.FortEPiaNORun.plotRhoOffDiagY"
+        ) as _plRoy, patch(
+            "fortepianoOutput.FortEPiaNORun.plotdRhoOffDiagY"
+        ) as _plDRoy:
+            run.doAllPlots(yref=2.5, color="abc")
+            _cl.assert_called_once_with()
+            _plZ.assert_called_once_with(lc="abc", lab="z")
+            _plW.assert_called_once_with(lc="abc", ls=":", lab="w")
+            self.assertEqual(_plRdy.call_count, 6)
+            for i in range(run.nnu):
+                _plRdy.assert_any_call(i, 2.5, fpom.styles[i], lc=fpom.colors[i])
+                _plRdy.assert_any_call(
+                    i, 2.5, fpom.styles[i], lc=fpom.colors[i], mass=True
+                )
+            self.assertEqual(_plRf.call_count, 6)
+            for i in range(run.nnu):
+                _plRf.assert_any_call(i, ls=fpom.styles[i], lc=fpom.colors[i], y2=True)
+                _plRf.assert_any_call(
+                    i, ls=fpom.styles[i], lc=fpom.colors[i], y2=True, mass=True
+                )
+            self.assertEqual(_plRoy.call_count, 3)
+            self.assertEqual(_plDRoy.call_count, 3)
+            for i in range(run.nnu):
+                for j in range(i + 1, run.nnu):
+                    _plRoy.assert_any_call(i, j, 2.5, lc=fpom.colors[2 * i + j - 1])
+                    _plDRoy.assert_any_call(i, j, 2.5, lc=fpom.colors[2 * i + j - 1])
+            _fp.assert_has_calls(
+                [
+                    call(
+                        "%s/z.pdf" % run.folder, xlab="$x$", ylab=r"$z$", xscale="log"
+                    ),
+                    call(
+                        "%s/rho_diag.pdf" % run.folder,
+                        xlab="$x$",
+                        ylab=r"$\rho$",
+                        xscale="log",
+                        yscale="log",
+                    ),
+                    call(
+                        "%s/rho_mass_diag.pdf" % run.folder,
+                        xlab="$x$",
+                        ylab=r"$\rho$",
+                        xscale="log",
+                        yscale="log",
+                    ),
+                    call(
+                        "%s/rhofin_diag.pdf" % run.folder, xscale="linear", yscale="log"
+                    ),
+                    call(
+                        "%s/rhofin_mass_diag.pdf" % run.folder,
+                        xscale="linear",
+                        yscale="log",
+                    ),
+                    call("%s/rho_offdiag.pdf" % run.folder),
+                    call("%s/drho_offdiag.pdf" % run.folder),
+                ]
+            )
 
     def test_integrateRho_yn(self):
         """test integrateRho_yn"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "integrateRho_yn"))
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with self.assertRaises(AttributeError):
+            run.integrateRho_yn(0, 2, show=True)
+        with self.assertRaises(AttributeError):
+            run.integrateRho_yn(0, 2, mass=True)
+        run.rho = np.asarray([])
+        run.rhoM = np.asarray([])
+        with self.assertRaises(AttributeError):
+            run.integrateRho_yn(0, 2)
+        run.yv = np.array([x for x in range(3)])
+        with self.assertRaises(IndexError):
+            run.integrateRho_yn(0, 2)
+        run.rho = np.asarray(
+            [[[None, None], [None, None],], [[None, None], [None, None],],],
+        )
+        run.rhoM = np.asarray(
+            [[[None, None], [None, None],], [[None, None], [None, None],],],
+        )
+        run.yv = np.linspace(0.01, 20, 200)
+        run.rho[0, 0, 0] = np.array(
+            [[0] + list(run.yv), [1] + list(1.0 / (np.exp(run.yv) + 1))]
+        )
+        run.rho[1, 1, 0] = np.array(
+            [[0] + list(run.yv), [1] + list(2.0 / (np.exp(run.yv) + 1))]
+        )
+        self.assertTrue(np.isclose(run.integrateRho_yn(0, 2), 0.182691))
+        self.assertTrue(np.isclose(run.integrateRho_yn(1, 1), 0.166662))
+        run.rhoM[0, 0, 0] = np.array(
+            [
+                [0] + list(1.0 / (np.exp(run.yv) + 1)),
+                [1] + list(2.0 / (np.exp(run.yv) + 1)),
+            ]
+        )
+        self.assertTrue(np.isclose(run.integrateRho_yn(0, 1, mass=True), 0.166662))
+        self.assertTrue(
+            np.isclose(run.integrateRho_yn(0, 2, ix=0, mass=True), 0.182691)
+        )
 
 
 class TestPrepareIni(unittest.TestCase):

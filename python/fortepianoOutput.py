@@ -1328,7 +1328,7 @@ class FortEPiaNORun:
         else:
             rho = self.rho
         fy = interp1d(self.yv, rho[inu, inu, 0][ix, 1:] * (np.exp(self.yv) + 1))
-        res = quad(lambda y: y ** n * fy(y) / (np.exp(y) + 1), 0.01, 20)
+        res = quad(lambda y: y ** n * fy(y) / (np.exp(y) + 1), self.yv[0], self.yv[-1])
         if show:
             print(res)
         return res[0] / np.pi ** 2
