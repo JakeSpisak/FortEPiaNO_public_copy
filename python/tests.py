@@ -940,11 +940,220 @@ class TestFortEPiaNORun(FPTestCase):
 class TestPrepareIni(unittest.TestCase):
     """Testing the prepareIni module """
 
+    def test_module(self):
+        """test module variables"""
+        self.assertEqual(pim.params_active, ["dm21", "th12", "dm31", "th13", "th23"])
+        self.assertEqual(pim.params_sterile, ["dm41", "th14", "th24", "th34"])
+        self.assertIsInstance(pim.default_osc_act, dict)
+        for v in pim.default_osc_act.values():
+            self.assertIsInstance(v, dict)
+            for s in v.values():
+                self.assertIsInstance(s, dict)
+        self.assertIsInstance(pim.default_osc_ster, dict)
+        for v in pim.default_osc_ster.values():
+            self.assertIsInstance(v, dict)
+
     def test_setParser(self):
         """test setParser"""
 
     def test_oscParams(self):
         """test oscParams"""
+        args = dgm.Namespace(**{"use_sinsq": True, "dm21": 1.23, "th12": 0.01,})
+        for a in ["a+s", "as", "1p1", "1+1"]:
+            args.numodel = a
+            self.assertEqual(
+                pim.oscParams(args),
+                {
+                    "use_sinsq": "T",
+                    "nnu": 2,
+                    "factors": [1, 1],
+                    "sterile": [False, True],
+                    "dm41": 0.0,
+                    "th14": 0.0,
+                    "th24": 0.0,
+                    "th34": 0.0,
+                    "dm31": 0.0,
+                    "th13": 0.0,
+                    "th23": 0.0,
+                    "dm21": 1.23,
+                    "th12": 0.01,
+                },
+            )
+        for a in ["2+0", "2nu", "2"]:
+            args.numodel = a
+            self.assertEqual(
+                pim.oscParams(args),
+                {
+                    "use_sinsq": "T",
+                    "nnu": 2,
+                    "factors": [1, 2],
+                    "sterile": [False, False],
+                    "dm41": 0.0,
+                    "th14": 0.0,
+                    "th24": 0.0,
+                    "th34": 0.0,
+                    "dm31": 0.0,
+                    "th13": 0.0,
+                    "th23": 0.0,
+                    "dm21": 1.23,
+                    "th12": 0.01,
+                },
+            )
+        args = dgm.Namespace(
+            **{
+                "use_sinsq": True,
+                "dm21": 1.23,
+                "th12": 0.01,
+                "dm31": 0.0025,
+                "th13": 0.02,
+                "th23": 0.5,
+            }
+        )
+        for a in ["2p1", "2+1"]:
+            args.numodel = a
+            self.assertEqual(
+                pim.oscParams(args),
+                {
+                    "use_sinsq": "T",
+                    "nnu": 3,
+                    "factors": [1, 2, 1],
+                    "sterile": [False, False, True],
+                    "dm41": 0.0,
+                    "th14": 0.0,
+                    "th24": 0.0,
+                    "th34": 0.0,
+                    "dm31": 0.0025,
+                    "th13": 0.02,
+                    "th23": 0.5,
+                    "dm21": 1.23,
+                    "th12": 0.01,
+                },
+            )
+        args = dgm.Namespace(
+            **{
+                "use_sinsq": False,
+                "dm21": 1.23,
+                "th12": 0.01,
+                "dm31": 0.0025,
+                "th13": 0.02,
+                "th23": 0.5,
+            }
+        )
+        for a in ["3p0", "3+0", "3nu", "3"]:
+            args.numodel = a
+            args.default_active = "g"
+            args.ordering = "a"
+            self.assertEqual(
+                pim.oscParams(args),
+                {
+                    "use_sinsq": "F",
+                    "nnu": 3,
+                    "factors": [1, 1, 1],
+                    "sterile": [False, False, False],
+                    "dm41": 0.0,
+                    "th14": 0.0,
+                    "th24": 0.0,
+                    "th34": 0.0,
+                    "dm31": 0.0025,
+                    "th13": 0.02,
+                    "th23": 0.5,
+                    "dm21": 1.23,
+                    "th12": 0.01,
+                },
+            )
+            for g in ["VLC", "Bari", "NuFit"]:
+                for o in ["NO", "IO"]:
+                    args.default_active = g
+                    args.ordering = o
+                    res = pim.default_osc_act[g][o.lower()].copy()
+                    res.update(
+                        {
+                            "use_sinsq": "F",
+                            "nnu": 3,
+                            "factors": [1, 1, 1],
+                            "sterile": [False, False, False],
+                            "dm41": 0.0,
+                            "th14": 0.0,
+                            "th24": 0.0,
+                            "th34": 0.0,
+                        }
+                    )
+                    self.assertEqual(pim.oscParams(args), res)
+        args = dgm.Namespace(
+            **{
+                "use_sinsq": True,
+                "dm21": 8e-5,
+                "th12": 0.01,
+                "dm31": 0.0025,
+                "th13": 0.02,
+                "th23": 0.5,
+                "dm41": 1.23,
+                "th14": 0.1,
+                "th24": 0.2,
+                "th34": 0.3,
+            }
+        )
+        for a in ["3p1", "3+1"]:
+            args.numodel = a
+            args.default_sterile = "g"
+            args.default_active = "g"
+            args.ordering = "a"
+            self.assertEqual(
+                pim.oscParams(args),
+                {
+                    "use_sinsq": "T",
+                    "nnu": 4,
+                    "factors": [1, 1, 1, 1],
+                    "sterile": [False, False, False, True],
+                    "dm41": 1.23,
+                    "th14": 0.1,
+                    "th24": 0.2,
+                    "th34": 0.3,
+                    "dm31": 0.0025,
+                    "th13": 0.02,
+                    "th23": 0.5,
+                    "dm21": 8e-5,
+                    "th12": 0.01,
+                },
+            )
+            for g in ["Gariazzo&al"]:
+                args.default_sterile = g
+                args.default_active = "g"
+                args.ordering = "a"
+                res = pim.default_osc_ster[g].copy()
+                res.update(
+                    {
+                        "use_sinsq": "T",
+                        "nnu": 4,
+                        "factors": [1, 1, 1, 1],
+                        "sterile": [False, False, False, True],
+                        "dm31": 0.0025,
+                        "th13": 0.02,
+                        "th23": 0.5,
+                        "dm21": 8e-5,
+                        "th12": 0.01,
+                    }
+                )
+                self.assertEqual(pim.oscParams(args), res)
+            args.default_sterile = "g"
+            for g in ["VLC", "Bari", "NuFit"]:
+                for o in ["NO", "IO"]:
+                    args.default_active = g
+                    args.ordering = o
+                    res = pim.default_osc_act[g][o.lower()].copy()
+                    res.update(
+                        {
+                            "use_sinsq": "T",
+                            "nnu": 4,
+                            "factors": [1, 1, 1, 1],
+                            "sterile": [False, False, False, True],
+                            "dm41": 1.23,
+                            "th14": 0.1,
+                            "th24": 0.2,
+                            "th34": 0.3,
+                        }
+                    )
+                    self.assertEqual(pim.oscParams(args), res)
 
     def test_getIniValues(self):
         """test getIniValues"""

@@ -2,6 +2,62 @@ import sys
 import os
 import argparse
 
+params_active = ["dm21", "th12", "dm31", "th13", "th23"]
+params_sterile = ["dm41", "th14", "th24", "th34"]
+default_osc_act = {
+    "VLC": {
+        "no": {
+            "dm21": 7.55e-05,
+            "th12": 0.32,
+            "dm31": 0.00250,
+            "th13": 0.0216,
+            "th23": 0.547,
+        },
+        "io": {
+            "dm21": 7.55e-05,
+            "th12": 0.32,
+            "dm31": -0.00242,
+            "th13": 0.0222,
+            "th23": 0.551,
+        },
+    },
+    "Bari": {
+        "no": {
+            "dm21": 7.34e-05,
+            "dm31": 2.455e-3 + 0.5 * 7.34e-05,
+            "th12": 0.304,
+            "th13": 0.0214,
+            "th23": 0.551,
+        },
+        "io": {
+            "dm21": 7.34e-05,
+            "dm31": -2.441e-3 + 0.5 * 7.34e-05,
+            "th12": 0.303,
+            "th13": 0.0218,
+            "th23": 0.557,
+        },
+    },
+    "NuFit": {
+        "no": {
+            "dm21": 7.39e-05,
+            "th12": 0.31,
+            "dm31": 0.002525,
+            "th13": 0.0224,
+            "th23": 0.582,
+        },
+        "io": {
+            "dm21": 7.39e-05,
+            "th12": 0.31,
+            "dm31": -0.002512 + 7.39e-05,
+            "th13": 0.02263,
+            "th23": 0.582,
+        },
+    },
+}
+default_osc_ster = {
+    "Gariazzo&al": {"dm41": 1.29, "th14": 0.01, "th24": 0.0, "th34": 0.0,},
+}
+
 
 def setParser():
     """Prepare the parser for reading the command line arguments
@@ -214,21 +270,15 @@ def oscParams(args):
         osc["nnu"] = 4
         osc["sterile"] = [False, False, False, True]
         osc["factors"] = [1, 1, 1, 1]
-        if args.default_sterile == "Gariazzo&al":
-            osc["dm41"] = 1.29
-            osc["th14"] = 0.01
-            osc["th24"] = 0.0
-            osc["th34"] = 0.0
+        if args.default_sterile in default_osc_ster.keys():
+            for p in params_sterile:
+                osc[p] = default_osc_ster[args.default_sterile][p]
         else:
-            osc["dm41"] = args.dm41
-            osc["th14"] = args.th14
-            osc["th24"] = args.th24
-            osc["th34"] = args.th34
+            for p in params_sterile:
+                osc[p] = getattr(args, p)
     else:
-        osc["dm41"] = 0.0
-        osc["th14"] = 0.0
-        osc["th24"] = 0.0
-        osc["th34"] = 0.0
+        for p in params_sterile:
+            osc[p] = 0.0
     if args.numodel in ["3p1", "3+1", "3p0", "3+0", "3nu", "3", "2p1", "2+1"]:
         if args.numodel in ["2p1", "2+1"]:
             osc["nnu"] = 3
@@ -238,54 +288,15 @@ def oscParams(args):
             osc["nnu"] = 3
             osc["sterile"] = [False, False, False]
             osc["factors"] = [1, 1, 1]
-        if args.numodel in [
-            "3p1",
-            "3+1",
-            "3p0",
-            "3+0",
-            "3nu",
-            "3",
-        ] and args.default_active in ["VLC", "Bari", "NuFit"]:
-            if args.default_active == "VLC":
-                osc["dm21"] = 7.55e-05
-                osc["th12"] = 0.32
-                if args.ordering.lower() in ["no", "nh", "normal"]:
-                    osc["dm31"] = 0.00250
-                    osc["th13"] = 0.0216
-                    osc["th23"] = 0.547
-                else:
-                    osc["dm31"] = -0.00242
-                    osc["th13"] = 0.0222
-                    osc["th23"] = 0.551
-            elif args.default_active == "Bari":
-                osc["dm21"] = 7.34e-05
-                if args.ordering.lower() in ["no", "nh", "normal"]:
-                    osc["dm31"] = 2.455e-3 + 0.5 * (osc["dm21"])
-                    osc["th12"] = 0.304
-                    osc["th13"] = 0.0214
-                    osc["th23"] = 0.551
-                else:
-                    osc["dm31"] = -2.441e-3 + 0.5 * (osc["dm21"])
-                    osc["th12"] = 0.303
-                    osc["th13"] = 0.0218
-                    osc["th23"] = 0.557
-            elif args.default_active == "NuFit":
-                osc["dm21"] = 7.39e-05
-                osc["th12"] = 0.31
-                if args.ordering.lower() in ["no", "nh", "normal"]:
-                    osc["dm31"] = 0.002525
-                    osc["th13"] = 0.0224
-                    osc["th23"] = 0.582
-                else:
-                    osc["dm31"] = -0.002512 + osc["dm21"]
-                    osc["th13"] = 0.02263
-                    osc["th23"] = 0.582
+        if (
+            args.numodel in ["3p1", "3+1", "3p0", "3+0", "3nu", "3",]
+            and args.default_active in default_osc_act.keys()
+        ):
+            for p in params_active:
+                osc[p] = default_osc_act[args.default_active][args.ordering.lower()][p]
         else:
-            osc["dm21"] = args.dm21
-            osc["dm31"] = args.dm31
-            osc["th12"] = args.th12
-            osc["th13"] = args.th13
-            osc["th23"] = args.th23
+            for p in params_active:
+                osc[p] = getattr(args, p)
     else:
         osc["dm31"] = 0.0
         osc["th13"] = 0.0
