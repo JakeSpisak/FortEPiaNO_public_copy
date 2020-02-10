@@ -522,9 +522,9 @@ class FortEPiaNORun:
         )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$w$")
+        plt.ylabel(r"$z/w$")
 
-    def plotDeltaZ(self, ref, ls="-", lc="k"):
+    def plotDeltaZ(self, ref, ls="-", lc="k", lab=None):
         """Plot the difference in z with respect
         to a different FortEPiaNO point, as a function of x
 
@@ -532,6 +532,7 @@ class FortEPiaNORun:
             ref: a different FortEPiaNORun instance
             ls (default "-"): the line style
             lc (default "k"): the line color
+            lab (default None): if not None, the line label
         """
         try:
             self.zdat, ref.zdat
@@ -542,7 +543,13 @@ class FortEPiaNORun:
         mef = interp1d(mex, mey)
         refx, refy = stripRepeated(ref.zdat, 0, 1)
         reff = interp1d(refx, refy)
-        plt.plot(mex, reff(mex) - mef(mex), label=self.label, ls=ls, c=lc)
+        plt.plot(
+            mex,
+            reff(mex) - mef(mex),
+            label=self.label if lab is None else lab,
+            ls=ls,
+            c=lc,
+        )
         plt.xscale("log")
         plt.xlabel("$x$")
         plt.ylabel(r"$z-z_{\rm ref}$")

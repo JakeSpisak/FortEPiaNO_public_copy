@@ -514,19 +514,112 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_plotZ(self):
         """test plotZ"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotZ"))
+        with patch("matplotlib.pyplot.plot") as _p:
+            self.emptyRun.plotZ()
+            self.assertEqual(_p.call_count, 0)
+        run = self.explanatory
+        with patch("matplotlib.pyplot.plot") as _p, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotZ()
+            self.assertEqual(_p.call_count, 1)
+            self.assertEqualArray(_p.call_args[0], fpom.stripRepeated(run.zdat, 0, 1))
+            self.assertEqual(_p.call_args[1], {"label": "label", "ls": "-", "c": "k",})
+            _xl.assert_called_once_with("$x$")
+            _yl.assert_called_once_with(r"$z$")
+            _xs.assert_called_once_with("log")
+            self.explanatory.plotZ(ls=":", lc="r", lab="l")
+            self.assertEqual(_p.call_args[1], {"label": "l", "ls": ":", "c": "r",})
+            self.failedRun.plotZ()
+            self.assertEqualArray(_p.call_args[0], [[np.nan, np.nan, np.nan]] * 2)
 
     def test_plotW(self):
         """test plotW"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotW"))
+        with patch("matplotlib.pyplot.plot") as _p:
+            self.emptyRun.plotW()
+            self.assertEqual(_p.call_count, 0)
+        run = self.explanatory
+        with patch("matplotlib.pyplot.plot") as _p, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotW()
+            self.assertEqual(_p.call_count, 1)
+            self.assertEqualArray(_p.call_args[0], fpom.stripRepeated(run.zdat, 0, 2))
+            self.assertEqual(_p.call_args[1], {"label": "label", "ls": "-", "c": "k",})
+            _xl.assert_called_once_with("$x$")
+            _yl.assert_called_once_with(r"$w$")
+            _xs.assert_called_once_with("log")
+            self.explanatory.plotW(ls=":", lc="r", lab="l")
+            self.assertEqual(_p.call_args[1], {"label": "l", "ls": ":", "c": "r",})
+            self.failedRun.plotW()
+            self.assertEqualArray(_p.call_args[0], [[np.nan, np.nan, np.nan]] * 2)
 
     def test_plotZoverW(self):
         """test plotZoverW"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotZoverW"))
+        with patch("matplotlib.pyplot.plot") as _p:
+            self.emptyRun.plotZoverW()
+            self.assertEqual(_p.call_count, 0)
+        run = self.explanatory
+        with patch("matplotlib.pyplot.plot") as _p, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotZoverW()
+            self.assertEqual(_p.call_count, 1)
+            self.assertEqualArray(
+                _p.call_args[0],
+                fpom.stripRepeated(
+                    np.asarray([[x[0], x[1] / x[2]] for x in run.zdat]), 0, 1
+                ),
+            )
+            self.assertEqual(_p.call_args[1], {"label": "label", "ls": "-", "c": "k",})
+            _xl.assert_called_once_with("$x$")
+            _yl.assert_called_once_with(r"$z/w$")
+            _xs.assert_called_once_with("log")
+            self.explanatory.plotZoverW(ls=":", lc="r", lab="l")
+            self.assertEqual(_p.call_args[1], {"label": "l", "ls": ":", "c": "r",})
+            self.failedRun.plotZoverW()
+            self.assertEqualArray(_p.call_args[0], [[np.nan, np.nan, np.nan]] * 2)
 
     def test_plotDeltaZ(self):
         """test plotDeltaZ"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotDeltaZ"))
+        run = self.explanatory
+        run1 = fpom.FortEPiaNORun("output/nonexistent")
+        run1.zdat = np.array(run.zdat)
+        run1.zdat[:, 1] = run.zdat[:, 1] * 0.9
+        with patch("matplotlib.pyplot.plot") as _p:
+            self.emptyRun.plotDeltaZ(run)
+            self.assertEqual(_p.call_count, 0)
+            run.plotDeltaZ(self.emptyRun)
+            self.assertEqual(_p.call_count, 0)
+        with patch("matplotlib.pyplot.plot") as _p, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotDeltaZ(run)
+            self.assertEqual(_p.call_count, 1)
+            xv, yv = fpom.stripRepeated(run.zdat, 0, 1)
+            self.assertEqualArray(_p.call_args[0], np.asarray([xv, [0.0 for x in xv]]))
+            self.assertEqual(_p.call_args[1], {"label": "label", "ls": "-", "c": "k",})
+            _xl.assert_called_once_with("$x$")
+            _yl.assert_called_once_with(r"$z-z_{\rm ref}$")
+            _xs.assert_called_once_with("log")
+            run.plotDeltaZ(run1)
+            self.assertEqualArray(_p.call_args[0], np.asarray([xv, -0.1 * yv]))
+            run1.plotDeltaZ(run)
+            self.assertEqualArray(_p.call_args[0], np.asarray([xv, 0.1 * yv]))
+            self.explanatory.plotDeltaZ(run, lab="l", ls=":", lc="r")
+            self.assertEqual(_p.call_args[1], {"label": "l", "ls": ":", "c": "r",})
+            self.failedRun.plotDeltaZ(run)
+            self.assertEqualArray(_p.call_args[0], [[np.nan, np.nan, np.nan]] * 2)
+            run.plotDeltaZ(self.failedRun)
+            self.assertEqualArray(_p.call_args[0], [xv, [np.nan] * len(xv)])
 
     def test_plotRhoDiag(self):
         """test plotRhoDiag"""
