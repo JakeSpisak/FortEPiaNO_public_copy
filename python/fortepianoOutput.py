@@ -354,13 +354,14 @@ class FortEPiaNORun:
         prevy = 0
         for i, x in enumerate(rho[i1, i2, ri][:, 0]):
             fy = interp1d(self.yv, rho[i1, i2, ri][i, 1:])
-            cy = fy(y)
+            cy = fy(y) * (y ** 2 if y2 else 1.0)
             if cy != prevy:
                 prevy = cy
-                yv.append(prevy * (y ** 2 if y2 else 1.0))
+                yv.append(prevy)
                 xv.append(x)
-        xv.append(x)
-        yv.append(cy)
+        if x != xv[-1] or cy != yv[-1]:
+            xv.append(x)
+            yv.append(cy)
         return xv, yv
 
     def interpolateRhoIJ_x(self, i1, i2, x, ri=0, y2=False, mass=False):
@@ -389,10 +390,11 @@ class FortEPiaNORun:
         ov = []
         for i, y in enumerate(self.yv):
             fx = interp1d(
-                rho[i1, i2, ri][:, 0], rho[i1, i2, ri][:, i] * (y ** 2 if y2 else 1.0)
+                rho[i1, i2, ri][:, 0],
+                rho[i1, i2, ri][:, i + 1] * (y ** 2 if y2 else 1.0),
             )
             ov.append(fx(x))
-        return self.yv, ov
+        return self.yv, np.asarray(ov)
 
     def printTableLine(self):
         """Print a summary of the current point in a latex table format.

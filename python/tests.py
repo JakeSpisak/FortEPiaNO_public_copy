@@ -462,11 +462,97 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_interpolateRhoIJ(self):
         """test interpolateRhoIJ"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "interpolateRhoIJ"))
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.rho = np.asarray([])
+        run.rhoM = np.asarray([])
+        with self.assertRaises(IndexError):
+            run.interpolateRhoIJ(0, 0, 5)
+        run.rho = np.asarray(
+            [[[None, None], [None, None],], [[None, None], [None, None],],],
+        )
+        run.rho[0, 0, 0] = np.array([[0, 10, 11, 13], [1, 21, 22, 24], [3, 30, 31, 33]])
+        run.rho[0, 0, 1] = np.array([[0, 0, 1, 2], [2, 10, 11, 12], [4, 20, 21, 22]])
+        run.rho[0, 1, 0] = np.array([[0, 1, 2, 3], [3, 4, 5, 6], [5, 7, 8, 9]])
+        run.rho[0, 1, 1] = np.array([[0, 5, 6, 7], [1, 4, 5, 6], [5, 0, 1, 2]])
+        run.rho[1, 0, 0] = np.array([[0, 30, 31, 32], [1, 30, 31, 32], [3, 31, 32, 33]])
+        run.rho[1, 0, 1] = np.array([[0, 20, 21, 22], [2, 21, 22, 23], [4, 21, 22, 23]])
+        with self.assertRaises(AttributeError):
+            run.interpolateRhoIJ(0, 0, 5)
+        with self.assertRaises(IndexError):
+            run.interpolateRhoIJ(0, 0, 5, mass=True)
+        with self.assertRaises(TypeError):
+            run.interpolateRhoIJ(1, 1, 5)
+        run.rhoM = np.array(run.rho)
+        run.rhoM[1, 1, 0] = np.array(
+            [[0, 21, 22, 23], [3, 24, 25, 26], [5, 27, 28, 29]]
+        )
+        run.rhoM[1, 1, 1] = np.array(
+            [[0, 25, 26, 27], [1, 25, 26, 27], [5, 25, 26, 27]]
+        )
+        run.yv = np.array([x for x in range(3)])
+        self.assertEqualArray(run.interpolateRhoIJ(0, 0, 2), [[0, 1, 3], [13, 24, 33]])
+        self.assertEqualArray(
+            run.interpolateRhoIJ(0, 0, 2, y2=True),
+            [[0, 1, 3], [y * 4 for y in [13, 24, 33]]],
+        )
+        self.assertEqualArray(
+            run.interpolateRhoIJ(0, 1, 1.5, ri=1), [[0, 1, 5], [6.5, 5.5, 1.5]]
+        )
+        self.assertEqualArray(run.interpolateRhoIJ(1, 0, 1), [[0, 3], [31, 32]])
+        self.assertEqualArray(
+            run.interpolateRhoIJ(1, 0, 1, ri=1), [[0, 2, 4], [21, 22, 22]]
+        )
+        self.assertEqualArray(
+            run.interpolateRhoIJ(1, 1, 1, ri=1, mass=True), [[0, 5], [26, 26]]
+        )
 
     def test_interpolateRhoIJ_x(self):
         """test interpolateRhoIJ_x"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "interpolateRhoIJ_x"))
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with self.assertRaises(AttributeError):
+            run.interpolateRhoIJ_x(0, 0, 5)
+        run.rho = np.asarray([])
+        run.rhoM = np.asarray([])
+        with self.assertRaises(AttributeError):
+            run.interpolateRhoIJ_x(0, 0, 5)
+        run.yv = np.array([x for x in range(3)])
+        with self.assertRaises(IndexError):
+            run.interpolateRhoIJ_x(0, 0, 5)
+        run.rho = np.asarray(
+            [[[None, None], [None, None],], [[None, None], [None, None],],],
+        )
+        run.rho[0, 0, 0] = np.array([[0, 10, 20, 30], [1, 11, 21, 31], [3, 13, 23, 33]])
+        run.rho[0, 0, 1] = np.array([[0, 0, 1, 2], [2, 10, 11, 12], [4, 20, 21, 22]])
+        run.rho[0, 1, 0] = np.array([[0, 1, 2, 3], [3, 4, 5, 6], [5, 7, 8, 9]])
+        run.rho[0, 1, 1] = np.array([[0, 5, 6, 7], [1, 4, 5, 6], [5, 0, 1, 2]])
+        run.rho[1, 0, 0] = np.array([[0, 30, 31, 32], [1, 30, 31, 32], [3, 31, 32, 33]])
+        run.rho[1, 0, 1] = np.array([[0, 20, 21, 22], [2, 21, 22, 23], [4, 21, 22, 23]])
+        with self.assertRaises(IndexError):
+            run.interpolateRhoIJ_x(0, 0, 5, mass=True)
+        with self.assertRaises(TypeError):
+            run.interpolateRhoIJ_x(1, 1, 5)
+        run.rhoM = np.array(run.rho)
+        run.rhoM[1, 1, 0] = np.array(
+            [[0, 21, 22, 23], [3, 24, 25, 26], [5, 27, 28, 29]]
+        )
+        run.rhoM[1, 1, 1] = np.array(
+            [[0, 25, 26, 27], [1, 25, 26, 27], [5, 25, 26, 27]]
+        )
+        self.assertEqualArray(
+            run.interpolateRhoIJ_x(0, 0, 2), [[0, 1, 2], [12, 22, 32]]
+        )
+        self.assertEqualArray(
+            run.interpolateRhoIJ_x(0, 0, 2, y2=True), [[0, 1, 2], [0, 22, 4 * 32]],
+        )
+        self.assertEqualArray(
+            run.interpolateRhoIJ_x(0, 1, 2, ri=1), [[0, 1, 2], [3, 4, 5]]
+        )
+        self.assertEqualArray(
+            run.interpolateRhoIJ_x(1, 0, 2), [[0, 1, 2], [30.5, 31.5, 32.5]]
+        )
+        self.assertEqualArray(
+            run.interpolateRhoIJ_x(1, 1, 2, ri=1, mass=True), [[0, 1, 2], [25, 26, 27]]
+        )
 
     def test_printTableLine(self):
         """test printTableLine"""
