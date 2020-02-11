@@ -1161,11 +1161,131 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_plotRhoDiagY(self):
         """test plotRhoDiagY"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotRhoDiagY"))
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoDiagY(0, 2.5, "-")
+            run.plotRhoDiagY(0, 2.5, "-", mass=True)
+            self.assertEqual(_plt.call_count, 0)
+        run.rho = np.asarray([])
+        run.rhoM = np.asarray([])
+        run.rho = np.asarray(
+            [[[None, None], [None, None],], [[None, None], [None, None],],],
+        )
+        run.rhoM = np.asarray(
+            [[[None, None], [None, None],], [[None, None], [None, None],],],
+        )
+        run.yv = np.linspace(0.01, 20, 200)
+        run.rho[0, 0, 0] = np.array(
+            [[0] + list(run.yv), [1] + list(1.0 / (np.exp(run.yv) + 1))]
+        )
+        run.rho[1, 1, 0] = np.array(
+            [[0] + list(run.yv), [1] + list(2.0 / (np.exp(run.yv) + 1))]
+        )
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotRhoDiagY(0, 2.5, "-")
+            _xs.assert_called_once_with("log")
+            _xl.assert_called_once_with("$x$")
+            _yl.assert_called_once_with(r"$\rho_{\alpha\alpha}$")
+            _plt.assert_called_once()
+            x, yv = run.interpolateRhoIJ(0, 0, 2.5)
+            self.assertEqualArray(_plt.call_args[0], [x, yv])
+            self.assertEqual(
+                _plt.call_args[1],
+                {"label": r"%s \alpha=%d" % (run.label, 1), "ls": "-", "c": "k"},
+            )
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotRhoDiagY(1, 2.5, ":", lc="r", y2=True)
+            _yl.assert_called_once_with(r"$y^2\rho_{\alpha\alpha}$")
+            x, yv = run.interpolateRhoIJ(1, 1, 2.5)
+            self.assertEqualArray(_plt.call_args[0], [x, np.array(yv) * 2.5 ** 2])
+            self.assertEqual(
+                _plt.call_args[1],
+                {"label": r"%s \alpha=%d" % (run.label, 2), "ls": ":", "c": "r"},
+            )
+        run.rhoM[1, 1, 0] = np.array(
+            [
+                [0] + list(1.0 / (np.exp(run.yv) + 1)),
+                [1] + list(2.0 / (np.exp(run.yv) + 1)),
+            ]
+        )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoDiagY(1, 2.5, "-", mass=True, lab="lab")
+            x, yv = run.interpolateRhoIJ(1, 1, 2.5, mass=True)
+            self.assertEqualArray(_plt.call_args[0], [x, yv])
+            self.assertEqual(
+                _plt.call_args[1], {"label": "lab", "ls": "-", "c": "k"},
+            )
 
     def test_plotdRhoDiagY(self):
         """test plotdRhoDiagY"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotdRhoDiagY"))
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotdRhoDiagY(0, 2.5, "-")
+            run.plotdRhoDiagY(0, 2.5, "-", mass=True)
+            self.assertEqual(_plt.call_count, 0)
+        run.rho = np.asarray([])
+        run.rhoM = np.asarray([])
+        run.rho = np.asarray(
+            [[[None, None], [None, None],], [[None, None], [None, None],],],
+        )
+        run.rhoM = np.asarray(
+            [[[None, None], [None, None],], [[None, None], [None, None],],],
+        )
+        run.yv = np.linspace(0.01, 20, 200)
+        run.rho[0, 0, 0] = np.array(
+            [[0] + list(run.yv), [1] + list(1.0 / (np.exp(run.yv) + 1))]
+        )
+        run.rho[1, 1, 0] = np.array(
+            [[0] + list(run.yv), [1] + list(2.0 / (np.exp(run.yv) + 1))]
+        )
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotdRhoDiagY(0, 2.5, "-")
+            _xs.assert_called_once_with("log")
+            _xl.assert_called_once_with("$x$")
+            _yl.assert_called_once_with(r"$d\rho_{\alpha\alpha}/dt$")
+            _plt.assert_called_once()
+            x, yv = run.interpolateRhoIJ(0, 0, 2.5)
+            self.assertEqualArray(_plt.call_args[0], [x, np.gradient(yv, x)])
+            self.assertEqual(
+                _plt.call_args[1],
+                {"label": r"%s \alpha=%d" % (run.label, 1), "ls": "-", "c": "k"},
+            )
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotdRhoDiagY(1, 2.5, ":", lc="r", y2=True)
+            _yl.assert_called_once_with(r"$dy^2\rho_{\alpha\alpha}/dt$")
+            x, yv = run.interpolateRhoIJ(1, 1, 2.5)
+            self.assertEqualArray(
+                _plt.call_args[0], [x, np.gradient(np.array(yv) * 2.5 ** 2, x)]
+            )
+            self.assertEqual(
+                _plt.call_args[1],
+                {"label": r"%s \alpha=%d" % (run.label, 2), "ls": ":", "c": "r"},
+            )
+        run.rhoM[1, 1, 0] = np.array(
+            [
+                [0] + list(1.0 / (np.exp(run.yv) + 1)),
+                [1] + list(2.0 / (np.exp(run.yv) + 1)),
+            ]
+        )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotdRhoDiagY(1, 2.5, "-", mass=True, lab="lab")
+            x, yv = run.interpolateRhoIJ(1, 1, 2.5, mass=True)
+            self.assertEqualArray(_plt.call_args[0], [x, np.gradient(yv, x)])
+            self.assertEqual(
+                _plt.call_args[1], {"label": "lab", "ls": "-", "c": "k"},
+            )
 
     def test_plotRhoOffDiagY(self):
         """test plotRhoOffDiagY"""

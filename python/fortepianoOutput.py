@@ -871,13 +871,13 @@ class FortEPiaNORun:
         plt.plot(
             x,
             np.gradient(np.asarray(yv) * (y ** 2 if y2 else 1.0), x),
+            label=label,
             ls=ls,
             c=lc,
-            label=r"%s \alpha=%d" % (self.label, inu + 1),
         )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$d\rho_{\alpha\alpha}/dt$")
+        plt.ylabel(r"$d%s\rho_{\alpha\alpha}/dt$" % ("y^2" if y2 else ""))
 
     def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
         """Plot one off-diagonal element of the density matrix
