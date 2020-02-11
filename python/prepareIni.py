@@ -326,7 +326,18 @@ def getIniValues(args):
         a dictionary
     """
     values = oscParams(args)
-    values["verbose"] = args.verbose
+    for p in [
+        "verbose",
+        "Nx",
+        "x_in",
+        "x_fin",
+        "Ny",
+        "Nylog",
+        "y_min",
+        "y_cen",
+        "y_max",
+    ]:
+        values[p] = getattr(args, p)
     values["factors"] = "\n".join(
         ["nuFactor%d = %f" % (i + 1, f) for i, f in enumerate(values["factors"])]
     )
@@ -345,14 +356,6 @@ def getIniValues(args):
         if args.collisional == "damping"
         else 3
     )
-    values["Nx"] = args.Nx
-    values["x_in"] = args.x_in
-    values["x_fin"] = args.x_fin
-    values["Ny"] = args.Ny
-    values["Nylog"] = args.Nylog
-    values["y_min"] = args.y_min
-    values["y_cen"] = args.y_cen
-    values["y_max"] = args.y_max
     if any(
         [
             a != 1e-6
@@ -373,11 +376,8 @@ def getIniValues(args):
     values["dlsoda_rtol"] = args.dlsoda_rtol
     values["folder"] = args.outputfolder
     values["Nprintderivs"] = args.verbose_deriv_freq
-    values["save_energy_entropy"] = "T" if args.save_energy_entropy else "F"
-    values["save_fd"] = "T" if args.save_fd else "F"
-    values["save_Neff"] = "T" if args.save_Neff else "F"
-    values["save_nuDens"] = "T" if args.save_nuDens else "F"
-    values["save_z"] = "T" if args.save_z else "F"
+    for p in ["save_energy_entropy", "save_fd", "save_Neff", "save_nuDens", "save_z"]:
+        values[p] = "T" if getattr(args, p) else "F"
     values["use_GL"] = "F" if args.no_GL else "T"
     return values
 
@@ -416,7 +416,7 @@ Nx = {Nx:}
 x_in = {x_in:}
 x_fin = {x_fin:}
 
-use_gauss_laguerre={use_GL:}
+use_gauss_laguerre = {use_GL:}
 Ny = {Ny:}
 Nylog = {Nylog:}
 y_min = {y_min:}
@@ -441,8 +441,9 @@ Nprintderivs = {Nprintderivs:}
         **values
     )
     print("Writing to %s" % filename)
-    if not os.path.exists(os.path.dirname(os.path.abspath(filename))):
-        os.mkdir(os.path.dirname(os.path.abspath(filename)))
+    dirname = os.path.dirname(os.path.abspath(filename))
+    if not os.path.exists(dirname):
+        os.mkdir(dirname)
     with open(filename, "w") as _f:
         _f.write(iniText)
 

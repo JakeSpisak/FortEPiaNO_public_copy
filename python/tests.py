@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import argparse
 import os
 import shutil
 import sys
@@ -940,6 +941,13 @@ class TestFortEPiaNORun(FPTestCase):
 class TestPrepareIni(unittest.TestCase):
     """Testing the prepareIni module """
 
+    testIni = "test_ini_file.ini"
+
+    def tearDown(self):
+        """remove test files"""
+        if os.path.exists(self.testIni):
+            os.remove(self.testIni)
+
     def test_module(self):
         """test module variables"""
         self.assertEqual(pim.params_active, ["dm21", "th12", "dm31", "th13", "th23"])
@@ -947,14 +955,358 @@ class TestPrepareIni(unittest.TestCase):
         self.assertIsInstance(pim.default_osc_act, dict)
         for v in pim.default_osc_act.values():
             self.assertIsInstance(v, dict)
+            self.assertIn("no", v.keys())
+            self.assertIn("io", v.keys())
             for s in v.values():
                 self.assertIsInstance(s, dict)
+                for p in pim.params_active:
+                    self.assertIn(p, s.keys())
         self.assertIsInstance(pim.default_osc_ster, dict)
         for v in pim.default_osc_ster.values():
             self.assertIsInstance(v, dict)
+            for p in pim.params_sterile:
+                self.assertIn(p, v.keys())
 
     def test_setParser(self):
         """test setParser"""
+        parser = argparse.ArgumentParser()
+        parser.add_argument = MagicMock()
+        with patch("argparse.ArgumentParser", return_value=parser) as _ap, patch(
+            "argparse.ArgumentParser.add_argument"
+        ) as _aa:
+            self.assertEqual(pim.setParser(), parser)
+            _ap.assert_called_once_with(prog="prepareIni.py")
+        parser.add_argument.assert_has_calls(
+            [
+                call(
+                    "inifile",
+                    metavar="inifilename",
+                    help="the filename of the ini file where to write the configuration",
+                ),
+                call(
+                    "outputfolder",
+                    help="the name of the output folder that will contain the results",
+                ),
+                call(
+                    "numodel",
+                    choices=["3nu", "2nu", "3+1", "2+1", "1+1"],
+                    help="define the neutrino model that must be used",
+                ),
+                call(
+                    "collisional",
+                    choices=["zero", "complete", "damping", "diagonal"],
+                    help="define the scheme for the collision integrals",
+                ),
+                call(
+                    "--ordering",
+                    choices=["NO", "IO"],
+                    default="NO",
+                    help="define the mass ordering for the three active neutrinos (not used if you explicitely give the mixing parameters, only if you select default values by Valencia, Bari or NuFit global fit)",
+                ),
+                call(
+                    "--default_active",
+                    nargs=1,
+                    choices=["Bari", "NuFit", "VLC", "None"],
+                    default="VLC",
+                    help="define the mixing parameters for the active neutrinos as obtained from the Valencia global fit (doi:10.1016/j.physletb.2018.06.019, default), Bari group (doi:10.1016/j.ppnp.2018.05.005) or NuFit analysis (doi:10.1007/JHEP01(2019)106)",
+                ),
+                call(
+                    "--default_sterile",
+                    nargs=1,
+                    choices=["Gariazzo&al", "None"],
+                    default="Gariazzo&al",
+                    help="define the active-sterile mixing parameters as obtained from the Gariazzo et al. global fit (with th24=th34=0)",
+                ),
+                call(
+                    "--sinsq",
+                    dest="use_sinsq",
+                    action="store_false",
+                    help=r"use the $\sin^2$ of the mixing angles as input",
+                ),
+                call(
+                    "--dm21", type=float, default=0.0, help=r"define $\Delta m^2_{21}$",
+                ),
+                call(
+                    "--dm31",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\Delta m^2_{31}$ (pass negative value for inverted ordering)",
+                ),
+                call(
+                    "--dm41", type=float, default=0.0, help=r"define $\Delta m^2_{41}$",
+                ),
+                call(
+                    "--th12",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\theta_{12}$ or $\sin^2 \theta_{12}$",
+                ),
+                call(
+                    "--th13",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\theta_{13}$ or $\sin^2 \theta_{13}$",
+                ),
+                call(
+                    "--th14",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\theta_{14}$ or $\sin^2 \theta_{14}$",
+                ),
+                call(
+                    "--th23",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\theta_{23}$ or $\sin^2 \theta_{23}$",
+                ),
+                call(
+                    "--th24",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\theta_{24}$ or $\sin^2 \theta_{24}$",
+                ),
+                call(
+                    "--th34",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\theta_{34}$ or $\sin^2 \theta_{34}$",
+                ),
+                call(
+                    "-V",
+                    "--verbose",
+                    type=int,
+                    default=1,
+                    help="define the verbosity of the code",
+                ),
+                call(
+                    "--verbose_deriv_freq",
+                    type=int,
+                    default=100,
+                    help="print a string stating the current position only after N derivatives",
+                ),
+                call(
+                    "--Nx", type=int, default=200, help="number of points to save in x",
+                ),
+                call("--x_in", type=float, default=0.001, help="initial value of x"),
+                call("--x_fin", type=float, default=35, help="final value of x"),
+                call("--Ny", type=int, default=40, help="number of total points in y"),
+                call(
+                    "--Nylog",
+                    type=int,
+                    default=5,
+                    help="number of log-spaced points between y_in and y_cen",
+                ),
+                call("--y_min", type=float, default=0.01, help="minimum value of y"),
+                call(
+                    "--y_cen",
+                    type=float,
+                    default=1,
+                    help="value of y where to switch between log- and linear spacing",
+                ),
+                call("--y_max", type=float, default=20, help="maximum value of y"),
+                call(
+                    "--dlsoda_atol",
+                    type=float,
+                    default=1e-6,
+                    help="absolute tolerance for all the differential equations in DLSODA. "
+                    + "See also dlsoda_atol_z, dlsoda_atol_d, dlsoda_atol_o",
+                ),
+                call(
+                    "--dlsoda_atol_z",
+                    type=float,
+                    default=1e-6,
+                    help="absolute tolerance for the dz/dx, dw/dx differential equations in DLSODA. "
+                    + "See also dlsoda_atol, dlsoda_atol_d, dlsoda_atol_o",
+                ),
+                call(
+                    "--dlsoda_atol_d",
+                    type=float,
+                    default=1e-6,
+                    help="absolute tolerance for the differential equations drho_{ii}/dx"
+                    + "of the diagonal matrix elements in DLSODA. "
+                    + "See also dlsoda_atol, dlsoda_atol_z, dlsoda_atol_o",
+                ),
+                call(
+                    "--dlsoda_atol_o",
+                    type=float,
+                    default=1e-6,
+                    help="absolute tolerance for the differential equations drho_{ij}/dx"
+                    + "of the off-diagonal matrix elements in DLSODA. "
+                    + "See also dlsoda_atol, dlsoda_atol_z, dlsoda_atol_d",
+                ),
+                call(
+                    "--dlsoda_rtol",
+                    type=float,
+                    default=1e-6,
+                    help="relative tolerance for DLSODA",
+                ),
+                call(
+                    "--save_energy_entropy",
+                    action="store_true",
+                    help="enable saving the evolution of the energy density and entropy for each component",
+                ),
+                call(
+                    "--save_fd",
+                    action="store_true",
+                    help="enable saving the y grid and the corresponding Fermi-Dirac to fd.dat",
+                ),
+                call(
+                    "--save_Neff",
+                    action="store_true",
+                    help="enable saving the evolution of Neff",
+                ),
+                call(
+                    "--save_nuDens",
+                    action="store_true",
+                    help="enable saving the evolution of the full neutrino density matrix",
+                ),
+                call(
+                    "--save_z",
+                    action="store_true",
+                    help="enable saving the evolution of the photon temperature z",
+                ),
+                call(
+                    "--no_GL",
+                    action="store_true",
+                    help="do not use the Gauss-Laguerre method for integrals and for spacing the y points",
+                ),
+            ],
+            any_order=True,
+        )
+
+    def test_parsing(self):
+        """test that there are no errors in the parsing process"""
+        parser = pim.setParser()
+        with self.assertRaises(SystemExit):
+            args = parser.parse_args(["inifile", "outdir", "3nu"])
+        with self.assertRaises(SystemExit):
+            args = parser.parse_args(["inifile", "outdir", "abc", "complete"])
+        with self.assertRaises(SystemExit):
+            args = parser.parse_args(["inifile", "outdir", "3nu", "abc"])
+        with self.assertRaises(SystemExit):
+            args = parser.parse_args(["inifile", "outdir", "3nu", "complete", "abc"])
+        for p in ["3nu", "2nu", "3+1", "2+1", "1+1"]:
+            args = parser.parse_args(["inifile", "outdir", p, "zero"])
+        for p in ["zero", "complete", "damping", "diagonal"]:
+            args = parser.parse_args(["inifile", "outdir", "3nu", p])
+        baseargs = ["inifile", "outdir", "3nu", "complete"]
+        args = parser.parse_args(baseargs)
+        self.assertEqual(args.ordering, "NO")
+        self.assertEqual(args.default_active, "VLC")
+        self.assertEqual(args.default_sterile, "Gariazzo&al")
+        self.assertEqual(args.use_sinsq, True)
+        self.assertEqual(args.dm21, 0.0)
+        self.assertEqual(args.dm31, 0.0)
+        self.assertEqual(args.dm41, 0.0)
+        self.assertEqual(args.th12, 0.0)
+        self.assertEqual(args.th13, 0.0)
+        self.assertEqual(args.th14, 0.0)
+        self.assertEqual(args.th23, 0.0)
+        self.assertEqual(args.th24, 0.0)
+        self.assertEqual(args.th34, 0.0)
+        self.assertEqual(args.verbose, 1)
+        self.assertEqual(args.verbose_deriv_freq, 100)
+        self.assertEqual(args.Nx, 200)
+        self.assertEqual(args.x_in, 0.001)
+        self.assertEqual(args.x_fin, 35)
+        self.assertEqual(args.Ny, 40)
+        self.assertEqual(args.Nylog, 5)
+        self.assertEqual(args.y_min, 0.01)
+        self.assertEqual(args.y_cen, 1)
+        self.assertEqual(args.y_max, 20)
+        self.assertEqual(args.dlsoda_rtol, 1.0e-6)
+        self.assertEqual(args.dlsoda_atol, 1.0e-6)
+        self.assertEqual(args.dlsoda_atol_z, 1.0e-6)
+        self.assertEqual(args.dlsoda_atol_d, 1.0e-6)
+        self.assertEqual(args.dlsoda_atol_o, 1.0e-6)
+        self.assertEqual(args.no_GL, False)
+        self.assertEqual(args.save_energy_entropy, False)
+        self.assertEqual(args.save_fd, False)
+        self.assertEqual(args.save_Neff, False)
+        self.assertEqual(args.save_nuDens, False)
+        self.assertEqual(args.save_z, False)
+        for l in [
+            ["--ordering=NO"],
+            ["--ordering=IO"],
+            ["--default_active=None"],
+            ["--default_active=Bari"],
+            ["--default_active=NuFit"],
+            ["--default_active=VLC"],
+            ["--default_sterile=None"],
+            ["--default_sterile=Gariazzo&al"],
+            ["--sinsq"],
+            ["--dm21=1.23"],
+            ["--dm31=1.23"],
+            ["--dm41=1.23"],
+            ["--th12=0.01"],
+            ["--th13=0.01"],
+            ["--th14=0.01"],
+            ["--th23=0.01"],
+            ["--th24=0.01"],
+            ["--th34=0.01"],
+            ["-V=2"],
+            ["--verbose=2"],
+            ["--verbose_deriv_freq=200"],
+            ["--Nx=100"],
+            ["--x_in=0.1"],
+            ["--x_fin=40.5"],
+            ["--Ny=30"],
+            ["--Nylog=5"],
+            ["--y_min=0.02"],
+            ["--y_cen=2.2"],
+            ["--y_max=30.6"],
+            ["--dlsoda_rtol=1.3e-5"],
+            ["--dlsoda_atol=1.3e-4"],
+            ["--dlsoda_atol_z=1.2e-6"],
+            ["--dlsoda_atol_d=1.2e-6"],
+            ["--dlsoda_atol_o=1.2e-6"],
+            ["--no_GL"],
+            ["--save_energy_entropy"],
+            ["--save_fd"],
+            ["--save_Neff"],
+            ["--save_nuDens"],
+            ["--save_z"],
+        ]:
+            args = parser.parse_args(baseargs + l)
+        for l in [
+            ["--someoption"],
+            ["--ordering=abc"],
+            ["--default_active=abc"],
+            ["--dm21=abc"],
+            ["--dm31=abc"],
+            ["--dm41=abc"],
+            ["--th12=abc"],
+            ["--th13=abc"],
+            ["--th14=abc"],
+            ["--th23=abc"],
+            ["--th24=abc"],
+            ["--th34=abc"],
+            ["--verbose=abc"],
+            ["--verbose_deriv_freq=abc"],
+            ["--Nx=abc"],
+            ["--x_in=abc"],
+            ["--x_fin=abc"],
+            ["--Ny=abc"],
+            ["--Nylog=abc"],
+            ["--y_min=abc"],
+            ["--y_cen=abc"],
+            ["--y_max=abc"],
+            ["--dlsoda_rtol=abc"],
+            ["--dlsoda_atol=abc"],
+            ["--dlsoda_atol_z=abc"],
+            ["--dlsoda_atol_d=abc"],
+            ["--dlsoda_atol_o=abc"],
+            ["--no_GL=a"],
+            ["--save_energy_entropy=a"],
+            ["--save_fd=a"],
+            ["--save_Neff=a"],
+            ["--save_nuDens=a"],
+            ["--save_z=a"],
+        ]:
+            with self.assertRaises(SystemExit):
+                args = parser.parse_args(baseargs + l)
+        values = pim.getIniValues(args)
+        pim.writeIni(self.testIni, values)
 
     def test_oscParams(self):
         """test oscParams"""
@@ -1157,9 +1509,252 @@ class TestPrepareIni(unittest.TestCase):
 
     def test_getIniValues(self):
         """test getIniValues"""
+        self.maxDiff = None
+        args = dgm.Namespace(
+            **{
+                "verbose": "vb",
+                "collisional": "zero",
+                "Nx": 200,
+                "x_in": 0.001,
+                "x_fin": 35,
+                "Ny": 24,
+                "Nylog": 4,
+                "y_min": 0.01,
+                "y_cen": 1,
+                "y_max": 20,
+                "dlsoda_atol_z": 1e-6,
+                "dlsoda_atol_d": 1e-6,
+                "dlsoda_atol_o": 1e-7,
+                "dlsoda_rtol": 1e-4,
+                "outputfolder": "abcd",
+                "verbose_deriv_freq": 123,
+                "no_GL": True,
+                "save_energy_entropy": True,
+                "save_fd": True,
+                "save_Neff": True,
+                "save_nuDens": True,
+                "save_z": True,
+            }
+        )
+        with patch(
+            "prepareIni.oscParams",
+            return_value={"factors": [2, 1], "sterile": [False, True]},
+        ) as _op:
+            values = pim.getIniValues(args)
+        self.assertEqual(
+            values,
+            {
+                "verbose": "vb",
+                "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
+                "sterile": "sterile1 = F\nsterile2 = T",
+                "coll_offdiag": 0,
+                "Nx": 200,
+                "x_in": 0.001,
+                "x_fin": 35,
+                "Ny": 24,
+                "Nylog": 4,
+                "y_min": 0.01,
+                "y_cen": 1,
+                "y_max": 20,
+                "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-6
+                + "dlsoda_atol_d = %s\n" % 1e-6
+                + "dlsoda_atol_o = %s\n" % 1e-7,
+                "dlsoda_rtol": 1e-4,
+                "folder": "abcd",
+                "Nprintderivs": 123,
+                "use_GL": "F",
+                "save_energy_entropy": "T",
+                "save_fd": "T",
+                "save_Neff": "T",
+                "save_nuDens": "T",
+                "save_z": "T",
+            },
+        )
+        args = dgm.Namespace(
+            **{
+                "verbose": "vb",
+                "collisional": "complete",
+                "Nx": 200,
+                "x_in": 0.001,
+                "x_fin": 35,
+                "Ny": 24,
+                "Nylog": 4,
+                "y_min": 0.01,
+                "y_cen": 1,
+                "y_max": 20,
+                "dlsoda_atol": 1e-5,
+                "dlsoda_atol_z": 1e-6,
+                "dlsoda_atol_d": 1e-6,
+                "dlsoda_atol_o": 1e-6,
+                "dlsoda_rtol": 1e-4,
+                "outputfolder": "abcd",
+                "verbose_deriv_freq": 123,
+                "no_GL": False,
+                "save_energy_entropy": False,
+                "save_fd": False,
+                "save_Neff": False,
+                "save_nuDens": False,
+                "save_z": False,
+            }
+        )
+        with patch(
+            "prepareIni.oscParams",
+            return_value={"factors": [2, 1], "sterile": [False, True]},
+        ) as _op:
+            values = pim.getIniValues(args)
+        self.assertEqual(
+            values,
+            {
+                "verbose": "vb",
+                "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
+                "sterile": "sterile1 = F\nsterile2 = T",
+                "coll_offdiag": 1,
+                "Nx": 200,
+                "x_in": 0.001,
+                "x_fin": 35,
+                "Ny": 24,
+                "Nylog": 4,
+                "y_min": 0.01,
+                "y_cen": 1,
+                "y_max": 20,
+                "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-5
+                + "dlsoda_atol_d = %s\n" % 1e-5
+                + "dlsoda_atol_o = %s\n" % 1e-5,
+                "dlsoda_rtol": 1e-4,
+                "folder": "abcd",
+                "Nprintderivs": 123,
+                "use_GL": "T",
+                "save_energy_entropy": "F",
+                "save_fd": "F",
+                "save_Neff": "F",
+                "save_nuDens": "F",
+                "save_z": "F",
+            },
+        )
+        args.collisional = "damping"
+        args.dlsoda_atol_z = 1e-7
+        args.dlsoda_atol_d = 1e-6
+        args.dlsoda_atol_o = 1e-6
+        with patch(
+            "prepareIni.oscParams",
+            return_value={"factors": [2, 1], "sterile": [False, True]},
+        ) as _op:
+            values = pim.getIniValues(args)
+        self.assertEqual(values["coll_offdiag"], 2)
+        self.assertEqual(
+            values["dlsoda_atol"],
+            "dlsoda_atol_z = %s\n" % 1e-7
+            + "dlsoda_atol_d = %s\n" % 1e-6
+            + "dlsoda_atol_o = %s\n" % 1e-6,
+        )
+        args.collisional = "abcd"
+        args.dlsoda_atol_z = 1e-6
+        args.dlsoda_atol_d = 1e-7
+        args.dlsoda_atol_o = 1e-6
+        with patch(
+            "prepareIni.oscParams",
+            return_value={"factors": [2, 1], "sterile": [False, True]},
+        ) as _op:
+            values = pim.getIniValues(args)
+        self.assertEqual(values["coll_offdiag"], 3)
+        self.assertEqual(
+            values["dlsoda_atol"],
+            "dlsoda_atol_z = %s\n" % 1e-6
+            + "dlsoda_atol_d = %s\n" % 1e-7
+            + "dlsoda_atol_o = %s\n" % 1e-6,
+        )
 
     def test_writeIni(self):
         """test writeIni"""
+        values = {
+            "verbose": "vb",
+            "use_sinsq": "T",
+            "nnu": 4,
+            "dm41": 1.23,
+            "th14": 0.1,
+            "th24": 0.2,
+            "th34": 0.3,
+            "dm31": 0.0025,
+            "th13": 0.02,
+            "th23": 0.5,
+            "dm21": 8e-5,
+            "th12": 0.01,
+            "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
+            "sterile": "sterile1 = F\nsterile2 = T",
+            "coll_offdiag": 1,
+            "Nx": 200,
+            "x_in": 0.001,
+            "x_fin": 35,
+            "Ny": 24,
+            "Nylog": 4,
+            "y_min": 0.01,
+            "y_cen": 1,
+            "y_max": 20,
+            "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-5
+            + "dlsoda_atol_d = %s\n" % 1e-5
+            + "dlsoda_atol_o = %s\n" % 1e-5,
+            "dlsoda_rtol": 1e-4,
+            "folder": "abcd/",
+            "Nprintderivs": 123,
+            "use_GL": "T",
+            "save_energy_entropy": "F",
+            "save_fd": "F",
+            "save_Neff": "F",
+            "save_nuDens": "F",
+            "save_z": "F",
+        }
+        with self.assertRaises(OSError):
+            pim.writeIni("/nonexistent/cant/write/this.ini", values)
+        pim.writeIni(self.testIni, values)
+        with open(self.testIni) as _f:
+            lines = _f.readlines()
+        for l in [
+            "flavorNumber = 4",
+            "givesinsq = T",
+            "theta12= 0.01",
+            "dm21 = %s" % 8e-5,
+            "theta13 = 0.02",
+            "theta23 = 0.5",
+            "dm31 = 0.0025",
+            "theta14 = 0.1",
+            "theta24 = 0.2",
+            "theta34 = 0.3",
+            "dm41 = 1.23",
+            "collision_offdiag = 1",
+            "ftqed_temperature_corr = T",
+            "ftqed_ord3 = T",
+            "ftqed_log_term = F",
+            "Nx = 200",
+            "x_in = 0.001",
+            "x_fin = 35",
+            "use_gauss_laguerre = T",
+            "Ny = 24",
+            "Nylog = 4",
+            "y_min = 0.01",
+            "y_cen = 1",
+            "y_max = 20",
+            "outputFolder = abcd/",
+            "checkpoint = T",
+            "save_fd = F",
+            "save_Neff = F",
+            "save_nuDens_evolution = F",
+            "save_z_evolution = F",
+            "save_energy_entropy_evolution = F",
+            "dlsoda_rtol = %s" % 1e-4,
+            "verbose = vb",
+            "Nprintderivs = 123",
+        ]:
+            self.assertIn(l + "\n", lines)
+        with open(self.testIni) as _f:
+            content = _f.read()
+        for c in [
+            "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
+            "sterile1 = F\nsterile2 = T",
+            "dlsoda_atol_z = %s\n" % 1e-5
+            + "dlsoda_atol_d = %s\n" % 1e-5
+            + "dlsoda_atol_o = %s\n" % 1e-5,
+        ]:
+            self.assertIn(c, content)
 
 
 if __name__ == "__main__":
