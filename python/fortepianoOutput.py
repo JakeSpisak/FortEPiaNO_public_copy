@@ -403,6 +403,13 @@ class FortEPiaNORun:
         If the run was not complete, print just the label and a message
         on the last step that was saved
         """
+        try:
+            self.hasResume
+            self.label, self.Neff, self.zfin, self.zdat[-1]
+            [self.deltarhofin[i] for i in range(self.nnu)]
+        except (AttributeError, IndexError):
+            print(traceback.format_exc())
+            return
         if not self.verbose:
             return
         if self.hasResume:
@@ -584,7 +591,7 @@ class FortEPiaNORun:
             return
         plt.plot(
             *stripRepeated(rho[inu, inu, 0], 0, iy),
-            label="%s \alpha=%d" % (self.label, inu + 1),
+            label=r"%s \alpha=%d" % (self.label, inu + 1),
             ls=ls,
             c=lc
         )
@@ -625,7 +632,7 @@ class FortEPiaNORun:
             np.gradient(dijrey, dijrex),
             ls=ls,
             c=lc,
-            label="%s \alpha=%d" % (self.label, inu + 1),
+            label=r"%s \alpha=%d" % (self.label, inu + 1),
         )
         plt.xscale("log")
         plt.xlabel("$x$")
@@ -645,7 +652,7 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        if not self.full:
+        if not hasattr(self, "full") or not self.full:
             print("no offdiagonal loaded")
             return
         try:
@@ -665,14 +672,14 @@ class FortEPiaNORun:
             *stripRepeated(rho[i1, i2, 0], 0, iy),
             ls="-",
             c=lc,
-            label="%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
+            label=r"%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
         )
         if im:
             plt.plot(
                 *stripRepeated(rho[i1, i2, 1], 0, iy),
                 ls=":",
                 c=lc,
-                label="%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
+                label=r"%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
             )
         plt.xscale("log")
         plt.xlabel("$x$")
@@ -693,7 +700,7 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        if not self.full:
+        if not hasattr(self, "full") or not self.full:
             print("no offdiagonal loaded")
             return
         try:
@@ -710,7 +717,7 @@ class FortEPiaNORun:
             np.gradient(dijrey, dijrex),
             ls="-",
             c=lc,
-            label="%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1),
+            label=r"%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1),
         )
         if im:
             dijimx, dijimy = stripRepeated(rho[i1, i2, 1], 0, iy)
@@ -719,23 +726,24 @@ class FortEPiaNORun:
                 np.gradient(dijimy, dijimx),
                 ls=":",
                 c=lc,
-                label="%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1),
+                label=r"%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1),
             )
         plt.xscale("log")
         plt.xlabel("$x$")
         plt.ylabel(r"$d\rho_{\alpha\beta}/dt$")
 
     def plotRhoFin(
-        self, ix, iy=None, ri=0, ls="-", lc="k", y2=False, lab=None, mass=False
+        self, i1, i2=None, ri=0, ls="-", lc="k", y2=False, lab=None, mass=False
     ):
         """Plot the y dependence of an element of the density matrix
         at the final x
 
         Parameters:
-            ix: diagonal element of the density matrix to consider
-            iy (default None): if not None, the column index
+            i1: diagonal element of the density matrix to consider,
+                or row index of the density matrix element
+            i2 (default None): if not None, the column index
                 of the requested density matrix element.
-                If None, fix iy = ix and use a diagonal element
+                If None, fix i2 = i1 and use a diagonal element
             ri (default 0): it 0, use real part, if 1 the imaginary one
                 (only for off-diagonal entries of the density matrix)
             ls (default "-"): the line style
@@ -746,8 +754,8 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        if iy is None:
-            iy = ix
+        if i2 is None:
+            i2 = i1
         if ri not in [0, 1]:
             ri = 0
         try:
@@ -759,17 +767,17 @@ class FortEPiaNORun:
             print(traceback.format_exc())
             return
         try:
-            rho[ix, iy, ri][-1, 1:]
+            rho[i1, i2, ri][-1, 1:]
         except TypeError:
             print(traceback.format_exc())
             return
         label = (
-            "%s \alpha\beta=%d%d %s"
-            % (self.label, ix + 1, iy + 1, "re" if ri == 0 else "im")
+            r"%s \alpha\beta=%d%d %s"
+            % (self.label, i1 + 1, i2 + 1, "re" if ri == 0 else "im")
             if lab is None
             else lab
         )
-        fyv = self.yv ** 2 * rho[ix, iy, ri][-1, 1:] if y2 else rho[ix, iy, ri][-1, 1:]
+        fyv = self.yv ** 2 * rho[i1, i2, ri][-1, 1:] if y2 else rho[i1, i2, ri][-1, 1:]
         plt.plot(self.yv, fyv, ls=ls, c=lc, label=label)
         plt.xlabel("$y$")
         plt.ylabel(r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$" % ("y^2" if y2 else ""))
@@ -806,7 +814,7 @@ class FortEPiaNORun:
             *interp,
             ls=ls,
             c=lc,
-            label="%s \alpha\beta=%d%d %s x=%f"
+            label=r"%s \alpha\beta=%d%d %s x=%f"
             % (self.label, i1 + 1, i2 + 1, "re" if ri == 0 else "im", x)
         )
         plt.xlabel("$y$")
@@ -832,7 +840,7 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
-        label = lab if lab is not None else "%s \alpha=%d" % (self.label, inu + 1)
+        label = lab if lab is not None else r"%s \alpha=%d" % (self.label, inu + 1)
         plt.plot(x, np.asarray(yv) * (y ** 2 if y2 else 1.0), label=label, ls=ls, c=lc)
         plt.xscale("log")
         plt.xlabel("$x$")
@@ -859,13 +867,13 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
-        label = lab if lab is not None else "%s \alpha=%d" % (self.label, inu + 1)
+        label = lab if lab is not None else r"%s \alpha=%d" % (self.label, inu + 1)
         plt.plot(
             x,
             np.gradient(np.asarray(yv) * (y ** 2 if y2 else 1.0), x),
             ls=ls,
             c=lc,
-            label="%s \alpha=%d" % (self.label, inu + 1),
+            label=r"%s \alpha=%d" % (self.label, inu + 1),
         )
         plt.xscale("log")
         plt.xlabel("$x$")
@@ -898,7 +906,7 @@ class FortEPiaNORun:
             *interp,
             ls=ls,
             c=lc,
-            label="%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
+            label=r"%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
             if lab is None
             else lab
         )
@@ -912,7 +920,7 @@ class FortEPiaNORun:
                 *interpIm,
                 ls=":",
                 c=lc,
-                label="%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
+                label=r"%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
                 if lab is None
                 else lab
             )
