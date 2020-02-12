@@ -17,4 +17,4 @@ output*
 gmon.out
 *callgrind*
 grids/
-.tox/
+.tox*/
