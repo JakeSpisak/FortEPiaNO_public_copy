@@ -894,7 +894,7 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        if not self.full:
+        if not hasattr(self, "full") or not self.full:
             print("no offdiagonal loaded")
             return
         try:
@@ -946,7 +946,7 @@ class FortEPiaNORun:
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
-        if not self.full:
+        if not hasattr(self, "full") or not self.full:
             print("no offdiagonal loaded")
             return
         try:
@@ -960,7 +960,7 @@ class FortEPiaNORun:
                 np.gradient(dijrey, dijrex),
                 ls=ls,
                 c=lc,
-                label="%s %d%d re" % (self.label, i1 + 1, i2 + 1)
+                label=r"%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
                 if lab is None
                 else lab,
             )
@@ -978,7 +978,7 @@ class FortEPiaNORun:
                     np.gradient(dijimy, dijimx),
                     ls=":",
                     c=lc,
-                    label="%s %d%d im" % (self.label, i1 + 1, i2 + 1)
+                    label=r"%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
                     if lab is None
                     else lab,
                 )
