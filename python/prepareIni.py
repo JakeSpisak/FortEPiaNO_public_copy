@@ -86,24 +86,38 @@ def setParser():
         help="define the scheme for the collision integrals",
     )
     parser.add_argument(
+        "--qed_corrections",
+        choices=["no", "o2", "o3", "o2ln", "o3ln"],
+        default="o3",
+        help="define which terms must be included "
+        + "for the finite-temperature QED corrections "
+        + "[O(e^2), O(e^2)+O(e^3) - default, O(e^2)+ln, O(e^2)+O(e^3)ln, or none]",
+    )
+    parser.add_argument(
         "--ordering",
         choices=["NO", "IO"],
         default="NO",
-        help="define the mass ordering for the three active neutrinos (not used if you explicitely give the mixing parameters, only if you select default values by Valencia, Bari or NuFit global fit)",
+        help="define the mass ordering for the three active neutrinos "
+        + "(not used if you explicitely give the mixing parameters,"
+        + " only if you select default values by Valencia, Bari or NuFit global fit)",
     )
     parser.add_argument(
         "--default_active",
         nargs=1,
         choices=["Bari", "NuFit", "VLC", "None"],
         default="VLC",
-        help="define the mixing parameters for the active neutrinos as obtained from the Valencia global fit (doi:10.1016/j.physletb.2018.06.019, default), Bari group (doi:10.1016/j.ppnp.2018.05.005) or NuFit analysis (doi:10.1007/JHEP01(2019)106)",
+        help="define the mixing parameters for the active neutrinos as obtained "
+        + "from the Valencia global fit (doi:10.1016/j.physletb.2018.06.019, default), "
+        + "Bari group (doi:10.1016/j.ppnp.2018.05.005) or "
+        + "NuFit analysis (doi:10.1007/JHEP01(2019)106)",
     )
     parser.add_argument(
         "--default_sterile",
         nargs=1,
         choices=["Gariazzo&al", "None"],
         default="Gariazzo&al",
-        help="define the active-sterile mixing parameters as obtained from the Gariazzo et al. global fit (with th24=th34=0)",
+        help="define the active-sterile mixing parameters as obtained "
+        + "from the Gariazzo et al. global fit (with th24=th34=0)",
     )
     parser.add_argument(
         "--sinsq",
@@ -356,6 +370,20 @@ def getIniValues(args):
         if args.collisional == "damping"
         else 3
     )
+    if args.qed_corrections == "no":
+        values["ftqed_temperature_corr"] = "F"
+        values["ftqed_ord3"] = "F"
+        values["ftqed_log_term"] = "F"
+    else:
+        values["ftqed_temperature_corr"] = "T"
+        if "o3" in args.qed_corrections:
+            values["ftqed_ord3"] = "T"
+        else:
+            values["ftqed_ord3"] = "F"
+        if "ln" in args.qed_corrections:
+            values["ftqed_log_term"] = "T"
+        else:
+            values["ftqed_log_term"] = "F"
     if any(
         [
             a != 1e-6
@@ -408,9 +436,9 @@ theta34 = {th34:}
 dm41 = {dm41:}
 
 collision_offdiag = {coll_offdiag:}
-ftqed_temperature_corr = T
-ftqed_ord3 = T
-ftqed_log_term = F
+ftqed_temperature_corr = {ftqed_temperature_corr:}
+ftqed_ord3 = {ftqed_ord3:}
+ftqed_log_term = {ftqed_log_term:}
 
 Nx = {Nx:}
 x_in = {x_in:}

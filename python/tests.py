@@ -1545,24 +1545,40 @@ class TestPrepareIni(unittest.TestCase):
                     help="define the scheme for the collision integrals",
                 ),
                 call(
+                    "--qed_corrections",
+                    choices=["no", "o2", "o3", "o2ln", "o3ln"],
+                    default="o3",
+                    help="define which terms must be included "
+                    + "for the finite-temperature QED corrections "
+                    + "[O(e^2), O(e^2)+O(e^3) - default, O(e^2)+ln, O(e^2)+O(e^3)ln, or none]",
+                ),
+                call(
                     "--ordering",
                     choices=["NO", "IO"],
                     default="NO",
-                    help="define the mass ordering for the three active neutrinos (not used if you explicitely give the mixing parameters, only if you select default values by Valencia, Bari or NuFit global fit)",
+                    help="define the mass ordering for the three active neutrinos "
+                    + "(not used if you explicitely give the mixing parameters, "
+                    + "only if you select default values "
+                    + "by Valencia, Bari or NuFit global fit)",
                 ),
                 call(
                     "--default_active",
                     nargs=1,
                     choices=["Bari", "NuFit", "VLC", "None"],
                     default="VLC",
-                    help="define the mixing parameters for the active neutrinos as obtained from the Valencia global fit (doi:10.1016/j.physletb.2018.06.019, default), Bari group (doi:10.1016/j.ppnp.2018.05.005) or NuFit analysis (doi:10.1007/JHEP01(2019)106)",
+                    help="define the mixing parameters for the active neutrinos as obtained "
+                    + "from the Valencia global fit "
+                    + "(doi:10.1016/j.physletb.2018.06.019, default), "
+                    + "Bari group (doi:10.1016/j.ppnp.2018.05.005) or "
+                    + "NuFit analysis (doi:10.1007/JHEP01(2019)106)",
                 ),
                 call(
                     "--default_sterile",
                     nargs=1,
                     choices=["Gariazzo&al", "None"],
                     default="Gariazzo&al",
-                    help="define the active-sterile mixing parameters as obtained from the Gariazzo et al. global fit (with th24=th34=0)",
+                    help="define the active-sterile mixing parameters as obtained "
+                    + "from the Gariazzo et al. global fit (with th24=th34=0)",
                 ),
                 call(
                     "--sinsq",
@@ -1577,7 +1593,8 @@ class TestPrepareIni(unittest.TestCase):
                     "--dm31",
                     type=float,
                     default=0.0,
-                    help=r"define $\Delta m^2_{31}$ (pass negative value for inverted ordering)",
+                    help=r"define $\Delta m^2_{31}$ "
+                    + "(pass negative value for inverted ordering)",
                 ),
                 call(
                     "--dm41", type=float, default=0.0, help=r"define $\Delta m^2_{41}$",
@@ -1662,7 +1679,8 @@ class TestPrepareIni(unittest.TestCase):
                     "--dlsoda_atol_z",
                     type=float,
                     default=1e-6,
-                    help="absolute tolerance for the dz/dx, dw/dx differential equations in DLSODA. "
+                    help="absolute tolerance for the dz/dx, dw/dx "
+                    + "differential equations in DLSODA. "
                     + "See also dlsoda_atol, dlsoda_atol_d, dlsoda_atol_o",
                 ),
                 call(
@@ -1690,7 +1708,8 @@ class TestPrepareIni(unittest.TestCase):
                 call(
                     "--save_energy_entropy",
                     action="store_true",
-                    help="enable saving the evolution of the energy density and entropy for each component",
+                    help="enable saving the evolution of the energy density "
+                    + "and entropy for each component",
                 ),
                 call(
                     "--save_fd",
@@ -1715,7 +1734,8 @@ class TestPrepareIni(unittest.TestCase):
                 call(
                     "--no_GL",
                     action="store_true",
-                    help="do not use the Gauss-Laguerre method for integrals and for spacing the y points",
+                    help="do not use the Gauss-Laguerre method for integrals "
+                    + "and for spacing the y points",
                 ),
             ],
             any_order=True,
@@ -2081,6 +2101,7 @@ class TestPrepareIni(unittest.TestCase):
                 "save_Neff": True,
                 "save_nuDens": True,
                 "save_z": True,
+                "qed_corrections": "no",
             }
         )
         with patch(
@@ -2115,6 +2136,9 @@ class TestPrepareIni(unittest.TestCase):
                 "save_Neff": "T",
                 "save_nuDens": "T",
                 "save_z": "T",
+                "ftqed_temperature_corr": "F",
+                "ftqed_ord3": "F",
+                "ftqed_log_term": "F",
             },
         )
         args = dgm.Namespace(
@@ -2142,6 +2166,7 @@ class TestPrepareIni(unittest.TestCase):
                 "save_Neff": False,
                 "save_nuDens": False,
                 "save_z": False,
+                "qed_corrections": "o2",
             }
         )
         with patch(
@@ -2176,9 +2201,13 @@ class TestPrepareIni(unittest.TestCase):
                 "save_Neff": "F",
                 "save_nuDens": "F",
                 "save_z": "F",
+                "ftqed_temperature_corr": "T",
+                "ftqed_ord3": "F",
+                "ftqed_log_term": "F",
             },
         )
         args.collisional = "damping"
+        args.qed_corrections = "o3"
         args.dlsoda_atol_z = 1e-7
         args.dlsoda_atol_d = 1e-6
         args.dlsoda_atol_o = 1e-6
@@ -2188,6 +2217,9 @@ class TestPrepareIni(unittest.TestCase):
         ) as _op:
             values = pim.getIniValues(args)
         self.assertEqual(values["coll_offdiag"], 2)
+        self.assertEqual(values["ftqed_temperature_corr"], "T")
+        self.assertEqual(values["ftqed_ord3"], "T")
+        self.assertEqual(values["ftqed_log_term"], "F")
         self.assertEqual(
             values["dlsoda_atol"],
             "dlsoda_atol_z = %s\n" % 1e-7
@@ -2195,6 +2227,7 @@ class TestPrepareIni(unittest.TestCase):
             + "dlsoda_atol_o = %s\n" % 1e-6,
         )
         args.collisional = "abcd"
+        args.qed_corrections = "o2ln"
         args.dlsoda_atol_z = 1e-6
         args.dlsoda_atol_d = 1e-7
         args.dlsoda_atol_o = 1e-6
@@ -2204,12 +2237,24 @@ class TestPrepareIni(unittest.TestCase):
         ) as _op:
             values = pim.getIniValues(args)
         self.assertEqual(values["coll_offdiag"], 3)
+        self.assertEqual(values["ftqed_temperature_corr"], "T")
+        self.assertEqual(values["ftqed_ord3"], "F")
+        self.assertEqual(values["ftqed_log_term"], "T")
         self.assertEqual(
             values["dlsoda_atol"],
             "dlsoda_atol_z = %s\n" % 1e-6
             + "dlsoda_atol_d = %s\n" % 1e-7
             + "dlsoda_atol_o = %s\n" % 1e-6,
         )
+        args.qed_corrections = "o3ln"
+        with patch(
+            "prepareIni.oscParams",
+            return_value={"factors": [2, 1], "sterile": [False, True]},
+        ) as _op:
+            values = pim.getIniValues(args)
+        self.assertEqual(values["ftqed_temperature_corr"], "T")
+        self.assertEqual(values["ftqed_ord3"], "T")
+        self.assertEqual(values["ftqed_log_term"], "T")
 
     def test_writeIni(self):
         """test writeIni"""
@@ -2237,6 +2282,9 @@ class TestPrepareIni(unittest.TestCase):
             "y_min": 0.01,
             "y_cen": 1,
             "y_max": 20,
+            "ftqed_temperature_corr": "F",
+            "ftqed_ord3": "T",
+            "ftqed_log_term": "T",
             "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-5
             + "dlsoda_atol_d = %s\n" % 1e-5
             + "dlsoda_atol_o = %s\n" % 1e-5,
@@ -2268,9 +2316,9 @@ class TestPrepareIni(unittest.TestCase):
             "theta34 = 0.3",
             "dm41 = 1.23",
             "collision_offdiag = 1",
-            "ftqed_temperature_corr = T",
+            "ftqed_temperature_corr = F",
             "ftqed_ord3 = T",
-            "ftqed_log_term = F",
+            "ftqed_log_term = T",
             "Nx = 200",
             "x_in = 0.001",
             "x_fin = 35",
