@@ -1457,7 +1457,131 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_plotNeff(self):
         """test plotNeff"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotNeff"))
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.nnu = 2
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotNeff()
+            run.Neffdat = np.array([[np.nan, np.nan], [np.nan, np.nan]])
+            run.plotNeff()
+            run.rho = self.explanatory.rho
+            run.plotNeff()
+            self.assertEqual(_plt.call_count, 0)
+        run.zdat = np.array([[0.1, 1.1, 1.0], [1, 1.2, 1.1], [10, 1.3, 1.1]])
+        data = [
+            [
+                0.1,
+                8.0 / 7.0 * 3.0 / (fpom.PISQD15 * 1.1 ** 4),
+                8.0
+                / 7.0
+                * 3.0
+                / (fpom.PISQD15 * 1.1 ** 4)
+                * (11.0 / 4.0) ** (4.0 / 3.0),
+            ],
+            [
+                1.0,
+                8.0 / 7.0 * 3.3 / (fpom.PISQD15 * 1.2 ** 4),
+                8.0
+                / 7.0
+                * 3.3
+                / (fpom.PISQD15 * 1.2 ** 4)
+                * (11.0 / 4.0) ** (4.0 / 3.0),
+            ],
+            [
+                10.0,
+                8.0 / 7.0 * 3.6 / (fpom.PISQD15 * 1.3 ** 4),
+                8.0
+                / 7.0
+                * 3.6
+                / (fpom.PISQD15 * 1.3 ** 4)
+                * (11.0 / 4.0) ** (4.0 / 3.0),
+            ],
+        ]
+        data = np.asarray(data)
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "numpy.savetxt"
+        ) as _sv, patch(
+            "fortepianoOutput.FortEPiaNORun.integrateRho_yn",
+            side_effect=[1.0, 2.0, 1.1, 2.2, 1.2, 2.4],
+        ) as _int:
+            run.plotNeff()
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0], fpom.stripRepeated(data, 0, 1),
+            )
+            self.assertEqual(
+                _plt.call_args[1], {"ls": "-", "c": "k", "label": run.label},
+            )
+            self.assertEqual(_sv.call_args[0][0], os.path.join(run.folder, "Neff.dat"))
+            self.assertEqualArray(_sv.call_args[0][1], data)
+            self.assertEqual(_sv.call_args[1], {"fmt": "%.7e"})
+            _int.assert_has_calls(
+                [call(ii, 3, ix=jj) for ii in [0, 1] for jj in [0, 1, 2]],
+                any_order=True,
+            )
+        del run.rho
+        del run.zdat
+        run.Neffdat = data
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "numpy.savetxt"
+        ) as _sv, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch(
+            "fortepianoOutput.FortEPiaNORun.integrateRho_yn"
+        ) as _int:
+            run.plotNeff(axes=False, lc="r", ls=":", lab="mylabel")
+            _xs.assert_called_once_with("log")
+            _xl.assert_called_once_with("$x$")
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0], fpom.stripRepeated(data, 0, 1),
+            )
+            self.assertEqual(
+                _plt.call_args[1], {"ls": ":", "c": "r", "label": "mylabel"},
+            )
+            self.assertEqual(_sv.call_count, 0)
+            self.assertEqual(_int.call_count, 0)
+        plt.figure()
+        ax = plt.gca()
+        ax1 = ax.twiny()
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "numpy.savetxt"
+        ) as _sv, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch(
+            "fortepianoOutput.FortEPiaNORun.integrateRho_yn"
+        ) as _int, patch(
+            "matplotlib.pyplot.gca", return_value=ax
+        ) as _gca, patch(
+            "matplotlib.pyplot.Axes.twinx", return_value=ax1
+        ) as _twx, patch(
+            "matplotlib.pyplot.Axes.set_ylim"
+        ) as _syl, patch(
+            "matplotlib.pyplot.Axes.set_ylabel"
+        ) as _sya:
+            run.plotNeff()
+            _xs.assert_called_once_with("log")
+            _xl.assert_called_once_with("$x$")
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0], fpom.stripRepeated(data, 0, 1),
+            )
+            self.assertEqual(_sv.call_count, 0)
+            self.assertEqual(_int.call_count, 0)
+            _gca.assert_called_once_with()
+            _twx.assert_called_once_with()
+            _syl.assert_any_call([0.5, 4.5])
+            self.assertEqualArray(
+                _syl.call_args_list[1][0][0],
+                np.asarray([0.5, 4.5]) * (11.0 / 4) ** (4.0 / 3),
+            )
+            _sya.assert_any_call(r"$N_{\rm eff}^{\rm in}$")
+            _sya.assert_any_call(r"$N_{\rm eff}^{\rm now}$")
+            run.plotNeff(nefflims=[1.5, 2.5])
+            self.assertEqualArray(_syl.call_args_list[2][0][0], [1.5, 2.5])
+            self.assertEqualArray(
+                _syl.call_args_list[3][0][0],
+                np.asarray([1.5, 2.5]) * (11.0 / 4) ** (4.0 / 3),
+            )
 
     def test_plotEnergyDensity(self):
         """test plotEnergyDensity"""

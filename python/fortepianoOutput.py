@@ -1037,11 +1037,10 @@ class FortEPiaNORun:
         if axes:
             ax = plt.gca()
             ax.set_ylim(nefflims)
-            lims = ax.get_ylim()
             ax1 = ax.twinx()
             ax.set_ylabel(r"$N_{\rm eff}^{\rm in}$")
             ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}$")
-            ax1.set_ylim(np.asarray(lims) * (11.0 / 4) ** (4.0 / 3))
+            ax1.set_ylim(np.asarray(nefflims) * (11.0 / 4) ** (4.0 / 3))
 
     def plotEnergyDensity(
         self,
