@@ -1064,7 +1064,7 @@ class FortEPiaNORun:
         styles=["-", "-", "-", ":", "-.", "--", "-"],
         skip=[False, False, False, False, False, False, False],
         lw=1,
-        allstyles=False,
+        allstyles=None,
         alllabels=None,
     ):
         """Plot the evolution of the single components
@@ -1101,7 +1101,7 @@ class FortEPiaNORun:
             skip (default [False]*7): True or False for each line
                 to skip it and do not plot it
             lw (default 1): line width for the lines
-            allstyles (default False): if it evaluates to True,
+            allstyles (default None): if it evaluates to True,
                 a common line style for the all the lines
             alllabels (default None): if it evaluates to True,
                 a common label for all the lines
@@ -1129,6 +1129,7 @@ class FortEPiaNORun:
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
+                    lw=lw,
                 )
             except IndexError:
                 pass
@@ -1172,7 +1173,7 @@ class FortEPiaNORun:
         styles=["-", "-", "-", ":", "-.", "--", "-"],
         skip=[False, False, False, False, False, False, False],
         lw=1,
-        allstyles=False,
+        allstyles=None,
         alllabels=None,
     ):
         """Plot the evolution of the single components
@@ -1209,7 +1210,7 @@ class FortEPiaNORun:
             skip (default [False]*7): True or False for each line
                 to skip it and do not plot it
             lw (default 1): line width for the lines
-            allstyles (default False): if it evaluates to True,
+            allstyles (default None): if it evaluates to True,
                 a common line style for the all the lines
             alllabels (default None): if it evaluates to True,
                 a common label for all the lines

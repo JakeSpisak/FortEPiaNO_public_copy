@@ -1461,11 +1461,441 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_plotEnergyDensity(self):
         """test plotEnergyDensity"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotEnergyDensity"))
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEnergyDensity()
+            run.endens = None
+            run.plotEnergyDensity()
+            run.endens = [0, 1, 2]
+            run.plotEnergyDensity()
+            self.assertEqual(_plt.call_count, 0)
+        run = self.explanatory
+        colors = ["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]
+        styles = ["-", "-", "-", ":", "-.", "--", "-"]
+        skip = [False, False, False, False, False, False, False]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEnergyDensity()
+            self.assertEqual(_plt.call_count, 9)
+            self.assertEqualArray(
+                _plt.call_args_list[0][0],
+                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+            )
+            self.assertEqual(
+                _plt.call_args_list[0][1],
+                {"label": "total", "c": "k", "ls": "-", "lw": 1,},
+            )
+            for ix, lab in enumerate(
+                [r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$", r"$\nu_\mu$", r"$\nu_\tau$",]
+            ):
+                self.assertEqualArray(
+                    _plt.call_args_list[1 + ix][0],
+                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[1 + ix][1],
+                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 1,},
+                )
+            self.assertEqualArray(
+                _plt.call_args_list[-2][0],
+                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-2][1],
+                {"label": r"$\gamma+e$", "c": "#00ccff", "ls": ":", "lw": 1,},
+            )
+            self.assertEqualArray(
+                _plt.call_args_list[-1][0],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                ],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-1][1],
+                {"label": r"$\gamma+e+\mu$", "c": "#6666ff", "ls": "--", "lw": 1,},
+            )
+        # some tweaks on the inputs
+        run.endens = np.c_[run.endens, run.endens[:, 7]]
+        colors = ["b", "w", "m", "#ff9933", "c", "#ff9933", "#ff00ff"]
+        styles = [":", "-", ".", ":", ".", ":", "-"]
+        skip = [False, True, False, False, True, True, False]
+        labels = [
+            r"a$\gamma$",
+            "a$e$",
+            r"a$\mu$",
+            r"a$\nu_e$",
+            r"a$\nu_\mu$",
+            r"a$\nu_\tau$",
+            r"a$\nu_s$",
+        ]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEnergyDensity(
+                gamma_e=True,
+                gec="#002233",
+                ges="-",
+                gamma_e_mu=True,
+                gemc="#557788",
+                gems=":",
+                labels=labels,
+                colors=colors,
+                styles=styles,
+                skip=skip,
+                lw=2,
+            )
+            self.assertEqual(_plt.call_count, 7)
+            self.assertEqualArray(
+                _plt.call_args_list[0][0],
+                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+            )
+            self.assertEqual(
+                _plt.call_args_list[0][1],
+                {"label": "total", "c": "k", "ls": "-", "lw": 2,},
+            )
+            ii = 1
+            for ix, lab in enumerate(labels):
+                if skip[ix]:
+                    continue
+                self.assertEqualArray(
+                    _plt.call_args_list[ii][0],
+                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ii][1],
+                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 2,},
+                )
+                ii += 1
+            self.assertEqualArray(
+                _plt.call_args_list[-2][0],
+                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-2][1],
+                {"label": r"$\gamma+e$", "c": "#002233", "ls": "-", "lw": 2,},
+            )
+            self.assertEqualArray(
+                _plt.call_args_list[-1][0],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                ],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-1][1],
+                {"label": r"$\gamma+e+\mu$", "c": "#557788", "ls": ":", "lw": 2,},
+            )
+        skip = [False, False, False, False, False, False, False]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEnergyDensity(
+                gamma_e=False,
+                gec="#002233",
+                ges="-",
+                gamma_e_mu=False,
+                gemc="#557788",
+                gems=":",
+                labels=labels,
+                colors=colors,
+                styles=styles,
+                skip=skip,
+                lw=2,
+            )
+            self.assertEqual(_plt.call_count, 8)
+            self.assertEqualArray(
+                _plt.call_args_list[0][0],
+                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+            )
+            self.assertEqual(
+                _plt.call_args_list[0][1],
+                {"label": "total", "c": "k", "ls": "-", "lw": 2,},
+            )
+            ii = 1
+            for ix, lab in enumerate(labels):
+                if skip[ix]:
+                    continue
+                self.assertEqualArray(
+                    _plt.call_args_list[ii][0],
+                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ii][1],
+                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 2,},
+                )
+                ii += 1
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEnergyDensity(
+                gamma_e=True,
+                gec="#002233",
+                ges="-",
+                gamma_e_mu=True,
+                gemc="#557788",
+                gems=":",
+                labels=labels,
+                colors=colors,
+                styles=styles,
+                skip=skip,
+                allstyles="--",
+                alllabels="newlab",
+                lw=2,
+            )
+            self.assertEqual(_plt.call_count, 10)
+            self.assertEqualArray(
+                _plt.call_args_list[0][0],
+                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+            )
+            self.assertEqual(
+                _plt.call_args_list[0][1],
+                {"label": "newlab", "c": "k", "ls": "--", "lw": 2,},
+            )
+            ii = 1
+            for ix, lab in enumerate(labels):
+                if skip[ix]:
+                    continue
+                self.assertEqualArray(
+                    _plt.call_args_list[ii][0],
+                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ii][1],
+                    {"label": "newlab", "c": colors[ix], "ls": "--", "lw": 2,},
+                )
+                ii += 1
+            self.assertEqualArray(
+                _plt.call_args_list[-2][0],
+                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-2][1],
+                {"label": "newlab", "c": "#002233", "ls": "--", "lw": 2,},
+            )
+            self.assertEqualArray(
+                _plt.call_args_list[-1][0],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                ],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-1][1],
+                {"label": "newlab", "c": "#557788", "ls": "--", "lw": 2,},
+            )
 
     def test_plotEntropy(self):
         """test plotEntropy"""
-        self.assertTrue(hasattr(fpom.FortEPiaNORun, "plotEntropy"))
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEntropy()
+            run.entropy = None
+            run.plotEntropy()
+            run.entropy = [0, 1, 2]
+            run.plotEntropy()
+            self.assertEqual(_plt.call_count, 0)
+        run = self.explanatory
+        colors = ["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]
+        styles = ["-", "-", "-", ":", "-.", "--", "-"]
+        skip = [False, False, False, False, False, False, False]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEntropy()
+            self.assertEqual(_plt.call_count, 9)
+            self.assertEqualArray(
+                _plt.call_args_list[0][0],
+                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+            )
+            self.assertEqual(
+                _plt.call_args_list[0][1],
+                {"label": "total", "c": "k", "ls": "-", "lw": 1,},
+            )
+            for ix, lab in enumerate(
+                [r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$", r"$\nu_\mu$", r"$\nu_\tau$",]
+            ):
+                self.assertEqualArray(
+                    _plt.call_args_list[1 + ix][0],
+                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[1 + ix][1],
+                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 1,},
+                )
+            self.assertEqualArray(
+                _plt.call_args_list[-2][0],
+                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-2][1],
+                {"label": r"$\gamma+e$", "c": "#00ccff", "ls": ":", "lw": 1,},
+            )
+            self.assertEqualArray(
+                _plt.call_args_list[-1][0],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                ],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-1][1],
+                {"label": r"$\gamma+e+\mu$", "c": "#6666ff", "ls": "--", "lw": 1,},
+            )
+        # some tweaks on the inputs
+        run.entropy = np.c_[run.entropy, run.entropy[:, 7]]
+        colors = ["b", "w", "m", "#ff9933", "c", "#ff9933", "#ff00ff"]
+        styles = [":", "-", ".", ":", ".", ":", "-"]
+        skip = [False, True, False, False, True, True, False]
+        labels = [
+            r"a$\gamma$",
+            "a$e$",
+            r"a$\mu$",
+            r"a$\nu_e$",
+            r"a$\nu_\mu$",
+            r"a$\nu_\tau$",
+            r"a$\nu_s$",
+        ]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEntropy(
+                gamma_e=True,
+                gec="#002233",
+                ges="-",
+                gamma_e_mu=True,
+                gemc="#557788",
+                gems=":",
+                labels=labels,
+                colors=colors,
+                styles=styles,
+                skip=skip,
+                lw=2,
+            )
+            self.assertEqual(_plt.call_count, 7)
+            self.assertEqualArray(
+                _plt.call_args_list[0][0],
+                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+            )
+            self.assertEqual(
+                _plt.call_args_list[0][1],
+                {"label": "total", "c": "k", "ls": "-", "lw": 2,},
+            )
+            ii = 1
+            for ix, lab in enumerate(labels):
+                if skip[ix]:
+                    continue
+                self.assertEqualArray(
+                    _plt.call_args_list[ii][0],
+                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ii][1],
+                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 2,},
+                )
+                ii += 1
+            self.assertEqualArray(
+                _plt.call_args_list[-2][0],
+                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-2][1],
+                {"label": r"$\gamma+e$", "c": "#002233", "ls": "-", "lw": 2,},
+            )
+            self.assertEqualArray(
+                _plt.call_args_list[-1][0],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                ],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-1][1],
+                {"label": r"$\gamma+e+\mu$", "c": "#557788", "ls": ":", "lw": 2,},
+            )
+        skip = [False, False, False, False, False, False, False]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEntropy(
+                gamma_e=False,
+                gec="#002233",
+                ges="-",
+                gamma_e_mu=False,
+                gemc="#557788",
+                gems=":",
+                labels=labels,
+                colors=colors,
+                styles=styles,
+                skip=skip,
+                lw=2,
+            )
+            self.assertEqual(_plt.call_count, 8)
+            self.assertEqualArray(
+                _plt.call_args_list[0][0],
+                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+            )
+            self.assertEqual(
+                _plt.call_args_list[0][1],
+                {"label": "total", "c": "k", "ls": "-", "lw": 2,},
+            )
+            ii = 1
+            for ix, lab in enumerate(labels):
+                if skip[ix]:
+                    continue
+                self.assertEqualArray(
+                    _plt.call_args_list[ii][0],
+                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ii][1],
+                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 2,},
+                )
+                ii += 1
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotEntropy(
+                gamma_e=True,
+                gec="#002233",
+                ges="-",
+                gamma_e_mu=True,
+                gemc="#557788",
+                gems=":",
+                labels=labels,
+                colors=colors,
+                styles=styles,
+                skip=skip,
+                allstyles="--",
+                alllabels="newlab",
+                lw=2,
+            )
+            self.assertEqual(_plt.call_count, 10)
+            self.assertEqualArray(
+                _plt.call_args_list[0][0],
+                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+            )
+            self.assertEqual(
+                _plt.call_args_list[0][1],
+                {"label": "newlab", "c": "k", "ls": "--", "lw": 2,},
+            )
+            ii = 1
+            for ix, lab in enumerate(labels):
+                if skip[ix]:
+                    continue
+                self.assertEqualArray(
+                    _plt.call_args_list[ii][0],
+                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ii][1],
+                    {"label": "newlab", "c": colors[ix], "ls": "--", "lw": 2,},
+                )
+                ii += 1
+            self.assertEqualArray(
+                _plt.call_args_list[-2][0],
+                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-2][1],
+                {"label": "newlab", "c": "#002233", "ls": "--", "lw": 2,},
+            )
+            self.assertEqualArray(
+                _plt.call_args_list[-1][0],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                ],
+            )
+            self.assertEqual(
+                _plt.call_args_list[-1][1],
+                {"label": "newlab", "c": "#557788", "ls": "--", "lw": 2,},
+            )
 
     def test_doAllPlots(self):
         """test doAllPlots"""
