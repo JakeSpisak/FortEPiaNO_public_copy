@@ -103,10 +103,6 @@ for flavor and mass eigenstates if available.
 
 Additionally, the function `integrateRho_yn` provides a fast way to compute the integral of `y^n f(y)`, interpolating over the final energy density that was computed by `FortEPiaNO`.
 
-### 2.3.`dogrid3p1.py`
-Functions to generate the ini files, submit runs, produce plots for a specific grid.
-See `python python/dogrid3p1.py -h` for a detailled description of the accepted arguments.
-
 
 ## 3.Source code
 Should you need to edit the source codes, this is more or less the content of each file:

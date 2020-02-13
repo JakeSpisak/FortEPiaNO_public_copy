@@ -21,7 +21,6 @@ else:
     USE_AUTOSPEC_CLASS = True
 
 
-import dogrid3p1 as dgm
 import fortepianoOutput as fpom
 import prepareIni as pim
 
@@ -31,6 +30,21 @@ except NameError:
     FileNotFoundError = IOError
 
 allPlots = True
+
+
+class Namespace:
+    """Produce a namespace which has attributesto be used
+    instead of dictionary keys,
+    to mimic the output of parse_args.Namespace
+    """
+
+    def __init__(self, **kwargs):
+        """Use the input dictionary to update the instance __dict__
+
+        Parameters:
+            any keyword arguments
+        """
+        self.__dict__.update(kwargs)
 
 
 def setUpModule():
@@ -62,56 +76,6 @@ class FPTestCase(unittest.TestCase):
             a, b: the two np.ndarrays to compare
         """
         self.assertTrue(np.allclose(a, b, equal_nan=True))
-
-
-class TestDogrid3p1(unittest.TestCase):
-    """Testing the dogrid3p1 module"""
-
-    def test_sortFiles(self):
-        """test sortFiles"""
-
-    def test_Namespace(self):
-        """test Namespace"""
-
-    def test_safegetattr(self):
-        """test savegetattr"""
-
-    def test_setParser(self):
-        """test setParser"""
-
-    def test_write_grid_cfg(self):
-        """test write_grid_cfg"""
-
-    def test_read_grid_cfg(self):
-        """test read_grid_cfg"""
-
-    def test_contourplot(self):
-        """test contourplot"""
-        self.assertTrue(hasattr(dgm, "contourplot"))
-
-    def test_call_fill(self):
-        """test call_fill"""
-        self.assertTrue(hasattr(dgm, "call_fill"))
-
-    def test_call_plot(self):
-        """test call_plot"""
-        self.assertTrue(hasattr(dgm, "call_plot"))
-
-    def test_call_prepare(self):
-        """test call_prepare"""
-        self.assertTrue(hasattr(dgm, "call_prepare"))
-
-    def test_call_read(self):
-        """test call_read"""
-        self.assertTrue(hasattr(dgm, "call_read"))
-
-    def test_call_run(self):
-        """test call_run"""
-        self.assertTrue(hasattr(dgm, "call_run"))
-
-    def test_call_ternary(self):
-        """test call_ternary"""
-        self.assertTrue(hasattr(dgm, "call_ternary"))
 
 
 class TestFortepianoOutput(FPTestCase):
@@ -2591,7 +2555,7 @@ class TestPrepareIni(unittest.TestCase):
 
     def test_oscParams(self):
         """test oscParams"""
-        args = dgm.Namespace(**{"use_sinsq": True, "dm21": 1.23, "th12": 0.01,})
+        args = Namespace(**{"use_sinsq": True, "dm21": 1.23, "th12": 0.01,})
         for a in ["a+s", "as", "1p1", "1+1"]:
             args.numodel = a
             self.assertEqual(
@@ -2632,7 +2596,7 @@ class TestPrepareIni(unittest.TestCase):
                     "th12": 0.01,
                 },
             )
-        args = dgm.Namespace(
+        args = Namespace(
             **{
                 "use_sinsq": True,
                 "dm21": 1.23,
@@ -2662,7 +2626,7 @@ class TestPrepareIni(unittest.TestCase):
                     "th12": 0.01,
                 },
             )
-        args = dgm.Namespace(
+        args = Namespace(
             **{
                 "use_sinsq": False,
                 "dm21": 1.23,
@@ -2712,7 +2676,7 @@ class TestPrepareIni(unittest.TestCase):
                         }
                     )
                     self.assertEqual(pim.oscParams(args), res)
-        args = dgm.Namespace(
+        args = Namespace(
             **{
                 "use_sinsq": True,
                 "dm21": 8e-5,
@@ -2791,7 +2755,7 @@ class TestPrepareIni(unittest.TestCase):
     def test_getIniValues(self):
         """test getIniValues"""
         self.maxDiff = None
-        args = dgm.Namespace(
+        args = Namespace(
             **{
                 "verbose": "vb",
                 "collisional": "zero",
@@ -2855,7 +2819,7 @@ class TestPrepareIni(unittest.TestCase):
                 "ftqed_log_term": "F",
             },
         )
-        args = dgm.Namespace(
+        args = Namespace(
             **{
                 "verbose": "vb",
                 "collisional": "complete",
