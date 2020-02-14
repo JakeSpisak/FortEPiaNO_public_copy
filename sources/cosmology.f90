@@ -75,12 +75,18 @@ module fpCosmology
 		integrand_rho_nonRel = Emk * fermiDirac(Emk/z)
 	end function integrand_rho_nonRel
 
-	pure function integrand_uX_Ek_nonRel(u, w, n)
+	pure function integrand_uX_Ek_nonRel(u, x, z, mf, elTherMass, n)
 		real(dl) :: integrand_uX_Ek_nonRel
-		real(dl), intent(in) :: u, w
+		real(dl), intent(in) :: u, x, z, mf
+		logical, intent(in) :: elTherMass
 		integer, intent(in) :: n
-		real(dl) :: squ2w2, expsqu2w2
-		squ2w2 = E_k_m(u, w)
+		real(dl) :: w, squ2w2, expsqu2w2
+		w = x*mf/z
+		if (elTherMass) then
+			squ2w2 = Ebare_i_dme(u, w, dme2_electronFull(x, u, z))
+		else
+			squ2w2 = E_k_m(u, w)
+		end if
 		expsqu2w2 = exp(squ2w2)
 		integrand_uX_Ek_nonRel = u**n/(squ2w2*(1.d0+expsqu2w2))
 	end function integrand_uX_Ek_nonRel
@@ -114,30 +120,30 @@ module fpCosmology
 #endif
 	end function nonRelativistic_energyDensity
 
-	pure function integrate_uX_Ek_nonRel(w, n)
+	pure function integrate_uX_Ek_nonRel(x, z, mf, elTherMass, n)
 		!computes the integral of u**n/(sqrt(u**2+w**2)(1+exp(sqrt(u**2+w**2))))
 		!useful to get the pressure for non-relativistic species
 		real(dl) :: integrate_uX_Ek_nonRel
-		real(dl), intent(in) :: w
+		real(dl), intent(in) :: x, z, mf
 		integer, intent(in) :: n
+		logical, intent(in) :: elTherMass
 		integer :: i
 		integrate_uX_Ek_nonRel = 0.d0
 		do i = 1, N_opt_xoz
 			integrate_uX_Ek_nonRel = integrate_uX_Ek_nonRel &
-				+ opt_y_w(i)*integrand_uX_Ek_nonRel(opt_y(i), w, n-2)!n-2 because the weights already take into account y^2
+				+ opt_y_w(i)*integrand_uX_Ek_nonRel(opt_y(i), x, z, mf, elTherMass, n-2)!n-2 because the weights already take into account y^2
 		end do
 		integrate_uX_Ek_nonRel = integrate_uX_Ek_nonRel/PISQx2
 	end function integrate_uX_Ek_nonRel
 
-	pure function nonRelativistic_pressure(cls, x, z) result(press)
+	pure function nonRelativistic_pressure(cls, x, z, elTherMass) result(press)
 		real(dl) :: press
 		class(nonRelativistic_fermion), intent(in) :: cls
 		real(dl), intent(in) :: x, z
-		real(dl) :: t
+		logical, intent(in) :: elTherMass
 
 		if (x .lt. cls%x_enDens_cut) then
-			t = cls%mass_factor*x/z
-			press = 4.d0*z**4/3.d0*(integrate_uX_Ek_nonRel(t, 4))
+			press = 4.d0*z**4/3.d0*(integrate_uX_Ek_nonRel(x, z, cls%mass_factor, elTherMass, 4))
 		else
 			press = 0.d0
 		end if
@@ -149,7 +155,7 @@ module fpCosmology
 		real(dl), intent(in) :: x, z
 
 		if (x .lt. cls%x_enDens_cut) then
-			entropy = (cls%energyDensity(x, z) + cls%pressure(x, z))/z
+			entropy = (cls%energyDensity(x, z) + cls%pressure(x, z, .false.))/z
 		else
 			entropy = 0.d0
 		end if
