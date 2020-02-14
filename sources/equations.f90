@@ -38,9 +38,9 @@ module fpEquations
 
 		leptonDensities = 0.d0
 		ldf = leptDensFactor / x**6
-		leptonDensities(1,1) = ldf * electrons%energyDensity(x, z)
+		leptonDensities(1,1) = ldf * (electrons%energyDensity(x, z) + electrons%pressure(x, z))
 		if (flavorNumber.gt.2) &
-			leptonDensities(2,2) = ldf * muons%energyDensity(x, z)
+			leptonDensities(2,2) = ldf * (muons%energyDensity(x, z) + muons%pressure(x, z))
 
 		nuDensities%re = 0.d0
 		nuDensities%im = 0.d0
@@ -59,6 +59,7 @@ module fpEquations
 				nuDensities%im(iy, ix) = - nuDensities%im(ix, iy)
 			end do
 		end do
+		ldf = ldf*4.d0/3.d0
 		nuDensities%re(:,:) = nuDensities%re(:,:) * ldf * (cos2thW)
 		nuDensities%im(:,:) = nuDensities%im(:,:) * ldf * (cos2thW)
 	end subroutine updateMatterDensities

@@ -59,7 +59,7 @@ module constants
 	real(dl), parameter :: i_dm21 = 7.37e-05
 	real(dl), parameter :: i_dm31 = 0.00256
 
-	real(dl), parameter :: leptDensFactor = -8*SQRT2*G_F*m_e**6/(3*m_W**2)
+	real(dl), parameter :: leptDensFactor = -2*SQRT2*G_F*m_e**6/(m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
 	real(dl), parameter :: overallFactor = planck_mass / sqrt(PIx8D3)
 	real(dl), parameter :: dampTermFactor = -7.d0*PISQ*PISQ/135.d0

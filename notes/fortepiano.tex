@@ -110,7 +110,9 @@ Other matrices that we need to define are
 \begin{equation}\label{eq:matterpotentials_nxn}
 \mathbb{E}_\ell=\text{diag}(\rho_e, \rho_\mu, 0, \ldots)\,,
 \qquad
-\mathbb{E}_\nu=S_a\left(\int \mathrm{d}y y^3\varrho\right) S_a\,
+\mathbb{P}_\ell=\text{diag}(P_e, P_\mu, 0, \ldots)\,,
+\qquad
+\mathbb{E}_\nu=S_a\frac{1}{\pi^2}\left(\int \mathrm{d}y y^3\varrho\right) S_a\,
 \quad\mbox{with }S_a=\text{diag}(1,1,1,0,\ldots)\,,
 \end{equation}
 while the interaction matrices used in the the collision terms,
@@ -343,11 +345,11 @@ The differential equations which the code solves are the following
     \left[
         \frac{\mathbb{M}_{\rm F}}{2y}
         -
-        \frac{8\sqrt{2}G_{\rm F} y m_e^6}{3x^6}
+        \frac{2\sqrt{2}G_{\rm F} y m_e^6}{x^6}
         \left(
-            \frac{\mathbb{E}_\ell}{m_W^2}
+            \frac{\mathbb{E}_\ell+\mathbb{P}_\ell}{m_W^2}
             +
-            \frac{\mathbb{E}_\nu}{m_Z^2}
+            \frac{4}{3}\,\frac{\mathbb{E}_\nu}{m_Z^2}
         \right),
     \varrho
     \right]
