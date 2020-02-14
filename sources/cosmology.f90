@@ -43,7 +43,7 @@ module fpCosmology
 		rho_r = photonDensity(z) &
 			+ allNuDensity()
 		do ix=1, fermions_number
-			rho_r = rho_r + fermions(ix)%energyDensity(x,z)
+			rho_r = rho_r + fermions(ix)%energyDensity(x, z)
 		end do
 		rho_r = rho_r + deltaRhoTot_em(x, z)
 	end function
@@ -63,10 +63,15 @@ module fpCosmology
 	end function photonEntropy
 
 	!functions for non relativistic particles
-	pure function integrand_rho_nonRel(x, z, y)
+	pure function integrand_rho_nonRel(x, z, y, elTherMass)
 		real(dl) :: integrand_rho_nonRel, Emk
 		real(dl), intent(in) :: x, z, y
-		Emk = E_k_m(y, x)
+		logical, intent(in) :: elTherMass
+		if (elTherMass) then
+			Emk = Ebare_i_dme(x, y, dme2_electronFull(x, y, z))
+		else
+			Emk = E_k_m(y, x)
+		end if
 		integrand_rho_nonRel = Emk * fermiDirac(Emk/z)
 	end function integrand_rho_nonRel
 
@@ -80,16 +85,17 @@ module fpCosmology
 		integrand_uX_Ek_nonRel = u**n/(squ2w2*(1.d0+expsqu2w2))
 	end function integrand_uX_Ek_nonRel
 
-	pure function nonRelativistic_energyDensity_full(cls, x, z) result (nredf)!fermion + antifermion
+	pure function nonRelativistic_energyDensity_full(cls, x, z, elTherMass) result (nredf)!fermion + antifermion
 		class(nonRelativistic_fermion), intent(in) :: cls
 		real(dl) :: nredf
 		real(dl), intent(in) :: x,z
+		logical, intent(in) :: elTherMass
 		integer :: i
 
 		nredf = 0.d0
 		if (x .lt. cls%x_enDens_cut) then
 			do i=1, N_opt_y
-				nredf = nredf + opt_y_w(i)* integrand_rho_nonRel(x*cls%mass_factor, z, opt_y(i))
+				nredf = nredf + opt_y_w(i)* integrand_rho_nonRel(x*cls%mass_factor, z, opt_y(i), elTherMass)
 			end do
 			nredf = nredf / PISQD2
 			!the factor is given by g = 2(elicity) * 2(f+\bar f)
@@ -102,7 +108,7 @@ module fpCosmology
 		real(dl), intent(in) :: x, z
 
 #ifdef NOINTERPOLATION
-		ed = nonRelativistic_energyDensity_full(cls, x, z)
+		ed = nonRelativistic_energyDensity_full(cls, x, z, .false.)
 #else
 		call cls%enDensInterp%evaluate(x, z, ed)
 #endif
@@ -170,7 +176,7 @@ module fpCosmology
 		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
 			do iz=1, interp_nz
-				ed_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz))
+				ed_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .false.)
 			end do
 		end do
 		!$omp end parallel do
@@ -182,7 +188,7 @@ module fpCosmology
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
 		write(*,"(' [cosmo] test energyDensity interpolation in ',*(E12.5))") x, z
-		t1 = cls%energyDensityFull(x, z)
+		t1 = cls%energyDensityFull(x, z, .false.)
 		t2 = cls%energyDensity(x, z)
 		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
 #endif

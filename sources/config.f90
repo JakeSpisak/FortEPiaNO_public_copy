@@ -364,6 +364,7 @@ module fpConfig
 			ftqed_temperature_corr = read_ini_logical("ftqed_temperature_corr",.true.)
 			ftqed_log_term = read_ini_logical("ftqed_log_term",.false.)
 			ftqed_ord3 = read_ini_logical("ftqed_ord3",.true.)
+			ftqed_e_mth_leptondens = read_ini_logical("ftqed_e_mth_leptondens",.true.)
 
 			!settings for saving files
 			save_fd = read_ini_logical("save_fd", .true.)

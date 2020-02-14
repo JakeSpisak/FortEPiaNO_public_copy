@@ -11,13 +11,6 @@ module fpInteractions
 
 	contains
 
-	elemental function Ebare_i_dme(x, y, dme2)!for electrons
-		real(dl) :: Ebare_i_dme
-		real(dl), intent(in) :: x, y, dme2
-
-		Ebare_i_dme = sqrt(x*x+y*y+dme2)
-	end function Ebare_i_dme
-
 	!phase space
 	pure function F_ab_ann_re(n1, n2, f3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
 	!doi:10.1088/1475-7516/2016/07/051 eq. 2.5

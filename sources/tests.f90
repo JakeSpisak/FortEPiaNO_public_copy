@@ -92,6 +92,7 @@ program tests
 		ftqed_temperature_corr = .true.
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
+		ftqed_e_mth_leptondens = .false.
 		flavorNumber = 3
 		flavNumSqu = flavorNumber**2
 		call allocateStuff
@@ -423,11 +424,11 @@ program tests
 		end do
 
 		call printTestBlockName("Cosmology")
-		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0), 1.06283d0, 1d-4)
-		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.32d0), 3.49493d0, 1d-4)
-		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(1.d1, 1.2d0), 0.0377723d0, 1d-4)
-		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(2.d1, 1.2d0), 0.0000421964d0, 1d-4)
-		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0), 2.61468d-8, 5d-3)
+		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0, .false.), 1.06283d0, 1d-4)
+		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.32d0, .false.), 3.49493d0, 1d-4)
+		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(1.d1, 1.2d0, .false.), 0.0377723d0, 1d-4)
+		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(2.d1, 1.2d0, .false.), 0.0000421964d0, 1d-4)
+		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0, .false.), 2.61468d-8, 5d-3)
 		call assert_double_rel("elDens test 1", electrons%energyDensity(1.d0, 1.d0), 1.06283d0, 1d-4)
 		call assert_double_rel("elDens test 2", electrons%energyDensity(0.076d0, 1.32d0), 3.49493d0, 1d-4)
 		call assert_double_rel("elDens test 3", electrons%energyDensity(1.d1, 1.2d0), 0.0377723d0, 1d-2)
@@ -576,12 +577,12 @@ program tests
 		end do
 		call assert_double("Neff test 5", Neff_from_rho_z(1.39779d0), 3.045d0, 1d-3)
 
-		call assert_double("muonDensF test 1", muons%energyDensityFull(1.d0, 1.d0), 0.d0, 1d-15)
-		call assert_double_rel("muonDensF test 2", muons%energyDensityFull(0.1d0, 1.32d0), 0.000146007d0, 1d-4)
-		call assert_double_rel("muonDensF test 3", muons%energyDensityFull(0.01d0, 1.2d0), 1.86472d0, 1d-4)
-		call assert_double_rel("muonDensF test 4", muons%energyDensityFull(3.d-3, 1.2d0), 2.3396d0, 1d-4)
-		call assert_double_rel("muonDensF test 5", muons%energyDensityFull(1.d-3, 1.d0), 1.14785d0, 1d-4)
-		call assert_double("muonDensF test 6", muons%energyDensityFull(4.d0, 1.3d0), 0.d0, 1d-15)
+		call assert_double("muonDensF test 1", muons%energyDensityFull(1.d0, 1.d0, .false.), 0.d0, 1d-15)
+		call assert_double_rel("muonDensF test 2", muons%energyDensityFull(0.1d0, 1.32d0, .false.), 0.000146007d0, 1d-4)
+		call assert_double_rel("muonDensF test 3", muons%energyDensityFull(0.01d0, 1.2d0, .false.), 1.86472d0, 1d-4)
+		call assert_double_rel("muonDensF test 4", muons%energyDensityFull(3.d-3, 1.2d0, .false.), 2.3396d0, 1d-4)
+		call assert_double_rel("muonDensF test 5", muons%energyDensityFull(1.d-3, 1.d0, .false.), 1.14785d0, 1d-4)
+		call assert_double("muonDensF test 6", muons%energyDensityFull(4.d0, 1.3d0, .false.), 0.d0, 1d-15)
 
 		call assert_double("muonDens test 1", muons%energyDensity(1.d0, 1.d0), 0.d0, 1d-15)
 		call assert_double_rel("muonDens test 2", muons%energyDensity(1.d-1, 1.32d0), 0.000146007d0, 1.1d-2)

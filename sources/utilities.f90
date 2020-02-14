@@ -200,6 +200,13 @@ module utilities
 		E_k_m = sqrt(k*k+m*m)
 	end function E_k_m
 
+	elemental function Ebare_i_dme(x, y, dme2)!for electrons
+		real(dl) :: Ebare_i_dme
+		real(dl), intent(in) :: x, y, dme2
+
+		Ebare_i_dme = sqrt(x*x+y*y+dme2)
+	end function Ebare_i_dme
+
 	elemental function fermiDirac(x)
 		real(dl) :: fermiDirac
 		real(dl), intent(in) :: x

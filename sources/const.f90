@@ -86,6 +86,7 @@ module variables
 	logical :: ftqed_temperature_corr
 	logical :: ftqed_log_term
 	logical :: ftqed_ord3
+	logical :: ftqed_e_mth_leptondens
 	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 	logical :: save_energy_entropy_evolution
 
