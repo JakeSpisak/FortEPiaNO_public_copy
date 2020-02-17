@@ -443,7 +443,7 @@ enddo                                                   !SG-PF
 				call random_number(z)
 				x=(x_fin-x_in)*x + x_in
 				z=0.4d0*z + z_in
-				t1 = electrons%energyDensity(x,z)
+				t1 = electrons%energyDensity(x,z, .false.)
 			end do
 			call toc(timer1, "<interpolated>")
 

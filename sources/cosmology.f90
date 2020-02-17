@@ -8,23 +8,22 @@ module fpCosmology
 	use linear_interpolation_module
 	implicit none
 
-#ifndef NOINTERPOLATION
-	type(linear_interp_2d) :: elDens, muDens
-#endif
-
 	type nonRelativistic_fermion
 		character(len=20) :: fermionName
 		logical :: isElectron !if true, compute the electromagnetic corrections to the mass
 		real(dl) :: mass_factor !mass of the particle divided by electron mass
 		real(dl) :: x_enDens_cut !for x larger than this, do not consider this particle (fix energy density and other things to 0)
-		type(linear_interp_2d) :: enDensInterp !information for interpolating the energy density
+		type(linear_interp_2d) :: enDensNoThMassInterp !information for interpolating the energy density without thermal mass corrections (for total energy density)
+		type(linear_interp_2d) :: enDensWThMassInterp !information for interpolating the energy density with thermal mass corrections (for lepton matter potentials)
+		type(linear_interp_2d) :: pressInterp !information for interpolating the energy density
 		contains
 		procedure :: initialize => nonRelativistic_initialize !save properties and prepare energy density interpolation
 		procedure :: dzodx_terms => nonRelativistic_dzodx_terms !contributions to the dz/dx numerator and denominator
 		procedure :: energyDensityFull => nonRelativistic_energyDensity_full !full integral of the energy density
 		procedure :: energyDensity => nonRelativistic_energyDensity !interpolated energy density
 		procedure :: entropy => nonRelativistic_entropy !entropy
-		procedure :: pressure => nonRelativistic_pressure !pressure
+		procedure :: pressureFull => nonRelativistic_pressure_full !pressure
+		procedure :: pressure => nonRelativistic_pressure !interpolated pressure
 	end type nonRelativistic_fermion
 	
 	integer, parameter :: fermions_number = 2
@@ -43,7 +42,7 @@ module fpCosmology
 		rho_r = photonDensity(z) &
 			+ allNuDensity()
 		do ix=1, fermions_number
-			rho_r = rho_r + fermions(ix)%energyDensity(x, z)
+			rho_r = rho_r + fermions(ix)%energyDensity(x, z, .false.)
 		end do
 		rho_r = rho_r + deltaRhoTot_em(x, z)
 	end function
@@ -108,15 +107,20 @@ module fpCosmology
 		end if
 	end function nonRelativistic_energyDensity_full
 
-	function nonRelativistic_energyDensity(cls, x, z) result (ed)
+	function nonRelativistic_energyDensity(cls, x, z, elTherMass) result (ed)
 		class(nonRelativistic_fermion) :: cls
 		real(dl) :: ed
 		real(dl), intent(in) :: x, z
+		logical, intent(in) :: elTherMass
 
 #ifdef NOINTERPOLATION
-		ed = nonRelativistic_energyDensity_full(cls, x, z, .false.)
+		ed = nonRelativistic_energyDensity_full(cls, x, z, elTherMass)
 #else
-		call cls%enDensInterp%evaluate(x, z, ed)
+		if (cls%isElectron .and. elTherMass) then
+			call cls%enDensWThMassInterp%evaluate(x, z, ed)
+		else
+			call cls%enDensNoThMassInterp%evaluate(x, z, ed)
+		end if
 #endif
 	end function nonRelativistic_energyDensity
 
@@ -136,7 +140,7 @@ module fpCosmology
 		integrate_uX_Ek_nonRel = integrate_uX_Ek_nonRel/PISQx2
 	end function integrate_uX_Ek_nonRel
 
-	pure function nonRelativistic_pressure(cls, x, z, elTherMass) result(press)
+	pure function nonRelativistic_pressure_full(cls, x, z, elTherMass) result(press)
 		real(dl) :: press
 		class(nonRelativistic_fermion), intent(in) :: cls
 		real(dl), intent(in) :: x, z
@@ -147,6 +151,19 @@ module fpCosmology
 		else
 			press = 0.d0
 		end if
+	end function nonRelativistic_pressure_full
+
+	function nonRelativistic_pressure(cls, x, z, elTherMass) result (ed)
+		class(nonRelativistic_fermion) :: cls
+		real(dl) :: ed
+		real(dl), intent(in) :: x, z
+		logical, intent(in) :: elTherMass
+
+#ifdef NOINTERPOLATION
+		ed = nonRelativistic_pressure_full(cls, x, z, elTherMass)
+#else
+		call cls%pressInterp%evaluate(x, z, ed)
+#endif
 	end function nonRelativistic_pressure
 
 	function nonRelativistic_entropy(cls, x, z) result(entropy)
@@ -155,7 +172,7 @@ module fpCosmology
 		real(dl), intent(in) :: x, z
 
 		if (x .lt. cls%x_enDens_cut) then
-			entropy = (cls%energyDensity(x, z) + cls%pressure(x, z, .false.))/z
+			entropy = (cls%energyDensity(x, z, .false.) + cls%pressure(x, z, .false.))/z
 		else
 			entropy = 0.d0
 		end if
@@ -166,7 +183,8 @@ module fpCosmology
 		character(len=*), intent(in) :: fermionName
 		logical, intent(in) :: isElectron
 		real(dl), intent(in) :: mass_factor, xcut
-		real(dl), dimension(:,:), allocatable :: ed_vec
+		real(dl), dimension(:,:), allocatable :: ednt_vec, edwt_vec, p_vec
+		logical :: thmass
 		integer :: ix, iz, iflag
 		real(dl) :: x,z, t1,t2
 		real(8) :: timer1
@@ -178,15 +196,24 @@ module fpCosmology
 		cls%x_enDens_cut = xcut
 
 #ifndef NOINTERPOLATION
-		allocate(ed_vec(interp_nx, interp_nz))
+		allocate(ednt_vec(interp_nx, interp_nz))
+		allocate(edwt_vec(interp_nx, interp_nz))
+		allocate(p_vec(interp_nx, interp_nz))
+		thmass = isElectron .and. ftqed_e_mth_leptondens
 		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
 		do ix=1, interp_nx
 			do iz=1, interp_nz
-				ed_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .false.)
+				if (cls%isElectron) &
+					edwt_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .true.)
+				ednt_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .false.)
+				p_vec(ix,iz) = cls%pressureFull(interp_xvec(ix), interp_zvec(iz), thmass)
 			end do
 		end do
 		!$omp end parallel do
-		call cls%enDensInterp%initialize(interp_xvec, interp_zvec, ed_vec, iflag)!linear
+		if (cls%isElectron) &
+			call cls%enDensWThMassInterp%initialize(interp_xvec, interp_zvec, edwt_vec, iflag)!linear
+		call cls%enDensNoThMassInterp%initialize(interp_xvec, interp_zvec, ednt_vec, iflag)!linear
+		call cls%pressInterp%initialize(interp_xvec, interp_zvec, p_vec, iflag)!linear
 
 		call random_seed()
 		call random_number(x)
@@ -194,8 +221,11 @@ module fpCosmology
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
 		write(*,"(' [cosmo] test energyDensity interpolation in ',*(E12.5))") x, z
-		t1 = cls%energyDensityFull(x, z, .false.)
-		t2 = cls%energyDensity(x, z)
+		t1 = cls%energyDensityFull(x, z, thmass)
+		t2 = cls%energyDensity(x, z, thmass)
+		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
+		t1 = cls%pressureFull(x, z, thmass)
+		t2 = cls%pressure(x, z, thmass)
 		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
 #endif
 		call addToLog("[cosmo] ...done!")

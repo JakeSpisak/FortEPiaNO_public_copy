@@ -39,12 +39,12 @@ module fpEquations
 		leptonDensities = 0.d0
 		ldf = leptDensFactor / x**6
 		leptonDensities(1,1) = ldf * ( &
-			electrons%energyDensityFull(x, z, ftqed_e_mth_leptondens) &
+			electrons%energyDensity(x, z, ftqed_e_mth_leptondens) &
 			+ electrons%pressure(x, z, ftqed_e_mth_leptondens) &
 		)
 		if (flavorNumber.gt.2) &
 			leptonDensities(2,2) = ldf * ( &
-				muons%energyDensityFull(x, z, .false.) &
+				muons%energyDensity(x, z, .false.) &
 				+ muons%pressure(x, z, .false.) &
 			)
 
@@ -488,8 +488,8 @@ module fpEquations
 			call openFile(iu, trim(outputFolder)//'/energyDensity.dat', firstWrite)
 			write(iu, multidblfmt) x, z, &
 				photonDensity(z), &
-				electrons%energyDensity(x, z), &
-				muons%energyDensity(x, z), &
+				electrons%energyDensity(x, z, .false.), &
+				muons%energyDensity(x, z, .false.), &
 				nuEnDens(1:flavorNumber)
 			close(iu)
 			call openFile(iu, trim(outputFolder)//'/entropy.dat', firstWrite)
