@@ -103,6 +103,10 @@ for flavor and mass eigenstates if available.
 
 Additionally, the function `integrateRho_yn` provides a fast way to compute the integral of `y^n f(y)`, interpolating over the final energy density that was computed by `FortEPiaNO`.
 
+### 2.3.`tests.py`
+Testing tools to verify that everything works in the python part, from reading the output folder to plotting.
+Run it if you want to test that you have all the required packages and everything is working in your current setup.
+
 
 ## 3.Source code
 Should you need to edit the source codes, this is more or less the content of each file:
@@ -112,6 +116,7 @@ Should you need to edit the source codes, this is more or less the content of ea
 * `cosmology.f90`: energy density of the various species;
 * `equations.f90`: evolution equations of the various quantities;
 * `fortepiano.f90`: main program;
+* `ftqed.f90`: functions and utilities to compute finite-temperature QED corrections;
 * `interactions.f90`: functions that define the neutrino interactions and the collision terms;
 * `tests.f90`: numerical tests for the software.
 

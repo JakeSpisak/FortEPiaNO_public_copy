@@ -16,7 +16,7 @@ setup(
     long_description=readme(),
     author="S. Gariazzo",
     author_email="stefano.gariazzo@gmail.com",
-    url="https://bitbucket.org/ahep_cosmo/piano/",
+    url="https://bitbucket.org/ahep_cosmo/fortepiano_public/",
     # license="GPL-3.0",
     # keywords="",
     install_requires=[
