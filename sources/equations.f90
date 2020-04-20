@@ -685,7 +685,7 @@ module fpEquations
 		end do
 	end subroutine drhoy_dx_fullMat
 
-	pure subroutine derivative (x, z, m, dme2, sqrtraddens, n, ydot)
+	pure subroutine drho_y_dx(x, z, m, dme2, sqrtraddens, n, ydot)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
 		real(dl), intent(in) :: x, z, dme2, sqrtraddens
 		integer, intent(in) :: m, n
@@ -707,7 +707,7 @@ module fpEquations
 				end do
 			end do
 		end if
-	end subroutine derivative
+	end subroutine drho_y_dx
 
 	subroutine derivatives(n, x, vars, ydot)
 !		compute all the rho derivatives (drho/dx for all y, dz/dx)
@@ -755,7 +755,7 @@ module fpEquations
 		tmpvec = 0
 		!$omp do schedule(static)
 		do m=1, Ny
-			call derivative(x, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
+			call drho_y_dx(x, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
 			s=(m-1)*flavNumSqu
 			ydot(s+1:s+flavNumSqu) = tmpvec(:)
 		end do
