@@ -103,7 +103,6 @@ def setParser():
     )
     parser.add_argument(
         "--default_active",
-        nargs=1,
         choices=["Bari", "NuFit", "VLC", "None"],
         default="VLC",
         help="define the mixing parameters for the active neutrinos as obtained "
@@ -113,7 +112,6 @@ def setParser():
     )
     parser.add_argument(
         "--default_sterile",
-        nargs=1,
         choices=["Gariazzo&al", "None"],
         default="Gariazzo&al",
         help="define the active-sterile mixing parameters as obtained "
@@ -188,7 +186,7 @@ def setParser():
     parser.add_argument("--x_in", type=float, default=0.001, help="initial value of x")
     parser.add_argument("--x_fin", type=float, default=35, help="final value of x")
     parser.add_argument(
-        "--Ny", type=int, default=40, help="number of total points in y"
+        "--Ny", type=int, default=30, help="number of total points in y"
     )
     parser.add_argument(
         "--Nylog",
