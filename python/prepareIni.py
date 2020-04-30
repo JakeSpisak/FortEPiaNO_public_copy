@@ -82,9 +82,15 @@ def setParser():
     )
     parser.add_argument(
         "collisional",
-        choices=["zero", "complete", "damping", "diagonal"],
+        choices=["zero", "complete", "damping", "diagonal", "yyyw_off", "yyyw_all"],
         help="define the scheme for the collision integrals",
     )
+    for c in ["nue", "nunu"]:
+        parser.add_argument(
+            "--damping_no_%s" % c,
+            action="store_true",
+            help="disable %s contributions to damping terms" % c,
+        )
     parser.add_argument(
         "--qed_corrections",
         choices=["no", "o2", "o3", "o2ln", "o3ln"],
@@ -366,6 +372,10 @@ def getIniValues(args):
         if args.collisional == "complete"
         else 2
         if args.collisional == "damping"
+        else 4
+        if args.collisional == "yyyw_off"
+        else 5
+        if args.collisional == "yyyw_all"
         else 3
     )
     if args.qed_corrections == "no":
@@ -374,14 +384,8 @@ def getIniValues(args):
         values["ftqed_log_term"] = "F"
     else:
         values["ftqed_temperature_corr"] = "T"
-        if "o3" in args.qed_corrections:
-            values["ftqed_ord3"] = "T"
-        else:
-            values["ftqed_ord3"] = "F"
-        if "ln" in args.qed_corrections:
-            values["ftqed_log_term"] = "T"
-        else:
-            values["ftqed_log_term"] = "F"
+        values["ftqed_ord3"] = "T" if "o3" in args.qed_corrections else "F"
+        values["ftqed_log_term"] = "T" if "ln" in args.qed_corrections else "F"
     if any(
         [
             a != 1e-6
@@ -402,7 +406,15 @@ def getIniValues(args):
     values["dlsoda_rtol"] = args.dlsoda_rtol
     values["folder"] = args.outputfolder
     values["Nprintderivs"] = args.verbose_deriv_freq
-    for p in ["save_energy_entropy", "save_fd", "save_Neff", "save_nuDens", "save_z"]:
+    for p in [
+        "damping_no_nue",
+        "damping_no_nunu",
+        "save_energy_entropy",
+        "save_fd",
+        "save_Neff",
+        "save_nuDens",
+        "save_z",
+    ]:
         values[p] = "T" if getattr(args, p) else "F"
     values["use_GL"] = "F" if args.no_GL else "T"
     return values

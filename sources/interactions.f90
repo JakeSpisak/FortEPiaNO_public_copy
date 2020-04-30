@@ -11,6 +11,65 @@ module fpInteractions
 
 	contains
 
+	!kappa function for damping terms (YYYW)
+	elemental function kappa_damp(a, b, c)
+		real(dl) :: kappa_damp
+		real(dl), intent(in) :: a, b, c
+		kappa_damp = a*a*(c-b) - 2.d0/3.d0*a* (c**3-b**3) + (c**5-b**5)/5.d0
+	end function kappa_damp
+
+	!function that returns the integrand of the nunu damping coefficient in YYYW terms
+	elemental function nunu_damp_integrand(p, p1, q)
+		real(dl) :: nunu_damp_integrand
+		real(dl), intent(in) :: p, q, p1
+		real(dl) :: q1
+		real(dl) :: as, bs, cs, ap, bp, cp
+		real(dl) :: fq, fp1, fq1
+		q1 = p + q - p1
+
+		cs = p + q
+		as = cs**2
+		bs = max(abs(p-q), abs(p1-q1))
+
+		ap = (q - p1)**2
+		bp = abs(p1 - q)
+		cp = min(p+q1, q+p1)
+
+		fq = fermiDirac(q)
+		fp1 = fermiDirac(p1)
+		fq1 = fermiDirac(q1)
+
+		nunu_damp_integrand = &
+			(kappa_damp(as, bs, cs) + 2.d0 * kappa_damp(ap, bp, cp)) &
+			* ((1.d0-fq)*fp1*fq1 + fq*(1.d0-fp1)*(1.d0-fq1))
+	end function nunu_damp_integrand
+
+	!integral of the above function
+	function dy_damping(y)
+		real(dl) :: dy_damping
+		real(dl), intent(in) :: y
+		integer :: ia, ib
+		integer, parameter :: nydamp = 2**13
+		real(dl), dimension(:), allocatable :: ya, dya
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(ya(nydamp), dya(nydamp))
+		ya = linspace(0.d0, 100.d0, nydamp)
+		do ia=1, nydamp-1
+			dya(ia) = ya(ia+1) - ya(ia)
+		end do
+		allocate(fy2_arr(nydamp, nydamp))
+		fy2_arr = 0.d0
+		do ia=1, nydamp
+			do ib=1, nydamp
+				if (ya(ib) .gt. ya(ia)-y) &
+					fy2_arr(ia, ib) = nunu_damp_integrand(y, ya(ia), ya(ib))
+			end do
+		end do
+		dy_damping = integral_NC_2d(nydamp, nydamp, dya, dya, fy2_arr) / y**3
+		deallocate(ya, dya, fy2_arr)
+	end function dy_damping
+
 	!phase space
 	pure function F_ab_ann_re(n1, n2, f3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)
 	!doi:10.1088/1475-7516/2016/07/051 eq. 2.5
@@ -715,7 +774,7 @@ module fpInteractions
 		procedure (collision_integrand) :: Fint
 		type(cmplxMatNN) :: get_collision_terms
 		procedure (collision_integrator), pointer :: integrator
-		real(dl) :: x, z, y1, cf
+		real(dl) :: x, z, y1, cf, z4
 		integer :: iy1
 		type(coll_args), intent(in) :: collArgsIn
 		type(coll_args) :: collArgs
@@ -727,6 +786,7 @@ module fpInteractions
 
 		x = collArgs%x
 		z = collArgs%z
+		z4 = z**4
 		y1 = collArgs%y1
 		iy1 = collArgs%iy
 
@@ -750,7 +810,14 @@ module fpInteractions
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			if (.not.sterile(i)) then
-				get_collision_terms%re(i,i) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
+				if (collision_offdiag.eq.5) then
+					get_collision_terms%re(i,i) = &
+						- (dampTermMatrixCoeffNue(i,i)+dampTermMatrixCoeffNunu(i,i)) &
+						* dampTermYYYWdy(iy1) &
+						* (nuDensMatVecFD(iy1)%re(i,i) - dampTermYYYWfeq(iy1))
+				else
+					get_collision_terms%re(i,i) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
+				end if
 			end if
 			if (collision_offdiag.eq.1) then
 				do j=i+1, flavorNumber
@@ -758,17 +825,35 @@ module fpInteractions
 					get_collision_terms%re(i,j) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
 					get_collision_terms%im(i,j) = integrator(Fint, collArgs, F_ab_ann_im, F_ab_sc_im)
 #ifndef DO_TESTS
-					get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
-                        + dampTermFactor * dampTermMatrixCoeffNunu(i,j) * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
-					get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
-                        + dampTermFactor * dampTermMatrixCoeffNunu(i,j) * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
+					get_collision_terms%re(i,j) = &
+						get_collision_terms%re(i,j) &
+						+ dampTermFactor * dampTermMatrixCoeffNunu(i,j) &
+						* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
+					get_collision_terms%im(i,j) = &
+						get_collision_terms%im(i,j) &
+						+ dampTermFactor * dampTermMatrixCoeffNunu(i,j) &
+						* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
 #endif
 				end do
 			else if (collision_offdiag.eq.2) then
 				do j=i+1, flavorNumber
-					collArgs%ix2 = j
-					get_collision_terms%re(i,j) = dampTermFactor * (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
-					get_collision_terms%im(i,j) = dampTermFactor * (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
+					get_collision_terms%re(i,j) = &
+						dampTermFactor &
+						* (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
+						* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
+					get_collision_terms%im(i,j) = &
+						dampTermFactor &
+						* (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
+						* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
+				end do
+			else if (collision_offdiag.eq.4 .or. collision_offdiag.eq.5) then
+				do j=i+1, flavorNumber
+					get_collision_terms%re(i,j) = &
+						- (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
+						* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%re(i,j)
+					get_collision_terms%im(i,j) = &
+						- (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
+						* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(i,j)
 				end do
 			end if
 			do j=i+1, flavorNumber

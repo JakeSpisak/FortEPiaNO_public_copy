@@ -22,6 +22,7 @@ module fpConfig
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		call allocateCmplxMat(nuDensities)
+		allocate(dampTermYYYWdy(Ny), dampTermYYYWfeq(Ny))
 		allocate(dampTermMatrixCoeffNue(nf,nf))
 		allocate(dampTermMatrixCoeffNunu(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
@@ -92,10 +93,24 @@ module fpConfig
 		integer :: ix, iy
 		real(dl) :: nue_nue_nux, nue_nue_nus, nue_numu_nutau, nue_nux_nus
 		real(dl) :: nunu_nue_nux, nunu_nue_nus, nunu_numu_nutau, nunu_nux_nus
+		real(dl) :: nue_nue, nue_nux, nue_nus
+		real(dl) :: nunu_nue, nunu_nux, nunu_nus
+		real(dl) :: xW
 		character(len=300) :: tmpstr
 
+		xW = sin2thW
+
+		dampTermYYYWdy = 0.d0
+		dampTermYYYWfeq = 0.d0
 		dampTermMatrixCoeffNue = 0.d0
 		dampTermMatrixCoeffNunu = 0.d0
+		nunu_nue = 0.d0
+		nunu_nux = 0.d0
+		nunu_nus = 0.d0
+		nue_nue = 0.d0
+		nue_nux = 0.d0
+		nue_nus = 0.d0
+
 		!numbers from McKellar:1992ja
 		!terms for scattering, annihilation with electrons
 		!nu_e - nu_X
@@ -124,26 +139,67 @@ module fpConfig
 		nunu_nue_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
 		!nu_X - nu_s
 		nunu_nux_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
+
+		if (collision_offdiag.eq.4 .or. collision_offdiag.eq.5) then
+			!formulas from YYYW notes
+			write(*,*) "[config] Computing d(y) for damping factors a la YYYW..."
+			!$omp parallel do default(shared) private(ix) schedule(dynamic)
+			do ix=1, Ny
+				dampTermYYYWdy(ix) = dy_damping(y_arr(ix)) * y_arr(ix)**3
+				dampTermYYYWfeq(ix) = fermiDirac(y_arr(ix))
+			end do
+			!$omp end parallel do
+			write(*,"(3A14)") "y", "f_eq(y)", "d(y)"
+			do ix=1, Ny
+				write(*,"(3E14.6)") y_arr(ix), dampTermYYYWfeq(ix), dampTermYYYWdy(ix)
+			end do
+			nunu_nue = 1.d0
+			nunu_nux = 1.d0
+			nunu_nue_nux = 1.d0
+			nunu_numu_nutau = 1.d0
+			nue_nue = 4.d0*xW**2 + 2.d0 * xW + 0.5d0
+			nue_nux = 4.d0*xW**2 - 2.d0 * xW + 0.5d0
+			nue_nue_nux = 4.d0*xW**2 + 0.5d0
+			nue_numu_nutau = 4.d0*xW**2 - 2.d0 * xW + 0.5d0
+			nunu_nus = 0.d0
+			nunu_nue_nus = 0.d0
+			nunu_nux_nus = 0.d0
+			nue_nus = 0.d0
+			nue_nue_nus = 3.d0*xW**2 + 1.d0*xW + 0.25d0
+			nue_nux_nus = 3.d0*xW**2 - 1.d0*xW + 0.25d0
+		end if
 		if (flavorNumber .ge. 2) then
+			dampTermMatrixCoeffNue(1, 1) = nue_nue
+			dampTermMatrixCoeffNunu(1, 1) = nunu_nue
 			if (sterile(2)) then
 				dampTermMatrixCoeffNue(1, 2) = nue_nue_nus
 				dampTermMatrixCoeffNunu(1, 2) = nunu_nue_nus
+				dampTermMatrixCoeffNue(2, 2) = nue_nus
+				dampTermMatrixCoeffNunu(2, 2) = nunu_nus
 			else
 				dampTermMatrixCoeffNue(1, 2) = nue_nue_nux
 				dampTermMatrixCoeffNunu(1, 2) = nunu_nue_nux
+				dampTermMatrixCoeffNue(2, 2) = nue_nux
+				dampTermMatrixCoeffNunu(2, 2) = nunu_nux
 			end if
 		end if
 		if (flavorNumber .ge. 3) then
 			if (sterile(3)) then
 				dampTermMatrixCoeffNue(1, 3) = nue_nue_nus
-				dampTermMatrixCoeffNue(2, 3) = nue_nux_nus
 				dampTermMatrixCoeffNunu(1, 3) = nunu_nue_nus
-				dampTermMatrixCoeffNunu(2, 3) = nunu_nux_nus
+				if (.not.sterile(2)) then
+					dampTermMatrixCoeffNue(2, 3) = nue_nux_nus
+					dampTermMatrixCoeffNunu(2, 3) = nunu_nux_nus
+				end if
+				dampTermMatrixCoeffNue(3, 3) = nue_nus
+				dampTermMatrixCoeffNunu(3, 3) = nunu_nus
 			else
 				dampTermMatrixCoeffNue(1, 3) = nue_nue_nux
-				dampTermMatrixCoeffNue(2, 3) = nue_numu_nutau
 				dampTermMatrixCoeffNunu(1, 3) = nunu_nue_nux
+				dampTermMatrixCoeffNue(2, 3) = nue_numu_nutau
 				dampTermMatrixCoeffNunu(2, 3) = nunu_numu_nutau
+				dampTermMatrixCoeffNue(3, 3) = nue_nux
+				dampTermMatrixCoeffNunu(3, 3) = nunu_nux
 			end if
 		end if
 		if (damping_read_zero) then
@@ -163,16 +219,25 @@ module fpConfig
 			do ix=4, flavorNumber
 				dampTermMatrixCoeffNue(1, ix) = nue_nue_nus
 				dampTermMatrixCoeffNunu(1, ix) = nunu_nue_nus
-				do iy=2, ix-1
-					dampTermMatrixCoeffNue(iy, ix) = nue_nux_nus
-					dampTermMatrixCoeffNunu(iy, ix) = nunu_nux_nus
+				dampTermMatrixCoeffNue(ix, ix) = nue_nus
+				dampTermMatrixCoeffNunu(ix, ix) = nunu_nus
+				do iy=2, 3
+					if (.not.sterile(iy)) then
+						dampTermMatrixCoeffNue(iy, ix) = nue_nux_nus
+						dampTermMatrixCoeffNunu(iy, ix) = nunu_nux_nus
+					end if
 				end do
 			end do
 		end if
+		if (damping_no_nue) &
+			dampTermMatrixCoeffNue = 0.d0
+		if (damping_no_nunu) &
+			dampTermMatrixCoeffNunu = 0.d0
 		write(*,*)"Damping factors (Nue):"
 		call printMat(dampTermMatrixCoeffNue)
 		write(*,*)"Damping factors (NuNu):"
 		call printMat(dampTermMatrixCoeffNunu)
+		write(*,*)"[config] Damping factors done."
 	end subroutine setDampingFactorCoeffs
 
 	subroutine init_matrices
@@ -315,7 +380,7 @@ module fpConfig
 
 			Nx = read_ini_int('Nx',100)
 			use_gauss_laguerre = read_ini_logical('use_gauss_laguerre', .true.)
-			Ny = read_ini_int('Ny',100)
+			Ny = read_ini_int('Ny',30)
 
 			Nylog = read_ini_int('Nylog',7)
 			allocate(x_arr(Nx))
@@ -360,6 +425,8 @@ module fpConfig
 
 			!settings for collisional
 			collision_offdiag = read_ini_int("collision_offdiag", 1)
+			damping_no_nue = read_ini_logical("damping_no_nue", .false.)
+			damping_no_nunu = read_ini_logical("damping_no_nunu", .false.)
 			damping_read_zero = .true.
 			ftqed_temperature_corr = read_ini_logical("ftqed_temperature_corr",.true.)
 			ftqed_log_term = read_ini_logical("ftqed_log_term",.false.)

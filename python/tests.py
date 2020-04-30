@@ -2480,6 +2480,8 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.dlsoda_atol_d, 1.0e-6)
         self.assertEqual(args.dlsoda_atol_o, 1.0e-6)
         self.assertEqual(args.no_GL, False)
+        self.assertEqual(args.damping_no_nue, False)
+        self.assertEqual(args.damping_no_nunu, False)
         self.assertEqual(args.save_energy_entropy, False)
         self.assertEqual(args.save_fd, False)
         self.assertEqual(args.save_Neff, False)
@@ -2789,6 +2791,8 @@ class TestPrepareIni(unittest.TestCase):
                 "outputfolder": "abcd",
                 "verbose_deriv_freq": 123,
                 "no_GL": True,
+                "damping_no_nue": True,
+                "damping_no_nunu": True,
                 "save_energy_entropy": True,
                 "save_fd": True,
                 "save_Neff": True,
@@ -2809,6 +2813,8 @@ class TestPrepareIni(unittest.TestCase):
                 "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
                 "sterile": "sterile1 = F\nsterile2 = T",
                 "coll_offdiag": 0,
+                "damping_no_nue": "T",
+                "damping_no_nunu": "T",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -2851,6 +2857,8 @@ class TestPrepareIni(unittest.TestCase):
                 "dlsoda_atol_d": 1e-6,
                 "dlsoda_atol_o": 1e-6,
                 "dlsoda_rtol": 1e-4,
+                "damping_no_nue": False,
+                "damping_no_nunu": False,
                 "outputfolder": "abcd",
                 "verbose_deriv_freq": 123,
                 "no_GL": False,
@@ -2882,6 +2890,8 @@ class TestPrepareIni(unittest.TestCase):
                 "y_min": 0.01,
                 "y_cen": 1,
                 "y_max": 20,
+                "damping_no_nue": "F",
+                "damping_no_nunu": "F",
                 "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-5
                 + "dlsoda_atol_d = %s\n" % 1e-5
                 + "dlsoda_atol_o = %s\n" % 1e-5,
