@@ -52,7 +52,7 @@ def finalizePlot(
     legend=True,
     x_T=False,
     Neff_axes=False,
-    tightrect=(-0.035, -0.04, 1.025, 1.04),
+    tightrect=(-0.025, -0.03, 1.015, 1.03),
 ):
     """Prepare the final configuration of the plot
     (legends, labels, limits, axes and so on)
@@ -75,7 +75,7 @@ def finalizePlot(
         Neff_axes (default False): if True, the y axis on the left
             will show Neff normalized in the early universe,
             while its twin on the right the final Neff
-        tightrect (default (-0.035, -0.04, 1.025, 1.04)):
+        tightrect (default (-0.025, -0.03, 1.015, 1.03)):
             the rect parameter to use in tight_plot
     """
     plt.title(title)
@@ -591,7 +591,7 @@ class FortEPiaNORun:
             return
         plt.plot(
             *stripRepeated(rho[inu, inu, 0], 0, iy),
-            label=r"%s \alpha=%d" % (self.label, inu + 1),
+            label=r"%s $\alpha$=%d" % (self.label, inu + 1),
             ls=ls,
             c=lc
         )
@@ -632,11 +632,11 @@ class FortEPiaNORun:
             np.gradient(dijrey, dijrex),
             ls=ls,
             c=lc,
-            label=r"%s \alpha=%d" % (self.label, inu + 1),
+            label=r"%s $\alpha$=%d" % (self.label, inu + 1),
         )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$d\rho_{\alpha\alpha}/dt$")
+        plt.ylabel(r"$d\rho_{\alpha\alpha}/dx$")
 
     def plotRhoOffDiag(self, i1, i2, iy, lc="k", im=True, mass=False):
         """Plot one off-diagonal element of the density matrix
@@ -672,14 +672,14 @@ class FortEPiaNORun:
             *stripRepeated(rho[i1, i2, 0], 0, iy),
             ls="-",
             c=lc,
-            label=r"%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
+            label=r"%s $\alpha\beta$=%d%d re" % (self.label, i1 + 1, i2 + 1)
         )
         if im:
             plt.plot(
                 *stripRepeated(rho[i1, i2, 1], 0, iy),
                 ls=":",
                 c=lc,
-                label=r"%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
+                label=r"%s $\alpha\beta$=%d%d im" % (self.label, i1 + 1, i2 + 1)
             )
         plt.xscale("log")
         plt.xlabel("$x$")
@@ -717,7 +717,7 @@ class FortEPiaNORun:
             np.gradient(dijrey, dijrex),
             ls="-",
             c=lc,
-            label=r"%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1),
+            label=r"%s $\alpha\beta$=%d%d re" % (self.label, i1 + 1, i2 + 1),
         )
         if im:
             dijimx, dijimy = stripRepeated(rho[i1, i2, 1], 0, iy)
@@ -726,11 +726,11 @@ class FortEPiaNORun:
                 np.gradient(dijimy, dijimx),
                 ls=":",
                 c=lc,
-                label=r"%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1),
+                label=r"%s $\alpha\beta$=%d%d im" % (self.label, i1 + 1, i2 + 1),
             )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$d\rho_{\alpha\beta}/dt$")
+        plt.ylabel(r"$d\rho_{\alpha\beta}/dx$")
 
     def plotRhoFin(
         self, i1, i2=None, ri=0, ls="-", lc="k", y2=False, lab=None, mass=False
@@ -772,7 +772,7 @@ class FortEPiaNORun:
             print(traceback.format_exc())
             return
         label = (
-            r"%s \alpha\beta=%d%d %s"
+            r"%s $\alpha\beta$=%d%d %s"
             % (self.label, i1 + 1, i2 + 1, "re" if ri == 0 else "im")
             if lab is None
             else lab
@@ -814,7 +814,7 @@ class FortEPiaNORun:
             *interp,
             ls=ls,
             c=lc,
-            label=r"%s \alpha\beta=%d%d %s x=%f"
+            label=r"%s $\alpha\beta$=%d%d %s x=%f"
             % (self.label, i1 + 1, i2 + 1, "re" if ri == 0 else "im", x)
         )
         plt.xlabel("$y$")
@@ -840,7 +840,7 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
-        label = lab if lab is not None else r"%s \alpha=%d" % (self.label, inu + 1)
+        label = lab if lab is not None else r"%s $\alpha$=%d" % (self.label, inu + 1)
         plt.plot(x, np.asarray(yv) * (y ** 2 if y2 else 1.0), label=label, ls=ls, c=lc)
         plt.xscale("log")
         plt.xlabel("$x$")
@@ -867,7 +867,7 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
-        label = lab if lab is not None else r"%s \alpha=%d" % (self.label, inu + 1)
+        label = lab if lab is not None else r"%s $\alpha$=%d" % (self.label, inu + 1)
         plt.plot(
             x,
             np.gradient(np.asarray(yv) * (y ** 2 if y2 else 1.0), x),
@@ -877,7 +877,7 @@ class FortEPiaNORun:
         )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$d%s\rho_{\alpha\alpha}/dt$" % ("y^2" if y2 else ""))
+        plt.ylabel(r"$d%s\rho_{\alpha\alpha}/dx$" % ("y^2" if y2 else ""))
 
     def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
         """Plot one off-diagonal element of the density matrix
@@ -906,7 +906,7 @@ class FortEPiaNORun:
             *interp,
             ls=ls,
             c=lc,
-            label=r"%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
+            label=r"%s $\alpha\beta$=%d%d re" % (self.label, i1 + 1, i2 + 1)
             if lab is None
             else lab
         )
@@ -920,7 +920,7 @@ class FortEPiaNORun:
                 *interpIm,
                 ls=":",
                 c=lc,
-                label=r"%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
+                label=r"%s $\alpha\beta$=%d%d im" % (self.label, i1 + 1, i2 + 1)
                 if lab is None
                 else lab
             )
@@ -960,7 +960,7 @@ class FortEPiaNORun:
                 np.gradient(dijrey, dijrex),
                 ls=ls,
                 c=lc,
-                label=r"%s \alpha\beta=%d%d re" % (self.label, i1 + 1, i2 + 1)
+                label=r"%s $\alpha\beta$=%d%d re" % (self.label, i1 + 1, i2 + 1)
                 if lab is None
                 else lab,
             )
@@ -978,7 +978,7 @@ class FortEPiaNORun:
                     np.gradient(dijimy, dijimx),
                     ls=":",
                     c=lc,
-                    label=r"%s \alpha\beta=%d%d im" % (self.label, i1 + 1, i2 + 1)
+                    label=r"%s $\alpha\beta$=%d%d im" % (self.label, i1 + 1, i2 + 1)
                     if lab is None
                     else lab,
                 )
@@ -986,7 +986,7 @@ class FortEPiaNORun:
                 pass
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$d\rho_{\alpha\beta}/dt$")
+        plt.ylabel(r"$d\rho_{\alpha\beta}/dx$")
 
     def plotNeff(self, lc="k", ls="-", lab=None, nefflims=[0.5, 4.5], axes=True):
         """Plot the evolution of Neff as a function of x.

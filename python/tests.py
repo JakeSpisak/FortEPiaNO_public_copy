@@ -135,7 +135,7 @@ class TestFortepianoOutput(FPTestCase):
             self.assertEqual(_ysc.call_count, 0)
             self.assertEqual(_xli.call_count, 0)
             self.assertEqual(_yli.call_count, 0)
-            _tig.assert_called_once_with(rect=(-0.035, -0.04, 1.025, 1.04))
+            _tig.assert_called_once_with(rect=(-0.025, -0.03, 1.015, 1.03))
             _sfi.assert_called_once_with("fname")
             _clo.assert_called_once_with()
             fpom.finalizePlot(
@@ -723,7 +723,7 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 1), "ls": "-", "c": "k"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 1), "ls": "-", "c": "k"},
             )
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotRhoDiag(1, 0, ":", lc="r")
@@ -732,7 +732,7 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 2), "ls": ":", "c": "r"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 2), "ls": ":", "c": "r"},
             )
         run.rhoM[1, 1, 0] = np.array(
             [
@@ -747,7 +747,7 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 2), "ls": "-", "c": "k"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 2), "ls": "-", "c": "k"},
             )
 
     def test_plotdRhoDiag(self):
@@ -780,13 +780,13 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotdRhoDiag(0, 1, "-")
             _xs.assert_called_once_with("log")
             _xl.assert_called_once_with("$x$")
-            _yl.assert_called_once_with(r"$d\rho_{\alpha\alpha}/dt$")
+            _yl.assert_called_once_with(r"$d\rho_{\alpha\alpha}/dx$")
             _plt.assert_called_once()
             xv, yv = fpom.stripRepeated(run.rho[0, 0, 0], 0, 1)
             self.assertEqualArray(_plt.call_args[0], [xv, np.gradient(yv, xv)])
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 1), "ls": "-", "c": "k"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 1), "ls": "-", "c": "k"},
             )
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotdRhoDiag(1, 0, ":", lc="r")
@@ -794,7 +794,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqualArray(_plt.call_args[0], [xv, np.gradient(yv, xv)])
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 2), "ls": ":", "c": "r"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 2), "ls": ":", "c": "r"},
             )
         run.rhoM[1, 1, 0] = np.array(
             [
@@ -808,7 +808,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqualArray(_plt.call_args[0], [xv, np.gradient(yv, xv)])
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 2), "ls": "-", "c": "k"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 2), "ls": "-", "c": "k"},
             )
 
     def test_plotRhoOffDiag(self):
@@ -855,7 +855,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d re" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d re" % (run.label, 1, 2),
                     "ls": "-",
                     "c": "k",
                 },
@@ -867,7 +867,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d im" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d im" % (run.label, 1, 2),
                     "ls": ":",
                     "c": "r",
                 },
@@ -879,7 +879,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d re" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d re" % (run.label, 1, 2),
                     "ls": "-",
                     "c": "r",
                 },
@@ -932,14 +932,14 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotdRhoOffDiag(0, 1, 1, im=False)
             _xs.assert_called_once_with("log")
             _xl.assert_called_once_with("$x$")
-            _yl.assert_called_once_with(r"$d\rho_{\alpha\beta}/dt$")
+            _yl.assert_called_once_with(r"$d\rho_{\alpha\beta}/dx$")
             _plt.assert_called_once()
             xv, yv = fpom.stripRepeated(run.rho[0, 1, 0], 0, 1)
             self.assertEqualArray(_plt.call_args[0], [xv, np.gradient(yv, xv)])
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d re" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d re" % (run.label, 1, 2),
                     "ls": "-",
                     "c": "k",
                 },
@@ -951,7 +951,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d im" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d im" % (run.label, 1, 2),
                     "ls": ":",
                     "c": "r",
                 },
@@ -963,7 +963,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d re" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d re" % (run.label, 1, 2),
                     "ls": "-",
                     "c": "r",
                 },
@@ -1014,7 +1014,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d %s" % (run.label, 1, 1, "re"),
+                    "label": r"%s $\alpha\beta$=%d%d %s" % (run.label, 1, 1, "re"),
                     "ls": "-",
                     "c": "k",
                 },
@@ -1030,7 +1030,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d %s" % (run.label, 2, 1, "im"),
+                    "label": r"%s $\alpha\beta$=%d%d %s" % (run.label, 2, 1, "im"),
                     "ls": ":",
                     "c": "r",
                 },
@@ -1086,7 +1086,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d %s x=%f"
+                    "label": r"%s $\alpha\beta$=%d%d %s x=%f"
                     % (run.label, 1, 1, "re", 0.5),
                     "ls": "-",
                     "c": "k",
@@ -1104,7 +1104,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d %s x=%f"
+                    "label": r"%s $\alpha\beta$=%d%d %s x=%f"
                     % (run.label, 2, 1, "im", 0.5),
                     "ls": ":",
                     "c": "r",
@@ -1159,7 +1159,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqualArray(_plt.call_args[0], [x, yv])
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 1), "ls": "-", "c": "k"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 1), "ls": "-", "c": "k"},
             )
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.ylabel"
@@ -1170,7 +1170,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqualArray(_plt.call_args[0], [x, np.array(yv) * 2.5 ** 2])
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 2), "ls": ":", "c": "r"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 2), "ls": ":", "c": "r"},
             )
         run.rhoM[1, 1, 0] = np.array(
             [
@@ -1216,26 +1216,26 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotdRhoDiagY(0, 2.5, "-")
             _xs.assert_called_once_with("log")
             _xl.assert_called_once_with("$x$")
-            _yl.assert_called_once_with(r"$d\rho_{\alpha\alpha}/dt$")
+            _yl.assert_called_once_with(r"$d\rho_{\alpha\alpha}/dx$")
             _plt.assert_called_once()
             x, yv = run.interpolateRhoIJ(0, 0, 2.5)
             self.assertEqualArray(_plt.call_args[0], [x, np.gradient(yv, x)])
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 1), "ls": "-", "c": "k"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 1), "ls": "-", "c": "k"},
             )
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.ylabel"
         ) as _yl:
             run.plotdRhoDiagY(1, 2.5, ":", lc="r", y2=True)
-            _yl.assert_called_once_with(r"$dy^2\rho_{\alpha\alpha}/dt$")
+            _yl.assert_called_once_with(r"$dy^2\rho_{\alpha\alpha}/dx$")
             x, yv = run.interpolateRhoIJ(1, 1, 2.5)
             self.assertEqualArray(
                 _plt.call_args[0], [x, np.gradient(np.array(yv) * 2.5 ** 2, x)]
             )
             self.assertEqual(
                 _plt.call_args[1],
-                {"label": r"%s \alpha=%d" % (run.label, 2), "ls": ":", "c": "r"},
+                {"label": r"%s $\alpha$=%d" % (run.label, 2), "ls": ":", "c": "r"},
             )
         run.rhoM[1, 1, 0] = np.array(
             [
@@ -1295,7 +1295,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d re" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d re" % (run.label, 1, 2),
                     "ls": "-",
                     "c": "k",
                 },
@@ -1307,7 +1307,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d im" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d im" % (run.label, 1, 2),
                     "ls": ":",
                     "c": "r",
                 },
@@ -1319,7 +1319,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d re" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d re" % (run.label, 1, 2),
                     "ls": "-",
                     "c": "r",
                 },
@@ -1372,14 +1372,14 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotdRhoOffDiagY(0, 1, 2.5, im=False)
             _xs.assert_called_once_with("log")
             _xl.assert_called_once_with("$x$")
-            _yl.assert_called_once_with(r"$d\rho_{\alpha\beta}/dt$")
+            _yl.assert_called_once_with(r"$d\rho_{\alpha\beta}/dx$")
             _plt.assert_called_once()
             xv, yv = run.interpolateRhoIJ(0, 1, 2.5, ri=0, mass=False)
             self.assertEqualArray(_plt.call_args[0], [xv, np.gradient(yv, xv)])
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d re" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d re" % (run.label, 1, 2),
                     "ls": "-",
                     "c": "k",
                 },
@@ -1391,7 +1391,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d im" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d im" % (run.label, 1, 2),
                     "ls": ":",
                     "c": "r",
                 },
@@ -1403,7 +1403,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s \alpha\beta=%d%d re" % (run.label, 1, 2),
+                    "label": r"%s $\alpha\beta$=%d%d re" % (run.label, 1, 2),
                     "ls": "-",
                     "c": "r",
                 },
@@ -2219,8 +2219,25 @@ class TestPrepareIni(unittest.TestCase):
                 ),
                 call(
                     "collisional",
-                    choices=["zero", "complete", "damping", "diagonal"],
+                    choices=[
+                        "zero",
+                        "complete",
+                        "damping",
+                        "diagonal",
+                        "yyyw_off",
+                        "yyyw_all",
+                    ],
                     help="define the scheme for the collision integrals",
+                ),
+                call(
+                    "--damping_no_nue",
+                    action="store_true",
+                    help="disable nue contributions to damping terms",
+                ),
+                call(
+                    "--damping_no_nunu",
+                    action="store_true",
+                    help="disable nunu contributions to damping terms",
                 ),
                 call(
                     "--qed_corrections",
@@ -2241,7 +2258,6 @@ class TestPrepareIni(unittest.TestCase):
                 ),
                 call(
                     "--default_active",
-                    nargs=1,
                     choices=["Bari", "NuFit", "VLC", "None"],
                     default="VLC",
                     help="define the mixing parameters for the active neutrinos as obtained "
@@ -2252,7 +2268,6 @@ class TestPrepareIni(unittest.TestCase):
                 ),
                 call(
                     "--default_sterile",
-                    nargs=1,
                     choices=["Gariazzo&al", "None"],
                     default="Gariazzo&al",
                     help="define the active-sterile mixing parameters as obtained "
@@ -2331,7 +2346,7 @@ class TestPrepareIni(unittest.TestCase):
                 ),
                 call("--x_in", type=float, default=0.001, help="initial value of x"),
                 call("--x_fin", type=float, default=35, help="final value of x"),
-                call("--Ny", type=int, default=40, help="number of total points in y"),
+                call("--Ny", type=int, default=30, help="number of total points in y"),
                 call(
                     "--Nylog",
                     type=int,
@@ -2454,7 +2469,7 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.Nx, 200)
         self.assertEqual(args.x_in, 0.001)
         self.assertEqual(args.x_fin, 35)
-        self.assertEqual(args.Ny, 40)
+        self.assertEqual(args.Ny, 30)
         self.assertEqual(args.Nylog, 5)
         self.assertEqual(args.y_min, 0.01)
         self.assertEqual(args.y_cen, 1)
