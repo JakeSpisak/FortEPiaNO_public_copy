@@ -95,7 +95,6 @@ module fpEquations
 	subroutine vec_2_densMat(vec)
 		real(dL), dimension(:), intent(in) :: vec
 		integer :: i,j,k,m
-		real(dL) :: fd
 
 		k=1
 		do m=1, Ny
@@ -117,9 +116,8 @@ module fpEquations
 			end if
 			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
 			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
-			fd = fermiDirac(y_arr(m))
 			do i=1, flavorNumber
-				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * fd
+				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * feq_vec(m)
 			end do
 		end do
 	end subroutine vec_2_densMat
@@ -220,7 +218,7 @@ module fpEquations
 				do ix=1, flavorNumber
 					nudrho = nudrho + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 				end do
-				fy_arr(m) = nudrho * fermiDirac(y_arr(m))
+				fy_arr(m) = nudrho * feq_vec(m)
 			end do
 			!$omp end parallel do
 			nudrho = integral_GL_1d(w_gl_arr, fy_arr)
@@ -231,7 +229,7 @@ module fpEquations
 				do ix=1, flavorNumber
 					nudrho = nudrho + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 				end do
-				fy_arr(m) = y_arr(m)**3 * nudrho * fermiDirac(y_arr(m))
+				fy_arr(m) = y_arr(m)**3 * nudrho * feq_vec(m)
 			end do
 			!$omp end parallel do
 			nudrho = integral_NC_1d(Ny, dy_arr, fy_arr)
@@ -678,9 +676,8 @@ module fpEquations
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
-		fd = fermiDirac(y)
 		do ix=1, flavorNumber
-			matrix%re(ix,ix) = matrix%re(ix,ix) / fd
+			matrix%re(ix,ix) = matrix%re(ix,ix) / feq_vec(iy)
 			matrix%im(ix,ix) = 0.d0
 		end do
 	end subroutine drhoy_dx_fullMat

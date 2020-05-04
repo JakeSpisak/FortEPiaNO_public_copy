@@ -113,7 +113,7 @@ module variables
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	type(cmplxMatNN) :: nuDensities
 	logical :: damping_no_nue, damping_no_nunu
-	real(dl), dimension(:), allocatable :: dampTermYYYWdy, dampTermYYYWfeq
+	real(dl), dimension(:), allocatable :: dampTermYYYWdy
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
@@ -132,6 +132,7 @@ module variables
 	integer :: Nx, Ny, Nylog
 	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
+	real(dl), dimension(:), allocatable :: feq_vec
 	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr, w_gl_arr2
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter

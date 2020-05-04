@@ -36,6 +36,7 @@ program tests
 	call do_test_collision_terms
 	call do_test_damping_factors
 	call do_test_zin
+	call do_test_damping_yyyw
 	call do_test_GL
 	call do_test_matterPotential
 	call do_test_diagonalization
@@ -71,7 +72,6 @@ program tests
 		interp_zmin = interp_zmin0
 		interp_zmax = interp_zmax0
 		allocate(x_arr(Nx), y_arr(Ny))
-		allocate(dy_arr(Ny), fy_arr(Ny))
 		x_in    = 0.001d0
 		x_fin   = 40.d0
 		logx_in  = log10(x_in)
@@ -83,10 +83,7 @@ program tests
 		Nylog = 1
 		use_gauss_laguerre = .false.
 		y_arr = linspace(y_min, y_max, Ny)
-		do ix=1, Ny-1
-			dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
-		end do
-		dy_arr(Ny) = 0.d0
+		call finish_y_arrays
 		collision_offdiag = 1
 		damping_read_zero = .false.
 		ftqed_temperature_corr = .true.
@@ -111,6 +108,8 @@ program tests
 			massSplittings(3) = 0.0025153d0
 		end if
 		z_in=1.0000575
+		damping_no_nue = .false.
+		damping_no_nunu = .false.
 		save_fd = .true.
 		save_energy_entropy_evolution = .true.
 		save_Neff = .true.
@@ -125,8 +124,6 @@ program tests
 		interp_yvec = logspace(log10(y_min), log10(y_max), interp_ny)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
-		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
-		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 	end subroutine do_tests_initialization
 
 	subroutine do_basic_tests
@@ -162,6 +159,12 @@ program tests
 
 		call assert_double_rel("y_arr linlog 1", y_arr(1), 0.01d0, 1d-7)
 		call assert_double_rel("y_arr linlog 2", y_arr(2), 0.21191919191919d0, 1d-7)
+
+		call assert_double_rel("FD 1", fermiDirac(0.d0), 0.5d0, 1d-7)
+		call assert_double_rel("FD 2", fermiDirac(5.d0), 0.0066928509242848554d0, 1d-7)
+		call assert_double_rel("FD 3", fermiDirac(20.d0), 2.0611536181902037d-09, 1d-7)
+		call assert_double_rel("f_eq saved A", feq_vec(1), fermiDirac(y_arr(1)), 1d-3)
+		call assert_double_rel("f_eq saved B", feq_vec(Ny), fermiDirac(y_arr(Ny)), 1d-3)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_basic_tests
@@ -2406,6 +2409,8 @@ program tests
 		tmpmatB(1,:) = (/0., 0.0000928646, -0.000596976/)
 		tmpmatB(2,:) = (/0., 0., 0.000331159/)
 		tmpmatB(3,:) = (/0., 0., 0./)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		cts = get_collision_terms(collArgs, fakecollinty)
@@ -2432,6 +2437,8 @@ program tests
 		tmpmatB(1,:) = (/0., 0.0000928646, -0.000278594/)
 		tmpmatB(2,:) = (/0., 0., 0.0000782838/)
 		tmpmatB(3,:) = (/0., 0., 0./)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		cts = get_collision_terms(collArgs, fakecollinty)
@@ -2462,6 +2469,8 @@ program tests
 		tmpmatB(1,:) = (/0., 0.000198992, 0./)
 		tmpmatB(2,:) = (/0., 0., 0./)
 		tmpmatB(3,:) = (/0., 0., 0./)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		cts = get_collision_terms(collArgs, fakecollinty)
@@ -2488,6 +2497,8 @@ program tests
 		tmpmatB(1,:) = (/0., 0.0000928646, 0./)
 		tmpmatB(2,:) = (/0., 0., 0./)
 		tmpmatB(3,:) = (/0., 0., 0./)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		cts = get_collision_terms(collArgs, fakecollinty)
@@ -2535,6 +2546,8 @@ program tests
 		tmpmatB(1,:) = (/0.0000928646, -0.000278594, -0.0198992/)
 		tmpmatB(2,:) = (/0., 0.0000782838, 0.0331159/)
 		tmpmatB(3,:) = (/0., 0., -0.0827898/)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		cts = get_collision_terms(collArgs, fakecollinty)
@@ -2563,6 +2576,7 @@ program tests
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
 		end do
 		collision_offdiag = 1
+		sterile = .false.
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_damping_factors
@@ -2786,6 +2800,10 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 
+		feq_vec = 0.d0
+		do ix=1, Ny
+			feq_vec(ix) = fermiDirac(y_arr(ix))
+		end do
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
 		call assert_double("dz_o_dx test 1a", ydot(n), 7.15311d0, 5d-5)
 		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), 7.15311d0, 5d-5)
@@ -2994,4 +3012,146 @@ program tests
 		call test_speed_coll_int
 	end subroutine do_timing_tests
 
+	subroutine do_test_damping_yyyw
+		real(dl) :: x,z,dme2
+		integer :: i, j, ix, iy1, iy
+		real(dl) :: y,res1,res2
+		type(coll_args) :: collArgs
+		real(dl), dimension(3) :: tmparrS, tmparrA
+		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
+		character(len=300) :: tmparg
+		type(cmplxMatNN) :: cts
+
+		call allocateCmplxMat(cts)
+
+		call printTestBlockName("damping factors a la YYYW")
+
+		call assert_double_rel("kappa A", -15.4485396d0, kappa_damp(12.d0, 0.44d0, 0.33d0), 1d-7)
+		call assert_double_rel("kappa B", -0.12818209d0, kappa_damp(1.d0, 0.14d0, 0.01d0), 1d-7)
+
+		call assert_double_rel("nunu_damp_integrand A", 3.948450853637d-6, nunu_damp_integrand(0.01d0, 3.d0, 5.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand B", -3.34556795185d0,  nunu_damp_integrand(0.01d0, 13.d0, 5.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand C", -37.225769332d0,   nunu_damp_integrand(0.01d0, 3.d0, 1.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand D", 366.6887058d0,     nunu_damp_integrand(10.d0, 3.d0, 5.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand E", -0.080526245965d0, nunu_damp_integrand(10.d0, 30.d0, 5.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand F", 328.64337311d0,    nunu_damp_integrand(10.d0, 3.d0, 1.d0), 1d-7)
+
+		call assert_double_rel("dy_damping 0.001     ", dy_damping(0.001d0     ), 129.894d0, 2d-3)
+		call assert_double_rel("dy_damping 0.00359381", dy_damping(0.00359381d0), 129.933d0, 3d-3)
+		call assert_double_rel("dy_damping 0.0129155 ", dy_damping(0.0129155d0 ), 129.397d0, 2d-3)
+		call assert_double_rel("dy_damping 0.0464159 ", dy_damping(0.0464159d0 ), 128.161d0, 1d-3)
+		call assert_double_rel("dy_damping 0.16681   ", dy_damping(0.16681d0   ), 124.039d0, 1d-3)
+		call assert_double_rel("dy_damping 0.599484  ", dy_damping(0.599484d0  ), 112.398d0, 1d-3)
+		call assert_double_rel("dy_damping 2.15443   ", dy_damping(2.15443d0   ), 95.9192d0, 1d-3)
+		call assert_double_rel("dy_damping 7.74264   ", dy_damping(7.74264d0   ), 97.5425d0, 1d-3)
+		call assert_double_rel("dy_damping 27.8256   ", dy_damping(27.8256d0   ), 100.130d0, 1d-3)
+		call assert_double_rel("dy_damping 100.      ", dy_damping(100.d0      ), 100.772d0, 5d-2)
+
+		collision_offdiag = 4
+		call setDampingFactorCoeffs
+
+		call assert_double_rel("dy_damping saved A", dampTermYYYWdy(1), 129.894d0*y_arr(1)**3, 1d-2)
+		call assert_double_rel("dy_damping saved B", dampTermYYYWdy(Ny), 99.7d0*y_arr(Ny)**3, 1d-2)
+
+		call assert_double_rel("c Nue  1,1", dampTermMatrixCoeffNue (1,1), 1.176d0, 1d-2)
+		call assert_double_rel("c Nue  1,2", dampTermMatrixCoeffNue (1,2), 0.714d0, 1d-2)
+		call assert_double_rel("c Nue  1,3", dampTermMatrixCoeffNue (1,3), 0.714d0, 1d-2)
+		call assert_double_rel("c Nue  2,2", dampTermMatrixCoeffNue (2,2), 0.2514d0, 1d-2)
+		call assert_double_rel("c Nue  2,3", dampTermMatrixCoeffNue (2,3), 0.2514d0, 1d-2)
+		call assert_double_rel("c Nue  3,3", dampTermMatrixCoeffNue (3,3), 0.2514d0, 1d-2)
+		call assert_double_rel("c Nunu 1,1", dampTermMatrixCoeffNunu(1,1), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 2,2", dampTermMatrixCoeffNunu(2,2), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 3,3", dampTermMatrixCoeffNunu(3,3), 1.d0, 1d-2)
+
+		! tests for comparing with complete terms
+		x = 0.75d0
+		iy1 = 7 !1.22151515151515
+		z = 1.186d0
+		dme2 = 0.1d0
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = dme2
+		do iy=1, Ny
+			y = y_arr(iy)
+			nuDensMatVecFD(iy)%re(1,:) = (/1.1d0*fermiDirac(y), 10.d0, 33.d0/)
+			nuDensMatVecFD(iy)%re(2,:) = (/10.d0, 1.1d0*fermiDirac(y), 46.d0/)
+			nuDensMatVecFD(iy)%re(3,:) = (/33.d0, 46.d0, 1.1d0*fermiDirac(y)/)
+			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0/)
+			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0/)
+			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
+		end do
+
+		cts = get_collision_terms(collArgs, fakecollinty)
+		res1 = integrate_coll_int_NC(fakecollinty, collArgs, F_ab_ann_re, F_ab_sc_re) &
+			* collTermFactor/(y_arr(iy1)**2*x**4)
+!		call printMat(cts%re)
+		do ix=1, 3
+			write(tmparg,"('damping YYYW d A',2I1)") ix,iy
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), &
+				res1 - (dampTermMatrixCoeffNunu(ix,ix)) &
+				* dampTermYYYWdy(iy1) &
+				* (nuDensMatVecFD(iy1)%re(ix,ix) - feq_vec(iy1)) &
+				* collTermFactor/(y_arr(iy1)**2*x**4), &
+				1d-4)
+			do iy=ix+1, 3
+				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
+				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
+					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
+					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%re(ix,iy) &
+					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					1d-4)
+				call assert_double_rel(trim(tmparg)//" im", cts%im(ix, iy), &
+					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
+					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(ix,iy) &
+					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					1d-4)
+			end do
+		end do
+		x = 4.75d0
+		iy1 = 3
+		z = 1.386d0
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collision_offdiag = 5
+		cts = get_collision_terms(collArgs, fakecollinty)
+!		call printMat(cts%re)
+		do ix=1, 3
+			write(tmparg,"('damping YYYW d B',2I1)") ix,iy
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), &
+				- (dampTermMatrixCoeffNue(ix,ix)+dampTermMatrixCoeffNunu(ix,ix)) &
+				* dampTermYYYWdy(iy1) &
+				* (nuDensMatVecFD(iy1)%re(ix,ix) - feq_vec(iy1)) &
+				* collTermFactor/(y_arr(iy1)**2*x**4), &
+				1d-4)
+			do iy=ix+1, 3
+				write(tmparg,"('damping YYYW od B',2I1)") ix,iy
+				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
+					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
+					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%re(ix,iy) &
+					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					1d-4)
+				call assert_double_rel(trim(tmparg)//" im", cts%im(ix, iy), &
+					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
+					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(ix,iy) &
+					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					1d-4)
+			end do
+		end do
+
+		collision_offdiag = 1
+		call setDampingFactorCoeffs
+
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_damping_yyyw
 end program tests
