@@ -643,7 +643,7 @@ module fpEquations
 		type(cmplxMatNN), intent(out) :: matrix
 		real(dl), intent(in) :: x, z, dme2, sqrtraddens
 		integer, intent(in) :: iy
-		real(dl) :: y, overallNorm, fd, cf
+		real(dl) :: y, overallNorm, cf
 		integer :: ix
 		type(coll_args) :: collArgs
 		type(cmplxMatNN) :: tmpmat
