@@ -637,11 +637,11 @@ module fpEquations
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
 
-	pure subroutine drhoy_dx_fullMat(matrix, x, z, iy, dme2, sqrtraddens, Fint)
+	pure subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, dme2, sqrtraddens, Fint)
 		use fpInterfaces2
 		procedure (collision_integrand) :: Fint
 		type(cmplxMatNN), intent(out) :: matrix
-		real(dl), intent(in) :: x, z, dme2, sqrtraddens
+		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: iy
 		real(dl) :: y, overallNorm, cf
 		integer :: ix
@@ -653,6 +653,7 @@ module fpEquations
 		y = nuDensMatVecFD(iy)%y
 
 		collArgs%x = x
+		collArgs%w = w
 		collArgs%z = z
 		collArgs%y1 = y
 		collArgs%dme2 = dme2
@@ -682,15 +683,15 @@ module fpEquations
 		end do
 	end subroutine drhoy_dx_fullMat
 
-	pure subroutine drho_y_dx(x, z, m, dme2, sqrtraddens, n, ydot)
+	pure subroutine drho_y_dx(x, w, z, m, dme2, sqrtraddens, n, ydot)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
-		real(dl), intent(in) :: x, z, dme2, sqrtraddens
+		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
 		integer :: i, j, k
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x, z, m, dme2, sqrtraddens, coll_nue_3_int)
+		call drhoy_dx_fullMat(mat, x, w, z, m, dme2, sqrtraddens, coll_nue_3_int)
 		do i=1, flavorNumber
 			ydot(i) = mat%re(i,i)
 		end do
@@ -752,7 +753,7 @@ module fpEquations
 		tmpvec = 0
 		!$omp do schedule(static)
 		do m=1, Ny
-			call drho_y_dx(x, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
+			call drho_y_dx(x, w, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
 			s=(m-1)*flavNumSqu
 			ydot(s+1:s+flavNumSqu) = tmpvec(:)
 		end do

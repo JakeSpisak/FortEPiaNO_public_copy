@@ -103,7 +103,7 @@ module variables
 	end type cmplxMatNN
 
 	type coll_args
-		real(dl) :: y1, y2, y3, y4, x, z, dme2
+		real(dl) :: y1, y2, y3, y4, x, w, z, dme2
 		integer :: ix1, ix2, iy
 	end type coll_args
 

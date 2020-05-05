@@ -2244,7 +2244,7 @@ program tests
 		res%im(1,:) = (/0., 8504.49, 30182.6/)
 		res%im(2,:) = (/-8504.49, 0., -698.419/)
 		res%im(3,:) = (/-30182.6, 698.419, 0./)
-		call drhoy_dx_fullMat(outp, x, z, iy, dme2, sqrtraddens, fakecollint0)
+		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx a ',2I1)") i,j
@@ -2272,7 +2272,7 @@ program tests
 		res%im(1,:) = (/0., 9293.06, 30971.2/)
 		res%im(2,:) = (/-9293.06, 0., 90.1601/)
 		res%im(3,:) = (/-30971.2, -90.1601, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint1)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollint1)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx b ',2I1)") i,j
@@ -2317,7 +2317,7 @@ program tests
 		res%im(1,:) = (/0., 369833., 410950./)
 		res%im(2,:) = (/-369833., 0., 6598.44/)
 		res%im(3,:) = (/-410950., -6598.44, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint0)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollint0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx c ',2I1)") i,j
@@ -2340,7 +2340,7 @@ program tests
 		res%im(1,:) = (/0., 369983., 411100./)
 		res%im(2,:) = (/-369983., 0., 6748.46/)
 		res%im(3,:) = (/-411100., -6748.46, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollinty)
+		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollinty)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx d ',2I1)") i,j
@@ -3013,8 +3013,8 @@ program tests
 	end subroutine do_timing_tests
 
 	subroutine do_test_damping_yyyw
-		real(dl) :: x,z,dme2
-		integer :: i, j, ix, iy1, iy
+		real(dl) :: x,w,z,dme2
+		integer :: ix, iy1, iy
 		real(dl) :: y,res1,res2
 		type(coll_args) :: collArgs
 		real(dl), dimension(3) :: tmparrS, tmparrA
@@ -3117,8 +3117,10 @@ program tests
 		end do
 		x = 4.75d0
 		iy1 = 3
+        w = 1.234d0
 		z = 1.386d0
 		collArgs%x = x
+		collArgs%w = w
 		collArgs%z = z
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
@@ -3126,11 +3128,13 @@ program tests
 		cts = get_collision_terms(collArgs, fakecollinty)
 !		call printMat(cts%re)
 		do ix=1, 3
-			write(tmparg,"('damping YYYW d B',2I1)") ix,iy
+			write(tmparg,"('damping YYYW d B',2I1)") ix,ix
 			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), &
-				- (dampTermMatrixCoeffNue(ix,ix)+dampTermMatrixCoeffNunu(ix,ix)) &
+				- ( &
+					dampTermMatrixCoeffNue(ix,ix) * (nuDensMatVecFD(iy1)%re(ix,ix) - fermiDirac(y_arr(iy1)/z)) &
+					+ dampTermMatrixCoeffNunu(ix,ix) * (nuDensMatVecFD(iy1)%re(ix,ix) - fermiDirac(y_arr(iy1)/w)) &
+				) &
 				* dampTermYYYWdy(iy1) &
-				* (nuDensMatVecFD(iy1)%re(ix,ix) - feq_vec(iy1)) &
 				* collTermFactor/(y_arr(iy1)**2*x**4), &
 				1d-4)
 			do iy=ix+1, 3

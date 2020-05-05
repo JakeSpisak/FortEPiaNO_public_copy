@@ -774,7 +774,7 @@ module fpInteractions
 		procedure (collision_integrand) :: Fint
 		type(cmplxMatNN) :: get_collision_terms
 		procedure (collision_integrator), pointer :: integrator
-		real(dl) :: x, z, y1, cf, z4
+		real(dl) :: x, w, z, y1, cf, w4, z4
 		integer :: iy1
 		type(coll_args), intent(in) :: collArgsIn
 		type(coll_args) :: collArgs
@@ -785,7 +785,9 @@ module fpInteractions
 		collArgs=collArgsIn
 
 		x = collArgs%x
+		w = collArgs%w
 		z = collArgs%z
+		w4 = w**4
 		z4 = z**4
 		y1 = collArgs%y1
 		iy1 = collArgs%iy
@@ -813,9 +815,11 @@ module fpInteractions
 			if (.not.sterile(i)) then
 				if (collision_offdiag.eq.5) then !only damping factors (YYYW)
 					get_collision_terms%re(i,i) = &
-						- (dampTermMatrixCoeffNue(i,i)+dampTermMatrixCoeffNunu(i,i)) &
-						* dampTermYYYWdy(iy1) &
-						* (nuDensMatVecFD(iy1)%re(i,i) - feq_vec(iy1))
+						- ( &
+							dampTermMatrixCoeffNue(i,i) * (nuDensMatVecFD(iy1)%re(i,i) - fermiDirac(y_arr(iy1)/z))&
+							+ dampTermMatrixCoeffNunu(i,i) * (nuDensMatVecFD(iy1)%re(i,i) - fermiDirac(y_arr(iy1)/w))&
+						) &
+						* dampTermYYYWdy(iy1)
 				else !full integration for nue
 					get_collision_terms%re(i,i) = &
 						integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
@@ -823,7 +827,7 @@ module fpInteractions
 						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
 							- (dampTermMatrixCoeffNunu(i,i)) &
 							* dampTermYYYWdy(iy1) &
-							* (nuDensMatVecFD(iy1)%re(i,i) - feq_vec(iy1))
+							* (nuDensMatVecFD(iy1)%re(i,i) - fermiDirac(y_arr(iy1)/w))
 					end if
 				end if
 			end if
