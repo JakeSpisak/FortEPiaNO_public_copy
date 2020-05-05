@@ -42,11 +42,13 @@ module fpEquations
 			electrons%energyDensity(x, z, ftqed_e_mth_leptondens) &
 			+ electrons%pressure(x, z, ftqed_e_mth_leptondens) &
 		)
+#ifndef NO_MUONS
 		if (flavorNumber.gt.2) &
 			leptonDensities(2,2) = ldf * ( &
 				muons%energyDensity(x, z, .false.) &
 				+ muons%pressure(x, z, .false.) &
 			)
+#endif
 
 		nuDensities%re = 0.d0
 		nuDensities%im = 0.d0
@@ -497,14 +499,22 @@ module fpEquations
 			write(iu, multidblfmt) x, z, &
 				photonDensity(z), &
 				electrons%energyDensity(x, z, .false.), &
+#ifndef NO_MUONS
 				muons%energyDensity(x, z, .false.), &
+#else
+				0.d0, &
+#endif
 				nuEnDens(1:flavorNumber)
 			close(iu)
 			call openFile(iu, trim(outputFolder)//'/entropy.dat', firstWrite)
 			write(iu, multidblfmt) x, z, &
 				photonEntropy(z), &
 				electrons%entropy(x, z), &
+#ifndef NO_MUONS
 				muons%entropy(x, z), &
+#else
+				0.d0, &
+#endif
 				nuEnDens(1:flavorNumber)*four_thirds/w
 			close(iu)
 		end if
