@@ -20,7 +20,7 @@ module fpInteractions
 		integer, intent(in) :: a, b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
-#ifdef FULLFAB
+#ifdef FULL_F_AB
 		integer :: l, m
 #endif
 
@@ -31,7 +31,7 @@ module fpInteractions
 		t1b=0.d0
 		t2a=0.d0
 		t2b=0.d0
-#ifdef FULLFAB
+#ifdef FULL_F_AB
 		do k=1, flavorNumber
 		do l=1, flavorNumber
 		do m=1, flavorNumber
@@ -98,7 +98,7 @@ module fpInteractions
 		integer, intent(in) :: a, b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
-#ifdef FULLFAB
+#ifdef FULL_F_AB
 		integer :: l, m
 #endif
 
@@ -109,7 +109,7 @@ module fpInteractions
 		t1b=0.d0
 		t2a=0.d0
 		t2b=0.d0
-#ifdef FULLFAB
+#ifdef FULL_F_AB
 		do k=1, flavorNumber
 		do l=1, flavorNumber
 		do m=1, flavorNumber
@@ -176,7 +176,7 @@ module fpInteractions
 		integer, intent(in) :: a, b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
-#ifdef FULLFAB
+#ifdef FULL_F_AB
 		integer :: l, m
 #endif
 
@@ -187,7 +187,7 @@ module fpInteractions
 		t1b=0.d0
 		t2a=0.d0
 		t2b=0.d0
-#ifdef FULLFAB
+#ifdef FULL_F_AB
 		do k=1, flavorNumber
 		do l=1, flavorNumber
 		do m=1, flavorNumber
@@ -254,7 +254,7 @@ module fpInteractions
 		integer, intent(in) :: a, b, i, j
 		integer :: k
 		real(dl) :: t1a, t1b, t2a, t2b
-#ifdef FULLFAB
+#ifdef FULL_F_AB
 		integer :: l, m
 #endif
 
@@ -265,7 +265,7 @@ module fpInteractions
 		t1b=0.d0
 		t2a=0.d0
 		t2b=0.d0
-#ifdef FULLFAB
+#ifdef FULL_F_AB
 		do k=1, flavorNumber
 		do l=1, flavorNumber
 		do m=1, flavorNumber
