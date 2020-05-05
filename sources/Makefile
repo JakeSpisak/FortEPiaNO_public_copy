@@ -1,10 +1,13 @@
 # FLAGS
+# set NO_MUONS=1 to disable muon contributions
+NO_MUONS ?=
 # define TESTSPEED=1 to compute the time required for the first 1000 derivatives
 TESTSPEED ?=
 # define FULL_F_AB=1 to compute full matrix product in F_AB functions (by default assumes diagonal G matrices)
 FULL_F_AB ?=
 # define NOINTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
 NOINTERPOLATION ?=
+
 F90 ?= ifort
 
 BUILD_DIR ?= ../build
@@ -30,11 +33,14 @@ F90=gfortran
 DEBUGFLAGS=-O0 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -p -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
 endif
 
+ifeq ($(NO_MUONS), 1)
+	F90FLAGS += -DNO_MUONS=1
+endif
 ifeq ($(TESTSPEED), 1)
 	F90FLAGS += -DTESTSPEED=1
 endif
 ifeq ($(FULL_F_AB), 1)
-	F90FLAGS += -DFULLFAB=1
+	F90FLAGS += -DFULL_F_AB=1
 endif
 ifeq ($(NOINTERPOLATION), 1)
 	F90FLAGS += -DNOINTERPOLATION=1
