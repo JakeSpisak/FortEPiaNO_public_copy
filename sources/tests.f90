@@ -3059,12 +3059,12 @@ program tests
 		call assert_double_rel("c Nue  2,2", dampTermMatrixCoeffNue (2,2), 0.2514d0, 1d-2)
 		call assert_double_rel("c Nue  2,3", dampTermMatrixCoeffNue (2,3), 0.2514d0, 1d-2)
 		call assert_double_rel("c Nue  3,3", dampTermMatrixCoeffNue (3,3), 0.2514d0, 1d-2)
-		call assert_double_rel("c Nunu 1,1", dampTermMatrixCoeffNunu(1,1), 1.d0, 1d-2)
-		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 1.d0, 1d-2)
-		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 1.d0, 1d-2)
-		call assert_double_rel("c Nunu 2,2", dampTermMatrixCoeffNunu(2,2), 1.d0, 1d-2)
-		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 1.d0, 1d-2)
-		call assert_double_rel("c Nunu 3,3", dampTermMatrixCoeffNunu(3,3), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 1,1", dampTermMatrixCoeffNunu(1,1), 2.d0, 1d-2)
+		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 2.d0, 1d-2)
+		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 2.d0, 1d-2)
+		call assert_double_rel("c Nunu 2,2", dampTermMatrixCoeffNunu(2,2), 2.d0, 1d-2)
+		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 2.d0, 1d-2)
+		call assert_double_rel("c Nunu 3,3", dampTermMatrixCoeffNunu(3,3), 2.d0, 1d-2)
 
 		! tests for comparing with complete terms
 		x = 0.75d0
