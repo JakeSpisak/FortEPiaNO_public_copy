@@ -477,7 +477,7 @@ module fpConfig
 		interp_xozvec = logspace(log10(very_early_x/interp_zmax), logx_fin, interp_nxz)
 
 		flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
-		if (collint_offdiag_damping .and. collint_damping_type.eq.0) then
+		if (has_offdiagonal()) then
 			flavNumSqu = flavorNumber**2
 		else
 			flavNumSqu = flavorNumber

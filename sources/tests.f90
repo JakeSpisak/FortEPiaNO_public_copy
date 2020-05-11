@@ -134,6 +134,18 @@ program tests
 		character(len=30) :: tmparg
 
 		call printTestBlockName("basic tests")
+
+		collint_damping_type = 0
+		collint_offdiag_damping = .false.
+		call assert_logical("has_offdiagonal 1", has_offdiagonal(), .true.)
+		collint_damping_type = 2
+		collint_offdiag_damping = .true.
+		call assert_logical("has_offdiagonal 2", has_offdiagonal(), .true.)
+		collint_damping_type = 0
+		call assert_logical("has_offdiagonal 3", has_offdiagonal(), .false.)
+		collint_damping_type = 2
+		collint_offdiag_damping = .false.
+
 		N = 12
 		allocate(tarr(N))
 		tarr = linspace(0.0d0, 11.d0, N)

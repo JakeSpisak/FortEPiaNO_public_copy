@@ -799,7 +799,7 @@ module fpInteractions
 		get_collision_terms%re = 0.d0
 		get_collision_terms%im = 0.d0
 
-		if (collint_diagonal_zero .and. collint_damping_type.eq.0) then
+		if (.not. has_offdiagonal() .and. collint_diagonal_zero) then
 			return
 		end if
 

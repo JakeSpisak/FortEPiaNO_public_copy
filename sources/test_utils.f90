@@ -34,6 +34,23 @@ module sgTestUtils
 		write(*,*) ""
 	end subroutine printTotalTests
 
+	subroutine assert_logical(testname, num1, num2)
+		character(len=*) :: testname
+		logical :: num1, num2
+
+		totalTests = totalTests + 1
+		if (num1 .eqv. num2) then
+			write(*, fmt="(a)", advance="no") "."
+			successTests = successTests + 1
+		else
+			print *, testname, " failed"
+			write (*,*) num1, num2
+			failedTests = failedTests + 1
+			if (blocking) &
+				call exit(1)
+		end if
+	end subroutine assert_logical
+
 	subroutine assert_double(testname, num1, num2, tol)
 		character(len=*) :: testname
 		real(dl) :: num1, num2, tol

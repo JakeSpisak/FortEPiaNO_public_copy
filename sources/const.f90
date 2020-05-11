@@ -183,6 +183,11 @@ module variables
 				allocate(m%im(flavorNumber,flavorNumber))
 		end if
 	end subroutine allocateCmplxMat
+
+	elemental function has_offdiagonal()
+		logical :: has_offdiagonal
+		has_offdiagonal = .not.(collint_offdiag_damping .and. collint_damping_type.eq.0)
+	end function has_offdiagonal
 end module variables
 
 module fpInterfaces1
