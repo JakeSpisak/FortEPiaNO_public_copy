@@ -84,7 +84,9 @@ program tests
 		use_gauss_laguerre = .false.
 		y_arr = linspace(y_min, y_max, Ny)
 		call finish_y_arrays
-		collision_offdiag = 1
+		collint_damping_type = 2
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .false.
 		damping_read_zero = .false.
 		ftqed_temperature_corr = .true.
 		ftqed_log_term = .false.
@@ -2135,6 +2137,52 @@ program tests
 				end if
 			end do
 		end do
+		tmpmatA(1,:) = (/348548, 0, 0/)
+		tmpmatA(2,:) = (/0, 348548, 0/)
+		tmpmatA(3,:) = (/0, 0, 348548/)
+		tmpmatB(1,:) = (/0., 0., 0./)
+		tmpmatB(2,:) = (/0., 0., 0./)
+		tmpmatB(3,:) = (/0., 0., 0./)
+		collint_damping_type = 0
+		collint_offdiag_damping = .true.
+		cts = get_collision_terms(collArgs, fakecollinty)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms zod ',2I1)") i,j
+				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+		tmpmatA(1,:) = (/0, 348548, 348548/)
+		tmpmatA(2,:) = (/348548, 0, 348548/)
+		tmpmatA(3,:) = (/348548, 348548, 0/)
+		tmpmatB(1,:) = (/0., 348548., 348548./)
+		tmpmatB(2,:) = (/-348548., 0., 348548./)
+		tmpmatB(3,:) = (/-348548., -348548., 0./)
+		collint_damping_type = 2
+		collint_diagonal_zero = .true.
+		collint_offdiag_damping = .false.
+		cts = get_collision_terms(collArgs, fakecollinty)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms zd ',2I1)") i,j
+				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
+				if (abs(tmpmatB(i,j)).lt.1d-7) then
+					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
+				else
+					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
+				end if
+			end do
+		end do
+		collint_diagonal_zero = .false.
 
 		x=0.05d0
 		iy1 = 7 !1.22151515151515
@@ -2375,7 +2423,9 @@ program tests
 
 		call allocateCmplxMat(cts)
 
-		collision_offdiag = 2
+		collint_damping_type = 2
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .true.
 
 		x = 0.75d0
 		iy1 = 7 !1.22151515151515
@@ -2575,7 +2625,9 @@ program tests
 			deallocate(nuDensMatVecFD(ix)%re, nuDensMatVecFD(ix)%im)
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
 		end do
-		collision_offdiag = 1
+		collint_damping_type = 2
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .false.
 		sterile = .false.
 		call printTotalTests
 		call resetTestCounter
@@ -3047,7 +3099,9 @@ program tests
 		call assert_double_rel("dy_damping 27.8256   ", dy_damping(27.8256d0   ), 100.130d0, 1d-3)
 		call assert_double_rel("dy_damping 100.      ", dy_damping(100.d0      ), 100.772d0, 5d-2)
 
-		collision_offdiag = 4
+		collint_damping_type = 1
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .true.
 		call setDampingFactorCoeffs
 
 		call assert_double_rel("dy_damping saved A", dampTermYYYWdy(1), 129.894d0*y_arr(1)**3, 1d-2)
@@ -3095,12 +3149,7 @@ program tests
 !		call printMat(cts%re)
 		do ix=1, 3
 			write(tmparg,"('damping YYYW d A',2I1)") ix,iy
-			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), &
-				res1 - (dampTermMatrixCoeffNunu(ix,ix)) &
-				* dampTermYYYWdy(iy1) &
-				* (nuDensMatVecFD(iy1)%re(ix,ix) - feq_vec(iy1)) &
-				* collTermFactor/(y_arr(iy1)**2*x**4), &
-				1d-4)
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
 			do iy=ix+1, 3
 				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
@@ -3124,19 +3173,13 @@ program tests
 		collArgs%z = z
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		collision_offdiag = 5
 		cts = get_collision_terms(collArgs, fakecollinty)
+		res1 = integrate_coll_int_NC(fakecollinty, collArgs, F_ab_ann_re, F_ab_sc_re) &
+			* collTermFactor/(y_arr(iy1)**2*x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
 			write(tmparg,"('damping YYYW d B',2I1)") ix,ix
-			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), &
-				- ( &
-					dampTermMatrixCoeffNue(ix,ix) * (nuDensMatVecFD(iy1)%re(ix,ix) - fermiDirac(y_arr(iy1)/z)) &
-					+ dampTermMatrixCoeffNunu(ix,ix) * (nuDensMatVecFD(iy1)%re(ix,ix) - fermiDirac(y_arr(iy1)/w)) &
-				) &
-				* dampTermYYYWdy(iy1) &
-				* collTermFactor/(y_arr(iy1)**2*x**4), &
-				1d-4)
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
 			do iy=ix+1, 3
 				write(tmparg,"('damping YYYW od B',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
@@ -3152,7 +3195,9 @@ program tests
 			end do
 		end do
 
-		collision_offdiag = 1
+		collint_damping_type = 2
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .false.
 		call setDampingFactorCoeffs
 
 		call printTotalTests

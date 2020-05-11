@@ -98,7 +98,19 @@ module fpConfig
 		real(dl) :: xW
 		character(len=300) :: tmpstr
 
-		write(*,*) "[config] Damping factors settings: ", collision_offdiag
+		write(*,*) "[collint] Diagonal terms for collision integrals are set to zero: ", collint_diagonal_zero
+		write(*,*) "[collint] Use dampings instead of full integrals for nue off-diagonal contributions: ", collint_offdiag_damping
+		if (collint_offdiag_damping) then
+			if (collint_damping_type.eq.0) then
+				write(*,*) "[collint] off-diagonal contributions are zero"
+			else if (collint_damping_type.eq.1) then
+				write(*,*) "[collint] off-diagonal contributions are computed using YYYW expressions"
+			else if (collint_damping_type.eq.2) then
+				write(*,*) "[collint] off-diagonal contributions are computed using McKellar:1992ja expressions"
+			else
+				call criticalError("Invalid value for 'collint_damping_type', it can be [0, 1, 2].")
+			end if
+		end if
 		xW = sin2thW
 
 		dampTermYYYWdy = 0.d0
@@ -140,7 +152,7 @@ module fpConfig
 		!nu_X - nu_s
 		nunu_nux_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
 
-		if (collision_offdiag.eq.4 .or. collision_offdiag.eq.5) then
+		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
 			!formulas from YYYW notes
 			nunu_nue = 2.d0
 			nunu_nux = 2.d0
@@ -227,7 +239,7 @@ module fpConfig
 		write(*,*)"[config] Damping factors (NuNu):"
 		call printMat(dampTermMatrixCoeffNunu)
 
-		if (collision_offdiag.eq.4 .or. collision_offdiag.eq.5) then
+		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
 			!formulas from YYYW notes
 			write(*,*) "[config] Computing d(y) for damping factors a la YYYW..."
 			!$omp parallel do default(shared) private(ix) schedule(dynamic)
@@ -241,6 +253,7 @@ module fpConfig
 			end do
 		end if
 		write(*,*)"[config] Damping factors done."
+		call criticalError("expressions for nunu diagonal integrals missing!")
 	end subroutine setDampingFactorCoeffs
 
 	subroutine init_matrices
@@ -437,7 +450,9 @@ module fpConfig
 		giveSinSq = read_ini_logical('givesinsq', .true.)
 
 		!settings for collisional
-		collision_offdiag = read_ini_int("collision_offdiag", 1)
+		collint_damping_type = read_ini_int("collint_damping_type", 1)
+		collint_diagonal_zero = read_ini_logical("collint_diagonal_zero", .false.)
+		collint_offdiag_damping = read_ini_logical("collint_offdiag_damping", .true.)
 		damping_no_nue = read_ini_logical("damping_no_nue", .false.)
 		damping_no_nunu = read_ini_logical("damping_no_nunu", .false.)
 		damping_read_zero = .true.
@@ -462,7 +477,7 @@ module fpConfig
 		interp_xozvec = logspace(log10(very_early_x/interp_zmax), logx_fin, interp_nxz)
 
 		flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
-		if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+		if (collint_offdiag_damping .and. collint_damping_type.eq.0) then
 			flavNumSqu = flavorNumber**2
 		else
 			flavNumSqu = flavorNumber

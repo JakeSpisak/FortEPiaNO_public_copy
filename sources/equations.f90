@@ -82,7 +82,7 @@ module fpEquations
 				vec(k+i-1) = nuDensMatVec(m)%re(i,i)
 			end do
 			k=k+flavorNumber
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+			if (collint_offdiag_damping .and. collint_damping_type.eq.0) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						vec(k) = nuDensMatVec(m)%re(i,j)
@@ -105,7 +105,7 @@ module fpEquations
 				nuDensMatVec(m)%im(i,i) = 0.d0
 			end do
 			k=k+flavorNumber
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+			if (collint_offdiag_damping .and. collint_damping_type.eq.0) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						nuDensMatVec(m)%re(i,j) = vec(k)
@@ -464,7 +464,7 @@ module fpEquations
 				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
 				call nuDens_to_file(iu, k, k, x, nuDensMatVecFD, .true., trim(fname))
 			end do
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+			if (collint_offdiag_damping .and. collint_damping_type.eq.0) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_re.dat'
@@ -572,7 +572,7 @@ module fpEquations
 				atol(k+i-1) = dlsoda_atol_d
 			end do
 			k = k + flavorNumber
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+			if (collint_offdiag_damping .and. collint_damping_type.eq.0) then
 				do i = 1, flavorNumber-1
 					do j = i+1, flavorNumber
 						atol(k) = dlsoda_atol_o
@@ -714,7 +714,7 @@ module fpEquations
 			ydot(i) = mat%re(i,i)
 		end do
 		k=flavorNumber+1
-		if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+		if (collint_offdiag_damping .and. collint_damping_type.eq.0) then
 			do i=1, flavorNumber-1
 				do j=i+1, flavorNumber
 					ydot(k) = mat%re(i,j)

@@ -799,7 +799,7 @@ module fpInteractions
 		get_collision_terms%re = 0.d0
 		get_collision_terms%im = 0.d0
 
-		if (collision_offdiag.eq.0) then
+		if (collint_diagonal_zero .and. collint_damping_type.eq.0) then
 			return
 		end if
 
@@ -813,26 +813,13 @@ module fpInteractions
 			collArgs%ix2 = i
 			!diagonal elements:
 			if (.not.sterile(i)) then
-				if (collision_offdiag.eq.5) then !only damping factors (YYYW)
-					get_collision_terms%re(i,i) = &
-						- ( &
-							dampTermMatrixCoeffNue(i,i) * (nuDensMatVecFD(iy1)%re(i,i) - fermiDirac(y_arr(iy1)/z))&
-							+ dampTermMatrixCoeffNunu(i,i) * (nuDensMatVecFD(iy1)%re(i,i) - fermiDirac(y_arr(iy1)/w))&
-						) &
-						* dampTermYYYWdy(iy1)
-				else !full integration for nue
+				if (.not. collint_diagonal_zero) then
 					get_collision_terms%re(i,i) = &
 						integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
-					if (collision_offdiag.eq.4) then !add nunu diagonal damping (YYYW)
-						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
-							- (dampTermMatrixCoeffNunu(i,i)) &
-							* dampTermYYYWdy(iy1) &
-							* (nuDensMatVecFD(iy1)%re(i,i) - fermiDirac(y_arr(iy1)/w))
-					end if
 				end if
 			end if
 			!off-diagonal elements:
-			if (collision_offdiag.eq.1) then !full integration for nue, dampings for nunu (disabled for tests)
+			if (.not. collint_offdiag_damping) then !full integration for nue, dampings for nunu (disabled for tests)
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
 					get_collision_terms%re(i,j) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
@@ -848,7 +835,7 @@ module fpInteractions
 						* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
 #endif
 				end do
-			else if (collision_offdiag.eq.2) then !nue and nunu dampings from McKellar:1992ja
+			else if (collint_damping_type.eq.2) then !nue and nunu dampings from McKellar:1992ja
 				do j=i+1, flavorNumber
 					get_collision_terms%re(i,j) = &
 						dampTermFactor &
@@ -859,7 +846,7 @@ module fpInteractions
 						* (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
 						* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
 				end do
-			else if (collision_offdiag.eq.4 .or. collision_offdiag.eq.5) then !nue and nunu dampings from YYYW
+			else if (collint_damping_type.eq.1) then !nue and nunu dampings from YYYW
 				do j=i+1, flavorNumber
 					get_collision_terms%re(i,j) = &
 						- (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &

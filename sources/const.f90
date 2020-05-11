@@ -81,7 +81,10 @@ module variables
 	logical :: checkpoint = .false.
 	logical :: force_replace = .false.
 
-	integer :: collision_offdiag
+	integer :: collint_damping_type
+	logical :: collint_offdiag_damping
+	logical :: collint_diagonal_zero
+	logical :: damping_no_nue, damping_no_nunu
 	logical :: damping_read_zero
 	logical :: ftqed_temperature_corr
 	logical :: ftqed_log_term
@@ -112,7 +115,6 @@ module variables
 	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	type(cmplxMatNN) :: nuDensities
-	logical :: damping_no_nue, damping_no_nunu
 	real(dl), dimension(:), allocatable :: dampTermYYYWdy
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
