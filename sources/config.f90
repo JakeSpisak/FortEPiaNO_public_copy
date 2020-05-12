@@ -95,16 +95,14 @@ module fpConfig
 
 		write(*,*) "[collint] Diagonal terms for collision integrals are set to zero: ", collint_diagonal_zero
 		write(*,*) "[collint] Use dampings instead of full integrals for nue off-diagonal contributions: ", collint_offdiag_damping
-		if (collint_offdiag_damping) then
-			if (collint_damping_type.eq.0) then
-				write(*,*) "[collint] off-diagonal contributions are zero"
-			else if (collint_damping_type.eq.1) then
-				write(*,*) "[collint] off-diagonal contributions are computed using YYYW expressions"
-			else if (collint_damping_type.eq.2) then
-				write(*,*) "[collint] off-diagonal contributions are computed using McKellar:1992ja expressions"
-			else
-				call criticalError("Invalid value for 'collint_damping_type', it can be [0, 1, 2].")
-			end if
+		if (collint_damping_type.eq.0) then
+			write(*,*) "[collint] off-diagonal contributions are zero"
+		else if (collint_damping_type.eq.1) then
+			write(*,*) "[collint] off-diagonal contributions are computed using YYYW expressions"
+		else if (collint_damping_type.eq.2) then
+			write(*,*) "[collint] off-diagonal contributions are computed using McKellar:1992ja expressions"
+		else
+			call criticalError("Invalid value for 'collint_damping_type', it can be [0, 1, 2].")
 		end if
 
 		call setDampingFactorCoeffs
