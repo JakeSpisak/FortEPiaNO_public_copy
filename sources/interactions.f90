@@ -951,17 +951,30 @@ module fpInteractions
 					collArgs%ix2 = j
 					get_collision_terms%re(i,j) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
 					get_collision_terms%im(i,j) = integrator(Fint, collArgs, F_ab_ann_im, F_ab_sc_im)
-#ifndef DO_TESTS
-					get_collision_terms%re(i,j) = &
-						get_collision_terms%re(i,j) &
-						+ dampTermFactor * dampTermMatrixCoeffNunu(i,j) &
-						* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
-					get_collision_terms%im(i,j) = &
-						get_collision_terms%im(i,j) &
-						+ dampTermFactor * dampTermMatrixCoeffNunu(i,j) &
-						* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
-#endif
 				end do
+#ifndef DO_TESTS
+				if (collint_damping_type.eq.2) then !add nunu dampings from McKellar:1992ja
+					do j=i+1, flavorNumber
+						get_collision_terms%re(i,j) = &
+							get_collision_terms%re(i,j) &
+							+ dampTermFactor * dampTermMatrixCoeffNunu(i,j) &
+							* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%re(i,j)
+						get_collision_terms%im(i,j) = &
+							get_collision_terms%im(i,j) &
+							+ dampTermFactor * dampTermMatrixCoeffNunu(i,j) &
+							* z4 * y1*y1*y1 * nuDensMatVecFD(iy1)%im(i,j)
+					end do
+				else if (collint_damping_type.eq.1) then !add nunu dampings from YYYW
+					do j=i+1, flavorNumber
+						get_collision_terms%re(i,j) = &
+							get_collision_terms%re(i,j) - dampTermMatrixCoeffNunu(i,j) &
+							* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%re(i,j)
+						get_collision_terms%im(i,j) = &
+							get_collision_terms%im(i,j) - dampTermMatrixCoeffNunu(i,j) &
+							* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(i,j)
+					end do
+				end if
+#endif
 			else if (collint_damping_type.eq.2) then !nue and nunu dampings from McKellar:1992ja
 				do j=i+1, flavorNumber
 					get_collision_terms%re(i,j) = &
