@@ -109,15 +109,17 @@ module fpConfig
 
 		call setDampingFactorCoeffs
 
-		do ix=1, flavorNumber
-			do iy=ix+1, flavorNumber
-				write(tmpstr,"('damping_',2I1,'_zero')") ix, iy
-				if (read_ini_logical(trim(tmpstr), .false.)) then
-					dampTermMatrixCoeffNue(ix, iy) = 0.d0
-					dampTermMatrixCoeffNunu(ix, iy) = 0.d0
-				end if
+		if (damping_read_zero) then
+			do ix=1, flavorNumber
+				do iy=ix+1, flavorNumber
+					write(tmpstr,"('damping_',2I1,'_zero')") ix, iy
+					if (read_ini_logical(trim(tmpstr), .false.)) then
+						dampTermMatrixCoeffNue(ix, iy) = 0.d0
+						dampTermMatrixCoeffNunu(ix, iy) = 0.d0
+					end if
+				end do
 			end do
-		end do
+		end if
 
 		if (damping_no_nue) &
 			dampTermMatrixCoeffNue = 0.d0
