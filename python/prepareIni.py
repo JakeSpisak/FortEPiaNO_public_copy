@@ -81,9 +81,23 @@ def setParser():
         help="define the neutrino model that must be used",
     )
     parser.add_argument(
-        "collisional",
-        choices=["zero", "complete", "damping", "diagonal", "yyyw_off", "yyyw_all"],
-        help="define the scheme for the collision integrals",
+        "--collint_diagonal_zero",
+        action="store_true",
+        help="set to zero the diagonal contributions of collision terms",
+    )
+    parser.add_argument(
+        "--collint_offdiag_nodamp",
+        action="store_true",
+        help="use full integrals instead of damping terms for the off-diagonal collision terms",
+    )
+    parser.add_argument(
+        "--collint_damping_type",
+        choices=["zero", "yyyw", "McKellar:1992ja"],
+        default="yyyw",
+        help="define the scheme for the off-diagonal contribution of collision integrals."
+        + "Use 'zero' to ignore all the off-diagonal components, "
+        + "'yyyw' to use the expressions from YYYW or "
+        + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
     )
     for c in ["nue", "nunu"]:
         parser.add_argument(
@@ -365,18 +379,16 @@ def getIniValues(args):
             for i, f in enumerate(values["sterile"])
         ]
     )
-    values["coll_offdiag"] = (
+    values["collint_diagonal_zero"] = "T" if args.collint_diagonal_zero else "F"
+    values["collint_offdiag_damping"] = "F" if args.collint_offdiag_nodamp else "T"
+    values["collint_damping_type"] = (
         0
-        if args.collisional == "zero"
+        if args.collint_damping_type == "zero"
         else 1
-        if args.collisional == "complete"
+        if args.collint_damping_type == "yyyw"
         else 2
-        if args.collisional == "damping"
-        else 4
-        if args.collisional == "yyyw_off"
-        else 5
-        if args.collisional == "yyyw_all"
-        else 3
+        if args.collint_damping_type == "McKellar:1992ja"
+        else 1
     )
     if args.qed_corrections == "no":
         values["ftqed_temperature_corr"] = "F"
@@ -445,7 +457,9 @@ theta24 = {th24:}
 theta34 = {th34:}
 dm41 = {dm41:}
 
-collision_offdiag = {coll_offdiag:}
+collint_diagonal_zero = {collint_diagonal_zero:}
+collint_offdiag_damping = {collint_offdiag_damping:}
+collint_damping_type = {collint_damping_type:}
 ftqed_temperature_corr = {ftqed_temperature_corr:}
 ftqed_ord3 = {ftqed_ord3:}
 ftqed_log_term = {ftqed_log_term:}

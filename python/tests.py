@@ -338,9 +338,9 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertTrue(np.isclose(run.wfin, 1.09659, atol=1e-5))
         self.assertTrue(np.isclose(run.zfin, 1.53574, atol=1e-5))
         self.assertIsInstance(run.deltarhofin, list)
-        self.assertTrue(np.isclose(run.deltarhofin[0], 0.4667, atol=1e-4))
+        self.assertTrue(np.isclose(run.deltarhofin[0], 0.4666, atol=1e-4))
         self.assertTrue(np.isclose(run.deltarhofin[1], 0.4639, atol=1e-4))
-        self.assertTrue(np.isclose(run.deltarhofin[2], 0.4628, atol=1e-4))
+        self.assertTrue(np.isclose(run.deltarhofin[2], 0.4629, atol=1e-4))
         self.assertEqual(len(run.rho), 3)
         self.assertEqual(len(run.rho[0]), 3)
         self.assertEqual(len(run.rho), 3)
@@ -2218,16 +2218,23 @@ class TestPrepareIni(unittest.TestCase):
                     help="define the neutrino model that must be used",
                 ),
                 call(
-                    "collisional",
-                    choices=[
-                        "zero",
-                        "complete",
-                        "damping",
-                        "diagonal",
-                        "yyyw_off",
-                        "yyyw_all",
-                    ],
-                    help="define the scheme for the collision integrals",
+                    "--collint_diagonal_zero",
+                    action="store_true",
+                    help="set to zero the diagonal contributions of collision terms",
+                ),
+                call(
+                    "--collint_offdiag_nodamp",
+                    action="store_true",
+                    help="use full integrals instead of damping terms for the off-diagonal collision terms",
+                ),
+                call(
+                    "--collint_damping_type",
+                    choices=["zero", "yyyw", "McKellar:1992ja"],
+                    default="yyyw",
+                    help="define the scheme for the off-diagonal contribution of collision integrals."
+                    + "Use 'zero' to ignore all the off-diagonal components, "
+                    + "'yyyw' to use the expressions from YYYW or "
+                    + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
                 ),
                 call(
                     "--damping_no_nue",
@@ -2438,18 +2445,14 @@ class TestPrepareIni(unittest.TestCase):
         """test that there are no errors in the parsing process"""
         parser = pim.setParser()
         with self.assertRaises(SystemExit):
-            args = parser.parse_args(["inifile", "outdir", "3nu"])
+            args = parser.parse_args(["inifile", "outdir"])
         with self.assertRaises(SystemExit):
-            args = parser.parse_args(["inifile", "outdir", "abc", "complete"])
+            args = parser.parse_args(["inifile", "outdir", "abc"])
         with self.assertRaises(SystemExit):
             args = parser.parse_args(["inifile", "outdir", "3nu", "abc"])
-        with self.assertRaises(SystemExit):
-            args = parser.parse_args(["inifile", "outdir", "3nu", "complete", "abc"])
         for p in ["3nu", "2nu", "3+1", "2+1", "1+1"]:
-            args = parser.parse_args(["inifile", "outdir", p, "zero"])
-        for p in ["zero", "complete", "damping", "diagonal"]:
-            args = parser.parse_args(["inifile", "outdir", "3nu", p])
-        baseargs = ["inifile", "outdir", "3nu", "complete"]
+            args = parser.parse_args(["inifile", "outdir", p])
+        baseargs = ["inifile", "outdir", "3nu"]
         args = parser.parse_args(baseargs)
         self.assertEqual(args.ordering, "NO")
         self.assertEqual(args.default_active, "VLC")
@@ -2480,6 +2483,9 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.dlsoda_atol_d, 1.0e-6)
         self.assertEqual(args.dlsoda_atol_o, 1.0e-6)
         self.assertEqual(args.no_GL, False)
+        self.assertEqual(args.collint_diagonal_zero, False)
+        self.assertEqual(args.collint_offdiag_nodamp, False)
+        self.assertEqual(args.collint_damping_type, "yyyw")
         self.assertEqual(args.damping_no_nue, False)
         self.assertEqual(args.damping_no_nunu, False)
         self.assertEqual(args.save_energy_entropy, False)
@@ -2775,7 +2781,9 @@ class TestPrepareIni(unittest.TestCase):
         args = Namespace(
             **{
                 "verbose": "vb",
-                "collisional": "zero",
+                "collint_diagonal_zero": False,
+                "collint_offdiag_nodamp": False,
+                "collint_damping_type": "yyyw",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -2812,7 +2820,9 @@ class TestPrepareIni(unittest.TestCase):
                 "verbose": "vb",
                 "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
                 "sterile": "sterile1 = F\nsterile2 = T",
-                "coll_offdiag": 0,
+                "collint_diagonal_zero": "F",
+                "collint_offdiag_damping": "T",
+                "collint_damping_type": 1,
                 "damping_no_nue": "T",
                 "damping_no_nunu": "T",
                 "Nx": 200,
@@ -2843,7 +2853,9 @@ class TestPrepareIni(unittest.TestCase):
         args = Namespace(
             **{
                 "verbose": "vb",
-                "collisional": "complete",
+                "collint_diagonal_zero": True,
+                "collint_offdiag_nodamp": True,
+                "collint_damping_type": "zero",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -2881,7 +2893,9 @@ class TestPrepareIni(unittest.TestCase):
                 "verbose": "vb",
                 "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
                 "sterile": "sterile1 = F\nsterile2 = T",
-                "coll_offdiag": 1,
+                "collint_diagonal_zero": "T",
+                "collint_offdiag_damping": "F",
+                "collint_damping_type": 0,
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -2909,7 +2923,7 @@ class TestPrepareIni(unittest.TestCase):
                 "ftqed_log_term": "F",
             },
         )
-        args.collisional = "damping"
+        args.collint_damping_type = "McKellar:1992ja"
         args.qed_corrections = "o3"
         args.dlsoda_atol_z = 1e-7
         args.dlsoda_atol_d = 1e-6
@@ -2919,7 +2933,7 @@ class TestPrepareIni(unittest.TestCase):
             return_value={"factors": [2, 1], "sterile": [False, True]},
         ) as _op:
             values = pim.getIniValues(args)
-        self.assertEqual(values["coll_offdiag"], 2)
+        self.assertEqual(values["collint_damping_type"], 2)
         self.assertEqual(values["ftqed_temperature_corr"], "T")
         self.assertEqual(values["ftqed_ord3"], "T")
         self.assertEqual(values["ftqed_log_term"], "F")
@@ -2929,7 +2943,7 @@ class TestPrepareIni(unittest.TestCase):
             + "dlsoda_atol_d = %s\n" % 1e-6
             + "dlsoda_atol_o = %s\n" % 1e-6,
         )
-        args.collisional = "abcd"
+        args.collint_damping_type = "abcd"
         args.qed_corrections = "o2ln"
         args.dlsoda_atol_z = 1e-6
         args.dlsoda_atol_d = 1e-7
@@ -2939,7 +2953,7 @@ class TestPrepareIni(unittest.TestCase):
             return_value={"factors": [2, 1], "sterile": [False, True]},
         ) as _op:
             values = pim.getIniValues(args)
-        self.assertEqual(values["coll_offdiag"], 3)
+        self.assertEqual(values["collint_damping_type"], 1)
         self.assertEqual(values["ftqed_temperature_corr"], "T")
         self.assertEqual(values["ftqed_ord3"], "F")
         self.assertEqual(values["ftqed_log_term"], "T")
@@ -2976,7 +2990,9 @@ class TestPrepareIni(unittest.TestCase):
             "th12": 0.01,
             "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
             "sterile": "sterile1 = F\nsterile2 = T",
-            "coll_offdiag": 1,
+            "collint_diagonal_zero": "F",
+            "collint_offdiag_damping": "T",
+            "collint_damping_type": "1",
             "Nx": 200,
             "x_in": 0.001,
             "x_fin": 35,
@@ -3018,7 +3034,9 @@ class TestPrepareIni(unittest.TestCase):
             "theta24 = 0.2",
             "theta34 = 0.3",
             "dm41 = 1.23",
-            "collision_offdiag = 1",
+            "collint_diagonal_zero = F",
+            "collint_offdiag_damping = T",
+            "collint_damping_type = 1",
             "ftqed_temperature_corr = F",
             "ftqed_ord3 = T",
             "ftqed_log_term = T",

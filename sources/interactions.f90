@@ -45,7 +45,7 @@ module fpInteractions
 	end function nunu_damp_integrand
 
 	!integral of the above function
-	function dy_damping(y)
+	pure function dy_damping(y)
 		real(dl) :: dy_damping
 		real(dl), intent(in) :: y
 		integer :: ia, ib
@@ -69,6 +69,133 @@ module fpInteractions
 		dy_damping = integral_NC_2d(nydamp, nydamp, dya, dya, fy2_arr) / y**3
 		deallocate(ya, dya, fy2_arr)
 	end function dy_damping
+
+	!fitting formula for the above function
+	elemental function dy_damping_fit(y)
+		real(dl) :: dy_damping_fit
+		real(dl), intent(in) :: y
+		real(dl), parameter :: d0 = 129.875
+		real(dl), parameter :: dinf = 100.999
+		real(dl), parameter :: a0 = 90.7332
+		real(dl), parameter :: a1 = -48.4473
+		real(dl), parameter :: a2 = 20.1219
+		real(dl), parameter :: b1 = -0.529157
+		real(dl), parameter :: b2 = 0.20649
+		real(dl) :: e101y, e001y, ly
+		e101y = exp(-1.01d0*y)
+		e001y = exp(-0.01d0*y)
+		ly = log(y)
+		dy_damping_fit = d0*e101y &
+		    + dinf*(1.d0-e001y) &
+		    + (e001y - e101y) &
+		    * ( &
+			(a0 + a1*ly + a2*ly*ly) &
+			/ (1.d0 + b1*ly + b2*ly*ly) &
+		    )
+	end function dy_damping_fit
+
+	!damping factor coefficients are defined here
+	subroutine setDampingFactorCoeffs
+		integer :: ix, iy
+		real(dl) :: nue_nue_nux, nue_nue_nus, nue_numu_nutau, nue_nux_nus
+		real(dl) :: nunu_nue_nux, nunu_nue_nus, nunu_numu_nutau, nunu_nux_nus
+		real(dl) :: xW
+
+		xW = sin2thW
+
+		dampTermYYYWdy = 0.d0
+		dampTermMatrixCoeffNue = 0.d0
+		dampTermMatrixCoeffNunu = 0.d0
+
+		!numbers from McKellar:1992ja
+		!terms for scattering, annihilation with electrons
+		!nu_e - nu_X
+		nue_nue_nux = &
+			8.d0 &!e+nu -> e+nu
+			+ (8.d0*sin2thW**2 + 1.d0)!nu+bnu -> e+e-
+		!nu_mu - nu_tau
+		nue_numu_nutau = &
+			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)!nu+bnu -> e+e-
+		!nu_e - nu_s
+		nue_nue_nus = 2.d0*(&
+			(8.d0*sin2thW**2 + 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
+			+ (4.d0*sin2thW**2 + 2.d0*sin2thW + 0.5d0) &!nu+bnu -> e+e-
+		)
+		!nu_X - nu_s
+		nue_nux_nus = 2.d0*(&
+			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
+			+ (4.d0*sin2thW**2 - 2.d0*sin2thW + 0.5d0) &!nu+bnu -> e+e-
+		)
+		!terms for nunu scattering
+		!nu_e - nu_X
+		nunu_nue_nux = 6.d0 !nu+(b)nu -> nu+(b)nu
+		!nu_mu - nu_tau
+		nunu_numu_nutau = 6.d0 !nu+(b)nu -> nu+(b)nu
+		!nu_e - nu_s
+		nunu_nue_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
+		!nu_X - nu_s
+		nunu_nux_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
+
+		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
+			!formulas from YYYW notes
+			nunu_nue_nux = 2.d0
+			nunu_numu_nutau = 2.d0
+			nue_nue_nux = 4.d0*xW**2 + 0.5d0
+			nue_numu_nutau = 4.d0*xW**2 - 2.d0 * xW + 0.5d0
+			nunu_nue_nus = 0.d0
+			nunu_nux_nus = 0.d0
+			nue_nue_nus = 3.d0*xW**2 + 1.d0*xW + 0.25d0
+			nue_nux_nus = 3.d0*xW**2 - 1.d0*xW + 0.25d0
+		end if
+		if (flavorNumber .ge. 2) then
+			if (sterile(2)) then
+				dampTermMatrixCoeffNue(1, 2) = nue_nue_nus
+				dampTermMatrixCoeffNunu(1, 2) = nunu_nue_nus
+			else
+				dampTermMatrixCoeffNue(1, 2) = nue_nue_nux
+				dampTermMatrixCoeffNunu(1, 2) = nunu_nue_nux
+			end if
+		end if
+		if (flavorNumber .ge. 3) then
+			if (sterile(3)) then
+				dampTermMatrixCoeffNue(1, 3) = nue_nue_nus
+				dampTermMatrixCoeffNunu(1, 3) = nunu_nue_nus
+				if (.not.sterile(2)) then
+					dampTermMatrixCoeffNue(2, 3) = nue_nux_nus
+					dampTermMatrixCoeffNunu(2, 3) = nunu_nux_nus
+				end if
+			else
+				dampTermMatrixCoeffNue(1, 3) = nue_nue_nux
+				dampTermMatrixCoeffNunu(1, 3) = nunu_nue_nux
+				dampTermMatrixCoeffNue(2, 3) = nue_numu_nutau
+				dampTermMatrixCoeffNunu(2, 3) = nunu_numu_nutau
+			end if
+		end if
+		do ix=4, flavorNumber
+			dampTermMatrixCoeffNue(1, ix) = nue_nue_nus
+			dampTermMatrixCoeffNunu(1, ix) = nunu_nue_nus
+			do iy=2, 3
+				if (.not.sterile(iy)) then
+					dampTermMatrixCoeffNue(iy, ix) = nue_nux_nus
+					dampTermMatrixCoeffNunu(iy, ix) = nunu_nux_nus
+				end if
+			end do
+		end do
+
+		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
+			!formulas from YYYW notes
+			write(*,*) "[collint] Computing d(y) for damping factors a la YYYW..."
+			!$omp parallel do default(shared) private(ix) schedule(dynamic)
+			do ix=1, Ny
+				dampTermYYYWdy(ix) = dy_damping_fit(y_arr(ix)) * y_arr(ix)**3
+			end do
+			!$omp end parallel do
+			write(*,"(3A14)") "y", "f_eq(y)", "d(y)"
+			do ix=1, Ny
+				write(*,"(3E14.6)") y_arr(ix), feq_vec(ix), dampTermYYYWdy(ix)
+			end do
+		end if
+	end subroutine setDampingFactorCoeffs
 
 	!phase space
 	pure function F_ab_ann_re(n1, n2, f3, f4, a, b, i, j)!a, b must be either 1(=L) or 2(=R)

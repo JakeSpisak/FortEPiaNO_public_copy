@@ -2464,7 +2464,7 @@ program tests
 
 		!2+1
 		sterile(3) = .true.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/0., -0.928646, -6.56674/)
 		tmpmatA(2,:) = (/0., 0., -7.45108/)
 		tmpmatA(3,:) = (/0., 0., 0./)
@@ -2492,7 +2492,7 @@ program tests
 
 !		!3+0
 		sterile(3) = .false.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/0., -0.928646, -3.06453/)
 		tmpmatA(2,:) = (/0., 0., -1.76139/)
 		tmpmatA(3,:) = (/0., 0., 0./)
@@ -2524,7 +2524,7 @@ program tests
 		call allocateStuff
 		!1+1
 		sterile(2) = .true.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/0., -1.98992, 0./)
 		tmpmatA(2,:) = (/0., 0., 0./)
 		tmpmatA(3,:) = (/0., 0., 0./)
@@ -2552,7 +2552,7 @@ program tests
 
 		!2+0
 		sterile(2) = .false.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/0., -0.928646, 0./)
 		tmpmatA(2,:) = (/0., 0., 0./)
 		tmpmatA(3,:) = (/0., 0., 0./)
@@ -2582,7 +2582,7 @@ program tests
 		flavNumSqu = flavorNumber**2
 		call deallocateStuff
 		call allocateStuff
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		do ix=1, Ny
 			deallocate(nuDensMatVecFD(ix)%re, nuDensMatVecFD(ix)%im)
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
@@ -2601,7 +2601,7 @@ program tests
 		!3+1
 		sterile = .false.
 		sterile(4) = .true.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/-0.928646, -3.06453, -2.38791/)
 		tmpmatA(2,:) = (/0., -1.76139, -1.32464/)
 		tmpmatA(3,:) = (/0., 0., -3.80833/)
@@ -2632,7 +2632,7 @@ program tests
 		flavNumSqu = flavorNumber**2
 		call deallocateStuff
 		call allocateStuff
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		do ix=1, Ny
 			deallocate(nuDensMatVecFD(ix)%re, nuDensMatVecFD(ix)%im)
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
@@ -3090,6 +3090,17 @@ program tests
 
 		call printTestBlockName("damping factors a la YYYW")
 
+		call assert_double_rel("dy_damping_fit 0.001     ", dy_damping_fit(0.001d0     ), 129.894d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.00359381", dy_damping_fit(0.00359381d0), 129.933d0, 2d-3)
+		call assert_double_rel("dy_damping_fit 0.0129155 ", dy_damping_fit(0.0129155d0 ), 129.397d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.0464159 ", dy_damping_fit(0.0464159d0 ), 128.161d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.16681   ", dy_damping_fit(0.16681d0   ), 124.039d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.599484  ", dy_damping_fit(0.599484d0  ), 112.398d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 2.15443   ", dy_damping_fit(2.15443d0   ), 95.9192d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 7.74264   ", dy_damping_fit(7.74264d0   ), 97.5425d0, 3d-3)
+		call assert_double_rel("dy_damping_fit 27.8256   ", dy_damping_fit(27.8256d0   ), 100.130d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 100.      ", dy_damping_fit(100.d0      ), 100.772d0, 2d-3)
+
 		call assert_double_rel("kappa A", -15.4485396d0, kappa_damp(12.d0, 0.44d0, 0.33d0), 1d-7)
 		call assert_double_rel("kappa B", -0.12818209d0, kappa_damp(1.d0, 0.14d0, 0.01d0), 1d-7)
 
@@ -3114,23 +3125,17 @@ program tests
 		collint_damping_type = 1
 		collint_diagonal_zero = .false.
 		collint_offdiag_damping = .true.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 
-		call assert_double_rel("dy_damping saved A", dampTermYYYWdy(1), 129.894d0*y_arr(1)**3, 1d-2)
-		call assert_double_rel("dy_damping saved B", dampTermYYYWdy(Ny), 99.7d0*y_arr(Ny)**3, 1d-2)
+		call assert_double_rel("dy_damping saved A", dampTermYYYWdy(1), 129.894d0*y_arr(1)**3, 3d-3)
+		call assert_double_rel("dy_damping saved B", dampTermYYYWdy(Ny), dy_damping_fit(y_arr(Ny))*y_arr(Ny)**3, 2d-3)
 
-		call assert_double_rel("c Nue  1,1", dampTermMatrixCoeffNue (1,1), 1.176d0, 1d-2)
 		call assert_double_rel("c Nue  1,2", dampTermMatrixCoeffNue (1,2), 0.714d0, 1d-2)
 		call assert_double_rel("c Nue  1,3", dampTermMatrixCoeffNue (1,3), 0.714d0, 1d-2)
-		call assert_double_rel("c Nue  2,2", dampTermMatrixCoeffNue (2,2), 0.2514d0, 1d-2)
 		call assert_double_rel("c Nue  2,3", dampTermMatrixCoeffNue (2,3), 0.2514d0, 1d-2)
-		call assert_double_rel("c Nue  3,3", dampTermMatrixCoeffNue (3,3), 0.2514d0, 1d-2)
-		call assert_double_rel("c Nunu 1,1", dampTermMatrixCoeffNunu(1,1), 2.d0, 1d-2)
 		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 2.d0, 1d-2)
 		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 2.d0, 1d-2)
-		call assert_double_rel("c Nunu 2,2", dampTermMatrixCoeffNunu(2,2), 2.d0, 1d-2)
 		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 2.d0, 1d-2)
-		call assert_double_rel("c Nunu 3,3", dampTermMatrixCoeffNunu(3,3), 2.d0, 1d-2)
 
 		! tests for comparing with complete terms
 		x = 0.75d0
@@ -3210,7 +3215,7 @@ program tests
 		collint_damping_type = 2
 		collint_diagonal_zero = .false.
 		collint_offdiag_damping = .false.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 
 		call printTotalTests
 		call resetTestCounter

@@ -89,13 +89,8 @@ module fpConfig
 		deallocate(m1,m2)
 	end subroutine setMixingMatrix
 
-	subroutine setDampingFactorCoeffs
+	subroutine setDampingFactors
 		integer :: ix, iy
-		real(dl) :: nue_nue_nux, nue_nue_nus, nue_numu_nutau, nue_nux_nus
-		real(dl) :: nunu_nue_nux, nunu_nue_nus, nunu_numu_nutau, nunu_nux_nus
-		real(dl) :: nue_nue, nue_nux, nue_nus
-		real(dl) :: nunu_nue, nunu_nux, nunu_nus
-		real(dl) :: xW
 		character(len=300) :: tmpstr
 
 		write(*,*) "[collint] Diagonal terms for collision integrals are set to zero: ", collint_diagonal_zero
@@ -111,125 +106,19 @@ module fpConfig
 				call criticalError("Invalid value for 'collint_damping_type', it can be [0, 1, 2].")
 			end if
 		end if
-		xW = sin2thW
 
-		dampTermYYYWdy = 0.d0
-		dampTermMatrixCoeffNue = 0.d0
-		dampTermMatrixCoeffNunu = 0.d0
-		nunu_nue = 0.d0
-		nunu_nux = 0.d0
-		nunu_nus = 0.d0
-		nue_nue = 0.d0
-		nue_nux = 0.d0
-		nue_nus = 0.d0
+		call setDampingFactorCoeffs
 
-		!numbers from McKellar:1992ja
-		!terms for scattering, annihilation with electrons
-		!nu_e - nu_X
-		nue_nue_nux = &
-			8.d0 &!e+nu -> e+nu
-			+ (8.d0*sin2thW**2 + 1.d0)!nu+bnu -> e+e-
-		!nu_mu - nu_tau
-		nue_numu_nutau = &
-			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)!nu+bnu -> e+e-
-		!nu_e - nu_s
-		nue_nue_nus = 2.d0*(&
-			(8.d0*sin2thW**2 + 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
-			+ (4.d0*sin2thW**2 + 2.d0*sin2thW + 0.5d0) &!nu+bnu -> e+e-
-		)
-		!nu_X - nu_s
-		nue_nux_nus = 2.d0*(&
-			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
-			+ (4.d0*sin2thW**2 - 2.d0*sin2thW + 0.5d0) &!nu+bnu -> e+e-
-		)
-		!terms for nunu scattering
-		!nu_e - nu_X
-		nunu_nue_nux = 6.d0 !nu+(b)nu -> nu+(b)nu
-		!nu_mu - nu_tau
-		nunu_numu_nutau = 6.d0 !nu+(b)nu -> nu+(b)nu
-		!nu_e - nu_s
-		nunu_nue_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
-		!nu_X - nu_s
-		nunu_nux_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
-
-		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
-			!formulas from YYYW notes
-			nunu_nue = 2.d0
-			nunu_nux = 2.d0
-			nunu_nue_nux = 2.d0
-			nunu_numu_nutau = 2.d0
-			nue_nue = 4.d0*xW**2 + 2.d0 * xW + 0.5d0
-			nue_nux = 4.d0*xW**2 - 2.d0 * xW + 0.5d0
-			nue_nue_nux = 4.d0*xW**2 + 0.5d0
-			nue_numu_nutau = 4.d0*xW**2 - 2.d0 * xW + 0.5d0
-			nunu_nus = 0.d0
-			nunu_nue_nus = 0.d0
-			nunu_nux_nus = 0.d0
-			nue_nus = 0.d0
-			nue_nue_nus = 3.d0*xW**2 + 1.d0*xW + 0.25d0
-			nue_nux_nus = 3.d0*xW**2 - 1.d0*xW + 0.25d0
-		end if
-		dampTermMatrixCoeffNue(1, 1) = nue_nue
-		dampTermMatrixCoeffNunu(1, 1) = nunu_nue
-		if (flavorNumber .ge. 2) then
-			if (sterile(2)) then
-				dampTermMatrixCoeffNue(1, 2) = nue_nue_nus
-				dampTermMatrixCoeffNunu(1, 2) = nunu_nue_nus
-				dampTermMatrixCoeffNue(2, 2) = nue_nus
-				dampTermMatrixCoeffNunu(2, 2) = nunu_nus
-			else
-				dampTermMatrixCoeffNue(1, 2) = nue_nue_nux
-				dampTermMatrixCoeffNunu(1, 2) = nunu_nue_nux
-				dampTermMatrixCoeffNue(2, 2) = nue_nux
-				dampTermMatrixCoeffNunu(2, 2) = nunu_nux
-			end if
-		end if
-		if (flavorNumber .ge. 3) then
-			if (sterile(3)) then
-				dampTermMatrixCoeffNue(1, 3) = nue_nue_nus
-				dampTermMatrixCoeffNunu(1, 3) = nunu_nue_nus
-				if (.not.sterile(2)) then
-					dampTermMatrixCoeffNue(2, 3) = nue_nux_nus
-					dampTermMatrixCoeffNunu(2, 3) = nunu_nux_nus
+		do ix=1, flavorNumber
+			do iy=ix+1, flavorNumber
+				write(tmpstr,"('damping_',2I1,'_zero')") ix, iy
+				if (read_ini_logical(trim(tmpstr), .false.)) then
+					dampTermMatrixCoeffNue(ix, iy) = 0.d0
+					dampTermMatrixCoeffNunu(ix, iy) = 0.d0
 				end if
-				dampTermMatrixCoeffNue(3, 3) = nue_nus
-				dampTermMatrixCoeffNunu(3, 3) = nunu_nus
-			else
-				dampTermMatrixCoeffNue(1, 3) = nue_nue_nux
-				dampTermMatrixCoeffNunu(1, 3) = nunu_nue_nux
-				dampTermMatrixCoeffNue(2, 3) = nue_numu_nutau
-				dampTermMatrixCoeffNunu(2, 3) = nunu_numu_nutau
-				dampTermMatrixCoeffNue(3, 3) = nue_nux
-				dampTermMatrixCoeffNunu(3, 3) = nunu_nux
-			end if
-		end if
-		if (damping_read_zero) then
-			do ix=4, flavorNumber
-				write(tmpstr,"('damping_',2I1,'_zero')") 1, ix
-				if (.not. read_ini_logical(trim(tmpstr), .false.)) &
-					dampTermMatrixCoeffNue(1, ix) = nue_nue_nus
-					dampTermMatrixCoeffNunu(1, ix) = nunu_nue_nus
-				do iy=2, ix-1
-					write(tmpstr,"('damping_',2I1,'_zero')") iy, ix
-					if (.not. read_ini_logical(trim(tmpstr), .false.)) &
-						dampTermMatrixCoeffNue(iy, ix) = nue_nux_nus
-						dampTermMatrixCoeffNunu(iy, ix) = nunu_nux_nus
-				end do
 			end do
-		else
-			do ix=4, flavorNumber
-				dampTermMatrixCoeffNue(1, ix) = nue_nue_nus
-				dampTermMatrixCoeffNunu(1, ix) = nunu_nue_nus
-				dampTermMatrixCoeffNue(ix, ix) = nue_nus
-				dampTermMatrixCoeffNunu(ix, ix) = nunu_nus
-				do iy=2, 3
-					if (.not.sterile(iy)) then
-						dampTermMatrixCoeffNue(iy, ix) = nue_nux_nus
-						dampTermMatrixCoeffNunu(iy, ix) = nunu_nux_nus
-					end if
-				end do
-			end do
-		end if
+		end do
+
 		if (damping_no_nue) &
 			dampTermMatrixCoeffNue = 0.d0
 		if (damping_no_nunu) &
@@ -239,22 +128,9 @@ module fpConfig
 		write(*,*)"[config] Damping factors (NuNu):"
 		call printMat(dampTermMatrixCoeffNunu)
 
-		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
-			!formulas from YYYW notes
-			write(*,*) "[config] Computing d(y) for damping factors a la YYYW..."
-			!$omp parallel do default(shared) private(ix) schedule(dynamic)
-			do ix=1, Ny
-				dampTermYYYWdy(ix) = dy_damping(y_arr(ix)) * y_arr(ix)**3
-			end do
-			!$omp end parallel do
-			write(*,"(3A14)") "y", "f_eq(y)", "d(y)"
-			do ix=1, Ny
-				write(*,"(3E14.6)") y_arr(ix), feq_vec(ix), dampTermYYYWdy(ix)
-			end do
-		end if
 		write(*,*)"[config] Damping factors done."
 		call criticalError("expressions for nunu diagonal integrals missing!")
-	end subroutine setDampingFactorCoeffs
+	end subroutine setDampingFactors
 
 	subroutine init_matrices
 		real(dl), dimension(:), allocatable :: diag_el
@@ -280,7 +156,7 @@ module fpConfig
 		call createDiagMat(GR_mat, flavorNumber, diag_el)
 		GLR_vec(2,:,:) = GR_mat
 
-		call setDampingFactorCoeffs
+		call setDampingFactors
 
 		!lepton densities
 		leptonDensities = 0.d0

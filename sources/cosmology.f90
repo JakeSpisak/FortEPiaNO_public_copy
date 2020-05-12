@@ -224,13 +224,13 @@ module fpCosmology
 		call random_number(z)
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
-		write(*,"(' [cosmo] test energyDensity interpolation in ',*(E12.5))") x, z
+		write(*,"(' [cosmo] test energyDensity/pressure interpolation in x,z=',*(E12.5))") x, z
 		t1 = cls%energyDensityFull(x, z, thmass)
 		t2 = cls%energyDensity(x, z, thmass)
-		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
+		write(*,"(' [cosmo] comparing energy density (true vs interp): ',*(E17.10))") t1, t2
 		t1 = cls%pressureFull(x, z, thmass)
 		t2 = cls%pressure(x, z, thmass)
-		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
+		write(*,"(' [cosmo] comparing pressure (true vs interp): ',*(E17.10))") t1, t2
 #endif
 		call addToLog("[cosmo] ...done!")
 	end subroutine nonRelativistic_initialize
