@@ -4,7 +4,6 @@ module fpCosmology
 	use utilities
 	use fpErrors
 	use ftqed
-	use fpInteractions
 	use linear_interpolation_module
 	implicit none
 
