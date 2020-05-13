@@ -939,6 +939,65 @@ enddo                                                   !SG-PF
 		call addToLog("[cosmology] ...done!")
 	end subroutine test_nuDens_speed
 
+	!kappa function for damping terms (YYYW)
+	elemental function kappa_damp(a, b, c)
+		real(dl) :: kappa_damp
+		real(dl), intent(in) :: a, b, c
+		kappa_damp = a*a*(c-b) - 2.d0/3.d0*a* (c**3-b**3) + (c**5-b**5)/5.d0
+	end function kappa_damp
+
+	!function that returns the integrand of the nunu damping coefficient in YYYW terms using K kernels
+	elemental function nunu_damp_integrand(p, p1, q)
+		real(dl) :: nunu_damp_integrand
+		real(dl), intent(in) :: p, q, p1
+		real(dl) :: q1
+		real(dl) :: as, bs, cs, ap, bp, cp
+		real(dl) :: fq, fp1, fq1
+		q1 = p + q - p1
+
+		cs = p + q
+		as = cs**2
+		bs = max(abs(p-q), abs(p1-q1))
+
+		ap = (q - p1)**2
+		bp = abs(p1 - q)
+		cp = min(p+q1, q+p1)
+
+		fq = fermiDirac(q)
+		fp1 = fermiDirac(p1)
+		fq1 = fermiDirac(q1)
+
+		nunu_damp_integrand = &
+			(kappa_damp(as, bs, cs) + 2.d0 * kappa_damp(ap, bp, cp)) &
+			* ((1.d0-fq)*fp1*fq1 + fq*(1.d0-fp1)*(1.d0-fq1))
+	end function nunu_damp_integrand
+
+	!integral of the above function
+	pure function dy_damping(y)
+		real(dl) :: dy_damping
+		real(dl), intent(in) :: y
+		integer :: ia, ib
+		integer, parameter :: nydamp = 2**10
+		real(dl), dimension(:), allocatable :: ya, dya
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(ya(nydamp), dya(nydamp))
+		ya = linspace(0.d0, 100.d0, nydamp)
+		do ia=1, nydamp-1
+			dya(ia) = ya(ia+1) - ya(ia)
+		end do
+		allocate(fy2_arr(nydamp, nydamp))
+		fy2_arr = 0.d0
+		do ia=1, nydamp
+			do ib=1, nydamp
+				if (ya(ib) .gt. ya(ia)-y) &
+					fy2_arr(ia, ib) = nunu_damp_integrand(y, ya(ia), ya(ib))
+			end do
+		end do
+		dy_damping = integral_NC_2d(nydamp, nydamp, dya, dya, fy2_arr) / y**3
+		deallocate(ya, dya, fy2_arr)
+	end function dy_damping
+
 	subroutine init_interp_d123
 		real(dl), dimension(:,:,:,:), allocatable :: d2, d3, pi1_12, pi1_13
 		real(dl) :: y1,  y2,  y3,  y4, d1a, d1b, d2a, d2b, d3a, d3b
