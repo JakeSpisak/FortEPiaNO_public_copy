@@ -11,51 +11,6 @@ module fpInteractions
 
 	contains
 
-	!function that returns the integrand of the nunu damping coefficient in YYYW terms using PI kernels
-	elemental function nunu_damp_integrand_pi(p, p1, q)
-		real(dl) :: nunu_damp_integrand_pi
-		real(dl), intent(in) :: p, q, p1
-		real(dl), dimension(2) :: pi2
-		real(dl) :: q1, fq, fp1, fq1
-
-		nunu_damp_integrand_pi = 0.d0
-		q1 = p + q - p1
-		if ( &
-			.not.(q1.lt.0.d0 &
-			.or. p .gt.p1+q +q1 &
-			.or. q .gt.p +p1+q1 &
-			.or. p1.gt.p +q +q1 &
-			.or. q1.gt.p +q +p1 &
-			) &
-		) then
-			pi2 = PI2_ne_f(p, q, p1, q1, q, q1)
-			fq = fermiDirac(q)
-			fp1 = fermiDirac(p1)
-			fq1 = fermiDirac(q1)
-			nunu_damp_integrand_pi = &
-				(pi2(2) + 2.d0 * pi2(1)) &
-				* ((1.d0-fq)*fp1*fq1 + fq*(1.d0-fp1)*(1.d0-fq1))
-		end if
-	end function nunu_damp_integrand_pi
-
-	!integral of the above function
-	pure function dy_damping_pi(y)
-		real(dl) :: dy_damping_pi
-		real(dl), intent(in) :: y
-		integer :: ia, ib
-		real(dl), dimension(:,:), allocatable :: fy2_arr
-
-		allocate(fy2_arr(Ny, Ny))
-		fy2_arr = 0.d0
-		do ia=1, Ny
-			do ib=1, Ny
-				fy2_arr(ia, ib) = nunu_damp_integrand_pi(y, y_arr(ia), y_arr(ib))
-			end do
-		end do
-		dy_damping_pi = integral_GL_2d(Ny, w_gl_arr2, w_gl_arr2, fy2_arr) / y**3
-		deallocate(fy2_arr)
-	end function dy_damping_pi
-
 	!fitting formula for the above function
 	elemental function dy_damping_fit(y)
 		real(dl) :: dy_damping_fit
@@ -496,6 +451,7 @@ module fpInteractions
 			- f2 * (1.d0 - f4) * (t2a + t2b)
 	end function F_ab_sc_im
 
+	!D functions
 	elemental function D1_full(y1, y2, y3, y4)
 	!10.1103/PhysRevD.94.033009 eq.D1
 		implicit none
@@ -670,6 +626,7 @@ module fpInteractions
 			)/24.d0
 	end function D3_full
 
+	!Pi functions
 	elemental function PI1_12_full(y1, y2, y3, y4) !(y1, y2)
 		real(dl) :: PI1_12_full
 		real(dl), intent(in) :: y1, y2, y3, y4
