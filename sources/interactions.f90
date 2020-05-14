@@ -451,6 +451,379 @@ module fpInteractions
 			- f2 * (1.d0 - f4) * (t2a + t2b)
 	end function F_ab_sc_im
 
+	!phase space functions for nunu interactions
+	!scattering
+#ifdef FULL_F_NU
+	pure subroutine F_nu_sc_1324(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		!...
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		real(dl), dimension(:), allocatable, intent(out) :: t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i
+		real(dl), intent(out) :: tr2, tr4
+		integer :: k, m
+		real(dl) :: s13r, s13i, s24r, s24i, d24r
+
+		allocate(t1r(flavorNumber), t3r(flavorNumber)) !t?r(m) -> t?r(i,m)
+		allocate(t1i(flavorNumber), t3i(flavorNumber))
+		allocate(t2r(flavorNumber), t4r(flavorNumber)) !t?r(m) -> t?r(m,j)
+		allocate(t2i(flavorNumber), t4i(flavorNumber))
+		tr2 = 0.d0
+		tr4 = 0.d0
+		do m=1, flavorNumber
+			s13r = 0.d0
+			s13i = 0.d0
+			s24r = 0.d0
+			s24i = 0.d0
+			d24r = 0.d0
+			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
+			do k=1, flavorNumber
+				s13r = s13r + n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)
+				s13i = s13i - n1%re(i,k)*n3%im(k,m) - n1%im(i,k)*n3%re(k,m)
+				s24r = s24r + n2%im(m,k)*n4%im(k,j) - n2%re(m,k)*n4%re(k,j)
+				s24i = s24i - n2%re(m,k)*n4%im(k,j) - n2%im(m,k)*n4%re(k,j)
+				d24r = d24r + n2%im(m,k)*n4%im(k,m) - n2%re(m,k)*n4%re(k,m)
+			end do
+			!compute the products of two matrices
+			t1r(m) = n3%re(i,m) + s13r
+			t1i(m) = n3%im(i,m) + s13i
+			t3r(m) = n1%re(i,m) + s13r
+			t3i(m) = n1%im(i,m) + s13i
+			t2r(m) = n4%re(m,j) + s24r
+			t2i(m) = n4%im(m,j) + s24i
+			t4r(m) = n2%re(m,j) + s24r
+			t4i(m) = n2%im(m,j) + s24i
+			!compute Tr()
+			tr2 = tr2 + n4%re(m,m) + d24r
+			tr4 = tr4 + n2%re(m,m) + d24r
+		end do
+	end subroutine F_nu_sc_1324
+
+	pure function F_nu_sc_re_prod(n1, n2, n3, n4, i, j)
+		!...
+		real(dl) :: F_nu_sc_re_prod
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k, m
+		real(dl), dimension(:), allocatable :: t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i
+		real(dl) :: s13r, s13i, s24r, s24i, d24r
+		real(dl) :: tr2, tr4
+
+		call F_nu_sc_1324(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		F_nu_sc_re_prod = &
+			t1r(j) * tr2 + sum(t1r(:)*t2r(:) - t1i(:)*t2i(:)) &
+			- (t3r(j) * tr4 + sum(t3r(:)*t4r(:) - t3i(:)*t4i(:)))
+		deallocate(t1r, t2r, t3r, t4r)
+		deallocate(t1i, t2i, t3i, t4i)
+	end function F_nu_sc_re_prod
+
+	pure function F_nu_sc_im_prod(n1, n2, n3, n4, i, j)
+		!...
+		real(dl) :: F_nu_sc_im_prod
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k, m
+		real(dl), dimension(:), allocatable :: t1r, t2r, t3r, t4r
+		real(dl), dimension(:), allocatable :: t1i, t2i, t3i, t4i
+		real(dl) :: s13r, s13i, s24r, s24i, d24r
+		real(dl) :: tr2, tr4
+
+		F_nu_sc_im_prod = 0.d0
+		!there can be no imaginary part in the diagonal
+		if (i.eq.j) &
+			return
+
+		call F_nu_sc_1324(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		F_nu_sc_im_prod = &
+			t1i(j) * tr2 + sum(t1r(:)*t2i(:) + t1i(:)*t2r(:)) &
+			- (t3i(j) * tr4 + sum(t3r(:)*t4i(:) + t3i(:)*t4r(:)))
+		deallocate(t1r, t2r, t3r, t4r)
+		deallocate(t1i, t2i, t3i, t4i)
+	end function F_nu_sc_im_prod
+#endif
+
+	pure function F_nu_sc_re(n1, n2, n3, n4, i, j)
+		!...
+		real(dl) :: F_nu_sc_re
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k
+#ifndef FULL_F_NU
+		real(dl), dimension(:), allocatable :: t2r, t4r
+		real(dl) :: s13r, s24r
+#endif
+
+		F_nu_sc_re = 0.d0
+
+#ifdef FULL_F_NU
+		F_nu_sc_re = F_nu_sc_re_prod(n1, n2, n3, n4, i, j)
+		if (i.eq.j) then ! +h.c. is the same for diagonal entries
+			F_nu_sc_re = 2.d0 * F_nu_sc_re
+			return
+		end if
+		!now repeat to compute the h.c. (off-diagonal entries)
+		F_nu_sc_re = F_nu_sc_re + F_nu_sc_re_prod(n1, n2, n3, n4, j, i)
+#else
+		!only consider diagonal rho, it's easier because all the products involve diagonal matrices only
+		!offdiagonal elements vanish here
+		if (i.ne.j) &
+			return
+		allocate(t2r(flavorNumber), t4r(flavorNumber))
+		do k=1, flavorNumber
+			s24r = n2%re(k, k)*n4%re(k, k)
+			t2r(k) = n4%re(k, k) - s24r
+			t4r(k) = n2%re(k, k) - s24r
+		end do
+		s13r = n1%re(i, i) * n3%re(i, i)
+		F_nu_sc_re = &
+			(n3%re(i,i) - s13r) * (t2r(i) + sum(t2r)) &
+			- (n1%re(i,i) - s13r) * (t4r(i) + sum(t4r))
+		deallocate(t2r, t4r)
+		F_nu_sc_re = 2.d0 * F_nu_sc_re ! +h.c.
+#endif
+	end function F_nu_sc_re
+
+	pure function F_nu_sc_im(n1, n2, n3, n4, i, j)
+		!...
+		real(dl) :: F_nu_sc_im
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+
+		F_nu_sc_im = 0.d0
+
+#ifdef FULL_F_NU
+		!there can be no imaginary part in the diagonal
+		if (i.eq.j) &
+			return
+
+		F_nu_sc_im = F_nu_sc_im_prod(n1, n2, n3, n4, i, j) - F_nu_sc_im_prod(n1, n2, n3, n4, j, i)
+#endif
+	end function F_nu_sc_im
+
+	!pair
+#ifdef FULL_F_NU
+	pure subroutine F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		!...
+		!first line: sAr -> 12, sB->34
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		real(dl), dimension(:), allocatable, intent(inout) :: t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i
+		real(dl), intent(out) :: tr2, tr4
+		integer :: k, m
+		real(dl) :: sAr, sAi, sBr, sBi, sBd
+
+		tr2 = 0.d0
+		tr4 = 0.d0
+		do m=1, flavorNumber
+			sAr = 0.d0
+			sAi = 0.d0
+			sBr = 0.d0
+			sBi = 0.d0
+			sBd = 0.d0
+			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
+			do k=1, flavorNumber
+				sAr = sAr + n1%re(i,k)*n2%re(k,m) - n1%im(i,k)*n2%im(k,m)
+				sAi = sAi + n1%im(i,k)*n2%re(k,m) + n1%re(i,k)*n2%im(k,m)
+				sBr = sBr + n4%re(m,k)*n3%re(k,j) - n4%im(m,k)*n3%im(k,j)
+				sBi = sBi + n4%im(m,k)*n3%re(k,j) + n4%re(m,k)*n3%im(k,j)
+				sBd = sBd + n4%re(m,k)*n3%re(k,m) - n4%im(m,k)*n3%im(k,m)
+			end do
+			!compute the products of two matrices
+			t1r(m) = sAr + idMat(i,m) - n1%re(i,m) - n2%re(i,m)
+			t1i(m) = sAi - n1%im(i,m) - n2%im(i,m)
+			t3r(m) = sAr
+			t3i(m) = sAi
+			t2r(m) = sBr
+			t2i(m) = sBi
+			t4r(m) = sBr + idMat(m,j) - n4%re(m,j) - n3%re(m,j)
+			t4i(m) = sBi - n4%im(m,j) - n3%im(m,j)
+			!compute Tr()
+			tr2 = tr2 + sBd
+			tr4 = tr4 + sBd + idMat(m,m) - n4%re(m,m) - n3%re(m,m)
+		end do
+	end subroutine F_nu_pa_1234
+
+	pure subroutine F_nu_pa_1342(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		!...
+		!second line: sAr -> 13, sB->24
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		real(dl), dimension(:), allocatable, intent(inout) :: t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i
+		real(dl), intent(out) :: tr2, tr4
+		integer :: k, m
+		real(dl) :: sAr, sAi, sBr, sBi, sBd
+
+		tr2 = 0.d0
+		tr4 = 0.d0
+		do m=1, flavorNumber
+			sAr = 0.d0
+			sAi = 0.d0
+			sBr = 0.d0
+			sBi = 0.d0
+			sBd = 0.d0
+			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
+			do k=1, flavorNumber
+				sAr = sAr + n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)
+				sAi = sAi - n1%re(i,k)*n3%im(k,m) - n1%im(i,k)*n3%re(k,m)
+				sBr = sBr + n4%im(m,k)*n2%im(k,j) - n4%re(m,k)*n2%re(k,j)
+				sBi = sBi - n4%re(m,k)*n2%im(k,j) - n4%im(m,k)*n2%re(k,j)
+				sBd = sBd + n4%im(m,k)*n2%im(k,m) - n4%re(m,k)*n2%re(k,m)
+			end do
+			!compute the products of two matrices
+			t1r(m) = n3%re(i,m) + sAr
+			t1i(m) = n3%im(i,m) + sAi
+			t3r(m) = n1%re(i,m) + sAr
+			t3i(m) = n1%im(i,m) + sAi
+			t2r(m) = n4%re(m,j) + sBr
+			t2i(m) = n4%im(m,j) + sBi
+			t4r(m) = n2%re(m,j) + sBr
+			t4i(m) = n2%im(m,j) + sBi
+			!compute Tr()
+			tr2 = tr2 + n4%re(m,m) + sBd
+			tr4 = tr4 + n2%re(m,m) + sBd
+		end do
+	end subroutine F_nu_pa_1342
+
+	pure function F_nu_pa_re_prod(n1, n2, n3, n4, i, j)
+		!...
+		real(dl) :: F_nu_pa_re_prod
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k, m
+		real(dl), dimension(:), allocatable :: t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i
+		real(dl) :: sAr, sAi, sBr, sBi, sBd
+		real(dl) :: tr2, tr4
+
+		F_nu_pa_re_prod = 0.d0
+
+		allocate(t1r(flavorNumber), t3r(flavorNumber)) !t?r(m) -> t?r(i,m)
+		allocate(t1i(flavorNumber), t3i(flavorNumber)) !t?r(m) -> t?r(i,m)
+		allocate(t2r(flavorNumber), t4r(flavorNumber)) !t?r(m) -> t?r(m,j)
+		allocate(t2i(flavorNumber), t4i(flavorNumber)) !t?r(m) -> t?r(m,j)
+
+		!first line: sAr -> 12, sB->34
+		call F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		F_nu_pa_re_prod = F_nu_pa_re_prod &
+			+ t1r(j) * tr2 + sum(t1r(:)*t2r(:) - t1i(:)*t2i(:)) &
+			- (t3r(j) * tr4 + sum(t3r(:)*t4r(:) - t3i(:)*t4i(:)))
+
+		!second line: sAr -> 13, sB->24
+		call F_nu_pa_1342(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		F_nu_pa_re_prod = F_nu_pa_re_prod &
+			+ t1r(j) * tr2 + sum(t1r(:)*t2r(:) - t1i(:)*t2i(:)) &
+			- (t3r(j) * tr4 + sum(t3r(:)*t4r(:) - t3i(:)*t4i(:)))
+
+		deallocate(t1r, t2r, t3r, t4r)
+		deallocate(t1i, t2i, t3i, t4i)
+	end function F_nu_pa_re_prod
+
+	pure function F_nu_pa_im_prod(n1, n2, n3, n4, i, j)
+		!...
+		real(dl) :: F_nu_pa_im_prod
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k, m
+		real(dl), dimension(:), allocatable :: t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i
+		real(dl) :: sAr, sAi, sBr, sBi, sBd
+		real(dl) :: tr2, tr4
+
+		F_nu_pa_im_prod = 0.d0
+
+		!there can be no imaginary part in the diagonal
+		if (i.eq.j) &
+			return
+
+		allocate(t1r(flavorNumber), t3r(flavorNumber)) !t?r(m) -> t?r(i,m)
+		allocate(t1i(flavorNumber), t3i(flavorNumber)) !t?r(m) -> t?r(i,m)
+		allocate(t2r(flavorNumber), t4r(flavorNumber)) !t?r(m) -> t?r(m,j)
+		allocate(t2i(flavorNumber), t4i(flavorNumber)) !t?r(m) -> t?r(m,j)
+
+		!first line: sAr -> 12, sB->34
+		call F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		F_nu_pa_im_prod = F_nu_pa_im_prod &
+			+ t1i(j) * tr2 + sum(t1r(:)*t2i(:) + t1i(:)*t2r(:)) &
+			- (t3i(j) * tr4 + sum(t3r(:)*t4i(:) + t3i(:)*t4r(:)))
+
+		!second line: sAr -> 13, sB->24
+		call F_nu_pa_1342(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		F_nu_pa_im_prod = F_nu_pa_im_prod &
+			+ t1i(j) * tr2 + sum(t1r(:)*t2i(:) + t1i(:)*t2r(:)) &
+			- (t3i(j) * tr4 + sum(t3r(:)*t4i(:) + t3i(:)*t4r(:)))
+
+		deallocate(t1r, t2r, t3r, t4r)
+		deallocate(t1i, t2i, t3i, t4i)
+	end function F_nu_pa_im_prod
+#endif
+
+	pure function F_nu_pa_re(n1, n2, n3, n4, i, j)
+		!...
+		real(dl) :: F_nu_pa_re
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k
+#ifndef FULL_F_NU
+		real(dl), dimension(:), allocatable :: t2r, t4r
+		real(dl) :: sAr, sBr
+#endif
+
+		F_nu_pa_re = 0.d0
+
+#ifdef FULL_F_NU
+		F_nu_pa_re = F_nu_pa_re_prod(n1, n2, n3, n4, i, j)
+		if (i.eq.j) then ! +h.c. is the same for diagonal entries
+			F_nu_pa_re = 2.d0 * F_nu_pa_re
+			return
+		end if
+		!now repeat to compute the h.c. (off-diagonal entries)
+		F_nu_pa_re = F_nu_pa_re + F_nu_pa_re_prod(n1, n2, n3, n4, j, i)
+#else
+		!only consider diagonal rho, it's easier because all the products involve diagonal matrices only
+		!offdiagonal elements vanish here
+		if (i.ne.j) &
+			return
+
+		allocate(t2r(flavorNumber), t4r(flavorNumber))
+		!first line: sAr -> 12, sBr->34
+		do k=1, flavorNumber
+			sBr = n4%re(k, k)*n3%re(k, k)
+			t2r(k) = sBr
+			t4r(k) = sBr + 1.d0 - n4%re(k, k) - n3%re(k, k)
+		end do
+		sAr = n1%re(i, i) * n2%re(i, i)
+		F_nu_pa_re = F_nu_pa_re &
+			+ (sAr + 1.d0 - n1%re(i,i) - n2%re(i,i)) * (t2r(i) + sum(t2r)) &
+			- sAr * (t4r(i) + sum(t4r))
+		!second line: sAr -> 13, sBr->24
+		do k=1, flavorNumber
+			sBr = n4%re(k, k)*n2%re(k, k)
+			t2r(k) = n4%re(k, k) - sBr
+			t4r(k) = n2%re(k, k) - sBr
+		end do
+		sAr = n1%re(i, i) * n3%re(i, i)
+		F_nu_pa_re = F_nu_pa_re &
+			+ (n3%re(i,i) - sAr) * (t2r(i) + sum(t2r)) &
+			- (n1%re(i,i) - sAr) * (t4r(i) + sum(t4r))
+		deallocate(t2r, t4r)
+		F_nu_pa_re = 2.d0 * F_nu_pa_re ! +h.c.
+#endif
+	end function F_nu_pa_re
+
+	pure function F_nu_pa_im(n1, n2, n3, n4, i, j)
+		!...
+		real(dl) :: F_nu_pa_im
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+
+		F_nu_pa_im = 0.d0
+
+#ifdef FULL_F_NU
+		!there can be no imaginary part in the diagonal
+		if (i.eq.j) &
+			return
+
+		F_nu_pa_im = F_nu_pa_im_prod(n1, n2, n3, n4, i, j) - F_nu_pa_im_prod(n1, n2, n3, n4, j, i)
+#endif
+	end function F_nu_pa_im
+
 	!D functions
 	elemental function D1_full(y1, y2, y3, y4)
 	!10.1103/PhysRevD.94.033009 eq.D1

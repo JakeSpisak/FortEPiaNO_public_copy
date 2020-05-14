@@ -31,6 +31,7 @@ program tests
 	call do_tests_Pi_ij
 	call do_f_ann_sc_re_tests_eq
 	call do_f_ann_sc_re_tests_full
+	call do_test_F_nu
 	call do_tests_coll_int
 	call do_test_drho_dx
 	call do_test_collision_terms
@@ -3241,4 +3242,107 @@ program tests
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_damping_yyyw
+
+	subroutine do_test_F_nu
+		integer :: i, j
+		real(dl) :: res
+		real(dl), dimension(3, 3) :: Fpr, Fpi, Fsr, Fsi
+		character(len=300) :: tmparg
+		type(cmplxMatNN) :: m1, m2, m3, m4
+
+		call allocateCmplxMat(m1)
+		call allocateCmplxMat(m2)
+		call allocateCmplxMat(m3)
+		call allocateCmplxMat(m4)
+
+		call printTestBlockName("phase space functions for nunu")
+
+#ifdef FULL_F_NU
+		m1%re(1,:) = (/1.1d0, 0.2d0, 0.3d0/)
+		m1%re(2,:) = (/0.2d0, 1.3d0, 0.d0/)
+		m1%re(3,:) = (/0.3d0, 0.d0, 2.d0/)
+		m1%im(1,:) = (/0.d0, 0.d0, -0.3d0/)
+		m1%im(2,:) = (/0.d0, 0.d0, -0.4d0/)
+		m1%im(3,:) = (/0.3d0, 0.4d0, 0.d0/)
+
+		m2%re(1,:) = (/2.1d0, 0.1d0, 0.1d0/)
+		m2%re(2,:) = (/0.1d0, 2.3d0, 0.d0/)
+		m2%re(3,:) = (/0.1d0, 0.d0, 2.d0/)
+		m2%im(1,:) = (/0.d0, 0.1d0, -0.2d0/)
+		m2%im(2,:) = (/-0.1d0, 0.d0, -0.15d0/)
+		m2%im(3,:) = (/0.2d0, 0.15d0, 0.d0/)
+
+		m3%re(1,:) = (/1.3d0, -0.2d0, 0.d0/)
+		m3%re(2,:) = (/-0.2d0, 1.4d0, 0.d0/)
+		m3%re(3,:) = (/0.d0, 0.d0, 1.5d0/)
+		m3%im(1,:) = (/0.d0, 0.01d0, 0.11d0/)
+		m3%im(2,:) = (/-0.01d0, 0.d0, -0.11d0/)
+		m3%im(3,:) = (/-0.11d0, 0.11d0, 0.d0/)
+
+		m4%re(1,:) = (/1.9d0, 0.01d0, 0.d0/)
+		m4%re(2,:) = (/0.01d0, 1.7d0, 0.13d0/)
+		m4%re(3,:) = (/0.d0, 0.13d0, 1.8d0/)
+		m4%im(1,:) = (/0.d0, 0.d0, 0.1d0/)
+		m4%im(2,:) = (/0.d0, 0.d0, 0.13d0/)
+		m4%im(3,:) = (/-0.1d0, -0.13d0, 0.d0/)
+
+		Fsr(1,:) = (/-2.07923d0, 6.34496d0, 5.41588d0/)
+		Fsr(2,:) = (/6.34496d0, 0.37778d0, -0.17484d0/)
+		Fsr(3,:) = (/5.41588d0, -0.17484d0, 10.6444d0/)
+		Fsi(1,:) = (/0.d0, 0.068105d0, -6.89441d0/)
+		Fsi(2,:) = (/-0.068105d0, 0.d0, -6.13617d0/)
+		Fsi(3,:) = (/6.89441d0, 6.13617d0, 0.d0/)
+
+		Fpr(1,:) = (/-3.71726d0, 11.7786d0, 11.3093d0/)
+		Fpr(2,:) = (/11.7786d0, 2.2042d0, -0.12906d0/)
+		Fpr(3,:) = (/11.3093d0, -0.12906d0, 23.0392d0/)
+		Fpi(1,:) = (/0.d0, 0.79126d0, -13.9696d0/)
+		Fpi(2,:) = (/-0.79126d0, 0.d0, -15.1604d0/)
+		Fpi(3,:) = (/13.9696d0, 15.1604d0, 0.d0/)
+#else
+		m1%re(1,:) = (/1.1d0, 0.d0, 0.d0/)
+		m1%re(2,:) = (/0.d0, 2.2d0, 0.d0/)
+		m1%re(3,:) = (/0.d0, 0.d0, 1.5d0/)
+		m1%im = 0.d0
+		m2%re(1,:) = (/1.3d0, 0.d0, 0.d0/)
+		m2%re(2,:) = (/0.d0, 1.4d0, 0.d0/)
+		m2%re(3,:) = (/0.d0, 0.d0, 1.1d0/)
+		m2%im = 0.d0
+		m3%re(1,:) = (/2.1d0, 0.d0, 0.d0/)
+		m3%re(2,:) = (/0.d0, 1.7d0, 0.d0/)
+		m3%re(3,:) = (/0.d0, 0.d0, 1.2d0/)
+		m3%im = 0.d0
+		m4%re(1,:) = (/1.6d0, 0.d0, 0.d0/)
+		m4%re(2,:) = (/0.d0, 1.9d0, 0.d0/)
+		m4%re(3,:) = (/0.d0, 0.d0, 1.0d0/)
+		m4%im = 0.d0
+		Fsr(1,:) = (/-6.06d0, 0.d0, 0.d0/)
+		Fsr(2,:) = (/0.d0, -1.596d0, 0.d0/)
+		Fsr(3,:) = (/0.d0, 0.d0, 0.504d0/)
+		Fsi=0.d0
+		Fpr(1,:) = (/-10.968d0, 0.d0, 0.d0/)
+		Fpr(2,:) = (/0.d0, -2.844d0, 0.d0/)
+		Fpr(3,:) = (/0.d0, 0.d0, -2.854d0/)
+		Fpi=0.d0
+#endif
+		do i=1, 3
+			do j=i,3
+				write(tmparg,"('F_nu_sc ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", F_nu_sc_re(m1, m2, m3, m4, i, j), Fsr(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", F_nu_sc_im(m1, m2, m3, m4, i, j), Fsi(i,j), 1d-7, 1d-4)
+
+				write(tmparg,"('F_nu_pa ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", F_nu_pa_re(m1, m2, m3, m4, i, j), Fpr(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", F_nu_pa_im(m1, m2, m3, m4, i, j), Fpi(i,j), 1d-7, 1d-4)
+			end do
+		end do
+
+		call deallocateCmplxMat(m1)
+		call deallocateCmplxMat(m2)
+		call deallocateCmplxMat(m3)
+		call deallocateCmplxMat(m4)
+
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_F_nu
 end program tests

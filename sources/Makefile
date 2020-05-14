@@ -5,6 +5,8 @@ NO_MUONS ?=
 TESTSPEED ?=
 # define FULL_F_AB=1 to compute full matrix product in F_AB functions (by default assumes diagonal G matrices)
 FULL_F_AB ?=
+# define FULL_F_NU=1 to compute full matrix product in F_nu functions. If not set, use only diagonal elements
+FULL_F_NU ?=
 # define NOINTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
 NOINTERPOLATION ?=
 
@@ -41,6 +43,9 @@ ifeq ($(TESTSPEED), 1)
 endif
 ifeq ($(FULL_F_AB), 1)
 	F90FLAGS += -DFULL_F_AB=1
+endif
+ifeq ($(FULL_F_NU), 1)
+	F90FLAGS += -DFULL_F_NU=1
 endif
 ifeq ($(NOINTERPOLATION), 1)
 	F90FLAGS += -DNOINTERPOLATION=1
