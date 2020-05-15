@@ -132,6 +132,36 @@ module sgTestUtils
 		end if
 	end subroutine assert_double_rel_safe
 
+	subroutine assert_double_rel_safe_verb(testname, num1, num2, tola, tolr)
+		character(len=*), intent(in) :: testname
+		real(dl), intent(in) :: num1, num2, tola, tolr
+
+		totalTests = totalTests + 1
+		if(abs(num2).lt.tola) then
+			if (abs(num1 - num2) .lt. tola) then
+				write(*, fmt="(a,'  ',E14.7)") testname, num1 - num2
+				successTests = successTests + 1
+			else
+				print *, testname, " failed (safe-abs)"
+				write (*,"(*(E17.9))") num1, num2, num1 - num2, tola
+				failedTests = failedTests + 1
+				if (blocking) &
+					call exit(1)
+			end if
+		else
+			if (abs((num1 - num2)/num1) .lt. tolr) then
+				write(*, fmt="(a,'  ',E14.7)") testname, (num1 - num2)/num1
+				successTests = successTests + 1
+			else
+				print *, testname, " failed (safe-rel)"
+				write (*,"(*(E17.9))") num1, num2, (num1 - num2)/num1, tolr
+				failedTests = failedTests + 1
+				if (blocking) &
+					call exit(1)
+			end if
+		end if
+	end subroutine assert_double_rel_safe_verb
+
 	subroutine assert_double_rel_verb(testname, num1, num2, tol)
 		character(len=*), intent(in) :: testname
 		real(dl), intent(in) :: num1, num2, tol

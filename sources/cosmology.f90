@@ -257,8 +257,14 @@ module fpCosmology
 		integer, intent(in) :: i1, i2
 		logical, intent(in), optional :: reim
 		integer :: ix
+		logical :: useim
 
-		if (present(reim) .and. .not.reim) then
+		useim=.false.
+		if (present(reim)) then
+			if (.not.reim) &
+				useim=.true.
+		end if
+		if (useim) then
 			do ix=1, Ny
 				y = y_arr(ix)
 				fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%im(i1, i2)
@@ -277,8 +283,14 @@ module fpCosmology
 		integer, intent(in) :: i1, i2
 		logical, intent(in), optional :: reim
 		integer :: ix
+		logical :: useim
 
-		if (present(reim) .and. .not.reim) then
+		useim=.false.
+		if (present(reim)) then
+			if (.not.reim) &
+				useim=.true.
+		end if
+		if (useim) then
 			do ix=1, Ny
 				fy_arr(ix) = nuDensMatVecFD(ix)%im(i1, i2)
 			end do

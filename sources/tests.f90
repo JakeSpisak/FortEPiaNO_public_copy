@@ -353,11 +353,7 @@ program tests
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix A ',2I1)") i,j
-				if (abs(m(i,j)).gt.1d-16) then
-					call assert_double_rel(trim(tmparg), leptonDensities(i,j), m(i,j), er(i))
-				else
-					call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-16, er(i))
 				write(tmparg,"('nu density matrix re A ',2I1)") i,j
 				call assert_double(trim(tmparg), nuDensities%re(i,j), 0.d0, 1d-7)
 				write(tmparg,"('nu density matrix im A ',2I1)") i,j
@@ -384,11 +380,7 @@ program tests
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix B ',2I1)") i,j
-				if (abs(m(i,j)).gt.1d-16) then
-					call assert_double_rel(trim(tmparg), leptonDensities(i,j), m(i,j), er(i))
-				else
-					call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-16, er(i))
 				write(tmparg,"('nu density matrix re B ',2I1)") i,j
 				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 5d-7)
 				write(tmparg,"('nu density matrix im B ',2I1)") i,j
@@ -1669,11 +1661,7 @@ program tests
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//"re", F_ab_ann_re(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatA(ix,iy), 1d-5)
-				if (abs(tmpmatB(ix,iy)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-5)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7, 1d-5)
 			end do
 		end do
 		!LL
@@ -1688,11 +1676,7 @@ program tests
 				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//"re", F_ab_sc_re(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy), tmpmatA(ix,iy), 1d-5)
 				r2 = F_ab_sc_im(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy)
-				if (abs(tmpmatB(ix,iy)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-5)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7, 1d-5)
 			end do
 		end do
 		call deallocateCmplxMat(nA)
@@ -2143,11 +2127,7 @@ program tests
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms f ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 		tmpmatA(1,:) = (/348548, 0, 0/)
@@ -2164,12 +2144,8 @@ program tests
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms zod ',2I1)") i,j
-				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 		tmpmatA(1,:) = (/0, 348548, 348548/)
@@ -2187,12 +2163,8 @@ program tests
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms zd ',2I1)") i,j
-				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 		collint_diagonal_zero = .false.
@@ -2251,16 +2223,8 @@ program tests
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms r ',2I1)") i,j
-				if (abs(tmpmatA(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				end if
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 		call printTotalTests
@@ -2309,19 +2273,15 @@ program tests
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx a ',2I1)") i,j
-				if (abs(res%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
-				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-3)
 				else
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
+					call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				end if
-				if (abs(res%im(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
-				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-2)
 				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-4)
+					call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 2d-4)
 				end if
 			end do
 		end do
@@ -2337,19 +2297,15 @@ program tests
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx b ',2I1)") i,j
-				if (abs(res%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
-				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 3d-3)
 				else
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
+					call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				end if
-				if (abs(res%im(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
-				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-2)
 				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
+					call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 				end if
 			end do
 		end do
@@ -2382,16 +2338,8 @@ program tests
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx c ',2I1)") i,j
-				if (abs(res%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
-				end if
-				if (abs(res%im(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 			end do
 		end do
 
@@ -2405,16 +2353,8 @@ program tests
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx d ',2I1)") i,j
-				if (abs(res%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
-				end if
-				if (abs(res%im(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 			end do
 		end do
 		GLR_vec = GLR_vectmp
@@ -2483,11 +2423,7 @@ program tests
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 2+1 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 
@@ -2511,11 +2447,7 @@ program tests
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 3+0 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 
@@ -2543,11 +2475,7 @@ program tests
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 1+1 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 
@@ -2571,11 +2499,7 @@ program tests
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 2+0 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 
@@ -2620,11 +2544,7 @@ program tests
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 3+1 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i, j-1), tmparrA(i))
-				if (abs(tmpmatB(i,j-1)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), 1d-7, tmparrS(i))
 			end do
 		end do
 
@@ -2758,14 +2678,13 @@ program tests
 		tmperrA(7,:) = (/0.06, 0.03, 0.03/)
 		tmperrB(7,:) = (/0.005d0, 0.01d0, 0.01d0/)
 		!Ny=45
-		tmperrA(8,:) = (/0.05, 0.025, 0.025/)
+		tmperrA(8,:) = (/0.05, 0.025, 0.03/)
 		tmperrB(8,:) = (/0.025, 0.03, 0.03/)
 		!Ny=50
 		tmperrA(9,:) = (/0.05, 0.02, 0.025/)
 		tmperrB(9,:) = (/0.021, 0.03, 0.03/)
 		do nix=3, 9
-			nx = nix*5+5
-			Ny=nx
+			Ny=nix*5+5
 			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
@@ -2792,11 +2711,7 @@ program tests
 				intb = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrA(nix,ix), (inta-tmparrA(nix,ix))/inta, (intb-tmparrA(nix,ix))/intb
 				write(tmparg,"('test coll sc GL, N=',I2,' - ',2I1)") Ny, ix, ix
-				if (abs(tmparrA(nix,ix)).gt.1d-30) then
-					call assert_double_rel_verb(trim(tmparg), inta, tmparrA(nix,ix), tmperrA(nix,ix))
-				else
-					call assert_double_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30)
-				end if
+				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30, tmperrA(nix,ix))
 			end do
 
 			write(*,*) ""
@@ -2807,11 +2722,7 @@ program tests
 				intb = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrB(nix,ix), (inta-tmparrB(nix,ix))/inta, (intb-tmparrB(nix,ix))/intb
 				write(tmparg,"('test coll ann GL, N=',I2,' - ',2I1)") Ny, ix, ix
-				if (abs(tmparrB(nix,ix)).gt.1d-30) then
-					call assert_double_rel_verb(trim(tmparg), inta, tmparrB(nix,ix), tmperrB(nix,ix))
-				else
-					call assert_double_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30)
-				end if
+				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30, tmperrB(nix,ix))
 			end do
 		end do
 
@@ -2922,11 +2833,7 @@ program tests
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff A ',2I1)") i,j
-				if (abs(Heff%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7, 1d-7)
 				call assert_double(trim(tmparg)//"re", Heff%im(i,j), r2(i,j), 1d-7)
 			end do
 		end do
@@ -2934,16 +2841,8 @@ program tests
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff_cmplx A ',2I1)") i,j
-				if (abs(r1(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
-				end if
-				if (abs(r2(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7, 1d-7)
+				call assert_double_rel_safe(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7, 1d-7)
 			end do
 		end do
 		!B
@@ -2963,32 +2862,16 @@ program tests
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff B ',2I1)") i,j
-				if (abs(r1(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
-				end if
-				if (abs(r2(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", Heff%im(i,j), r2(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", Heff%im(i,j), r2(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7, 1d-7)
+				call assert_double_rel_safe(trim(tmparg)//"im", Heff%im(i,j), r2(i,j), 1d-7, 1d-7)
 			end do
 		end do
 		Heffc = H_eff_cmplx(0.7d0)
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff_cmplx B ',2I1)") i,j
-				if (abs(r1(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
-				end if
-				if (abs(r2(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7, 1d-7)
+				call assert_double_rel_safe(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7, 1d-7)
 			end do
 		end do
 
@@ -3027,11 +2910,7 @@ program tests
 		rv = (/1.,2.,3.,0.,0.,0./)
 		do i=1, maxFlavorNumber
 			write(tmparg,"('HEigensystem ',I1)") i
-			if (abs(rv(i)).lt.1d-7) then
-				call assert_double(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7)
-			else
-				call assert_double_rel(trim(tmparg)//"re", tmpvec(i), rv(i), 2d-3)
-			end if
+			call assert_double_rel_safe(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7, 2d-3)
 		end do
 
 		do iy=1, Ny
@@ -3053,11 +2932,7 @@ program tests
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('rho mass basis ',2I1)") i,j
-				if (abs(r1(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", m%re(i,j), r1(i,j), 2d-3)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7, 2d-3)
 				call assert_double(trim(tmparg)//"im", m%im(i,j), r2(i,j), 1d-7)
 			end do
 		end do
