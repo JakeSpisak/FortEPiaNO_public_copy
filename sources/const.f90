@@ -211,6 +211,14 @@ module fpInterfaces1
 		end function
 	end interface
 	interface
+		pure real(dl) function Fnunu(n1, n2, n3, n4, i, j)
+			use precision
+			use variables
+			type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+			integer, intent(in) :: i, j
+		end function
+	end interface
+	interface
 		real(dl) function nuDensity_integrator(i1, i2, reim)
 			use precision
 			integer, intent(in) :: i1, i2

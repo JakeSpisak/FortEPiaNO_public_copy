@@ -129,7 +129,7 @@ module fpConfig
 		call printMat(dampTermMatrixCoeffNunu)
 
 		write(*,*)"[config] Damping factors done."
-		call criticalError("expressions for nunu diagonal integrals missing!")
+!		call criticalError("expressions for nunu diagonal integrals missing!")
 	end subroutine setDampingFactors
 
 	subroutine init_matrices

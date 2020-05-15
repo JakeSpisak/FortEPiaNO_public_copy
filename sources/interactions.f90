@@ -1162,15 +1162,46 @@ module fpInteractions
 			+ coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
 	end function coll_nue_3_int
 
+	function coll_nunu_int(iy2, iy3, obj, F_nu_sc, F_nu_pa)
+		!nunu interaction
+		use fpInterfaces1
+		real(dl) :: coll_nunu_int
+		integer, intent(in) :: iy2, iy3
+		type(coll_args), intent(in) :: obj
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		type(cmplxMatNN) :: n4
+		real(dl), dimension(2) :: pi2_vec
+		real(dl) :: y2, y3, y4
+
+		coll_nunu_int = 0.d0
+
+		y2 = y_arr(iy2)
+		y3 = y_arr(iy3)
+		y4 = obj%y1 + y2 - y3
+		if (.not.(y4.lt.y_arr(1) &
+				.or. y4.gt.y_arr(Ny) & !assume that if y4 is within the y_max range or there is no contribution...otherwise I should extrapolate! maybe later...
+				.or. obj%y1.gt.y2+y3+y4 &
+				.or. y2.gt.obj%y1+y3+y4 &
+				.or. y3.gt.obj%y1+y2+y4 &
+				.or. y4.gt.obj%y1+y2+y3) &
+		) then
+			pi2_vec = PI2_ne_f(obj%y1, y2, y3, y4, y2, y4)
+			n4 = get_interpolated_nudens(nuDensMatVecFD, y4, flavorNumber, Ny)
+			coll_nunu_int = coll_nunu_int &
+				+ pi2_vec(1) * F_nu_pa(nuDensMatVecFD(obj%iy), nuDensMatVecFD(iy2), nuDensMatVecFD(iy3), n4, obj%ix1,obj%ix2) &
+				+ pi2_vec(2) * F_nu_sc(nuDensMatVecFD(obj%iy), nuDensMatVecFD(iy2), nuDensMatVecFD(iy3), n4, obj%ix1,obj%ix2)
+		end if
+	end function coll_nunu_int
+
 	!integrate collision terms
-	pure function integrate_coll_int_NC(f, obj, F_ab_ann, F_ab_sc)
+	pure function integrate_collint_nue_NC(f, obj, F_ab_ann, F_ab_sc)
 		use fpInterfaces1
 		use fpInterfaces2
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
 		procedure (collision_integrand) :: f
-		real(dl) :: integrate_coll_int_NC
+		real(dl) :: integrate_collint_nue_NC
 		type(coll_args), intent(in) :: obj
 		integer :: ia, ib
 		real(dl), dimension(:,:), allocatable :: fy2_arr
@@ -1183,18 +1214,18 @@ module fpInteractions
 				fy2_arr(ia, ib) = f(ia, y_arr(ib), obj, F_ab_ann, F_ab_sc)
 			end do
 		end do
-		integrate_coll_int_NC = integral_NC_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
+		integrate_collint_nue_NC = integral_NC_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
 		deallocate(fy2_arr)
-	end function integrate_coll_int_NC
+	end function integrate_collint_nue_NC
 
-	pure function integrate_coll_int_GL(f, obj, F_ab_ann, F_ab_sc)
+	pure function integrate_collint_nue_GL(f, obj, F_ab_ann, F_ab_sc)
 		use fpInterfaces1
 		use fpInterfaces2
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
 		procedure (collision_integrand) :: f
-		real(dl) :: integrate_coll_int_GL
+		real(dl) :: integrate_collint_nue_GL
 		type(coll_args), intent(in) :: obj
 		integer :: ia, ib
 		real(dl), dimension(:,:), allocatable :: fy2_arr
@@ -1206,9 +1237,9 @@ module fpInteractions
 				fy2_arr(ia, ib) = f(ia, y_arr(ib), obj, F_ab_ann, F_ab_sc)
 			end do
 		end do
-		integrate_coll_int_GL = integral_GL_2d(Ny, w_gl_arr2, w_gl_arr2, fy2_arr)
+		integrate_collint_nue_GL = integral_GL_2d(Ny, w_gl_arr2, w_gl_arr2, fy2_arr)
 		deallocate(fy2_arr)
-	end function integrate_coll_int_GL
+	end function integrate_collint_nue_GL
 
 	pure function get_collision_terms(collArgsIn, Fint)
 		use fpInterfaces2
@@ -1247,9 +1278,9 @@ module fpInteractions
 		end if
 
 		if (use_gauss_laguerre) then
-			integrator => integrate_coll_int_GL
+			integrator => integrate_collint_nue_GL
 		else
-			integrator => integrate_coll_int_NC
+			integrator => integrate_collint_nue_NC
 		end if
 		do i=1, flavorNumber
 			collArgs%ix1 = i

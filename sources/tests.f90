@@ -14,25 +14,27 @@ program tests
 	write(*,*) ""
 	write(*,*) ""
 	write(*,"(a)") "Initializations"
-	call do_tests_initialization
+	call do_test_initialization
 	call init_fermions
 	call allocate_interpNuDens
 
 	call do_basic_tests
 	call do_test_NC_integrals
 	call do_test_commutator
-	call do_tests_JKG
-	call do_tests_dme2
-	call do_tests_cosmology
+	call do_test_JKG
+	call do_test_dme2
+	call do_test_cosmology
 	call do_test_nu_matrices
-	call do_tests_dzodx
-	call do_tests_dme2
-	call do_tests_Di
-	call do_tests_Pi_ij
+	call do_test_dzodx
+	call do_test_dme2
+	call do_test_Di
+	call do_test_Pi_ij
 	call do_f_ann_sc_re_tests_eq
 	call do_f_ann_sc_re_tests_full
 	call do_test_F_nu
-	call do_tests_coll_int
+	call do_test_interp_nudens
+	call do_test_collint_nunu
+	call do_test_coll_int
 	call do_test_drho_dx
 	call do_test_collision_terms
 	call do_test_damping_factors
@@ -53,7 +55,7 @@ program tests
 
 	contains
 
-	subroutine do_tests_initialization
+	subroutine do_test_initialization
 		real(dl), dimension(:), allocatable :: fake
 		integer :: ix
 
@@ -127,7 +129,7 @@ program tests
 		interp_yvec = logspace(log10(y_min), log10(y_max), interp_ny)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
-	end subroutine do_tests_initialization
+	end subroutine do_test_initialization
 
 	subroutine do_basic_tests
 		real(dl), dimension(:), allocatable :: tarr
@@ -416,7 +418,7 @@ program tests
 		call resetTestCounter
 	end subroutine do_test_nu_matrices
 
-	subroutine do_tests_cosmology
+	subroutine do_test_cosmology
 		real(dl), dimension(:), allocatable :: ndmv_re
 		integer :: i, iy
 
@@ -655,9 +657,9 @@ program tests
 
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_cosmology
+	end subroutine do_test_cosmology
 
-	subroutine do_tests_JKG
+	subroutine do_test_JKG
 		real(dl), dimension(2) :: res
 		integer :: ix
 
@@ -797,9 +799,9 @@ program tests
 		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_JKG
+	end subroutine do_test_JKG
 
-	subroutine do_tests_dzodx
+	subroutine do_test_dzodx
 		integer :: n
 		real(dl), dimension(:), allocatable :: ydot
 		integer :: m
@@ -832,9 +834,9 @@ program tests
 		deallocate(ydot)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_dzodx
+	end subroutine do_test_dzodx
 
-	subroutine do_tests_dme2
+	subroutine do_test_dme2
 		call printTestBlockName("dme2")
 		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.022915468d0, 1d-6)
 		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.022915468d0, 1d-6)!here no log term, the flag is set to false
@@ -872,9 +874,9 @@ program tests
 
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_dme2
+	end subroutine do_test_dme2
 
-	subroutine do_tests_Di
+	subroutine do_test_Di
 		call printTestBlockName("D_i functions")
 		call assert_double("D1 test 1", D1_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 2", D1_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
@@ -928,9 +930,9 @@ program tests
 		call assert_double_rel("D3p test 6", D3_bis(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_Di
+	end subroutine do_test_Di
 
-	subroutine do_tests_Pi_ij
+	subroutine do_test_Pi_ij
 		real(dl), dimension(2) :: temp_v2
 		call printTestBlockName("Pi(yi,yj) functions")
 		call assert_double("Pi_1_12 test 1", PI1_12_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.00933333d0, 1d-7)
@@ -970,7 +972,7 @@ program tests
 		call assert_double("Pi_2_12 test 4", temp_v2(2), 9420.8d0, 1d-7)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_Pi_ij
+	end subroutine do_test_Pi_ij
 
 	subroutine do_f_ann_sc_re_tests_eq
 		integer :: ix, iy
@@ -1685,7 +1687,7 @@ program tests
 		call resetTestCounter
 	end subroutine do_f_ann_sc_re_tests_full
 
-	subroutine do_tests_coll_int
+	subroutine do_test_coll_int
 		real(dl) :: x,z,dme2
 		type(coll_args) :: collArgs
 		integer :: i, j, iy1, iy
@@ -1830,7 +1832,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1863,7 +1865,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -1935,7 +1937,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1969,7 +1971,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -2053,7 +2055,7 @@ program tests
 		deallocate(ndmv_re)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_coll_int
+	end subroutine do_test_coll_int
 
 	pure real(dl) function fakecollint1(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
@@ -2652,13 +2654,13 @@ program tests
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				tmparrA(nix,ix) = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				tmparrA(nix,ix) = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			end do
 
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				tmparrB(nix,ix) = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				tmparrB(nix,ix) = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			end do
 		end do
 
@@ -2707,8 +2709,8 @@ program tests
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_coll_int_GL(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				inta = integrate_collint_nue_GL(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				intb = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrA(nix,ix), (inta-tmparrA(nix,ix))/inta, (intb-tmparrA(nix,ix))/intb
 				write(tmparg,"('test coll sc GL, N=',I2,' - ',2I1)") Ny, ix, ix
 				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30, tmperrA(nix,ix))
@@ -2718,8 +2720,8 @@ program tests
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_coll_int_GL(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				inta = integrate_collint_nue_GL(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				intb = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrB(nix,ix), (inta-tmparrB(nix,ix))/inta, (intb-tmparrB(nix,ix))/intb
 				write(tmparg,"('test coll ann GL, N=',I2,' - ',2I1)") Ny, ix, ix
 				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30, tmperrB(nix,ix))
@@ -3058,7 +3060,7 @@ program tests
 		end do
 
 		cts = get_collision_terms(collArgs, fakecollinty)
-		res1 = integrate_coll_int_NC(fakecollinty, collArgs, F_ab_ann_re, F_ab_sc_re) &
+		res1 = integrate_collint_nue_NC(fakecollinty, collArgs, F_ab_ann_re, F_ab_sc_re) &
 			* collTermFactor/(y_arr(iy1)**2*x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
@@ -3088,7 +3090,7 @@ program tests
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
 		cts = get_collision_terms(collArgs, fakecollinty)
-		res1 = integrate_coll_int_NC(fakecollinty, collArgs, F_ab_ann_re, F_ab_sc_re) &
+		res1 = integrate_collint_nue_NC(fakecollinty, collArgs, F_ab_ann_re, F_ab_sc_re) &
 			* collTermFactor/(y_arr(iy1)**2*x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
@@ -3220,4 +3222,105 @@ program tests
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_F_nu
+
+	subroutine do_test_interp_nudens
+		integer :: i, j
+		real(dl), dimension(2, 2) :: ndr, ndi
+		type(cmplxMatNN) :: nm
+		type(cmplxMatNN), dimension(:), allocatable :: vdm
+		character(len=300) :: tmparg
+
+		call printTestBlockName("interpolation of nudens")
+		allocate(vdm(3))
+		do i=1, 3
+			allocate(vdm(i)%re(2,2), vdm(i)%im(2,2))
+			vdm(i)%y = i
+		end do
+		vdm(3)%y = 10.
+		vdm(1)%re(1,:) = (/1.1,0.3/)
+		vdm(1)%re(2,:) = (/0.12,2./)
+		vdm(1)%im(1,:) = (/10.,2./)
+		vdm(1)%im(2,:) = (/-0.4,0./)
+		vdm(2)%re(1,:) = (/1.3,-0.2/)
+		vdm(2)%re(2,:) = (/0.16,1.2/)
+		vdm(2)%im(1,:) = (/0.,0.2/)
+		vdm(2)%im(2,:) = (/0.4,0./)
+		vdm(3)%re(1,:) = (/1.9,0./)
+		vdm(3)%re(2,:) = (/0.,1.1/)
+		vdm(3)%im(1,:) = (/0.,0.1/)
+		vdm(3)%im(2,:) = (/0.2,1.1/)
+		ndr(1,:) = (/1.2,0.05/)
+		ndr(2,:) = (/0.05,1.6/)
+		ndi(1,:) = (/0.,1.1/)
+		ndi(2,:) = (/-1.1,0./)
+		nm = get_interpolated_nudens(vdm, 1.5d0, 2, 3)
+		call assert_double("ndr A y", nm%y, 1.5d0, 1d-7)
+		do i=1,2
+			do j=1,2
+				write(tmparg,"('ndr A ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", nm%re(i,j), ndr(i,j), 1d-7)
+				call assert_double(trim(tmparg)//"im", nm%im(i,j), ndi(i,j), 1d-7)
+			end do
+		end do
+		call deallocateCmplxMat(nm)
+
+		ndr(1,:) = (/1.75,-0.05/)
+		ndr(2,:) = (/-0.05,1.125/)
+		ndi(1,:) = (/0.,0.125/)
+		ndi(2,:) = (/-0.125,0./)
+		nm = get_interpolated_nudens(vdm, 8.d0, 2, 3)
+		call assert_double("ndr B y", nm%y, 8.d0, 1d-7)
+		do i=1,2
+			do j=1,2
+				write(tmparg,"('ndr B ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", nm%re(i,j), ndr(i,j), 1d-7)
+				call assert_double(trim(tmparg)//"im", nm%im(i,j), ndi(i,j), 1d-7)
+			end do
+		end do
+		call deallocateCmplxMat(nm)
+
+		ndr(1,:) = (/0.,0./)
+		ndr(2,:) = (/0.,0./)
+		ndi(1,:) = (/0.,0./)
+		ndi(2,:) = (/0.,0./)
+		nm = get_interpolated_nudens(vdm, 0.1d0, 2, 3)
+		call assert_double("ndr C y", nm%y, 0.1d0, 1d-7)
+		do i=1,2
+			do j=1,2
+				write(tmparg,"('ndr C ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", nm%re(i,j), ndr(i,j), 1d-7)
+				call assert_double(trim(tmparg)//"im", nm%im(i,j), ndi(i,j), 1d-7)
+			end do
+		end do
+		call deallocateCmplxMat(nm)
+
+		ndr(1,:) = (/0.,0./)
+		ndr(2,:) = (/0.,0./)
+		ndi(1,:) = (/0.,0./)
+		ndi(2,:) = (/0.,0./)
+		nm = get_interpolated_nudens(vdm, 20.d0, 2, 3)
+		call assert_double("ndr D y", nm%y, 20.d0, 1d-7)
+		do i=1,2
+			do j=1,2
+				write(tmparg,"('ndr D ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", nm%re(i,j), ndr(i,j), 1d-7)
+				call assert_double(trim(tmparg)//"im", nm%im(i,j), ndi(i,j), 1d-7)
+			end do
+		end do
+		call deallocateCmplxMat(nm)
+
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_interp_nudens
+
+	subroutine do_test_collint_nunu
+		integer :: i, j
+		real(dl), dimension(3, 3) :: ndr, ndi
+
+		call printTestBlockName("collision integrals of nunu")
+
+
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_collint_nunu
 end program tests

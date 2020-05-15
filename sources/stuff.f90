@@ -507,7 +507,7 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sc re semilin>")
 		call tic(timer1)
@@ -530,7 +530,7 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<ann re semilin>")
 		call tic(timer1)
@@ -553,9 +553,9 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res1 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<reset>")
 		call tic(timer1)
@@ -566,8 +566,8 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res1 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sep ann, sc>")
 		call tic(timer1)
@@ -578,7 +578,7 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sum ann+sc>")
 		
