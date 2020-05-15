@@ -101,7 +101,7 @@ def setParser():
     )
     for c in ["nue", "nunu"]:
         parser.add_argument(
-            "--damping_no_%s" % c,
+            "--collint_no_%s" % c,
             action="store_true",
             help="disable %s contributions to damping terms" % c,
         )
@@ -419,8 +419,8 @@ def getIniValues(args):
     values["folder"] = args.outputfolder
     values["Nprintderivs"] = args.verbose_deriv_freq
     for p in [
-        "damping_no_nue",
-        "damping_no_nunu",
+        "collint_no_nue",
+        "collint_no_nunu",
         "save_energy_entropy",
         "save_fd",
         "save_Neff",

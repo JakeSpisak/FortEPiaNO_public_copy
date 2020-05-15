@@ -87,6 +87,8 @@ program tests
 		use_gauss_laguerre = .false.
 		y_arr = linspace(y_min, y_max, Ny)
 		call finish_y_arrays
+		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
+		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 		collint_damping_type = 2
 		collint_diagonal_zero = .false.
 		collint_offdiag_damping = .false.
@@ -113,8 +115,8 @@ program tests
 			massSplittings(3) = 0.0025153d0
 		end if
 		z_in=1.0000575
-		damping_no_nue = .false.
-		damping_no_nunu = .false.
+		collint_no_nue = .false.
+		collint_no_nunu = .false.
 		save_fd = .true.
 		save_energy_entropy_evolution = .true.
 		save_Neff = .true.
@@ -180,8 +182,8 @@ program tests
 		call assert_double_rel("FD 1", fermiDirac(0.d0), 0.5d0, 1d-7)
 		call assert_double_rel("FD 2", fermiDirac(5.d0), 0.0066928509242848554d0, 1d-7)
 		call assert_double_rel("FD 3", fermiDirac(20.d0), 2.0611536181902037d-09, 1d-7)
-		call assert_double_rel("f_eq saved A", feq_vec(1), fermiDirac(y_arr(1)), 1d-3)
-		call assert_double_rel("f_eq saved B", feq_vec(Ny), fermiDirac(y_arr(Ny)), 1d-3)
+		call assert_double_rel("f_eq saved A", feq_arr(1), fermiDirac(y_arr(1)), 1d-3)
+		call assert_double_rel("f_eq saved B", feq_arr(Ny), fermiDirac(y_arr(Ny)), 1d-3)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_basic_tests
@@ -2057,32 +2059,53 @@ program tests
 		call resetTestCounter
 	end subroutine do_test_coll_int
 
-	pure real(dl) function fakecollint1(a, b, o, F_ab_ann, F_ab_sc)
+	pure real(dl) function fakecollintnue1(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
-		fakecollint1=1.d0
+		fakecollintnue1=1.d0
 	end function
-	pure real(dl) function fakecollint0(a, b, o, F_ab_ann, F_ab_sc)
+	pure real(dl) function fakecollintnue0(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
-		fakecollint0=0.d0
+		fakecollintnue0=0.d0
 	end function
-	pure real(dl) function fakecollinty(a, b, o, F_ab_ann, F_ab_sc)
+	pure real(dl) function fakecollintnuey(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
-		fakecollinty=1.d4*b**2
+		fakecollintnuey=1.d4*b**2
+	end function
+	pure real(dl) function fakecollintnunu1(a, b, o, F_nu_sc, F_nu_pa)
+		use variables
+		integer, intent(in) :: a, b
+		type(coll_args), intent(in) :: o
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		fakecollintnunu1=1.d0
+	end function
+	pure real(dl) function fakecollintnunu0(a, b, o, F_nu_sc, F_nu_pa)
+		use variables
+		integer, intent(in) :: a, b
+		type(coll_args), intent(in) :: o
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		fakecollintnunu0=0.d0
+	end function
+	pure real(dl) function fakecollintnunuy(a, b, o, F_nu_sc, F_nu_pa)
+		use variables
+		integer, intent(in) :: a, b
+		type(coll_args), intent(in) :: o
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		fakecollintnunuy=1.d4*b**2
 	end function
 
 	subroutine do_test_collision_terms
@@ -2122,7 +2145,7 @@ program tests
 		tmpmatB(3,:) = (/-348548., -348548., 0./)
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2140,7 +2163,7 @@ program tests
 		tmpmatB(3,:) = (/0., 0., 0./)
 		collint_damping_type = 0
 		collint_offdiag_damping = .true.
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2159,7 +2182,7 @@ program tests
 		collint_damping_type = 2
 		collint_diagonal_zero = .true.
 		collint_offdiag_damping = .false.
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2218,7 +2241,7 @@ program tests
 		tmpmatB(3,:) = (/0., 0., 0./)
 		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
 		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
-		cts = get_collision_terms(collArgs, coll_nue_3_int)
+		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 !		write(*,multidblfmt)cts
@@ -2271,7 +2294,7 @@ program tests
 		res%im(1,:) = (/0., 8504.49, 30182.6/)
 		res%im(2,:) = (/-8504.49, 0., -698.419/)
 		res%im(3,:) = (/-30182.6, 698.419, 0./)
-		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollint0)
+		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx a ',2I1)") i,j
@@ -2295,7 +2318,7 @@ program tests
 		res%im(1,:) = (/0., 9293.06, 30971.2/)
 		res%im(2,:) = (/-9293.06, 0., 90.1601/)
 		res%im(3,:) = (/-30971.2, -90.1601, 0./)
-		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollint1)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue1, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx b ',2I1)") i,j
@@ -2336,7 +2359,7 @@ program tests
 		res%im(1,:) = (/0., 369833., 410950./)
 		res%im(2,:) = (/-369833., 0., 6598.44/)
 		res%im(3,:) = (/-410950., -6598.44, 0./)
-		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollint0)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx c ',2I1)") i,j
@@ -2351,7 +2374,7 @@ program tests
 		res%im(1,:) = (/0., 369983., 411100./)
 		res%im(2,:) = (/-369983., 0., 6748.46/)
 		res%im(3,:) = (/-411100., -6748.46, 0./)
-		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollinty)
+		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollintnuey, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx d ',2I1)") i,j
@@ -2418,7 +2441,7 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2442,7 +2465,7 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2470,7 +2493,7 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2494,7 +2517,7 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2539,7 +2562,7 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
@@ -2583,6 +2606,7 @@ program tests
 		use_gauss_laguerre = .true.
 		do nx=50, 10, -1
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
+			call finish_y_arrays
 
 			allocate(fx1(nx))
 			do ix=1,nx
@@ -2634,6 +2658,7 @@ program tests
 		do nix=1, 9
 			nx = nix*5+5
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
+			call finish_y_arrays
 			collArgs%y1 = xa(collArgs%iy)
 			y_arr = loglinspace(y_min, collArgs%y1, y_max, Ny, 10)
 			do ix=1, Ny-1
@@ -2680,7 +2705,7 @@ program tests
 		tmperrA(7,:) = (/0.06, 0.03, 0.03/)
 		tmperrB(7,:) = (/0.005d0, 0.01d0, 0.01d0/)
 		!Ny=45
-		tmperrA(8,:) = (/0.05, 0.025, 0.03/)
+		tmperrA(8,:) = (/0.05, 0.025, 0.025/)
 		tmperrB(8,:) = (/0.025, 0.03, 0.03/)
 		!Ny=50
 		tmperrA(9,:) = (/0.05, 0.02, 0.025/)
@@ -2688,6 +2713,7 @@ program tests
 		do nix=3, 9
 			Ny=nix*5+5
 			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+			call finish_y_arrays
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 			end do
@@ -2731,6 +2757,7 @@ program tests
 		call printTestBlockName("other applications of GL quadrature")
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+		call finish_y_arrays
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
@@ -2771,6 +2798,7 @@ program tests
 		nuFactor(1:3)=1.d0
 		Ny=25
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+		call finish_y_arrays
 		ydot = 0.d0
 		do m=1, Ny
 			ydot((m-1)*flavNumSqu + 1) = 1.d0/y_arr(m)
@@ -2778,9 +2806,9 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 
-		feq_vec = 0.d0
+		feq_arr = 0.d0
 		do ix=1, Ny
-			feq_vec(ix) = fermiDirac(y_arr(ix))
+			feq_arr(ix) = fermiDirac(y_arr(ix))
 		end do
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
 		call assert_double("dz_o_dx test 1a", ydot(n), 7.15311d0, 5d-5)
@@ -2970,6 +2998,7 @@ program tests
 
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+		call finish_y_arrays
 		call assert_double_rel("dy_damping_pi 3.        ", dy_damping_pi(3.d0        ),  94.545d0, 2d-2)
 		call assert_double_rel("dy_damping_pi 0.001     ", dy_damping_pi(0.001d0     ), 129.894d0, 2d-2)
 		call assert_double_rel("dy_damping_pi 0.00359381", dy_damping_pi(0.00359381d0), 129.933d0, 2d-2)
@@ -3059,8 +3088,8 @@ program tests
 			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
 		end do
 
-		cts = get_collision_terms(collArgs, fakecollinty)
-		res1 = integrate_collint_nue_NC(fakecollinty, collArgs, F_ab_ann_re, F_ab_sc_re) &
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
+		res1 = integrate_collint_nue_NC(fakecollintnuey, collArgs, F_ab_ann_re, F_ab_sc_re) &
 			* collTermFactor/(y_arr(iy1)**2*x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
@@ -3089,8 +3118,8 @@ program tests
 		collArgs%z = z
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		cts = get_collision_terms(collArgs, fakecollinty)
-		res1 = integrate_collint_nue_NC(fakecollinty, collArgs, F_ab_ann_re, F_ab_sc_re) &
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
+		res1 = integrate_collint_nue_NC(fakecollintnuey, collArgs, F_ab_ann_re, F_ab_sc_re) &
 			* collTermFactor/(y_arr(iy1)**2*x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
@@ -3314,11 +3343,43 @@ program tests
 	end subroutine do_test_interp_nudens
 
 	subroutine do_test_collint_nunu
-		integer :: i, j
+		integer :: i, j, iy1, iy2, iy3
 		real(dl), dimension(3, 3) :: ndr, ndi
+		type(coll_args) :: collArgs
 
 		call printTestBlockName("collision integrals of nunu")
+		collArgs%x = 0.05d0
+		collArgs%z = 1.06d0
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = 0.0d0
 
+		Ny=50
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+		call finish_y_arrays
+		do i=1, flavorNumber
+			do j=1, Ny
+				nuDensMatVecFD(j)%re(i, i) = 1.d0 * fermiDirac(y_arr(j))
+			end do
+		end do
+
+        iy1=15
+        iy2=10
+        iy3=12
+        print*,y_arr(iy1),y_arr(iy2),y_arr(iy3),y_arr(iy1)+y_arr(iy2)-y_arr(iy3)
+		collArgs%iy = iy1
+		collArgs%ix1 = 1
+		collArgs%ix2 = 1
+		call assert_double_rel("nunu int", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 12.d0, 1d-2)
+
+!		call assert_double_rel("cinunu", &
+!			integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), &
+!			dy_damping_fit(y_arr(collArgs%iy)), 1d-2)
+
+		Ny=100
+		y_arr = linspace(y_min, y_max, Ny)
+		call finish_y_arrays
 
 		call printTotalTests
 		call resetTestCounter

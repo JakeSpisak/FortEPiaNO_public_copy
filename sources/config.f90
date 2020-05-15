@@ -119,9 +119,9 @@ module fpConfig
 			end do
 		end if
 
-		if (damping_no_nue) &
+		if (collint_no_nue) &
 			dampTermMatrixCoeffNue = 0.d0
-		if (damping_no_nunu) &
+		if (collint_no_nunu) &
 			dampTermMatrixCoeffNunu = 0.d0
 		write(*,*)"[config] Damping factors (Nue):"
 		call printMat(dampTermMatrixCoeffNue)
@@ -129,7 +129,6 @@ module fpConfig
 		call printMat(dampTermMatrixCoeffNunu)
 
 		write(*,*)"[config] Damping factors done."
-!		call criticalError("expressions for nunu diagonal integrals missing!")
 	end subroutine setDampingFactors
 
 	subroutine init_matrices
@@ -217,19 +216,23 @@ module fpConfig
 
 	subroutine finish_y_arrays
 		integer :: ix
-		real(dl), dimension(:), allocatable :: fake
-		allocate(dy_arr(Ny), fy_arr(Ny), feq_vec(Ny))
 
-		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
-		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
+		if (allocated(dy_arr)) &
+			deallocate(dy_arr)
+		if (allocated(fy_arr)) &
+			deallocate(fy_arr)
+		if (allocated(feq_arr)) &
+			deallocate(feq_arr)
+		allocate(dy_arr(Ny), fy_arr(Ny), feq_arr(Ny))
+
 		do ix=1, Ny-1
 			dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 		end do
 		dy_arr(Ny) = 0.d0
 
-		feq_vec = 0.d0
+		feq_arr = 0.d0
 		do ix=1, Ny
-			feq_vec(ix) = fermiDirac(y_arr(ix))
+			feq_arr(ix) = fermiDirac(y_arr(ix))
 		end do
 	end subroutine
 
@@ -238,6 +241,7 @@ module fpConfig
 		character(len=300) :: tmparg, tmpstr
 		integer :: ix, iy, num_threads
 		logical :: file_exist
+		real(dl), dimension(:), allocatable :: fake
 
 		if (verbose>0) write(*,*) '[config] init configuration'
 		num_args = command_argument_count()
@@ -321,6 +325,8 @@ module fpConfig
 		end if
 
 		call finish_y_arrays
+		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
+		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 
 		!read mixing parameters and create matrices
 		giveSinSq = read_ini_logical('givesinsq', .true.)
@@ -329,8 +335,8 @@ module fpConfig
 		collint_damping_type = read_ini_int("collint_damping_type", 1)
 		collint_diagonal_zero = read_ini_logical("collint_diagonal_zero", .false.)
 		collint_offdiag_damping = read_ini_logical("collint_offdiag_damping", .true.)
-		damping_no_nue = read_ini_logical("damping_no_nue", .false.)
-		damping_no_nunu = read_ini_logical("damping_no_nunu", .false.)
+		collint_no_nue = read_ini_logical("collint_no_nue", .false.)
+		collint_no_nunu = read_ini_logical("collint_no_nunu", .false.)
 		damping_read_zero = .true.
 		ftqed_temperature_corr = read_ini_logical("ftqed_temperature_corr",.true.)
 		ftqed_log_term = read_ini_logical("ftqed_log_term",.false.)

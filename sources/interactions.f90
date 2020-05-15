@@ -133,7 +133,7 @@ module fpInteractions
 			!$omp end parallel do
 			write(*,"(3A14)") "y", "f_eq(y)", "d(y)"
 			do ix=1, Ny
-				write(*,"(3E14.6)") y_arr(ix), feq_vec(ix), dampTermYYYWdy(ix)
+				write(*,"(3E14.6)") y_arr(ix), feq_arr(ix), dampTermYYYWdy(ix)
 			end do
 		end if
 	end subroutine setDampingFactorCoeffs
@@ -1149,20 +1149,20 @@ module fpInteractions
 		end if
 	end function coll_nue_3_sc_int
 
-	pure function coll_nue_3_int(iy, yx, obj, F_ab_ann, F_ab_sc)
+	pure function coll_nue_int(iy, yx, obj, F_ab_ann, F_ab_sc)
 		use fpInterfaces1
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_int
-		coll_nue_3_int = &
+		real(dl) :: coll_nue_int
+		coll_nue_int = &
 			coll_nue_3_sc_int(iy, yx, obj, F_ab_sc) &
 			+ coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
-	end function coll_nue_3_int
+	end function coll_nue_int
 
-	function coll_nunu_int(iy2, iy3, obj, F_nu_sc, F_nu_pa)
+	pure function coll_nunu_int(iy2, iy3, obj, F_nu_sc, F_nu_pa)
 		!nunu interaction
 		use fpInterfaces1
 		real(dl) :: coll_nunu_int
@@ -1200,7 +1200,7 @@ module fpInteractions
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
-		procedure (collision_integrand) :: f
+		procedure (collision_integrand_nue) :: f
 		real(dl) :: integrate_collint_nue_NC
 		type(coll_args), intent(in) :: obj
 		integer :: ia, ib
@@ -1224,7 +1224,7 @@ module fpInteractions
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
-		procedure (collision_integrand) :: f
+		procedure (collision_integrand_nue) :: f
 		real(dl) :: integrate_collint_nue_GL
 		type(coll_args), intent(in) :: obj
 		integer :: ia, ib
@@ -1241,13 +1241,59 @@ module fpInteractions
 		deallocate(fy2_arr)
 	end function integrate_collint_nue_GL
 
-	pure function get_collision_terms(collArgsIn, Fint)
+	pure function integrate_collint_nunu_NC(f, obj, F_nu_sc, F_nu_pa)
+		use fpInterfaces1
+		use fpInterfaces2
+		implicit None
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		procedure (collision_integrand_nunu) :: f
+		real(dl) :: integrate_collint_nunu_NC
+		type(coll_args), intent(in) :: obj
+		integer :: ia, ib
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(fy2_arr(Ny, Ny))
+		fy2_arr = 0.d0
+		do ia=1, Ny
+			do ib=1, Ny
+				fy2_arr(ia, ib) = f(ia, ib, obj, F_nu_sc, F_nu_pa)
+			end do
+		end do
+		integrate_collint_nunu_NC = integral_NC_2d(Ny, Ny, dy_arr, dy_arr, fy2_arr)
+		deallocate(fy2_arr)
+	end function integrate_collint_nunu_NC
+
+	pure function integrate_collint_nunu_GL(f, obj, F_nu_sc, F_nu_pa)
+		use fpInterfaces1
+		use fpInterfaces2
+		implicit None
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		procedure (collision_integrand_nunu) :: f
+		real(dl) :: integrate_collint_nunu_GL
+		type(coll_args), intent(in) :: obj
+		integer :: ia, ib
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(fy2_arr(Ny, Ny))
+		fy2_arr = 0.d0
+		do ia=1, Ny
+			do ib=1, Ny
+				fy2_arr(ia, ib) = f(ia, ib, obj, F_nu_sc, F_nu_pa)
+			end do
+		end do
+		integrate_collint_nunu_GL = integral_GL_2d(Ny, w_gl_arr2, w_gl_arr2, fy2_arr)
+		deallocate(fy2_arr)
+	end function integrate_collint_nunu_GL
+
+	pure function get_collision_terms(collArgsIn, Fint_nue, Fint_nunu)
 		use fpInterfaces2
 		use fpInterfaces3
 		implicit None
-		procedure (collision_integrand) :: Fint
+		procedure (collision_integrand_nue) :: Fint_nue
+		procedure (collision_integrand_nunu) :: Fint_nunu
 		type(cmplxMatNN) :: get_collision_terms
-		procedure (collision_integrator), pointer :: integrator
+		procedure (collision_integrator_nue), pointer :: integrator_nue
+		procedure (collision_integrator_nunu), pointer :: integrator_nunu
 		real(dl) :: x, w, z, y1, cf, w4, z4
 		integer :: iy1
 		type(coll_args), intent(in) :: collArgsIn
@@ -1278,9 +1324,11 @@ module fpInteractions
 		end if
 
 		if (use_gauss_laguerre) then
-			integrator => integrate_collint_nue_GL
+			integrator_nue => integrate_collint_nue_GL
+			integrator_nunu => integrate_collint_nunu_GL
 		else
-			integrator => integrate_collint_nue_NC
+			integrator_nue => integrate_collint_nue_NC
+			integrator_nunu => integrate_collint_nunu_NC
 		end if
 		do i=1, flavorNumber
 			collArgs%ix1 = i
@@ -1288,16 +1336,30 @@ module fpInteractions
 			!diagonal elements:
 			if (.not.sterile(i)) then
 				if (.not. collint_diagonal_zero) then
-					get_collision_terms%re(i,i) = &
-						integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
+					if (.not.collint_no_nue) &
+						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
+							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_re, F_ab_sc_re)
+					if (.not.collint_no_nunu) &
+						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
+							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
 				end if
 			end if
 			!off-diagonal elements:
 			if (.not. collint_offdiag_damping) then !full integration for nue, dampings for nunu (disabled for tests)
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
-					get_collision_terms%re(i,j) = integrator(Fint, collArgs, F_ab_ann_re, F_ab_sc_re)
-					get_collision_terms%im(i,j) = integrator(Fint, collArgs, F_ab_ann_im, F_ab_sc_im)
+					if (.not.collint_no_nue) then
+						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
+							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_re, F_ab_sc_re)
+						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
+							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_im, F_ab_sc_im)
+					end if
+					if (.not.collint_no_nunu) then
+						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
+							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
+						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
+							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_im, F_nu_pa_im)/4.d0
+					end if
 				end do
 #ifndef DO_TESTS
 				if (collint_damping_type.eq.2) then !add nunu dampings from McKellar:1992ja

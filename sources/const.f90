@@ -84,7 +84,7 @@ module variables
 	integer :: collint_damping_type
 	logical :: collint_offdiag_damping
 	logical :: collint_diagonal_zero
-	logical :: damping_no_nue, damping_no_nunu
+	logical :: collint_no_nue, collint_no_nunu
 	logical :: damping_read_zero
 	logical :: ftqed_temperature_corr
 	logical :: ftqed_log_term
@@ -134,7 +134,7 @@ module variables
 	integer :: Nx, Ny, Nylog
 	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
-	real(dl), dimension(:), allocatable :: feq_vec
+	real(dl), dimension(:), allocatable :: feq_arr
 	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr, w_gl_arr2
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter
@@ -235,7 +235,7 @@ end module fpInterfaces1
 
 module fpInterfaces2
 	interface
-		pure real(dl) function collision_integrand(a, b, o, F_ab_ann, F_ab_sc)
+		pure real(dl) function collision_integrand_nue(a, b, o, F_ab_ann, F_ab_sc)
 			use precision
 			use variables
 			use fpInterfaces1
@@ -246,11 +246,21 @@ module fpInterfaces2
 			type(coll_args), intent(in) :: o
 		end function
 	end interface
+	interface
+		pure real(dl) function collision_integrand_nunu(a, b, o, F_nu_sc, F_nu_pa)
+			use precision
+			use variables
+			use fpInterfaces1
+			procedure (Fnunu) :: F_nu_sc, F_nu_pa
+			integer, intent(in) :: a, b
+			type(coll_args), intent(in) :: o
+		end function
+	end interface
 end module fpInterfaces2
 
 module fpInterfaces3
 	interface
-		pure real(dl) function collision_integrator(f, obj, F_ab_ann, F_ab_sc)
+		pure real(dl) function collision_integrator_nue(f, obj, F_ab_ann, F_ab_sc)
 			use precision
 			use variables
 			use fpInterfaces1
@@ -258,7 +268,19 @@ module fpInterfaces3
 			implicit None
 			procedure (F_annihilation) :: F_ab_ann
 			procedure (F_scattering) :: F_ab_sc
-			procedure (collision_integrand) :: f
+			procedure (collision_integrand_nue) :: f
+			type(coll_args), intent(in) :: obj
+		end function
+	end interface
+	interface
+		pure real(dl) function collision_integrator_nunu(f, obj, F_nu_sc, F_nu_pa)
+			use precision
+			use variables
+			use fpInterfaces1
+			use fpInterfaces2
+			implicit None
+			procedure (Fnunu) :: F_nu_sc, F_nu_pa
+			procedure (collision_integrand_nunu) :: f
 			type(coll_args), intent(in) :: obj
 		end function
 	end interface

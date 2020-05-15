@@ -119,7 +119,7 @@ module fpEquations
 			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
 			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
 			do i=1, flavorNumber
-				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * feq_vec(m)
+				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * feq_arr(m)
 			end do
 		end do
 	end subroutine vec_2_densMat
@@ -224,7 +224,7 @@ module fpEquations
 				do ix=1, flavorNumber
 					nudrho = nudrho + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 				end do
-				fy_arr(m) = nudrho * feq_vec(m)
+				fy_arr(m) = nudrho * feq_arr(m)
 			end do
 			!$omp end parallel do
 			nudrho = integral_GL_1d(w_gl_arr, fy_arr)
@@ -235,7 +235,7 @@ module fpEquations
 				do ix=1, flavorNumber
 					nudrho = nudrho + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 				end do
-				fy_arr(m) = y_arr(m)**3 * nudrho * feq_vec(m)
+				fy_arr(m) = y_arr(m)**3 * nudrho * feq_arr(m)
 			end do
 			!$omp end parallel do
 			nudrho = integral_NC_1d(Ny, dy_arr, fy_arr)
@@ -655,9 +655,10 @@ module fpEquations
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
 
-	pure subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, dme2, sqrtraddens, Fint)
+	pure subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, dme2, sqrtraddens, Fint_nue, Fint_nunu)
 		use fpInterfaces2
-		procedure (collision_integrand) :: Fint
+		procedure (collision_integrand_nue) :: Fint_nue
+		procedure (collision_integrand_nunu) :: Fint_nunu
 		type(cmplxMatNN), intent(out) :: matrix
 		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: iy
@@ -689,14 +690,14 @@ module fpEquations
 		matrix%im = - tmpmat%im * cf
 		matrix%re = tmpmat%re * cf
 
-		tmpmat = get_collision_terms(collArgs, Fint)
+		tmpmat = get_collision_terms(collArgs, Fint_nue, Fint_nunu)
 		matrix%re = matrix%re + tmpmat%re
 		matrix%im = matrix%im + tmpmat%im
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
 		do ix=1, flavorNumber
-			matrix%re(ix,ix) = matrix%re(ix,ix) / feq_vec(iy)
+			matrix%re(ix,ix) = matrix%re(ix,ix) / feq_arr(iy)
 			matrix%im(ix,ix) = 0.d0
 		end do
 	end subroutine drhoy_dx_fullMat
@@ -709,7 +710,7 @@ module fpEquations
 		integer :: i, j, k
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x, w, z, m, dme2, sqrtraddens, coll_nue_3_int)
+		call drhoy_dx_fullMat(mat, x, w, z, m, dme2, sqrtraddens, coll_nue_int, coll_nunu_int)
 		do i=1, flavorNumber
 			ydot(i) = mat%re(i,i)
 		end do

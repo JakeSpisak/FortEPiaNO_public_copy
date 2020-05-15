@@ -2237,12 +2237,12 @@ class TestPrepareIni(unittest.TestCase):
                     + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
                 ),
                 call(
-                    "--damping_no_nue",
+                    "--collint_no_nue",
                     action="store_true",
                     help="disable nue contributions to damping terms",
                 ),
                 call(
-                    "--damping_no_nunu",
+                    "--collint_no_nunu",
                     action="store_true",
                     help="disable nunu contributions to damping terms",
                 ),
@@ -2486,8 +2486,8 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.collint_diagonal_zero, False)
         self.assertEqual(args.collint_offdiag_nodamp, False)
         self.assertEqual(args.collint_damping_type, "yyyw")
-        self.assertEqual(args.damping_no_nue, False)
-        self.assertEqual(args.damping_no_nunu, False)
+        self.assertEqual(args.collint_no_nue, False)
+        self.assertEqual(args.collint_no_nunu, False)
         self.assertEqual(args.save_energy_entropy, False)
         self.assertEqual(args.save_fd, False)
         self.assertEqual(args.save_Neff, False)
@@ -2799,8 +2799,8 @@ class TestPrepareIni(unittest.TestCase):
                 "outputfolder": "abcd",
                 "verbose_deriv_freq": 123,
                 "no_GL": True,
-                "damping_no_nue": True,
-                "damping_no_nunu": True,
+                "collint_no_nue": True,
+                "collint_no_nunu": True,
                 "save_energy_entropy": True,
                 "save_fd": True,
                 "save_Neff": True,
@@ -2823,8 +2823,8 @@ class TestPrepareIni(unittest.TestCase):
                 "collint_diagonal_zero": "F",
                 "collint_offdiag_damping": "T",
                 "collint_damping_type": 1,
-                "damping_no_nue": "T",
-                "damping_no_nunu": "T",
+                "collint_no_nue": "T",
+                "collint_no_nunu": "T",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -2869,8 +2869,8 @@ class TestPrepareIni(unittest.TestCase):
                 "dlsoda_atol_d": 1e-6,
                 "dlsoda_atol_o": 1e-6,
                 "dlsoda_rtol": 1e-4,
-                "damping_no_nue": False,
-                "damping_no_nunu": False,
+                "collint_no_nue": False,
+                "collint_no_nunu": False,
                 "outputfolder": "abcd",
                 "verbose_deriv_freq": 123,
                 "no_GL": False,
@@ -2904,8 +2904,8 @@ class TestPrepareIni(unittest.TestCase):
                 "y_min": 0.01,
                 "y_cen": 1,
                 "y_max": 20,
-                "damping_no_nue": "F",
-                "damping_no_nunu": "F",
+                "collint_no_nue": "F",
+                "collint_no_nunu": "F",
                 "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-5
                 + "dlsoda_atol_d = %s\n" % 1e-5
                 + "dlsoda_atol_o = %s\n" % 1e-5,
