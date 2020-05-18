@@ -988,7 +988,17 @@ class FortEPiaNORun:
         plt.xlabel("$x$")
         plt.ylabel(r"$d\rho_{\alpha\beta}/dt$")
 
-    def plotNeff(self, lc="k", ls="-", lab=None, nefflims=[0.5, 4.5], axes=True):
+    def plotNeff(
+        self,
+        lc="k",
+        ls="-",
+        lab=None,
+        nefflims=[0.5, 4.5],
+        axes=True,
+        endensx=0,
+        endensgamma=2,
+        endensnu0=5,
+    ):
         """Plot the evolution of Neff as a function of x.
         If not available from Neff.dat,
         compute it directly from the density matrix
@@ -1000,30 +1010,67 @@ class FortEPiaNORun:
             nefflims (default [0.5, 4.5]): range for the y axis
             axes (default True): if True, create a twin y axis
                 with Neff^now in addition to the one with Neff^initial
+            endensx (default 0): index of
+                the x column in self.endens
+            endensgamma (default 2): index of
+                the photon energy density column in self.endens
+            endensnu0 (default 5): index of
+                the first neutrino energy density column in self.endens
         """
         if hasattr(self, "Neffdat") and not np.isnan(self.Neffdat[0, 0]):
             data = self.Neffdat
         else:
-            data = []
             try:
-                [self.rho[inu, inu, 0][:] for inu in range(self.nnu)]
-                self.zdat[:, 0:2][:]
+                rhogammas = self.endens[:, (endensx, endensgamma)][:, :]
             except (AttributeError, TypeError):
                 print(traceback.format_exc())
-                return
-            for ix, [x, z] in enumerate(self.zdat[:, 0:2]):
-                rhogamma = PISQD15 * z ** 4
-                rhonu = np.sum(
-                    [self.integrateRho_yn(inu, 3, ix=ix) for inu in range(self.nnu)]
+                try:
+                    self.zdat[:, 0:2][:]
+                except (AttributeError, TypeError):
+                    print(traceback.format_exc())
+                    return
+                rhogammas = np.array(
+                    [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, 0:2]]
                 )
-                data.append(
+            try:
+                rns = np.sum(
+                    self.endens[:, endensnu0 : endensnu0 + self.nnu][:, :], axis=1
+                )
+                xs = self.endens[:, endensx][:]
+                rhonus = np.array(list(zip(xs, rns)))
+            except (AttributeError, TypeError):
+                print(traceback.format_exc())
+                try:
+                    [self.rho[inu, inu, 0][:] for inu in range(self.nnu)]
+                except (AttributeError, TypeError):
+                    print(traceback.format_exc())
+                    return
+                rhonus = np.array(
                     [
-                        x,
-                        8.0 / 7.0 * rhonu / rhogamma,
-                        8.0 / 7.0 * rhonu / rhogamma * (11.0 / 4.0) ** (4.0 / 3.0),
+                        [
+                            x,
+                            np.sum(
+                                [
+                                    self.integrateRho_yn(inu, 3, ix=ix)
+                                    for inu in range(self.nnu)
+                                ]
+                            ),
+                        ]
+                        for ix, [x, z] in enumerate(self.zdat[:, 0:2])
                     ]
                 )
-            data = np.asarray(data)
+            frhonu = interp1d(*stripRepeated(rhonus, 0, 1))
+            frhoga = interp1d(*stripRepeated(rhogammas, 0, 1))
+            data = np.asarray(
+                [
+                    [
+                        x,
+                        8.0 / 7.0 * frhonu(x) / frhoga(x),
+                        8.0 / 7.0 * frhonu(x) / frhoga(x) * (11.0 / 4.0) ** (4.0 / 3.0),
+                    ]
+                    for x in rhogammas[:, 0]
+                ]
+            )
             print(os.path.join(self.folder, "Neff.dat"))
             np.savetxt(os.path.join(self.folder, "Neff.dat"), data, fmt="%.7e")
         plt.plot(
