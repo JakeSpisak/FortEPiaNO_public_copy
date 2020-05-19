@@ -1057,18 +1057,18 @@ module fpInteractions
 	end function PI2_ne_f
 
 	!integrands of collision terms
-	pure function coll_nue_3_ann_int(iy2, y4, obj, F_ab)
+	pure function coll_nue_ann_int(iy2, y4, obj, F_ab)
 		!annihilation
 		use fpInterfaces1
 		procedure (F_annihilation) :: F_ab
 		integer, intent(in) :: iy2
 		real(dl), intent(in) :: y4
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_ann_int
+		real(dl) :: coll_nue_ann_int
 		real(dl), dimension(2) :: pi2_vec
 		real(dl) :: y2, y3, f3, f4, E3, E4, dme2, t1, t2
 
-		coll_nue_3_ann_int = 0.d0
+		coll_nue_ann_int = 0.d0
 
 		dme2 = obj%dme2
 		y2 = y_arr(iy2)
@@ -1089,7 +1089,7 @@ module fpInteractions
 			f3 = fermiDirac(E3 / obj%z)
 			f4 = fermiDirac(E4 / obj%z)
 			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
-			coll_nue_3_ann_int = coll_nue_3_ann_int + &
+			coll_nue_ann_int = coll_nue_ann_int + &
 				y3/E3 * &
 				y4/E4 * &
 				( &
@@ -1100,20 +1100,20 @@ module fpInteractions
 						+ F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
-	end function coll_nue_3_ann_int
+	end function coll_nue_ann_int
 
-	pure function coll_nue_3_sc_int(iy3, y2, obj, F_ab)
+	pure function coll_nue_sc_int(iy3, y2, obj, F_ab)
 		!scattering, summing positron and electrons
 		use fpInterfaces1
 		procedure (F_scattering) :: F_ab
 		integer, intent(in) :: iy3
 		real(dl), intent(in) :: y2
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_sc_int
+		real(dl) :: coll_nue_sc_int
 		real(dl), dimension(2) :: pi2_vec
 		real(dl) :: y3, y4, f2, f4, E2, E4, dme2, t1, t2
 
-		coll_nue_3_sc_int = 0.d0
+		coll_nue_sc_int = 0.d0
 
 		dme2 = obj%dme2
 		E2 = Ebare_i_dme(obj%x,y2, dme2)
@@ -1134,7 +1134,7 @@ module fpInteractions
 			f2 = fermiDirac(E2 / obj%z)
 			f4 = fermiDirac(E4 / obj%z)
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
-			coll_nue_3_sc_int = coll_nue_3_sc_int + &
+			coll_nue_sc_int = coll_nue_sc_int + &
 				y2/E2 * &
 				y4/E4 * &
 				( &
@@ -1147,7 +1147,7 @@ module fpInteractions
 						+ F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy3),f2,f4, 1, 2, obj%ix1,obj%ix2) ) &
 				)
 		end if
-	end function coll_nue_3_sc_int
+	end function coll_nue_sc_int
 
 	pure function coll_nue_int(iy, yx, obj, F_ab_ann, F_ab_sc)
 		use fpInterfaces1
@@ -1158,8 +1158,8 @@ module fpInteractions
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_int
 		coll_nue_int = &
-			coll_nue_3_sc_int(iy, yx, obj, F_ab_sc) &
-			+ coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
+			coll_nue_sc_int(iy, yx, obj, F_ab_sc) &
+			+ coll_nue_ann_int(iy, yx, obj, F_ab_ann)
 	end function coll_nue_int
 
 	pure function coll_nunu_int(iy2, iy3, obj, F_nu_sc, F_nu_pa)

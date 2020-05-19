@@ -507,7 +507,7 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sc re semilin>")
 		call tic(timer1)
@@ -530,7 +530,7 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<ann re semilin>")
 		call tic(timer1)
@@ -553,8 +553,8 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res1 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			res2 = integrate_collint_nue_NC(coll_nue_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<reset>")
@@ -566,8 +566,8 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res1 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sep ann, sc>")
 		call tic(timer1)
@@ -1670,7 +1670,7 @@ enddo                                                   !SG-PF
 		end if
 	end function coll_nue_int_im
 
-	pure function coll_nue_3_ann_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
+	pure function coll_nue_ann_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
 		use fpInterfaces1
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
@@ -1678,11 +1678,11 @@ enddo                                                   !SG-PF
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_ann_int_w
-		coll_nue_3_ann_int_w = coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
-	end function coll_nue_3_ann_int_w
+		real(dl) :: coll_nue_ann_int_w
+		coll_nue_ann_int_w = coll_nue_ann_int(iy, yx, obj, F_ab_ann)
+	end function coll_nue_ann_int_w
 
-	pure function coll_nue_3_sc_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
+	pure function coll_nue_sc_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
 		use fpInterfaces1
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
@@ -1690,9 +1690,9 @@ enddo                                                   !SG-PF
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_sc_int_w
-		coll_nue_3_sc_int_w = coll_nue_3_sc_int(iy, yx, obj, F_ab_sc)
-	end function coll_nue_3_sc_int_w
+		real(dl) :: coll_nue_sc_int_w
+		coll_nue_sc_int_w = coll_nue_sc_int(iy, yx, obj, F_ab_sc)
+	end function coll_nue_sc_int_w
 
 	pure SUBROUTINE region(ndim,x,j,c,d)
 		use precision

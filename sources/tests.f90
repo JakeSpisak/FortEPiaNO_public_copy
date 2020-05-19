@@ -1746,7 +1746,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 fake "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1760,7 +1760,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 fake "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1780,7 +1780,7 @@ program tests
 		collArgs%ix2 = 1
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
+				fy2_arr(i,j) = coll_nue_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
 		write(*,*) ""
@@ -1793,7 +1793,7 @@ program tests
 		close(987)
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
+				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
 			end do
 		end do
 		call openFile(987, "test_ann3_re.dat", .true.)
@@ -1808,7 +1808,7 @@ program tests
 		tmparrA = (/1d-6, 1d-6, 1d-6/)
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
-		res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+		res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 		call assert_double("test coll sc 3 sing 1", res2, tmparrS(1), tmparrA(1))
 		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 		call assert_double("test coll sc 4 sing 1", res1, tmparrS(1), tmparrA(1))
@@ -1816,7 +1816,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 sing "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 sing "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1834,7 +1834,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1849,7 +1849,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1867,7 +1867,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -1892,7 +1892,7 @@ program tests
 		collArgs%ix2 = 3
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
+				fy2_arr(i,j) = coll_nue_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
 		call openFile(987, "test_sc3b_re.dat", .true.)
@@ -1903,7 +1903,7 @@ program tests
 		close(987)
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
+				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
 			end do
 		end do
 		call openFile(987, "test_ann3b_re.dat", .true.)
@@ -1920,7 +1920,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i+3
-			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1939,7 +1939,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1954,7 +1954,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i+3
-			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1973,7 +1973,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -2019,8 +2019,8 @@ program tests
 				write(tmparg,"('coll sc integrand full ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
-				res1 = coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
-				res2 = coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_im)
+				res1 = coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+				res2 = coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_im)
 				call assert_double_rel(trim(tmparg)//"re", res1, tmpmatA(i,j), tmparrA(i))
 				if (i.eq.j) then
 					call assert_double(trim(tmparg)//"im", res2, tmpmatB(i,j), 1d-7)
@@ -2043,8 +2043,8 @@ program tests
 				write(tmparg,"('coll ann integrand full ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
-				res1 = coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
-				res2 = coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_im)
+				res1 = coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+				res2 = coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_im)
 				call assert_double_rel(trim(tmparg)//"re", res1, tmpmatA(i,j), tmparrA(i))
 				if (i.eq.j) then
 					call assert_double(trim(tmparg)//"im", res2, tmpmatB(i,j), 1d-7)
@@ -2679,13 +2679,13 @@ program tests
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				tmparrA(nix,ix) = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				tmparrA(nix,ix) = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			end do
 
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				tmparrB(nix,ix) = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				tmparrB(nix,ix) = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			end do
 		end do
 
@@ -2735,8 +2735,8 @@ program tests
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_collint_nue_GL(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_collint_nue_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				inta = integrate_collint_nue_GL(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				intb = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrA(nix,ix), (inta-tmparrA(nix,ix))/inta, (intb-tmparrA(nix,ix))/intb
 				write(tmparg,"('test coll sc GL, N=',I2,' - ',2I1)") Ny, ix, ix
 				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30, tmperrA(nix,ix))
@@ -2746,8 +2746,8 @@ program tests
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_collint_nue_GL(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_collint_nue_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				inta = integrate_collint_nue_GL(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				intb = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrB(nix,ix), (inta-tmparrB(nix,ix))/inta, (intb-tmparrB(nix,ix))/intb
 				write(tmparg,"('test coll ann GL, N=',I2,' - ',2I1)") Ny, ix, ix
 				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30, tmperrB(nix,ix))
