@@ -3413,6 +3413,43 @@ program tests
 			end do
 		end do
 
+		!full integral
+		!A
+		iy1=10
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,1) = 397.484d0
+		ndr(2,2) = 400.475d0
+		ndr(3,3) = 390.577d0
+		er = 1d-2
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral A ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		!B
+		iy1=5
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,1) = 33.3417d0
+		ndr(2,2) = 36.3735d0
+		ndr(3,3) = 30.3581d0
+		er = 4d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral B ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
 #ifdef FULL_F_NU
 		!C
 		iy1=7
@@ -3462,15 +3499,132 @@ program tests
 				call assert_double_rel_safe(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
 			end do
 		end do
+
+		!full integral
+		!A
+		iy1=10
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,:) = (/2.23945e6, -219146., 117805./)
+		ndr(2,:) = (/-219146., 2.36926e6, 6.06044e6/)
+		ndr(3,:) = (/117805., 6.06044e6, 2.8301e6/)
+		ndi(1,:) = (/0.,- 813455., -6.02848e6/)
+		ndi(2,:) = (/813455.,0.,-266218./)
+		ndi(3,:) = (/6.02848e6,266218.,0./)
+		er(1,:) = (/1.2d-1, 1.0d-1, 1.0d-1/)
+		er(2,:) = (/1.0d-1, 1.1d-1, 1.2d-1/)
+		er(3,:) = (/1.0d-1, 1.2d-1, 1.1d-1/)
+		ei(1,:) = (/1.0d-1, 1.1d-1, 1.2d-1/)
+		ei(2,:) = (/1.1d-1, 1.0d-1, 1.0d-1/)
+		ei(3,:) = (/1.2d-1, 1.0d-1, 1.0d-1/)
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral C ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
 #endif
 
-!		call assert_double_rel("cinunu", &
-!			integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), &
-!			dy_damping_fit(y_arr(collArgs%iy)), 1d-2)
-
+		!back to linlog momenta -> NC method
 		Ny=100
 		y_arr = linspace(y_min, y_max, Ny)
 		call finish_y_arrays
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1,1) = 1.0d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2,2) = 1.1d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(3,3) = 0.9d0 * y_arr(j) * fermiDirac(y_arr(j))
+		end do
+
+		!A
+		iy1=20
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr = 0.d0
+		ndi = 0.d0
+		ndr(1,1) = -365.198d0
+		ndr(2,2) = -820.405d0
+		ndr(3,3) = 55.3159d0
+		er = 1d-3
+		er(3,3) = 2d-2
+		ei = 1d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral NC A ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		!B
+		iy1=4
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,1) = 193.541d0
+		ndr(2,2) = 204.772d0
+		ndr(3,3) = 181.685d0
+		er = 1d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral NC B ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+#ifdef FULL_F_NU
+		!C
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1, 1) = 1.d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(1, 2) = 0.1d0
+			nuDensMatVecFD(j)%re(1, 3) = 0.d0
+			nuDensMatVecFD(j)%re(2, 2) = 1.1d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2, 3) = -0.1d0 * y_arr(j)
+			nuDensMatVecFD(j)%re(3, 3) = 0.9d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2, 1) = nuDensMatVecFD(j)%re(1, 2)
+			nuDensMatVecFD(j)%re(3, 1) = nuDensMatVecFD(j)%re(1, 3)
+			nuDensMatVecFD(j)%re(3, 2) = nuDensMatVecFD(j)%re(2, 3)
+			nuDensMatVecFD(j)%im(1, 2) = 0.d0
+			nuDensMatVecFD(j)%im(1, 3) = 0.1d0 * y_arr(j)
+			nuDensMatVecFD(j)%im(2, 3) = 0.2d0
+			nuDensMatVecFD(j)%im(2, 1) = - nuDensMatVecFD(j)%im(1, 2)
+			nuDensMatVecFD(j)%im(3, 1) = - nuDensMatVecFD(j)%im(1, 3)
+			nuDensMatVecFD(j)%im(3, 2) = - nuDensMatVecFD(j)%im(2, 3)
+		end do
+
+		iy1=7
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,:) = (/5.05623e6, -468304., 241699./)
+		ndr(2,:) = (/-468304., 5.36981e6, 1.29749e7/)
+		ndr(3,:) = (/241699., 1.29749e7, 6.2691e6/)
+		ndi(1,:) = (/0., -1.73808e6, -1.29012e7/)
+		ndi(2,:) = (/1.73808e6, 0., -591614./)
+		ndi(3,:) = (/1.29012e7, 591614., 0./)
+		er = 1d-3
+		ei = 1d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral NC C ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+#endif
 
 		call printTotalTests
 		call resetTestCounter
