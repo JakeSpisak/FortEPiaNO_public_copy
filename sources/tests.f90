@@ -3366,9 +3366,9 @@ program tests
 			nuDensMatVecFD(j)%y=y_arr(j)
 			nuDensMatVecFD(j)%re=0.d0
 			nuDensMatVecFD(j)%im=0.d0
-			do i=1, flavorNumber
-				nuDensMatVecFD(j)%re(i, i) = 1.d0 * y_arr(j) * fermiDirac(y_arr(j))
-			end do
+			nuDensMatVecFD(j)%re(1,1) = 1.0d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2,2) = 1.1d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(3,3) = 0.9d0 * y_arr(j) * fermiDirac(y_arr(j))
 		end do
 
 		!A
@@ -3377,17 +3377,20 @@ program tests
 		iy3=5
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
+		ndr = 0.d0
+		ndr(1,1) = 0.0000980353d0
+		ndr(2,2) = 0.000103827d0
+		ndr(3,3) = 0.0000919177d0
+		ndi = 0.d0
+		er = 2d-3
+		ei = 1d-3
 		do i=1, flavorNumber
-			collArgs%ix1 = i
-			collArgs%ix2 = i
-			write(tmparg,"('nunu int A ',2I1)") i,i
-			call assert_double_rel(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 0.0000978716d0, 2d-3)
-			call assert_double(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), 0.d0, 1d-7)
-			do j=i+1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
 				collArgs%ix2 = j
 				write(tmparg,"('nunu int A ',2I1)") i,j
-				call assert_double(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), 0.d0, 1d-7)
+				call assert_double_rel_safe(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
 			end do
 		end do
 
@@ -3397,17 +3400,16 @@ program tests
 		iy3=7
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
+		ndr(1,1) = 0.0132253d0
+		ndr(2,2) = 0.0136399d0
+		ndr(3,3) = 0.0127086d0
 		do i=1, flavorNumber
-			collArgs%ix1 = i
-			collArgs%ix2 = i
-			write(tmparg,"('nunu int B ',2I1)") i,i
-			call assert_double_rel(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 0.0131986d0, 2d-3)
-			call assert_double(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), 0.d0, 1d-7)
-			do j=i+1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
 				collArgs%ix2 = j
 				write(tmparg,"('nunu int B ',2I1)") i,j
-				call assert_double(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 0.d0, 1d-7)
-				call assert_double(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), 0.d0, 1d-7)
+				call assert_double_rel_safe(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
 			end do
 		end do
 
