@@ -3344,8 +3344,12 @@ program tests
 
 	subroutine do_test_collint_nunu
 		integer :: i, j, iy1, iy2, iy3
+		real(dl) :: y2, y3, y4, fsc, fpa
 		real(dl), dimension(3, 3) :: ndr, ndi
 		type(coll_args) :: collArgs
+		type(cmplxMatNN) :: n4
+		real(dl), dimension(2) :: pi2_vec
+		character(len=300) :: tmparg
 
 		call printTestBlockName("collision integrals of nunu")
 		collArgs%x = 0.05d0
@@ -3358,20 +3362,56 @@ program tests
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		call finish_y_arrays
-		do i=1, flavorNumber
-			do j=1, Ny
-				nuDensMatVecFD(j)%re(i, i) = 1.d0 * fermiDirac(y_arr(j))
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			do i=1, flavorNumber
+				nuDensMatVecFD(j)%re(i, i) = 1.d0 * y_arr(j) * fermiDirac(y_arr(j))
 			end do
 		end do
 
-        iy1=15
-        iy2=10
-        iy3=12
-        print*,y_arr(iy1),y_arr(iy2),y_arr(iy3),y_arr(iy1)+y_arr(iy2)-y_arr(iy3)
+		iy1=7
+		iy2=2
+		iy3=5
 		collArgs%iy = iy1
-		collArgs%ix1 = 1
-		collArgs%ix2 = 1
-		call assert_double_rel("nunu int", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 12.d0, 1d-2)
+		collArgs%y1 = y_arr(iy1)
+		do i=1, flavorNumber
+			collArgs%ix1 = i
+			collArgs%ix2 = i
+			write(tmparg,"('nunu int A ',2I1)") i,i
+			call assert_double_rel(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 0.0000978716d0, 2d-3)
+			call assert_double(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), 0.d0, 1d-7)
+			do j=i+1, flavorNumber
+				collArgs%ix2 = j
+				write(tmparg,"('nunu int A ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), 0.d0, 1d-7)
+			end do
+		end do
+
+		iy1=10
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		iy2=4
+		iy3=7
+		y2=y_arr(iy2)
+		y3=y_arr(iy3)
+		y4=y_arr(iy1)+y_arr(iy2)-y_arr(iy3)
+		n4 = get_interpolated_nudens(nuDensMatVecFD, y4, 3, Ny)
+		do i=1, flavorNumber
+			collArgs%ix1 = i
+			collArgs%ix2 = i
+			write(tmparg,"('nunu int B ',2I1)") i,i
+			call assert_double_rel(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 0.0131986d0, 2d-3)
+			call assert_double(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), 0.d0, 1d-7)
+			do j=i+1, flavorNumber
+				collArgs%ix2 = j
+				write(tmparg,"('nunu int B ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), 0.d0, 1d-7)
+			end do
+		end do
 
 !		call assert_double_rel("cinunu", &
 !			integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), &
