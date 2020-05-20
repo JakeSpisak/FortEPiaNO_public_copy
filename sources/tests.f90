@@ -2126,7 +2126,7 @@ program tests
 		dme2 = 0.1d0
 		call printTestBlockName("Collision_terms")
 		collArgs%ix1 = 1
-		collArgs%ix1 = 1
+		collArgs%ix2 = 1
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
@@ -3344,10 +3344,10 @@ program tests
 
 	subroutine do_test_collint_nunu
 		integer :: i, j, iy1, iy2, iy3
-		real(dl) :: y2, y3, y4, fsc, fpa
+		real(dl) :: y2, y3, y4, fsc, fpa, res1, res2
 		real(dl), dimension(3, 3) :: ndr, ndi, er, ei
 		type(coll_args) :: collArgs
-		type(cmplxMatNN) :: n4
+		type(cmplxMatNN) :: n4, cts
 		real(dl), dimension(2) :: pi2_vec
 		character(len=300) :: tmparg
 
@@ -3362,6 +3362,7 @@ program tests
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		call finish_y_arrays
+		!print*,"y range (GL):",y_arr(1),y_arr(Ny)
 		do j=1, Ny
 			nuDensMatVecFD(j)%y=y_arr(j)
 			nuDensMatVecFD(j)%re=0.d0
@@ -3625,6 +3626,99 @@ program tests
 			end do
 		end do
 #endif
+
+		!now test that get_collision_terms does what expected
+		call allocateCmplxMat(cts)
+		collArgs%ix1 = 1
+		collArgs%ix2 = 1
+		collArgs%x = 0.05d0
+		collArgs%z = 1.06d0
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = 0.0d0
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+
+		res1 = integrate_collint_nunu_NC(fakecollintnunu1, collArgs, F_nu_sc_re, F_nu_pa_re)
+		cts = get_collision_terms(collArgs, fakecollintnue0, fakecollintnunu1)
+		cts%re(:,:) = cts%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		cts%im(:,:) = cts%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+#ifdef FULL_F_NU
+		ndr = res1/4.d0
+		ndi(1,:) = (/    0.d0,  res1/4., res1/4./)
+		ndi(2,:) = (/-res1/4.,     0.d0, res1/4./)
+		ndi(3,:) = (/-res1/4., -res1/4.,    0.d0/)
+#else
+		ndr(1,:) = (/res1/4.,     0.d0,    0.d0/)
+		ndr(2,:) = (/   0.d0,  res1/4.,    0.d0/)
+		ndr(3,:) = (/   0.d0,     0.d0, res1/4./)
+		ndi = 0.d0
+#endif
+		er = 1d-7
+		ei = 1d-7
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms nunu A ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		res1 = integrate_collint_nunu_NC(fakecollintnunu1, collArgs, F_nu_sc_re, F_nu_pa_re)
+		res2 = integrate_collint_nue_NC(fakecollintnue1, collArgs, F_ab_sc_re, F_ab_ann_re)
+		cts = get_collision_terms(collArgs, fakecollintnue1, fakecollintnunu1)
+		cts%re(:,:) = cts%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		cts%im(:,:) = cts%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+#ifdef FULL_F_NU
+		ndr = res1/4.d0 + res2
+		ndi(1,:) = (/         0.d0,  res1/4.+res2, res1/4.+res2/)
+		ndi(2,:) = (/-res1/4.-res2,          0.d0, res1/4.+res2/)
+		ndi(3,:) = (/-res1/4.-res2, -res1/4.-res2,         0.d0/)
+#else
+		ndr(1,:) = (/res1/4. + res2,            res2,           res2/)
+		ndr(2,:) = (/          res2,  res1/4. + res2,           res2/)
+		ndr(3,:) = (/          res2,            res2, res1/4. + res2/)
+		ndi(1,:) = (/ 0.d0, +res2, res2/)
+		ndi(2,:) = (/-res2,  0.d0, res2/)
+		ndi(3,:) = (/-res2, -res2, 0.d0/)
+#endif
+		er = 1d-7
+		ei = 1d-7
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms nunu B ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1,1) = (1.0d0 ) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2,2) = (1.0d0 ) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(3,3) = (1.0d0 ) * fermiDirac(y_arr(j))
+		end do
+		collArgs%z = 1.1d0
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = 0.0d0
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collArgs%x = 0.06d0
+		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
+		call printMat(cts%re)
+		cts = get_collision_terms(collArgs, fakecollintnue0, coll_nunu_int)
+		call printMat(cts%re)
+
+		collArgs%x = 0.1d0
+		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
+		call printMat(cts%re)
+		cts = get_collision_terms(collArgs, fakecollintnue0, coll_nunu_int)
+		call printMat(cts%re)
 
 		call printTotalTests
 		call resetTestCounter

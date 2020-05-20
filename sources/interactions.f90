@@ -1354,12 +1354,14 @@ module fpInteractions
 						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_im, F_ab_sc_im)
 					end if
+#ifdef FULL_F_NU
 					if (.not.collint_no_nunu) then
 						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
 						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_im, F_nu_pa_im)/4.d0
 					end if
+#endif
 				end do
 #ifndef DO_TESTS
 				if (collint_damping_type.eq.2) then !add nunu dampings from McKellar:1992ja
