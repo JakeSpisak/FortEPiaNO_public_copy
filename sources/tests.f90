@@ -3344,7 +3344,7 @@ program tests
 
 	subroutine do_test_collint_nunu
 		integer :: i, j, iy1, iy2, iy3
-		real(dl) :: y2, y3, y4, fsc, fpa, res1, res2
+		real(dl) :: y2, y3, y4, fsc, fpa, res1, res2, ey
 		real(dl), dimension(3, 3) :: ndr, ndi, er, ei
 		type(coll_args) :: collArgs
 		type(cmplxMatNN) :: n4, cts
@@ -3529,6 +3529,35 @@ program tests
 		end do
 #endif
 
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1,1) = (1.0d0 ) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2,2) = (1.0d0 ) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(3,3) = (1.0d0 ) * fermiDirac(y_arr(j))
+		end do
+		do j=0, 5
+			if (j.eq.0) then
+				collArgs%iy=1
+			else
+				collArgs%iy = j*10
+			end if
+			if (j.eq.5) then
+				ey = 0.15d0
+			elseif(j.eq.1) then
+				ey=0.02d0
+			else
+				ey=1.d-2
+			end if
+			collArgs%y1 = y_arr(collArgs%iy)
+			res1=integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_da, F_nu_pa_da)/collArgs%y1**3/8.d0
+			res2=dy_damping_fit(collArgs%y1)
+			!print*,"s",collargs%y1,res1,res2
+			write(tmparg,"('dy-sim GL',I1)") j
+			call assert_double_rel_safe(trim(tmparg), res1, res2, 1d-7, ey)
+		end do
+
 		!back to linlog momenta -> NC method
 		Ny=100
 		y_arr = linspace(y_min, y_max, Ny)
@@ -3701,6 +3730,20 @@ program tests
 			nuDensMatVecFD(j)%re(2,2) = (1.0d0 ) * fermiDirac(y_arr(j))
 			nuDensMatVecFD(j)%re(3,3) = (1.0d0 ) * fermiDirac(y_arr(j))
 		end do
+		do j=0, 5
+			if (j.eq.0) then
+				collArgs%iy=1
+			else
+				collArgs%iy = j*10
+			end if
+			collArgs%y1 = y_arr(collArgs%iy)
+			res1=integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_da, F_nu_pa_da)/collArgs%y1**3/8.d0
+			res2=dy_damping_fit(collArgs%y1)
+			!print*,"s",collargs%y1,res1,res2
+			write(tmparg,"('dy-sim GL',I1)") j
+			call assert_double_rel_safe(trim(tmparg), res1, res2, 1d-7, 1d-2)
+		end do
+
 		collArgs%z = 1.1d0
 		collArgs%y2 = 0.d0
 		collArgs%y3 = 0.d0

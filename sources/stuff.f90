@@ -1043,6 +1043,68 @@ enddo                                                   !SG-PF
 		deallocate(fy2_arr)
 	end function dy_damping_pi
 
+	pure function F_nu_sc_da(n1, n2, n3, n4, i, j)
+		real(dl) :: F_nu_sc_da
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k
+		real(dl), dimension(:), allocatable :: t2r, t4r
+		real(dl) :: s24r
+
+		F_nu_sc_da = 0.d0
+
+		if (i.ne.j) &
+			return
+		allocate(t2r(flavorNumber), t4r(flavorNumber))
+		do k=1, flavorNumber
+			s24r = n2%re(k, k)*n4%re(k, k)
+			t2r(k) = n4%re(k, k) - s24r
+			t4r(k) = n2%re(k, k) - s24r
+		end do
+		F_nu_sc_da = &
+			n3%re(i,i) * (t2r(i) + sum(t2r)) &
+			+ (1.d0 - n3%re(i,i)) * (t4r(i) + sum(t4r))
+		deallocate(t2r, t4r)
+		F_nu_sc_da = 2.d0 * F_nu_sc_da ! +h.c.
+	end function F_nu_sc_da
+
+	pure function F_nu_pa_da(n1, n2, n3, n4, i, j)
+		real(dl) :: F_nu_pa_da
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k
+		real(dl), dimension(:), allocatable :: t2r, t4r
+		real(dl) :: sBr
+
+		F_nu_pa_da = 0.d0
+
+		if (i.ne.j) &
+			return
+
+		allocate(t2r(flavorNumber), t4r(flavorNumber))
+		!first line: sAr -> 12, sBr->34
+		do k=1, flavorNumber
+			sBr = n4%re(k, k)*n3%re(k, k)
+			t2r(k) = sBr
+			t4r(k) = sBr + 1.d0 - n4%re(k, k) - n3%re(k, k)
+		end do
+		F_nu_pa_da = F_nu_pa_da &
+			+ (1.d0 - n2%re(i,i)) * (t2r(i) + sum(t2r)) &
+			+ n2%re(i,i) * (t4r(i) + sum(t4r))
+		!second line: sAr -> 13, sBr->24
+		do k=1, flavorNumber
+			sBr = n4%re(k, k)*n2%re(k, k)
+			t2r(k) = n4%re(k, k) - sBr
+			t4r(k) = n2%re(k, k) - sBr
+		end do
+		F_nu_pa_da = F_nu_pa_da &
+			+ n3%re(i,i) * (t2r(i) + sum(t2r)) &
+			+ (1.d0 - n3%re(i,i)) * (t4r(i) + sum(t4r))
+		deallocate(t2r, t4r)
+		F_nu_pa_da = 2.d0 * F_nu_pa_da ! +h.c.
+	end function F_nu_pa_da
+
+
 	subroutine init_interp_d123
 		real(dl), dimension(:,:,:,:), allocatable :: d2, d3, pi1_12, pi1_13
 		real(dl) :: y1,  y2,  y3,  y4, d1a, d1b, d2a, d2b, d3a, d3b
