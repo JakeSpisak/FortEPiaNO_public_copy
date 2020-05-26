@@ -55,11 +55,13 @@ Additional commands for the makefile include:
 * `make clean` to remove all compiled files.
 * `make tests` to compile a set of numerical tests (run them with `bin/tests`). If you modify the code, they will tell you if everything is still working as expected.
 
-Moreover, some parts of the code can be disabled using precompilation flags. For example:
+Moreover, some parts of the code can be enabled or disabled using precompilation flags.
+For example (add the option to the `make` command):
 
-* `make NO_MUONS=1` disables the contribution of muons to the energy budget of the universe;
-* `make FULL_F_NU=1` allows to use the full matrix product in the F_nu phase space functions that compute nunu scattering and pair annihilation. If not used, only diagonal elements of the neutrino density matrix will be used;
-* `make FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.
+* `NO_MUONS=1` disables the contribution of muons to the energy budget of the universe;
+* `INTERP_DIV_FD=1` changes the interpolation of the neutrino density matrix to divide by the Fermi Dirac distribution before the interpolation (and multiply back after);
+* `FULL_F_NU=1` allows to use the full matrix product in the F_nu phase space functions that compute nunu scattering and pair annihilation. If not used, only diagonal elements of the neutrino density matrix will be used;
+* `FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.
 
 **WARNING**: the test suite will not work if the flag `NO_MUONS=1` is activated, or even if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
 

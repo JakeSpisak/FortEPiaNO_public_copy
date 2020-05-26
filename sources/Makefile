@@ -47,6 +47,9 @@ endif
 ifeq ($(FULL_F_NU), 1)
 	F90FLAGS += -DFULL_F_NU=1
 endif
+ifeq ($(INTERP_DIV_FD), 1)
+	F90FLAGS += -DINTERP_DIV_FD=1
+endif
 ifeq ($(NOINTERPOLATION), 1)
 	F90FLAGS += -DNOINTERPOLATION=1
 endif

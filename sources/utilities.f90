@@ -580,6 +580,9 @@ module utilities
 		real(dl), intent(in) :: y
 		integer, intent(in) :: nf, ny
 		integer :: i, j, iy
+#ifdef INTERP_DIV_FD
+		real(dl) :: fd0, fd1, fdc
+#endif
 
 		call allocateCmplxMat(newmat)
 		newmat%y = y
@@ -593,10 +596,24 @@ module utilities
 		end do
 		if(iy.lt.1 .or. iy.ge.ny) &
 			return
+#ifdef INTERP_DIV_FD
+		fd0 = fermiDirac(ndmv(iy)%y)
+		fd1 = fermiDirac(ndmv(iy+1)%y)
+		fdc = fermiDirac(y)
+#endif
 		do i=1, nf
+#ifdef INTERP_DIV_FD
+			newmat%re(i,i) = ( &
+				ndmv(iy)%re(i,i)/fd0 &
+				+ (y-ndmv(iy)%y) &
+					* (ndmv(iy+1)%re(i,i)/fd1 - ndmv(iy)%re(i,i)/fd0) &
+					/ (ndmv(iy+1)%y-ndmv(iy)%y) &
+				) * fdc
+#else
 			newmat%re(i,i) = &
 				ndmv(iy)%re(i,i) &
 				+ (y-ndmv(iy)%y) * (ndmv(iy+1)%re(i,i)-ndmv(iy)%re(i,i))/(ndmv(iy+1)%y-ndmv(iy)%y)
+#endif
 			do j=i+1, nf
 				newmat%re(i,j) = &
 					ndmv(iy)%re(i,j) &
