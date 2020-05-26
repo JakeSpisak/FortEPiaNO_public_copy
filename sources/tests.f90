@@ -115,8 +115,10 @@ program tests
 			massSplittings(3) = 0.0025153d0
 		end if
 		z_in=1.0000575
-		collint_no_nue = .false.
-		collint_no_nunu = .false.
+		collint_d_no_nue = .false.
+		collint_d_no_nunu = .false.
+		collint_od_no_nue = .false.
+		collint_od_no_nunu = .false.
 		save_fd = .true.
 		save_energy_entropy_evolution = .true.
 		save_Neff = .true.

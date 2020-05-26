@@ -1336,31 +1336,33 @@ module fpInteractions
 			!diagonal elements:
 			if (.not.sterile(i)) then
 				if (.not. collint_diagonal_zero) then
-					if (.not.collint_no_nue) &
+					if (.not.collint_d_no_nue) &
 						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_re, F_ab_sc_re)
-					if (.not.collint_no_nunu) &
+					if (.not.collint_d_no_nunu) &
 						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
 				end if
 			end if
 			!off-diagonal elements:
-			if (.not. collint_offdiag_damping) then !full integration for nue, dampings for nunu (disabled for tests)
+			if (.not. collint_offdiag_damping) then !full integration for nue, for nunu integration only if FULL_F_NU is defined, damping if not (disabled for tests)
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
-					if (.not.collint_no_nue) then
+					if (.not.collint_od_no_nue) then
 						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_re, F_ab_sc_re)
 						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_im, F_ab_sc_im)
 					end if
+#ifndef DO_TESTS
 #ifdef FULL_F_NU
-					if (.not.collint_no_nunu) then
+					if (.not.collint_od_no_nunu) then
 						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
 						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_im, F_nu_pa_im)/4.d0
 					end if
+#endif
 #endif
 				end do
 #ifndef DO_TESTS

@@ -84,7 +84,8 @@ module variables
 	integer :: collint_damping_type
 	logical :: collint_offdiag_damping
 	logical :: collint_diagonal_zero
-	logical :: collint_no_nue, collint_no_nunu
+	logical :: collint_d_no_nue, collint_d_no_nunu
+	logical :: collint_od_no_nue, collint_od_no_nunu
 	logical :: damping_read_zero
 	logical :: ftqed_temperature_corr
 	logical :: ftqed_log_term

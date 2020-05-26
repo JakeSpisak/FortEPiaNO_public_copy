@@ -119,9 +119,9 @@ module fpConfig
 			end do
 		end if
 
-		if (collint_no_nue) &
+		if (collint_od_no_nue) &
 			dampTermMatrixCoeffNue = 0.d0
-		if (collint_no_nunu) &
+		if (collint_od_no_nunu) &
 			dampTermMatrixCoeffNunu = 0.d0
 		write(*,*)"[config] Damping factors (Nue):"
 		call printMat(dampTermMatrixCoeffNue)
@@ -335,8 +335,10 @@ module fpConfig
 		collint_damping_type = read_ini_int("collint_damping_type", 1)
 		collint_diagonal_zero = read_ini_logical("collint_diagonal_zero", .false.)
 		collint_offdiag_damping = read_ini_logical("collint_offdiag_damping", .true.)
-		collint_no_nue = read_ini_logical("collint_no_nue", .false.)
-		collint_no_nunu = read_ini_logical("collint_no_nunu", .false.)
+		collint_d_no_nue = read_ini_logical("collint_d_no_nue", .false.)
+		collint_d_no_nunu = read_ini_logical("collint_d_no_nunu", .false.)
+		collint_od_no_nue = read_ini_logical("collint_od_no_nue", .false.)
+		collint_od_no_nunu = read_ini_logical("collint_od_no_nunu", .false.)
 		damping_read_zero = .true.
 		ftqed_temperature_corr = read_ini_logical("ftqed_temperature_corr",.true.)
 		ftqed_log_term = read_ini_logical("ftqed_log_term",.false.)

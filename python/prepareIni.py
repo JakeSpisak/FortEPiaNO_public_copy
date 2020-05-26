@@ -100,11 +100,13 @@ def setParser():
         + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
     )
     for c in ["nue", "nunu"]:
-        parser.add_argument(
-            "--collint_no_%s" % c,
-            action="store_true",
-            help="disable %s contributions to damping terms" % c,
-        )
+        for d in ["d", "od"]:
+            parser.add_argument(
+                "--collint_%s_no_%s" % (d, c),
+                action="store_true",
+                help="disable %s contributions to %s damping terms"
+                % (c, "diagonal" if d == "d" else "off-diagonal"),
+            )
     parser.add_argument(
         "--qed_corrections",
         choices=["no", "o2", "o3", "o2ln", "o3ln"],
@@ -419,8 +421,10 @@ def getIniValues(args):
     values["folder"] = args.outputfolder
     values["Nprintderivs"] = args.verbose_deriv_freq
     for p in [
-        "collint_no_nue",
-        "collint_no_nunu",
+        "collint_d_no_nue",
+        "collint_d_no_nunu",
+        "collint_od_no_nue",
+        "collint_od_no_nunu",
         "save_energy_entropy",
         "save_fd",
         "save_Neff",
@@ -460,6 +464,11 @@ dm41 = {dm41:}
 collint_diagonal_zero = {collint_diagonal_zero:}
 collint_offdiag_damping = {collint_offdiag_damping:}
 collint_damping_type = {collint_damping_type:}
+collint_d_no_nue = {collint_d_no_nue:}
+collint_d_no_nunu = {collint_d_no_nunu:}
+collint_od_no_nue = {collint_od_no_nue:}
+collint_od_no_nunu = {collint_od_no_nunu:}
+
 ftqed_temperature_corr = {ftqed_temperature_corr:}
 ftqed_ord3 = {ftqed_ord3:}
 ftqed_log_term = {ftqed_log_term:}
