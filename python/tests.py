@@ -1993,6 +1993,8 @@ class TestFortEPiaNORun(FPTestCase):
         ) as _fp, patch("fortepianoOutput.FortEPiaNORun.plotZ") as _plZ, patch(
             "fortepianoOutput.FortEPiaNORun.plotW"
         ) as _plW, patch(
+            "fortepianoOutput.FortEPiaNORun.plotNeff"
+        ) as _plNf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
         ) as _plRdy, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoFin"
@@ -2005,6 +2007,7 @@ class TestFortEPiaNORun(FPTestCase):
             _cl.assert_called_once_with()
             _plZ.assert_called_once_with(lc="k", lab="z")
             _plW.assert_called_once_with(lc="k", ls=":", lab="w")
+            _plNf.assert_called_once_with(lc="k", axes=False)
             self.assertEqual(_plRdy.call_count, 6)
             for i in range(run.nnu):
                 _plRdy.assert_any_call(i, 5.0, fpom.styles[i], lc=fpom.colors[i])
@@ -2031,14 +2034,14 @@ class TestFortEPiaNORun(FPTestCase):
                     call(
                         "%s/rho_diag.pdf" % run.folder,
                         xlab="$x$",
-                        ylab=r"$\rho$",
+                        ylab=r"$\rho_{\alpha\alpha}$",
                         xscale="log",
                         yscale="log",
                     ),
                     call(
                         "%s/rho_mass_diag.pdf" % run.folder,
                         xlab="$x$",
-                        ylab=r"$\rho$",
+                        ylab=r"$\rho_{\alpha\alpha}$",
                         xscale="log",
                         yscale="log",
                     ),
@@ -2052,6 +2055,7 @@ class TestFortEPiaNORun(FPTestCase):
                     ),
                     call("%s/rho_offdiag.pdf" % run.folder),
                     call("%s/drho_offdiag.pdf" % run.folder),
+                    call("%s/Neff.pdf" % run.folder, legend=False, Neff_axes=True),
                 ]
             )
 
@@ -2060,6 +2064,8 @@ class TestFortEPiaNORun(FPTestCase):
         ) as _fp, patch("fortepianoOutput.FortEPiaNORun.plotZ") as _plZ, patch(
             "fortepianoOutput.FortEPiaNORun.plotW"
         ) as _plW, patch(
+            "fortepianoOutput.FortEPiaNORun.plotNeff"
+        ) as _plNf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
         ) as _plRdy, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoFin"
@@ -2072,6 +2078,7 @@ class TestFortEPiaNORun(FPTestCase):
             _cl.assert_called_once_with()
             _plZ.assert_called_once_with(lc="abc", lab="z")
             _plW.assert_called_once_with(lc="abc", ls=":", lab="w")
+            _plNf.assert_called_once_with(lc="abc", axes=False)
             self.assertEqual(_plRdy.call_count, 6)
             for i in range(run.nnu):
                 _plRdy.assert_any_call(i, 2.5, fpom.styles[i], lc=fpom.colors[i])
@@ -2098,14 +2105,14 @@ class TestFortEPiaNORun(FPTestCase):
                     call(
                         "%s/rho_diag.pdf" % run.folder,
                         xlab="$x$",
-                        ylab=r"$\rho$",
+                        ylab=r"$\rho_{\alpha\alpha}$",
                         xscale="log",
                         yscale="log",
                     ),
                     call(
                         "%s/rho_mass_diag.pdf" % run.folder,
                         xlab="$x$",
-                        ylab=r"$\rho$",
+                        ylab=r"$\rho_{\alpha\alpha}$",
                         xscale="log",
                         yscale="log",
                     ),
@@ -2119,6 +2126,7 @@ class TestFortEPiaNORun(FPTestCase):
                     ),
                     call("%s/rho_offdiag.pdf" % run.folder),
                     call("%s/drho_offdiag.pdf" % run.folder),
+                    call("%s/Neff.pdf" % run.folder, legend=False, Neff_axes=True),
                 ]
             )
 

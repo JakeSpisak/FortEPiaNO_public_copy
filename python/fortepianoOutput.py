@@ -1027,10 +1027,7 @@ class FortEPiaNORun:
             print(os.path.join(self.folder, "Neff.dat"))
             np.savetxt(os.path.join(self.folder, "Neff.dat"), data, fmt="%.7e")
         plt.plot(
-            *stripRepeated(data, 0, 1),
-            ls=ls,
-            c=lc,
-            label=self.label if lab is None else lab
+            *stripRepeated(data, 0, 1), ls=ls, c=lc, label=lab if lab else self.label
         )
         plt.xscale("log")
         plt.xlabel("$x$")
@@ -1278,7 +1275,7 @@ class FortEPiaNORun:
         finalizePlot(
             "%s/rho_diag.pdf" % self.folder,
             xlab="$x$",
-            ylab=r"$\rho$",
+            ylab=r"$\rho_{\alpha\alpha}$",
             xscale="log",
             yscale="log",
         )
@@ -1288,7 +1285,7 @@ class FortEPiaNORun:
         finalizePlot(
             "%s/rho_mass_diag.pdf" % self.folder,
             xlab="$x$",
-            ylab=r"$\rho$",
+            ylab=r"$\rho_{\alpha\alpha}$",
             xscale="log",
             yscale="log",
         )
@@ -1312,6 +1309,9 @@ class FortEPiaNORun:
                 for j in range(i + 1, self.nnu):
                     self.plotdRhoOffDiagY(i, j, yref, lc=colors[2 * i + j - 1])
             finalizePlot("%s/drho_offdiag.pdf" % self.folder)
+
+        self.plotNeff(lc=color, axes=False)
+        finalizePlot("%s/Neff.pdf" % self.folder, legend=False, Neff_axes=True)
 
     def integrateRho_yn(self, inu, n, ix=-1, show=False, mass=False):
         """Compute the integral
