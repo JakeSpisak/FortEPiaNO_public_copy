@@ -123,6 +123,10 @@ module fpConfig
 			dampTermMatrixCoeffNue = 0.d0
 		if (collint_od_no_nunu) &
 			dampTermMatrixCoeffNunu = 0.d0
+		if (collint_damping_type.eq.0) then
+			dampTermMatrixCoeffNue = 0.d0
+			dampTermMatrixCoeffNunu = 0.d0
+		endif
 		write(*,*)"[config] Damping factors (Nue):"
 		call printMat(dampTermMatrixCoeffNue)
 		write(*,*)"[config] Damping factors (NuNu):"
@@ -242,6 +246,25 @@ module fpConfig
 		integer :: ix, iy, num_threads
 		logical :: file_exist
 		real(dl), dimension(:), allocatable :: fake
+
+#ifdef NO_MUONS
+		call addToLog("[precompiler] Compiled without contributions from muons")
+#endif
+#ifdef TESTSPEED
+		call addToLog("[precompiler] Will execute test speed")
+#endif
+#ifdef FULL_F_AB
+		call addToLog("[precompiler] Compiled to compute the full products of rho, G_L and G_R matrices")
+#endif
+#ifdef FULL_F_NU
+		call addToLog("[precompiler] Compiled to compute the F factors using the full neutrino density matrix")
+#endif
+#ifdef INTERP_DIV_FD
+		call addToLog("[precompiler] Compiled to interpolate rho/FD instead of rho")
+#endif
+#ifdef NOINTERPOLATION
+		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
+#endif
 
 		if (verbose>0) write(*,*) '[config] init configuration'
 		num_args = command_argument_count()
@@ -442,5 +465,6 @@ module fpConfig
 		call ini_file_close()
 		call rename(trim(args(1))//".log", trim(outputFolder)//'/ini.log')
 		call addToLog("[config] Read configuration from ini file: complete.")
+
 	end subroutine initconfig
 end module fpConfig

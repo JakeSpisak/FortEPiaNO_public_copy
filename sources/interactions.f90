@@ -1366,6 +1366,7 @@ module fpInteractions
 #endif
 				end do
 #ifndef DO_TESTS
+#ifndef FULL_F_NU
 				if (collint_damping_type.eq.2) then !add nunu dampings from McKellar:1992ja
 					do j=i+1, flavorNumber
 						get_collision_terms%re(i,j) = &
@@ -1387,6 +1388,7 @@ module fpInteractions
 							* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(i,j)
 					end do
 				end if
+#endif
 #endif
 			else if (collint_damping_type.eq.2) then !nue and nunu dampings from McKellar:1992ja
 				do j=i+1, flavorNumber
