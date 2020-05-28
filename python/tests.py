@@ -402,7 +402,7 @@ class TestFortEPiaNORun(FPTestCase):
                 self.assertTrue(np.isnan(run.rho[i, j, 0]))
                 self.assertTrue(np.isnan(run.rho[i, j, 1]))
         with open("%s/resume.dat" % folder) as _f:
-            resume = _f.readlines()
+            resume = _f.read().replace("\n", " ")
         self.assertEqual(run.resume, resume)
         self.assertTrue(run.hasResume)
         self.assertEqualArray(run.deltarhofin, [np.nan, np.nan, np.nan])

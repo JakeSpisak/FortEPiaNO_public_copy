@@ -247,40 +247,31 @@ class FortEPiaNORun:
         self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         try:
             with open("%s/resume.dat" % folder) as _f:
-                self.resume = _f.readlines()
+                self.resume = _f.read()
         except FileNotFoundError:
-            self.resume = [""] * (self.nnu + 2)
+            self.resume = ""
             self.hasResume = False
         else:
+            self.resume = self.resume.replace("\n", " ")
             self.hasResume = True
         if self.hasResume:
             try:
-                self.Neff = float(
-                    re.match("Neff[ =]*([-\d.]*)", self.resume[-1]).group(1)
-                )
-            except ValueError:
+                self.Neff = float(re.search("Neff[ =]*([-\d.]*)", self.resume).group(1))
+            except (AttributeError, ValueError):
                 self.Neff = np.nan
             try:
                 self.wfin = float(
-                    re.match("final w[ =]*([-\d.]*)", self.resume[0]).group(1)
+                    re.search("final w[ =]*([-\d.]*)", self.resume).group(1)
                 )
-            except AttributeError:
+            except (AttributeError, ValueError):
                 if verbose:
-                    print("final w is not in resume.dat")
-                zlineindex = 0
+                    print("cannot read w from resume.dat")
                 self.wfin = np.nan
-            except ValueError:
-                if verbose:
-                    print("error reading w in resume.dat")
-                zlineindex = 1
-                self.wfin = np.nan
-            else:
-                zlineindex = 1
             try:
                 self.zfin = float(
-                    re.match("final z[ =]*([-\d.]*)", self.resume[zlineindex]).group(1)
+                    re.search("final z[ =]*([-\d.]*)", self.resume).group(1)
                 )
-            except ValueError:
+            except (AttributeError, ValueError):
                 self.zfin = np.nan
         self.deltarhofin = []
         for i in range(self.nnu):
@@ -288,9 +279,8 @@ class FortEPiaNORun:
                 try:
                     self.deltarhofin.append(
                         float(
-                            re.match(
-                                "dRho_%s[ =]*([-\d.]*)" % (i + 1),
-                                self.resume[i + 1 + zlineindex],
+                            re.search(
+                                "dRho_%s[ =]*([-\d.]*)" % (i + 1), self.resume,
                             ).group(1)
                         )
                     )
