@@ -247,11 +247,23 @@ module fpConfig
 		logical :: file_exist
 		real(dl), dimension(:), allocatable :: fake
 
+		if (verbose>0) write(*,*) '[config] init configuration'
+		num_args = command_argument_count()
+
+		allocate(args(num_args))
+		do ixa = 1, num_args
+			call get_command_argument(ixa,args(ixa))
+		end do
+		if(num_args.gt.1) then
+			logFile = trim(args(2))
+		end if
+		call openLogFile
+
 #ifdef NO_MUONS
 		call addToLog("[precompiler] Compiled without contributions from muons")
 #endif
 #ifdef TESTSPEED
-		call addToLog("[precompiler] Will execute test speed")
+		call addToLog("[precompiler] Will execute speed test")
 #endif
 #ifdef FULL_F_AB
 		call addToLog("[precompiler] Compiled to compute the full products of rho, G_L and G_R matrices")
@@ -266,17 +278,6 @@ module fpConfig
 		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
 #endif
 
-		if (verbose>0) write(*,*) '[config] init configuration'
-		num_args = command_argument_count()
-
-		allocate(args(num_args))
-		do ixa = 1, num_args
-			call get_command_argument(ixa,args(ixa))
-		end do
-		if(num_args.gt.1) then
-			logFile = trim(args(2))
-		end if
-		call openLogFile
 		if(num_args.eq.0) &
 			call criticalError("You are not passing a configuration file, please provide one.")
 
