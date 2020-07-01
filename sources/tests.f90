@@ -3268,7 +3268,6 @@ program tests
 			vdm(i)%y = i
 		end do
 		vdm(3)%y = 10.
-#ifdef INTERP_DIV_FD
 		vdm(1)%re(1,:) = (/1.1*fermiDirac(1.d0),0.3d0/)
 		vdm(1)%re(2,:) = (/0.12d0,2.*fermiDirac(1.d0)/)
 		vdm(2)%re(1,:) = (/1.3*fermiDirac(2.d0),-0.2d0/)
@@ -3277,16 +3276,6 @@ program tests
 		vdm(3)%re(2,:) = (/0.d0,1.1*fermiDirac(10.d0)/)
 		ndr(1,:) = (/1.2*fermiDirac(1.5d0),0.05d0/)
 		ndr(2,:) = (/0.05d0,1.6*fermiDirac(1.5d0)/)
-#else
-		vdm(1)%re(1,:) = (/1.1,0.3/)
-		vdm(1)%re(2,:) = (/0.12,2./)
-		vdm(2)%re(1,:) = (/1.3,-0.2/)
-		vdm(2)%re(2,:) = (/0.16,1.2/)
-		vdm(3)%re(1,:) = (/1.9,0./)
-		vdm(3)%re(2,:) = (/0.,1.1/)
-		ndr(1,:) = (/1.2,0.05/)
-		ndr(2,:) = (/0.05,1.6/)
-#endif
 		vdm(1)%im(1,:) = (/10.,2./)
 		vdm(1)%im(2,:) = (/-0.4,0./)
 		vdm(2)%im(1,:) = (/0.,0.2/)
@@ -3306,13 +3295,8 @@ program tests
 		end do
 		call deallocateCmplxMat(nm)
 
-#ifdef INTERP_DIV_FD
 		ndr(1,:) = (/1.75*fermiDirac(8.d0),-0.05d0/)
 		ndr(2,:) = (/-0.05d0,1.125*fermiDirac(8.d0)/)
-#else
-		ndr(1,:) = (/1.75,-0.05/)
-		ndr(2,:) = (/-0.05,1.125/)
-#endif
 		ndi(1,:) = (/0.,0.125/)
 		ndi(2,:) = (/-0.125,0./)
 		nm = get_interpolated_nudens(vdm, 8.d0, 2, 3)

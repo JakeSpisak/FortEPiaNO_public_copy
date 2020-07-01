@@ -271,9 +271,6 @@ module fpConfig
 #ifdef FULL_F_NU
 		call addToLog("[precompiler] Compiled to compute the F factors using the full neutrino density matrix")
 #endif
-#ifdef INTERP_DIV_FD
-		call addToLog("[precompiler] Compiled to interpolate rho/FD instead of rho")
-#endif
 #ifdef NOINTERPOLATION
 		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
 #endif

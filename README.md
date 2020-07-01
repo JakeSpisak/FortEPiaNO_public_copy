@@ -59,7 +59,6 @@ Moreover, some parts of the code can be enabled or disabled using precompilation
 For example (add the option to the `make` command):
 
 * `NO_MUONS=1` disables the contribution of muons to the energy budget of the universe;
-* `INTERP_DIV_FD=1` changes the interpolation of the neutrino density matrix to divide by the Fermi Dirac distribution before the interpolation (and multiply back after);
 * `FULL_F_NU=1` allows to use the full matrix product in the F_nu phase space functions that compute nunu scattering and pair annihilation. If not used, only diagonal elements of the neutrino density matrix will be used;
 * `FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.
 
