@@ -576,7 +576,7 @@ $\rho_{\nu_i}$ the one of the $i$-th neutrino.
 The full collision terms are defined by the sum
 of the contributions from neutrino--electron/positron scattering and
 $e^\pm$ annihilation into neutrinos,
-plus neutrino-neutrino interactions.
+plus neutrino--neutrino interactions.
 We neglect other reactions, such as $\mu^\pm$ annihilation (which only affects at very early temperatures when everything is in equilibrium).
 We therefore have \cite{deSalas:2016ztq,Bennett:inprep}
 %
@@ -854,7 +854,7 @@ is a modification of the Double-precision Livermore Solver for Ordinary Differen
 which includes an automatic switching between stiff and non-stiff problems
 of the form ${\rm d}y/{\rm d}t = f(t,y)$.
 In the stiff case, it treats the Jacobian matrix ${\rm d}f/{\rm d}y$ as either a dense (full) or a banded matrix, and as either user-supplied or internally approximated by difference quotients.
-It uses Adams methods (predictor-corrector) in the non-stiff case, and Backward Differentiation Formula (BDF) methods (the Gear methods) in the stiff case.
+It uses Adams methods (predictor--corrector) in the non-stiff case, and Backward Differentiation Formula (BDF) methods (the Gear methods) in the stiff case.
 The linear systems that arise are solved by direct methods (LU factor/solve).
 For more details, see the original publications  \cite{hindmarsh1982odepack,dlsoda1}.
 
@@ -866,7 +866,7 @@ from even earlier times ($z_0=1$ at $T_0=10\, m_\mu$, $x_0=m_e/T_0$) until $x_{\
 The obtained value $z_{\rm in}$ is then considered as the temperature of equilibrium
 of the entire plasma. Concerning the neutrino density matrix at $x_{\rm in}$, all off-diagonal elements and the diagonal ones for sterile
 neutrinos are fixed to zero, while the diagonal elements corresponding to active neutrinos are 
-Fermi-Dirac distributions with a temperature $z_{\rm in}$.
+Fermi--Dirac distributions with a temperature $z_{\rm in}$.
 For typical values that we use in the code,
 we have $z_{\rm in}-1=2.9\e{-4}$ for $x_{\rm in}=0.001$ (which we use for the 3+1 cases)
 or
@@ -880,7 +880,7 @@ One of the most interesting ways to make the code more precise and faster is rel
 Discretising the momenta with a linear or logarithmic spacing works, but it is not the most efficient
 way to generate the grid.
 Inspired by one of the methods used in \texttt{CLASS} (see \cite{Lesgourgues:2011rh}),
-we deeply tested and finally considered a spacing based on the Gauss-Laguerre (GL) integration method.
+we deeply tested and finally considered a spacing based on the Gauss--Laguerre (GL) integration method.
 The crucial point of the calculation is to compute the energy density of neutrinos,
 given by
 %
@@ -892,8 +892,8 @@ given by
 \mathrm{d}y\, y^3\,\varrho_{\alpha\alpha}(y),
 \end{equation}
 %
-where $\varrho_{\alpha\alpha}(y)$ will be close to a Fermi-Dirac distribution and in any case always exponentially suppressed.
-The Gauss-Laguerre quadrature (see e.g.~\cite{NR})
+where $\varrho_{\alpha\alpha}(y)$ will be close to a Fermi--Dirac distribution and in any case always exponentially suppressed.
+The Gauss--Laguerre quadrature (see e.g.~\cite{NR})
 is a method that is designed to optimise the solution of integrals of the type
 \begin{equation}
 I
@@ -915,7 +915,7 @@ Since our momentum distribution function is not directly proportional to $e^{-y}
 we consider $f(x)=e^y\,\varrho_{\alpha\alpha}(y)$,
 in order to rescale the weights appropriately.
 
-For the simple purpose of integrating the Fermi-Dirac distribution, very few points are typically required.
+For the simple purpose of integrating the Fermi--Dirac distribution, very few points are typically required.
 \texttt{CLASS}, for example, uses order of ten points for integrating the neutrino distribution.
 In our case the non-thermal distortions must be computed accurately, and in particular
 when evolving the thermalisation of a sterile neutrino we need more precision on the small momenta.
@@ -942,7 +942,7 @@ We further comment on these points in the next sections.
 \label{ssec:integrals}
 Most of the processing time is spent to compute the collision integrals
 discussed in section~\ref{sec:collint}, which are two-dimensional integrals in the momentum.
-We compute the integrals using a two-dimensional version of the Gauss-Laguerre method,
+We compute the integrals using a two-dimensional version of the Gauss--Laguerre method,
 which has been tested to be precise enough,
 %
 \begin{equation}
@@ -954,13 +954,13 @@ w_i\,w_j\,f_{ij}
 \end{equation}
 This works under the assumption that $f(x,y)$ is exponentially suppressed both in $x$ and $y$.
 Such assumption is valid in our case, as the functions $F_{ab}$ always contain products of momentum distribution functions,
-which are typically very close to the Fermi-Dirac.
-The only exception is the case of the additional neutrino, for which the distribution can be very different from the Fermi-Dirac,
+which are typically very close to the Fermi--Dirac.
+The only exception is the case of the additional neutrino, for which the distribution can be very different from the Fermi--Dirac,
 but in any case it is always exponentially suppressed, since the lowest momenta
 are always populated first and its momentum distribution can never exceed the one of standard neutrinos.
 
 When using a linear/logarithmic spacing of points, instead
-we perform the integrals using a composite two-dimensional Newton-Cotes (NC) formula of order 1 \cite{newtoncotes}:
+we perform the integrals using a composite two-dimensional Newton--Cotes (NC) formula of order 1 \cite{newtoncotes}:
 \begin{equation}
 \int_{x_1}^{x_N}\int_{y_1}^{y_M}{\rm d}x\, {\rm d}y\, f(x, y)
 =
@@ -990,14 +990,14 @@ with a short computation time.
 For the two-dimensional integrals, the selected momentum grid
 fully defines the integration procedure, and the precision is always good
 when using a reasonable number of points.
-Depending on the function, we may adopt the Gauss-Laguerre, Newton-Cotes or Romberg integration \cite{Romberg:1955}
+Depending on the function, we may adopt the Gauss--Laguerre, Newton--Cotes or Romberg integration \cite{Romberg:1955}
 methods for the one-dimensional integrals.
 In particular, for the electron and muon energy densities
 and for most of the funcions that enter the calculation of Eq.~\eqref{eq:dz_dx_nxn}
-we use a Gauss-Laguerre method on a dedicated grid of up to 110 points
+we use a Gauss--Laguerre method on a dedicated grid of up to 110 points
 for the most complicated functions.
 In one single case, the $K'(r)$ function derived from Eq.~\eqref{eq:k},
-the result obtained with the Gauss-Laguerre method
+the result obtained with the Gauss--Laguerre method
 did not reach the requested precision and we decided to use a Romberg integration instead.
 Although this requires a longer computation time, it only affects the initialisation stage,
 as in the code we interpolate over the pre-computed values.
@@ -1016,7 +1016,7 @@ Most of the results summarized here are discussed more in details in \cite{Garia
 Concerning the value of \Neff\ that we obtain using only active neutrinos,
 if we ignore neutrino--neutrino collision terms,
 we verified that we can reach much better than per mille stability on $\Neff=3.044$
-using $N_y\geq20$ points spaced with the Gauss-Laguerre method,
+using $N_y\geq20$ points spaced with the Gauss--Laguerre method,
 if the tolerance for \dlsoda~%
 \footnote{For simplicity, we assume the same numerical value for both the relative and absolute tolerance.
 The algorithm will always match the most stringent of the two requirements.}
@@ -1113,7 +1113,99 @@ is of order $10^{-3}$.
 
 \section{Defaults parameters}
 \label{ssec:default}
-\todo[inline]{blablabla}
+The numerical constants in the code (defined in \texttt{sources/const.f90})
+are mostly taken from \cite{Tanabashi:2018oca}.
+The default configuration of the code (\texttt{ini/explanatory.ini}) is the following:
+\begin{itemize}
+\item
+\textbf{Neutrino parameters}: three active neutrinos (\texttt{flavorNumber = 3}), with mixing parameters from \cite{Tanabashi:2018oca}:
+\texttt{givesinsq = T} (the following parameters \texttt{thetaij} provide the value of $\sin^2\theta_{ij}$),
+\texttt{theta12 = 0.297},
+\texttt{theta13 = 0.0215},
+\texttt{theta23 = 0.425},
+\texttt{dm21 = 7.37e-05} (eV$^2$),
+\texttt{dm31 = 0.00256} (eV$^2$).
+%
+\item
+\textbf{Collision integrals}: non-zero (\texttt{collint\_diagonal\_zero = F}) diagonal terms
+computed taking into account only the contribution from neutrino--electron interactions
+(\texttt{collint\_d\_no\_nue = F}, \texttt{collint\_d\_no\_nunu = T}),
+off-diagonal terms computed using damping approximations
+(\texttt{collint\_offdiag\_damping = T})
+from Eqs.~\ref{eq:damping_yyyw} (\texttt{collint\_damping\_type = 1}),
+also in this case considering only the neutrino--electron interactions
+(\texttt{collint\_od\_no\_nue = F}, \texttt{collint\_od\_no\_nunu = T}).
+%
+\item
+\textbf{FTQED}:
+finite temperature corrections are enabled
+(\texttt{ftqed\_temperature\_corr = T}),
+using third order corrections (\texttt{ftqed\_ord3 = T})
+but no logarithmic ones (\texttt{ftqed\_log\_term = F}),
+and including corrections to the electron mass in the matter potentials
+(\texttt{ftqed\_e\_mth\_leptondens = T}).
+%
+\item
+\textbf{Grid settings}:
+the $x$ range is considered between
+\texttt{x\_in = 0.05} and
+\texttt{x\_fin = 35},
+and the quantities saved in \texttt{Nx = 500} bins.
+For the momentum grid, the default configuration considers \texttt{Ny = 30} momentum nodes
+spaced according to the Gauss--Laguerre method (\texttt{use\_gauss\_laguerre = T}),
+as neutrino--neutrino collision terms are disabled.
+Remember that a correct run with neutrino--neutrino collisions is better performed
+using a much denser momentum grid, that will require to disable the Gauss--Laguerre nodes selection.
+%
+\item
+\textbf{Output settings}:
+the default output folder is \texttt{outputFolder = output},
+checkpoint are active (\texttt{checkpoint = T}),
+if a \texttt{resume.dat} file is present in the output folder it will be removed and the run repeated
+(\texttt{force\_replace = T}),
+all the outputs are enabled (%
+\texttt{save\_energy\_entropy\_evolution = T},
+\texttt{save\_fd = T},
+\texttt{save\_Neff = T},
+\texttt{save\_nuDens\_evolution = T},
+\texttt{save\_w\_evolution = T},
+\texttt{save\_z\_evolution = T}%
+).
+%
+\item \textbf{Precision}:
+\texttt{dlsoda\_rtol = 1.d-6},
+\texttt{dlsoda\_atol\_z = 1.d-6},
+\texttt{dlsoda\_atol\_d = 1.d-6},
+\texttt{dlsoda\_atol\_o = 1.d-6}.
+\end{itemize}
+For more available parameters and the description of all of them, see \texttt{ini/explanatory.ini}.
+
+
+\section{Precompiler options}
+\label{ssec:precompiler}
+The compilation of \fortepiano\ may be performed including a number of precompiler options
+that alter the behaviour of the code.
+The advantage of precompiler options is that the related features are enabled or disabled
+before the code is compiled, and their existence in the source code
+does not affect the execution speed when they are disabled.
+
+Available precompiler options currently include:
+\begin{itemize}
+\item \texttt{FULL\_F\_AB}: full matrix multiplication
+when computing neutrino--electron collision integrals
+(Eqs.~\ref{eq:F_ab_sc} and \ref{eq:F_ab_ann}).
+\item \texttt{FULL\_F\_NU}: take into account the full neutrino density matrix
+when computing neutrino--neutrino collision integrals
+(Eqs.~\ref{eq:F_nunu} and \ref{eq:F_nubarnu}).
+By default, the code only considers the diagonal elements of the neutrino density matrix,
+as off-diagonal ones are typically much smaller.
+No effect on the code execution unless the diagonal matrices $G_{L,R}$ are modified to be off-diagonal.
+\item \texttt{NO\_INTERPOLATION}: do not interpolate electron/muon energy densities and FTQED corrections
+(enabled by default to save time). Incompatible with the use of logarithmic FTQED corrections.
+\item \texttt{NO\_MUONS}: disable muon contributions to total energy density and matter potentials.
+\item \texttt{TESTSPEED}: compute a speed test with a timing of the first 1000 derivatives.
+\end{itemize}
+
 
 
 \acknowledgments
@@ -1121,7 +1213,7 @@ We thank J.J.~Bennett and G.~Buldgen for helping spotting
 some issue in the treatment of finite temperature corrections
 and for support in implementing the higher order correction terms.
 
-This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska-Curie grant agreement No 796941.
+This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska Curie grant agreement No 796941.
 
 
 \bibliographystyle{JHEP}
