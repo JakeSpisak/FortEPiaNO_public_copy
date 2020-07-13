@@ -7,8 +7,8 @@ TESTSPEED ?=
 FULL_F_AB ?=
 # define FULL_F_NU=1 to compute full matrix product in F_nu functions. If not set, use only diagonal elements
 FULL_F_NU ?=
-# define NOINTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
-NOINTERPOLATION ?=
+# define NO_INTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
+NO_INTERPOLATION ?=
 
 F90 ?= ifort
 
@@ -47,8 +47,8 @@ endif
 ifeq ($(FULL_F_NU), 1)
 	F90FLAGS += -DFULL_F_NU=1
 endif
-ifeq ($(NOINTERPOLATION), 1)
-	F90FLAGS += -DNOINTERPOLATION=1
+ifeq ($(NO_INTERPOLATION), 1)
+	F90FLAGS += -DNO_INTERPOLATION=1
 endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \

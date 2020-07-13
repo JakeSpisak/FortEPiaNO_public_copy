@@ -116,7 +116,7 @@ module fpCosmology
 		real(dl), intent(in) :: x, z
 		logical, intent(in) :: elTherMass
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		ed = nonRelativistic_energyDensity_full(cls, x, z, elTherMass)
 #else
 		if (cls%isElectron .and. elTherMass) then
@@ -162,7 +162,7 @@ module fpCosmology
 		real(dl), intent(in) :: x, z
 		logical, intent(in) :: elTherMass
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		ed = nonRelativistic_pressure_full(cls, x, z, elTherMass)
 #else
 		call cls%pressInterp%evaluate(x, z, ed)
@@ -198,7 +198,7 @@ module fpCosmology
 		cls%mass_factor = mass_factor
 		cls%x_enDens_cut = xcut
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		allocate(ednt_vec(interp_nx, interp_nz))
 		allocate(edwt_vec(interp_nx, interp_nz))
 		allocate(p_vec(interp_nx, interp_nz))

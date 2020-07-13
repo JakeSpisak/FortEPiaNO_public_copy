@@ -14,7 +14,7 @@ module fpEquations
 	use fpInterfaces1
 	implicit none
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
 	type(bspline_1d) :: dwodx_A_interp, dwodx_B_interp
 	type(bspline_1d) :: dzodx_eq_interp
@@ -124,7 +124,7 @@ module fpEquations
 		end do
 	end subroutine vec_2_densMat
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	subroutine init_interp_jkyg12
 		real(dl) :: num, den, xoz, numw, denw
 		real(dl), dimension(:), allocatable :: A, B
@@ -209,7 +209,7 @@ module fpEquations
 		real(dl) :: nudrho
 		real(dl), dimension(2) :: coeffs
 		integer :: ix, m
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		integer :: j
 		real(dl) :: num, den, xoz, numw, denw
 		real(dl), dimension(2) :: g12, fContr, elContr0
@@ -241,7 +241,7 @@ module fpEquations
 			nudrho = integral_NC_1d(Ny, dy_arr, fy_arr)
 		end if
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		xoz = x/z
 		g12 = G12_funcFull(x, z)
 		num = g12(1)
@@ -284,7 +284,7 @@ module fpEquations
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
 		real(dl) :: z, xoz, coeff
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		integer :: j
 		real(dl) :: num, den
 		real(dl), dimension(2) :: g12, fContr
@@ -295,7 +295,7 @@ module fpEquations
 		z = vars(n)+1.d0
 		xoz=x/z
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		g12 = G12_funcFull(x, z)
 		num = g12(1)
 		den = PISQ/7.5d0 + g12(2)
@@ -759,7 +759,7 @@ module fpEquations
 		z = vars(n) + 1.d0
 		call vec_2_densMat(vars)
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		dme2 = dme2_electronFull(x, 0.d0, z, .false.)
 #else
 		dme2 = dme2_nolog(x, z)

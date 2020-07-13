@@ -68,10 +68,10 @@ For example (add the option to the `make` command):
 The code, in the default compilation setup, is designed to avoid computing several integrals at each step and to use an interpolation instead.
 This mostly concerns integrals of energy densities (photons, charged leptons) and of the functions that describe electromagnetic corrections, including the coefficients in the dz/dx and dw/dx expressions.
 
-In order to change this default behaviour and use the full expressions at each step, at the expense of slightly slowing down the calculation, one can compile the code using `make NOINTERPOLATION=1`, so that the interpolations will be disabled.
+In order to change this default behaviour and use the full expressions at each step, at the expense of slightly slowing down the calculation, one can compile the code using `make NO_INTERPOLATION=1`, so that the interpolations will be disabled.
 For the default configuration in the `ini/explanatory.ini` file, the actual change in the final effective number of neutrinos is smaller than `1e-4` and the execution takes approximately 15% longer.
 
-**WARNING**: the test suite will not compile if the flag `NOINTERPOLATION=1` is activated, or if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
+**WARNING**: the test suite will not compile if the flag `NO_INTERPOLATION=1` is activated, or if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
 
 
 ## 2.Python scripts

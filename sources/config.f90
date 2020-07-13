@@ -204,7 +204,7 @@ module fpConfig
 	end subroutine init_matrices
 
 	subroutine init_fermions
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		call init_interp_dme2_e
 #endif
 		call fermions(1)%initialize("electrons", .true., 1.d0, 1d3)
@@ -213,7 +213,7 @@ module fpConfig
 		call fermions(2)%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
 		muons => fermions(2)
 #endif
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		call init_interp_jkyg12
 #endif
 	end subroutine init_fermions
@@ -271,7 +271,7 @@ module fpConfig
 #ifdef FULL_F_NU
 		call addToLog("[precompiler] Compiled to compute the F factors using the full neutrino density matrix")
 #endif
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
 #endif
 
