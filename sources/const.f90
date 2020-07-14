@@ -44,6 +44,16 @@ module constants
 	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
 #endif
 	real(dl), parameter :: cos2thW = 1.d0-sin2thW
+#ifdef GLR_ZERO_MOMENTUM
+	!from 10.1016/j.ppnp.2013.03.004
+	real(dl), parameter :: gLe = 0.727d0
+	real(dl), parameter :: gLmt = -0.273d0
+	real(dl), parameter :: gRemt = 0.233d0
+#else
+	real(dl), parameter :: gLe = sin2thW + 0.5d0
+	real(dl), parameter :: gLmt = sin2thW - 0.5d0
+	real(dl), parameter :: gRemt = sin2thW
+#endif
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: electron_charge = sqrt(4*PI*alpha_fine)
 	real(dl), parameter :: electron_charge_sq = electron_charge ** 2

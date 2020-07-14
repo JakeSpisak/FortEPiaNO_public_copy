@@ -35,11 +35,8 @@ F90=gfortran
 DEBUGFLAGS=-O0 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -p -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
 endif
 
-ifeq ($(NO_MUONS), 1)
-	F90FLAGS += -DNO_MUONS=1
-endif
-ifeq ($(TESTSPEED), 1)
-	F90FLAGS += -DTESTSPEED=1
+ifeq ($(GLR_ZERO_MOMENTUM), 1)
+	F90FLAGS += -DGLR_ZERO_MOMENTUM=1
 endif
 ifeq ($(FULL_F_AB), 1)
 	F90FLAGS += -DFULL_F_AB=1
@@ -49,6 +46,12 @@ ifeq ($(FULL_F_NU), 1)
 endif
 ifeq ($(NO_INTERPOLATION), 1)
 	F90FLAGS += -DNO_INTERPOLATION=1
+endif
+ifeq ($(NO_MUONS), 1)
+	F90FLAGS += -DNO_MUONS=1
+endif
+ifeq ($(TESTSPEED), 1)
+	F90FLAGS += -DTESTSPEED=1
 endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \

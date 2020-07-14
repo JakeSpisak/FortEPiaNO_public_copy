@@ -58,6 +58,7 @@ Additional commands for the makefile include:
 Moreover, some parts of the code can be enabled or disabled using precompilation flags.
 For example (add the option to the `make` command):
 
+* `GLR_ZERO_MOMENTUM=1` uses the `G_L` and `G_R` values at zero-momentum transfer from [https://doi.org/10.1016/j.ppnp.2013.03.004](https://doi.org/10.1016/j.ppnp.2013.03.004) instead of the default ones;
 * `NO_MUONS=1` disables the contribution of muons to the energy budget of the universe;
 * `FULL_F_NU=1` allows to use the full matrix product in the F_nu phase space functions that compute nunu scattering and pair annihilation. If not used, only diagonal elements of the neutrino density matrix will be used;
 * `FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.

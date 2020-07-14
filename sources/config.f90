@@ -143,20 +143,24 @@ module fpConfig
 		allocate(diag_el(flavorNumber))
 
 		!GL
-		diag_el = sin2thW - 0.5d0
-		diag_el(1) = sin2thW + 0.5d0
+		diag_el = gLmt
+		diag_el(1) = gLe
 		do ix=1, flavorNumber
 			if (sterile(ix)) diag_el(ix) = 0.d0
 		end do
 		call createDiagMat(GL_mat, flavorNumber, diag_el)
+		write(*,*) "G_L:"
+		call printMat(GL_mat)
 		GLR_vec(1,:,:) = GL_mat
 
 		!GR
-		diag_el = sin2thW
+		diag_el = gRemt
 		do ix=1, flavorNumber
 			if (sterile(ix)) diag_el(ix) = 0.d0
 		end do
 		call createDiagMat(GR_mat, flavorNumber, diag_el)
+		write(*,*) "G_R:"
+		call printMat(GR_mat)
 		GLR_vec(2,:,:) = GR_mat
 
 		call setDampingFactors

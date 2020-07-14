@@ -118,6 +118,7 @@ Other matrices that we need to define are
 while the interaction matrices used in the the collision terms,
 presented in section~\ref{sec:collint}, are
 \begin{equation}
+\label{eq:gLR}
 G^L=\text{diag}(g_L, \tilde g_L, \tilde g_L, 0,\ldots)\,,
 \qquad
 G^R=\text{diag}(g_R, g_R, g_R, 0,\ldots)\,,
@@ -1132,7 +1133,7 @@ computed taking into account only the contribution from neutrino--electron inter
 (\texttt{collint\_d\_no\_nue = F}, \texttt{collint\_d\_no\_nunu = T}),
 off-diagonal terms computed using damping approximations
 (\texttt{collint\_offdiag\_damping = T})
-from Eqs.~\ref{eq:damping_yyyw} (\texttt{collint\_damping\_type = 1}),
+from Eqs.~\eqref{eq:damping_yyyw} (\texttt{collint\_damping\_type = 1}),
 also in this case considering only the neutrino--electron interactions
 (\texttt{collint\_od\_no\_nue = F}, \texttt{collint\_od\_no\_nunu = T}).
 %
@@ -1191,15 +1192,17 @@ does not affect the execution speed when they are disabled.
 
 Available precompiler options currently include:
 \begin{itemize}
+\item \texttt{GLR\_ZERO\_MOMENTUM}: use $g_L$, $\tilde g_L$ and $g_R$ values
+computed at zero momentum transfer \cite{Erler:2013xha} in Eq.~\eqref{eq:gLR}.
 \item \texttt{FULL\_F\_AB}: full matrix multiplication
 when computing neutrino--electron collision integrals
-(Eqs.~\ref{eq:F_ab_sc} and \ref{eq:F_ab_ann}).
+(Eqs.~\eqref{eq:F_ab_sc} and \eqref{eq:F_ab_ann}).
+No effect on the code execution unless the diagonal matrices $G_{L,R}$ are modified to be off-diagonal.
 \item \texttt{FULL\_F\_NU}: take into account the full neutrino density matrix
 when computing neutrino--neutrino collision integrals
-(Eqs.~\ref{eq:F_nunu} and \ref{eq:F_nubarnu}).
+(Eqs.~\eqref{eq:F_nunu} and \eqref{eq:F_nubarnu}).
 By default, the code only considers the diagonal elements of the neutrino density matrix,
 as off-diagonal ones are typically much smaller.
-No effect on the code execution unless the diagonal matrices $G_{L,R}$ are modified to be off-diagonal.
 \item \texttt{NO\_INTERPOLATION}: do not interpolate electron/muon energy densities and FTQED corrections
 (enabled by default to save time). Incompatible with the use of logarithmic FTQED corrections.
 \item \texttt{NO\_MUONS}: disable muon contributions to total energy density and matter potentials.
@@ -1211,7 +1214,8 @@ No effect on the code execution unless the diagonal matrices $G_{L,R}$ are modif
 \acknowledgments
 We thank J.J.~Bennett and G.~Buldgen for helping spotting
 some issue in the treatment of finite temperature corrections
-and for support in implementing the higher order correction terms.
+and for support in implementing the higher order correction terms,
+and M.~Escudero~Abenza for useful comments and suggestions.
 
 This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska Curie grant agreement No 796941.
 
