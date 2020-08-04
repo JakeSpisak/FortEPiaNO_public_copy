@@ -68,6 +68,6 @@ module fpErrors
 		write(lfu,*) "[Critical error] "//message
 
 		call closeLogFile
-		call exit()
+		call exit(1)
 	end subroutine criticalError
 end module

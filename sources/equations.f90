@@ -42,11 +42,13 @@ module fpEquations
 			electrons%energyDensity(x, z, ftqed_e_mth_leptondens) &
 			+ electrons%pressure(x, z, ftqed_e_mth_leptondens) &
 		)
+#ifndef NO_MUONS
 		if (flavorNumber.gt.2) &
 			leptonDensities(2,2) = ldf * ( &
 				muons%energyDensity(x, z, .false.) &
 				+ muons%pressure(x, z, .false.) &
 			)
+#endif
 
 		nuDensities%re = 0.d0
 		nuDensities%im = 0.d0
@@ -155,7 +157,11 @@ module fpEquations
 			end do
 			numw = g12(1) + elContr0(1)
 			denw = PISQ/7.5d0 + g12(2) + elContr0(2)
+#ifdef NO_MUONS
+			do j=1, fermions_number
+#else
 			do j=2, fermions_number
+#endif
 				fContr = fermions(j)%dzodx_terms(xoz)
 				numw = numw + fContr(1)
 				denw = denw + fContr(2)
@@ -262,7 +268,11 @@ module fpEquations
 		end do
 		numw = g12(1) + elContr0(1)
 		denw = PISQ/7.5d0 + g12(2) + elContr0(2)
+#ifdef NO_MUONS
+		do j=1, fermions_number
+#else
 		do j=2, fermions_number
+#endif
 			fContr = fermions(j)%dzodx_terms(xoz)
 			numw = numw + fContr(1)
 			denw = denw + fContr(2)
@@ -545,7 +555,11 @@ module fpEquations
 			write(iu, multidblfmt) x, z, &
 				photonDensity(z), &
 				electrons%energyDensity(x, z, .false.), &
+#ifndef NO_MUONS
 				muons%energyDensity(x, z, .false.), &
+#else
+				0.d0, &
+#endif
 				nuEnDens(1:flavorNumber)
 #endif
 			close(iu)
@@ -560,7 +574,11 @@ module fpEquations
 			write(iu, multidblfmt) x, z, &
 				photonEntropy(z), &
 				electrons%entropy(x, z), &
+#ifndef NO_MUONS
 				muons%entropy(x, z), &
+#else
+				0.d0, &
+#endif
 				nuEnDens(1:flavorNumber)*four_thirds/w
 #endif
 			close(iu)
@@ -819,7 +837,7 @@ module fpEquations
 		end do
 	end subroutine drhoy_dx_fullMat
 
-	pure subroutine derivative (x, z, m, dme2, sqrtraddens, n, ydot)
+	pure subroutine drho_y_dx(x, z, m, dme2, sqrtraddens, n, ydot)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
 		real(dl), intent(in) :: x, z, dme2, sqrtraddens
 		integer, intent(in) :: m, n
@@ -841,7 +859,7 @@ module fpEquations
 				end do
 			end do
 		end if
-	end subroutine derivative
+	end subroutine drho_y_dx
 
 	subroutine derivatives(n, x, vars, ydot)
 !		compute all the rho derivatives (drho/dx for all y, dz/dx)
@@ -899,7 +917,7 @@ module fpEquations
 		tmpvec = 0
 		!$omp do schedule(static)
 		do m=1, Ny
-			call derivative(x, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
+			call drho_y_dx(x, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
 			s=(m-1)*flavNumSqu
 			ydot(s+1:s+flavNumSqu) = tmpvec(:)
 		end do

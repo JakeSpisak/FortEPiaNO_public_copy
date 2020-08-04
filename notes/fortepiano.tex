@@ -584,8 +584,13 @@ We therefore have \cite{deSalas:2016ztq}
 \mathcal{I}[\varrho(y)]
 &=&
 \frac{G_F^2}{(2\pi)^3y^2}
-\left(\mathcal{I}_{\rm sc}^u + \mathcal{I}_{\rm ann}^u\right)\,,
+\mathcal{I}^u\,,
 \label{eq:collint}
+\\
+\mathcal{I}^u
+&\equiv&
+\mathcal{I}_{\rm sc}^u + \mathcal{I}_{\rm ann}^u\,,
+\label{eq:unnormcollint}
 \\
 \mathcal{I}_{\rm sc} ^u
 &=&
@@ -705,10 +710,12 @@ For the non-diagonal terms of the collision matrix we therefore use the
 damping approximation, in the form
 %
 \begin{equation}
-\mathcal{I}_{\alpha\beta}(\varrho) = -D_{\alpha\beta} \varrho_{\alpha\beta},
+\mathcal{I}^u_{\alpha\beta}(\varrho) = -D_{\alpha\beta} \varrho_{\alpha\beta},
 \end{equation}
 %
 for $\alpha \neq \beta$.
+Notice that $\mathcal{I}^u_{\alpha\beta}(\varrho)$ is the unnormalized term
+defined in Eq.~\eqref{eq:unnormcollint}.
 The expressions for the coefficients $D_{\alpha\beta}$ depend on the elements considered.
 The coefficients were derived for example in \cite{McKellar:1992ja},
 see also \cite{Enqvist:1991qj,Bell:1998ds},

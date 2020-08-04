@@ -55,6 +55,14 @@ Additional commands for the makefile include:
 * `make clean` to remove all compiled files.
 * `make tests` to compile a set of numerical tests (run them with `bin/tests`). If you modify the code, they will tell you if everything is still working as expected.
 
+Moreover, some parts of the code can be disabled using precompilation flags. For example:
+
+* `make NO_MUONS=1` disables the contribution of muons to the energy budget of the universe;
+* `make LOW_REHEATING=1` enables calculations for the low-reheating model;
+* `make FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.
+
+**WARNING**: the test suite will not work if the flag `NO_MUONS=1` is activated, or even if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
+
 ### 1.2.Interpolations
 The code, in the default compilation setup, is designed to avoid computing several integrals at each step and to use an interpolation instead.
 This mostly concerns integrals of energy densities (photons, charged leptons) and of the functions that describe electromagnetic corrections, including the coefficients in the dz/dx and dw/dx expressions.

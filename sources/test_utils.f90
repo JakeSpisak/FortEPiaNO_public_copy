@@ -47,7 +47,7 @@ module sgTestUtils
 			write (*,"(*(E17.9))") num1, num2, num1 - num2, tol
 			failedTests = failedTests + 1
 			if (blocking) &
-				call exit()
+				call exit(1)
 		end if
 	end subroutine assert_double
 
@@ -64,7 +64,7 @@ module sgTestUtils
 			write (*,"(*(E17.9))") num1, num2, num1 - num2, tol
 			failedTests = failedTests + 1
 			if (blocking) &
-				call exit()
+				call exit(1)
 		end if
 	end subroutine assert_double_verb
 
@@ -81,7 +81,7 @@ module sgTestUtils
 			write (*,"(*(E17.9))") num1, num2, (num1 - num2)/num1, tol
 			failedTests = failedTests + 1
 			if (blocking) &
-				call exit()
+				call exit(1)
 		end if
 	end subroutine assert_double_rel
 
@@ -98,7 +98,7 @@ module sgTestUtils
 			write (*,"(*(E17.9))") num1, num2, (num1 - num2)/num1, tol
 			failedTests = failedTests + 1
 			if (blocking) &
-				call exit()
+				call exit(1)
 		end if
 	end subroutine assert_double_rel_verb
 end module sgTestUtils
