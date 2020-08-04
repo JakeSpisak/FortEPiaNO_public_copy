@@ -24,6 +24,7 @@ module constants
 	real(dl), parameter :: PISQD15=PISQ/15.d0
 	real(dl), parameter :: PICub = PI*PI*PI
 	real(dl), parameter :: Gev2eV = 1.d9, Mev2eV = 1.d6
+	real(dl), parameter :: sec2eV = 1.519d21/Mev2ev
 
 	real(dl), parameter :: zero = 0.0d0
 
@@ -89,10 +90,16 @@ module variables
 	logical :: ftqed_e_mth_leptondens
 	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 	logical :: save_energy_entropy_evolution
+	logical :: save_BBN
 
 	!variables that will be read from config file
 	logical :: giveSinSq
 	integer :: flavorNumber, flavNumSqu
+
+	!Reheating
+	real(dl) :: Trh
+	real(dl) :: GammaPhi
+	real(dl) :: rhoPhi_in
 
 	!complex matrix, it will host the neutrino density matrix.
 	!Intended to have the relative shape correction with respect to the FD in the diagonal
@@ -129,6 +136,7 @@ module variables
 	logical :: use_gauss_laguerre
 	integer :: Nx, Ny, Nylog
 	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
+	real(dl) :: t_in
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
 	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr, w_gl_arr2
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
@@ -136,6 +144,9 @@ module variables
 	real(dl) :: toler_jkyg
 	real(dl) :: dlsoda_rtol
 	real(dl) :: dlsoda_atol_z, dlsoda_atol_d, dlsoda_atol_o
+
+	real(dl), parameter :: t0 = 1.d-3 !sec
+	real(dl), parameter :: x0 = 1.d-2 
 
 	integer, parameter :: N_opt_xoz = 63
 	real(dl), parameter :: opt_xoz_cut = 30.d0

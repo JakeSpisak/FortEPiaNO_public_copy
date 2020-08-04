@@ -212,7 +212,14 @@ module fpConfig
 		!nu density matrix
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
 		ntot = Ny*(flavNumSqu) + 2 !independent elements in nuDensity(y) + w,z
+
+#ifdef LOW_REHEATING
+		ntot=ntot+1
+#endif
+
 		allocate(nuDensVec(ntot))
+		if (save_BBN)&
+			call openFile(3978, trim(outputFolder)//"/y_grid.dat", .true.)
 		if(save_fd .and. trim(outputFolder).ne."")&
 			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)
 		do ix=1, Ny
@@ -224,17 +231,25 @@ module fpConfig
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdme = fermiDirac(y_arr(ix)/z_in)
 			fdm = fermiDirac(y_arr(ix))
+			if (save_BBN)&
+				write(3978, multidblfmt) y_arr(ix)
 			if(save_fd .and. trim(outputFolder).ne."")&
 				write(3154, multidblfmt) y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
+#ifdef LOW_REHEATING
+			do iy=1, flavorNumber
+				nuDensMatVec(ix)%re(iy,iy) = -1.d0
+			end do
+#else
 			nuDensMatVec(ix)%re(1,1) = 0.d0
 			if (flavorNumber.gt.1 .and. sterile(2)) &
 				nuDensMatVec(ix)%re(2,2) = -1.d0
 			if (flavorNumber.gt.2 .and. sterile(3)) &
 				nuDensMatVec(ix)%re(3,3) = -1.d0
-			do iy=2, flavorNumber
+			do iy=1, flavorNumber
 				if (sterile(iy)) &
 					nuDensMatVec(ix)%re(iy,iy) = -1.d0
 			end do
+#endif
 			nuDensMatVecFD(ix)%re = nuDensMatVec(ix)%re
 			nuDensMatVecFD(ix)%im = nuDensMatVec(ix)%im
 			do iy=1, flavorNumber
@@ -244,6 +259,8 @@ module fpConfig
 		end do
 		if(save_fd .and. trim(outputFolder).ne."")&
 			close(3154)
+		if(save_BBN)&
+			close(3978)
 
 		deallocate(diag_el)
 	end subroutine init_matrices
@@ -330,6 +347,33 @@ module fpConfig
 			logx_fin = log10(x_fin)
 			x_arr = logspace(logx_in, logx_fin, Nx)
 
+#ifdef LOW_REHEATING
+#ifndef NOINTERPOLATION
+			call criticalError("Cannot use interpolations with Low-Reheating!")
+#endif
+
+			!Reading reheating temperature
+			Trh= read_ini_real('Trh', 0.d0)
+			!Initial time
+			t_in=t0*(x_in/x0)**(1.5d0)
+
+			if (Trh .gt. 0.d0) then
+				write(*,*) 'Reheating temperature: ', Trh
+				rhoPhi_in=(overallFactor/(3.d0*t_in*sec2eV/2.d0))**2
+				write(*,*) 'Initial condition on the phi density: ', rhoPhi_in
+				rhoPhi_in=rhoPhi_in*(x_in**3/m_e**4) !paso a densidad comoving (adim)
+			else
+				call criticalError("Invalid reheating temperature: must be positive. Do not compile LOW_REHEATING to use the code without low-reheating")
+			end if
+
+			write(*,*) 'The adimensional initial condition is: ', rhoPhi_in
+
+			!Compute GammaPhi
+			GammaPhi=((Trh/0.7)**2)/sec2eV
+
+			write(*,*) 'Initial GammaPhi: ', GammaPhi
+#endif
+
 			y_min = read_ini_real('y_min', 0.01d0)
 			y_max = read_ini_real('y_max', 20.0d0)
 			y_cen = read_ini_real('y_cen', 1.0d0)
@@ -373,6 +417,7 @@ module fpConfig
 			save_nuDens_evolution = read_ini_logical("save_nuDens_evolution", .true.)
 			save_w_evolution = read_ini_logical("save_w_evolution", .true.)
 			save_z_evolution = read_ini_logical("save_z_evolution", .true.)
+			save_BBN = read_ini_logical("save_BBN", .true.)
 
 			z_in=1.d0
 			allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
@@ -418,7 +463,9 @@ module fpConfig
 			end if
 
 			call init_fermions
+#ifndef LOW_REHEATING
 			call zin_solver
+#endif
 
 			massSplittings = 0.d0
 			massSplittings(2) = read_ini_real('dm21', i_dm21)

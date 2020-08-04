@@ -113,7 +113,6 @@ def setParser():
     )
     parser.add_argument(
         "--default_sterile",
-        nargs=1,
         choices=["Gariazzo&al", "None"],
         default="Gariazzo&al",
         help="define the active-sterile mixing parameters as obtained "
@@ -174,6 +173,12 @@ def setParser():
         help=r"define $\theta_{34}$ or $\sin^2 \theta_{34}$",
     )
     parser.add_argument(
+        "--Trh",
+        type=float,
+        default=25.0,
+        help=r"define $\T_{RH}$ (reheating temperature in MeV)",
+    )
+    parser.add_argument(
         "-V", "--verbose", type=int, default=1, help="define the verbosity of the code"
     )
     parser.add_argument(
@@ -185,7 +190,7 @@ def setParser():
     parser.add_argument(
         "--Nx", type=int, default=200, help="number of points to save in x"
     )
-    parser.add_argument("--x_in", type=float, default=0.001, help="initial value of x")
+    parser.add_argument("--x_in", type=float, default=0.01, help="initial value of x")
     parser.add_argument("--x_fin", type=float, default=35, help="final value of x")
     parser.add_argument(
         "--Ny", type=int, default=40, help="number of total points in y"
@@ -246,6 +251,11 @@ def setParser():
         "--save_fd",
         action="store_true",
         help="enable saving the y grid and the corresponding Fermi-Dirac to fd.dat",
+    )
+    parser.add_argument(
+        "--save_BBN",
+        action="store_true",
+        help="enable saving the output for PArthENoPE",
     )
     parser.add_argument(
         "--save_Neff", action="store_true", help="enable saving the evolution of Neff"
@@ -350,6 +360,7 @@ def getIniValues(args):
         "y_min",
         "y_cen",
         "y_max",
+	"Trh",
     ]:
         values[p] = getattr(args, p)
     values["factors"] = "\n".join(
@@ -404,7 +415,7 @@ def getIniValues(args):
     values["dlsoda_rtol"] = args.dlsoda_rtol
     values["folder"] = args.outputfolder
     values["Nprintderivs"] = args.verbose_deriv_freq
-    for p in ["save_energy_entropy", "save_fd", "save_Neff", "save_nuDens", "save_z"]:
+    for p in ["save_energy_entropy", "save_fd", "save_Neff", "save_nuDens", "save_z", "save_BBN"]:
         values[p] = "T" if getattr(args, p) else "F"
     values["use_GL"] = "F" if args.no_GL else "T"
     return values
@@ -435,6 +446,8 @@ theta24 = {th24:}
 theta34 = {th34:}
 dm41 = {dm41:}
 
+Trh = {Trh:}
+
 collision_offdiag = {coll_offdiag:}
 ftqed_temperature_corr = {ftqed_temperature_corr:}
 ftqed_ord3 = {ftqed_ord3:}
@@ -459,6 +472,7 @@ save_Neff = {save_Neff:}
 save_nuDens_evolution = {save_nuDens:}
 save_z_evolution = {save_z:}
 save_energy_entropy_evolution = {save_energy_entropy:}
+save_BBN = {save_BBN:}
 
 {dlsoda_atol:}
 dlsoda_rtol = {dlsoda_rtol:}

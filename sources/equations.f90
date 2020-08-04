@@ -196,6 +196,16 @@ module fpEquations
 	end function dwodxcoef_interp_func
 #endif
 
+	subroutine drhoPhi_o_dx(x, z, rhoPhi, ydot, n)
+		real(dl), intent(in) :: x, z, rhoPhi
+		integer, intent(in) :: n
+		real(dl), dimension(n), intent(inout) :: ydot
+		real(dl) :: aux
+
+		aux = x*rhoPhi
+		ydot(n-2) = -aux*GammaPhi*overallFactor / (m_e*m_e*sqrt(totalRadiationDensity(x,z) + aux))
+	end subroutine drhoPhi_o_dx
+
 	subroutine dz_o_dx(x, w, z, ydot, n)
 		!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		!Newton-Cotes integral without need of interpolation
@@ -209,6 +219,9 @@ module fpEquations
 		integer :: j
 		real(dl) :: num, den, xoz, numw, denw
 		real(dl), dimension(2) :: g12, fContr, elContr0
+#ifdef LOW_REHEATING
+		real(dl) :: lrh_contr
+#endif
 
 		elContr0 = electrons%dzodx_terms(interp_xozvec(1))
 #endif
@@ -254,6 +267,11 @@ module fpEquations
 			numw = numw + fContr(1)
 			denw = denw + fContr(2)
 		end do
+#ifdef LOW_REHEATING
+		lrh_contr = x*ydot(n-2) / (2.d0*z**3)
+		num=num - lrh_contr
+		numw=numw - lrh_contr
+#endif
 		!neutrino effective temperature
 		ydot(n-1) = numw / denw - nudrho / z**3 / (2.d0*PISQ*denw)
 		!photon temperature
@@ -427,8 +445,38 @@ module fpEquations
 		close(u)
 	end subroutine nuDens_to_file
 
+	subroutine nuDens_to_file_BBN(u, ix, iy, x, z, mat, reim, fname)
+		integer, intent(in) :: u, ix, iy
+		real(dl), intent(in) :: x, z
+		logical, intent(in) :: reim!true for real, false for imaginary part
+		type(cmplxMatNN), dimension(:), allocatable, intent(in) :: mat
+		character(len=*), intent(in) :: fname
+		integer :: m
+		real(dl), dimension(:), allocatable :: tmpvec
+
+		allocate(tmpvec(Ny))
+		call openFile(u, trim(fname), firstWrite)
+		if (reim) then
+			do m=1, nY
+				tmpvec(m)=mat(m)%re(ix, iy)
+			end do
+		else
+			do m=1, nY
+				tmpvec(m)=mat(m)%im(ix, iy)
+			end do
+		end if
+		write(u, multidblfmt) x, z, tmpvec
+		deallocate(tmpvec)
+		close(u)
+	end subroutine nuDens_to_file_BBN
+
+#ifdef LOW_REHEATING
+	subroutine saveRelevantInfo(x, t, vec)
+		real(dl), intent(in) :: x, t
+#else
 	subroutine saveRelevantInfo(x, vec)
 		real(dl), intent(in) :: x
+#endif
 		real(dl), dimension(:), intent(in) :: vec
 		type(cmplxMatNN), dimension(:), allocatable :: rho_mass
 		complex(dl), dimension(:,:), allocatable :: tmpComplMat, transfMat
@@ -486,42 +534,97 @@ module fpEquations
 				nuEnDens(k) = nuDensityInt(k, k)*nuFactor(k)
 			end do
 			call openFile(iu, trim(outputFolder)//'/energyDensity.dat', firstWrite)
+#ifdef LOW_REHEATING
+			write(iu, multidblfmt) x, t, z, &
+				photonDensity(z), &
+				electrons%energyDensity(x, z, .false.), &
+				muons%energyDensity(x, z, .false.), &
+				nuEnDens(1:flavorNumber), &
+				vec(ntot-2)
+#else
 			write(iu, multidblfmt) x, z, &
 				photonDensity(z), &
 				electrons%energyDensity(x, z, .false.), &
 				muons%energyDensity(x, z, .false.), &
 				nuEnDens(1:flavorNumber)
+#endif
 			close(iu)
 			call openFile(iu, trim(outputFolder)//'/entropy.dat', firstWrite)
+#ifdef LOW_REHEATING
+			write(iu, multidblfmt) x, t, z, &
+				photonEntropy(z), &
+				electrons%entropy(x, z), &
+				muons%entropy(x, z), &
+				nuEnDens(1:flavorNumber)*four_thirds/w
+#else
 			write(iu, multidblfmt) x, z, &
 				photonEntropy(z), &
 				electrons%entropy(x, z), &
 				muons%entropy(x, z), &
 				nuEnDens(1:flavorNumber)*four_thirds/w
+#endif
 			close(iu)
 		end if
 		if (save_z_evolution) then
 			call openFile(iu, trim(outputFolder)//'/z.dat', firstWrite)
+#ifdef LOW_REHEATING
+			if (save_w_evolution) then
+				write(iu, multidblfmt) x, t, z, vec(ntot-1)+1.d0
+			else
+				write(iu, multidblfmt) x, t, z
+			end if
+#else
 			if (save_w_evolution) then
 				write(iu, multidblfmt) x, z, vec(ntot-1)+1.d0
 			else
 				write(iu, multidblfmt) x, z
 			end if
+#endif
 			close(iu)
 		end if
 		if (save_Neff) then
 			neff = Neff_from_rho_z(vec(ntot)+1.d0)
 			call openFile(iu, trim(outputFolder)//'/Neff.dat', firstWrite)
+#ifdef LOW_REHEATING
+			write(iu, multidblfmt) &
+				x, t, neff/zid**4, neff
+#else
 			write(iu, multidblfmt) &
 				x, neff/zid**4, neff
+#endif
 			close(iu)
 		end if
+
+		if (save_BBN) then
+			call openFile(iu, trim(outputFolder)//'/BBN.dat', firstWrite)
+			write(iu, multidblfmt) &
+				x, z, w, allNuDensity()
+			close(iu)
+
+			call openFile(iu, trim(outputFolder)//'/rho_tot.dat', firstWrite)
+#ifdef LOW_REHEATING
+			write(iu, multidblfmt) &
+				x, totalRadiationDensity(x,z), totalRadiationDensity(x,z)+x*vec(ntot-2)
+#else
+			write(iu, multidblfmt) &
+				x, totalRadiationDensity(x,z)
+#endif
+			close(iu)
+
+			!we also save f_nue
+			write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag1_BBN.dat'
+			call nuDens_to_file_BBN(iu, 1, 1, x, z, nuDensMatVecFD, .true., trim(fname))
+		end if
+
 		firstWrite=.false.
 	end subroutine saveRelevantInfo
 
 	subroutine solver
 		real(dl) :: xstart, xend, xchk
 		integer :: ix, nchk, ix_in
+#ifdef LOW_REHEATING
+		real(dl) :: tx, deltax
+#endif
 		character(len=3) :: istchar
 		character(len=100) :: tmpstring
 		real(dl), dimension(:), allocatable :: ychk
@@ -533,7 +636,7 @@ module fpEquations
 		integer,dimension(8) :: values
 		integer, parameter :: timefileu = 8970
 		character(len=*), parameter :: timefilen = '/time.log'
-        integer :: m, i, j, k
+		integer :: m, i, j, k
 
 		deriv_counter = 0
 
@@ -550,6 +653,7 @@ module fpEquations
 		lrw=22+ntot*(ntot+9)
 		liw=20+ntot
 		allocate(atol(ntot), rwork(lrw), iwork(liw))
+		atol = dlsoda_atol_z
 		k = 1
 		do m = 1, Ny
 			do i = 1, flavorNumber
@@ -566,6 +670,9 @@ module fpEquations
 				end do
 			end if
 		end do
+#ifdef LOW_REHEATING
+		atol(ntot-2) = dlsoda_atol_z
+#endif
 		atol(ntot-1) = dlsoda_atol_z
 		atol(ntot) = dlsoda_atol_z
 		rwork=0.
@@ -574,8 +681,15 @@ module fpEquations
 		jt=2
 
 		call densMat_2_vec(nuDensVec)
+
+#ifdef LOW_REHEATING
+		nuDensVec(ntot-2) = rhoPhi_in
+		nuDensVec(ntot-1) = -0.99
+		nuDensVec(ntot) = -0.99
+#else
 		nuDensVec(ntot-1) = z_in - 1.d0 !neutrino temperature start at same value as photon temperature
 		nuDensVec(ntot) = z_in - 1.d0
+#endif
 
 		call readCheckpoints(nchk, xchk, ychk, chk)
 
@@ -593,11 +707,21 @@ module fpEquations
 		else
 			xstart=x_arr(1)
 			ix_in=1
+#ifdef LOW_REHEATING
+			call saveRelevantInfo(xstart, t_in, nuDensVec)
+#else
 			call saveRelevantInfo(xstart, nuDensVec)
+#endif
 		end if
 
+#ifdef LOW_REHEATING
+		tx=t_in
+#endif
 		do ix=ix_in+1, Nx
 			xend   = x_arr(ix)
+#ifdef LOW_REHEATING
+			deltax = xend - xstart
+#endif
 			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") xstart, xend
 			call addToLog("[solver] Start DLSODA..."//trim(tmpstring))
 
@@ -618,7 +742,17 @@ module fpEquations
 				call criticalError('istate='//istchar)
 			end if
 			call writeCheckpoints(ntot, xend, nuDensVec)
+#ifdef LOW_REHEATING
+			tx = tx &
+				+ deltax * xend * overallFactor / sec2eV / m_e**2 &
+				/ sqrt( &
+					totalRadiationDensity(xend, nuDensVec(ntot)+1.d0) &
+					+ xend*nuDensVec(ntot-2) &
+				)
+			call saveRelevantInfo(xend, tx, nuDensVec)
+#else
 			call saveRelevantInfo(xend, nuDensVec)
+#endif
 			xstart=xend
 		end do
 		write(tmpstring,"('x_end =',"//dblfmt//",' - w_end =',"//dblfmt//",' - z_end =',"//dblfmt//")") &
@@ -717,6 +851,9 @@ module fpEquations
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
 		real(dl) :: w, z, dme2, sqrtraddens
+#ifdef LOW_REHEATING
+		real(dl) :: rhoPhi
+#endif
 		character(len=100) :: tmpstr
 		logical :: file_exist
 		integer :: tstat, m, s
@@ -740,6 +877,9 @@ module fpEquations
 
 		w = vars(n-1) + 1.d0
 		z = vars(n) + 1.d0
+#ifdef LOW_REHEATING
+		rhoPhi = vars(n-2)
+#endif
 		call vec_2_densMat(vars)
 
 #ifdef NOINTERPOLATION
@@ -747,7 +887,11 @@ module fpEquations
 #else
 		dme2 = dme2_nolog(x, z)
 #endif
+#ifdef LOW_REHEATING
+		sqrtraddens = sqrt(totalRadiationDensity(x, z) + x*rhoPhi)
+#else
 		sqrtraddens = sqrt(totalRadiationDensity(x, z))
+#endif
 		call updateMatterDensities(x, z)
 
 		!$omp parallel shared(ydot, x, z, dme2, sqrtraddens, flavNumSqu) private(m, s, tmpvec)
@@ -763,6 +907,9 @@ module fpEquations
 		deallocate(tmpvec)
 		!$omp end parallel
 
+#ifdef LOW_REHEATING
+		call drhoPhi_o_dx (x, z, rhoPhi, ydot, n)
+#endif
 		call dz_o_dx(x, w, z, ydot, ntot)
 
 		call densMat_2_vec(nuDensVec)
@@ -823,6 +970,11 @@ module fpEquations
 		tmp = Neff_from_rho_z(z)
 		write(*,"('Neff    = ',F9.6)") tmp
 		write(9876,"('Neff    = ',F9.6)") tmp
+
+#ifdef LOW_REHEATING
+		write(*,"('Trh    = ',F9.6)") Trh
+		write(9876,"('Trh    = ',F9.6)") Trh
+#endif
 		close(9876)
 	end subroutine finalresults
 end module fpEquations
