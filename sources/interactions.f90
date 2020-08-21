@@ -50,6 +50,16 @@ module fpInteractions
 
 		!numbers from McKellar:1992ja
 		!terms for scattering, annihilation with electrons
+#ifdef NO_NUE_ANNIHILATION
+		!nu_e - nu_X
+		nue_nue_nux = 8.d0
+		!nu_mu - nu_tau
+		nue_numu_nutau = 0.d0
+		!nu_e - nu_s
+		nue_nue_nus = 2.d0*(8.d0*sin2thW**2 + 4.d0*sin2thW + 1.d0)
+		!nu_X - nu_s
+		nue_nux_nus = 2.d0*(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)
+#else
 		!nu_e - nu_X
 		nue_nue_nux = &
 			8.d0 &!e+nu -> e+nu
@@ -67,6 +77,7 @@ module fpInteractions
 			(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0) &!e+nu -> e+nu
 			+ (4.d0*sin2thW**2 - 2.d0*sin2thW + 0.5d0) &!nu+bnu -> e+e-
 		)
+#endif
 		!terms for nunu scattering
 		!nu_e - nu_X
 		nunu_nue_nux = 6.d0 !nu+(b)nu -> nu+(b)nu
@@ -1157,9 +1168,14 @@ module fpInteractions
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_int
+#ifdef NO_NUE_ANNIHILATION
+		coll_nue_int = &
+			coll_nue_sc_int(iy, yx, obj, F_ab_sc)
+#else
 		coll_nue_int = &
 			coll_nue_sc_int(iy, yx, obj, F_ab_sc) &
 			+ coll_nue_ann_int(iy, yx, obj, F_ab_ann)
+#endif
 	end function coll_nue_int
 
 	pure function coll_nunu_int(iy2, iy3, obj, F_nu_sc, F_nu_pa)

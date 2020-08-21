@@ -263,12 +263,6 @@ module fpConfig
 		end if
 		call openLogFile
 
-#ifdef NO_MUONS
-		call addToLog("[precompiler] Compiled without contributions from muons")
-#endif
-#ifdef TESTSPEED
-		call addToLog("[precompiler] Will execute speed test")
-#endif
 #ifdef FULL_F_AB
 		call addToLog("[precompiler] Compiled to compute the full products of rho, G_L and G_R matrices")
 #endif
@@ -277,6 +271,15 @@ module fpConfig
 #endif
 #ifdef NO_INTERPOLATION
 		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
+#endif
+#ifdef NO_MUONS
+		call addToLog("[precompiler] Compiled without contributions from muons")
+#endif
+#ifdef NO_NUE_ANNIHILATION
+		call addToLog("[precompiler] Compiled without contributions from nunu<->ee annihilation to collision integrals")
+#endif
+#ifdef TESTSPEED
+		call addToLog("[precompiler] Will execute speed test")
 #endif
 
 		if(num_args.eq.0) &
