@@ -1194,7 +1194,6 @@ Available precompiler options currently include:
 \begin{itemize}
 \item \texttt{GLR\_ZERO\_MOMENTUM}: use $g_L$, $\tilde g_L$ and $g_R$ values
 computed at zero momentum transfer \cite{Erler:2013xha} in Eq.~\eqref{eq:gLR}.
-\item \texttt{NO\_NUE\_ANNIHILATION}: disable contribution from $\nu\bar\nu\leftrightarrow e^+e^-$ processes to collision integrals.
 \item \texttt{FULL\_F\_AB}: full matrix multiplication
 when computing neutrino--electron collision integrals
 (Eqs.~\eqref{eq:F_ab_sc} and \eqref{eq:F_ab_ann}).
@@ -1207,6 +1206,7 @@ as off-diagonal ones are typically much smaller.
 \item \texttt{NO\_INTERPOLATION}: do not interpolate electron/muon energy densities and FTQED corrections
 (enabled by default to save time). Incompatible with the use of logarithmic FTQED corrections.
 \item \texttt{NO\_MUONS}: disable muon contributions to total energy density and matter potentials.
+\item \texttt{NO\_NUE\_ANNIHILATION}: disable contribution from $\nu\bar\nu\leftrightarrow e^+e^-$ processes to collision integrals.
 \item \texttt{TESTSPEED}: compute a speed test with a timing of the first 1000 derivatives.
 \end{itemize}
 
