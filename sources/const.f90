@@ -24,6 +24,8 @@ module constants
 	real(dl), parameter :: PISQD15=PISQ/15.d0
 	real(dl), parameter :: PICub = PI*PI*PI
 	real(dl), parameter :: Gev2eV = 1.d9, Mev2eV = 1.d6
+	real(dl), parameter :: zetaOfThree = 1.20205690315959428540d0
+	real(dl), parameter :: zetaOfThreex2DPISQ = zetaOfThree * 2.d0 / PISQ
 
 	real(dl), parameter :: zero = 0.0d0
 
@@ -103,6 +105,7 @@ module variables
 	logical :: ftqed_e_mth_leptondens
 	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 	logical :: save_energy_entropy_evolution
+	logical :: save_number_evolution
 
 	!variables that will be read from config file
 	logical :: giveSinSq

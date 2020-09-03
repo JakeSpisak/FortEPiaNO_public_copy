@@ -55,7 +55,12 @@ default_osc_act = {
     },
 }
 default_osc_ster = {
-    "Gariazzo&al": {"dm41": 1.29, "th14": 0.01, "th24": 0.0, "th34": 0.0,},
+    "Gariazzo&al": {
+        "dm41": 1.29,
+        "th14": 0.01,
+        "th24": 0.0,
+        "th34": 0.0,
+    },
 }
 
 
@@ -276,6 +281,11 @@ def setParser():
         help="enable saving the evolution of the full neutrino density matrix",
     )
     parser.add_argument(
+        "--save_number",
+        action="store_true",
+        help="enable saving the evolution of the number density for each component",
+    )
+    parser.add_argument(
         "--save_z",
         action="store_true",
         help="enable saving the evolution of the photon temperature z",
@@ -323,7 +333,15 @@ def oscParams(args):
             osc["sterile"] = [False, False, False]
             osc["factors"] = [1, 1, 1]
         if (
-            args.numodel in ["3p1", "3+1", "3p0", "3+0", "3nu", "3",]
+            args.numodel
+            in [
+                "3p1",
+                "3+1",
+                "3p0",
+                "3+0",
+                "3nu",
+                "3",
+            ]
             and args.default_active in default_osc_act.keys()
         ):
             for p in params_active:
@@ -429,6 +447,7 @@ def getIniValues(args):
         "save_fd",
         "save_Neff",
         "save_nuDens",
+        "save_number",
         "save_z",
     ]:
         values[p] = "T" if getattr(args, p) else "F"
@@ -492,6 +511,7 @@ save_Neff = {save_Neff:}
 save_nuDens_evolution = {save_nuDens:}
 save_z_evolution = {save_z:}
 save_energy_entropy_evolution = {save_energy_entropy:}
+save_number_evolution = {save_number:}
 
 {dlsoda_atol:}
 dlsoda_rtol = {dlsoda_rtol:}

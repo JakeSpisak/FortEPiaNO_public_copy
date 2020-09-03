@@ -160,7 +160,9 @@ class TestFortepianoOutput(FPTestCase):
             _tig.assert_any_call(rect=(0, 1, 2, 3))
             self.assertEqual(_tpa.call_count, 2)
             fpom.finalizePlot(
-                "fname", legcol=3, lloc="upper right",
+                "fname",
+                legcol=3,
+                lloc="upper right",
             )
             _leg.assert_any_call(loc="upper right", ncol=3)
 
@@ -316,6 +318,7 @@ class TestFortEPiaNORun(FPTestCase):
         run.plotNeff()
         run.plotEnergyDensity()
         run.plotEntropy()
+        run.plotNumberDensity()
 
     def test_example(self):
         """test an example with FortEPiaNORun from explanatory.ini"""
@@ -332,6 +335,8 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqualArray(run.endens, fc)
         fc = np.loadtxt("%s/entropy.dat" % folder)
         self.assertEqualArray(run.entropy, fc)
+        fc = np.loadtxt("%s/numberDensity.dat" % folder)
+        self.assertEqualArray(run.number, fc)
         self.assertTrue(hasattr(run, "resume"))
         self.assertTrue(run.hasResume)
         self.assertTrue(np.isclose(run.Neff, 3.0430, atol=1e-4))
@@ -369,6 +374,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "Neffdat"))
         self.assertFalse(hasattr(run, "endens"))
         self.assertFalse(hasattr(run, "entropy"))
+        self.assertFalse(hasattr(run, "number"))
         self.assertFalse(hasattr(run, "Neff"))
         self.assertFalse(hasattr(run, "wfin"))
         self.assertFalse(hasattr(run, "zfin"))
@@ -391,6 +397,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.zfin, 1.5)
         self.assertTrue(np.isnan(run.endens))
         self.assertTrue(np.isnan(run.entropy))
+        self.assertTrue(np.isnan(run.number))
         self.assertEqual(len(run.rho), 3)
         self.assertEqual(len(run.rho[0]), 3)
         self.assertEqual(len(run.rho), 3)
@@ -445,7 +452,16 @@ class TestFortEPiaNORun(FPTestCase):
         with self.assertRaises(IndexError):
             run.interpolateRhoIJ(0, 0, 5)
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rho[0, 0, 0] = np.array([[0, 10, 11, 13], [1, 21, 22, 24], [3, 30, 31, 33]])
         run.rho[0, 0, 1] = np.array([[0, 0, 1, 2], [2, 10, 11, 12], [4, 20, 21, 22]])
@@ -496,7 +512,16 @@ class TestFortEPiaNORun(FPTestCase):
         with self.assertRaises(IndexError):
             run.interpolateRhoIJ_x(0, 0, 5)
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rho[0, 0, 0] = np.array([[0, 10, 20, 30], [1, 11, 21, 31], [3, 13, 23, 33]])
         run.rho[0, 0, 1] = np.array([[0, 0, 1, 2], [2, 10, 11, 12], [4, 20, 21, 22]])
@@ -519,7 +544,8 @@ class TestFortEPiaNORun(FPTestCase):
             run.interpolateRhoIJ_x(0, 0, 2), [[0, 1, 2], [12, 22, 32]]
         )
         self.assertEqualArray(
-            run.interpolateRhoIJ_x(0, 0, 2, y2=True), [[0, 1, 2], [0, 22, 4 * 32]],
+            run.interpolateRhoIJ_x(0, 0, 2, y2=True),
+            [[0, 1, 2], [0, 22, 4 * 32]],
         )
         self.assertEqualArray(
             run.interpolateRhoIJ_x(0, 1, 2, ri=1), [[0, 1, 2], [3, 4, 5]]
@@ -554,7 +580,13 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_p.call_count, 1)
             self.assertEqualArray(_p.call_args[0], [run.yv, run.fd])
             self.assertEqual(
-                _p.call_args[1], {"label": "label", "ls": "-", "marker": ".", "c": "k",}
+                _p.call_args[1],
+                {
+                    "label": "label",
+                    "ls": "-",
+                    "marker": ".",
+                    "c": "k",
+                },
             )
             _xl.assert_called_once_with("$y$")
             _yl.assert_called_once_with(r"$y^2 f(y)$")
@@ -572,7 +604,13 @@ class TestFortEPiaNORun(FPTestCase):
                 ],
             )
             self.assertEqual(
-                _p.call_args[1], {"label": "l", "ls": ":", "marker": ".", "c": "r",}
+                _p.call_args[1],
+                {
+                    "label": "l",
+                    "ls": ":",
+                    "marker": ".",
+                    "c": "r",
+                },
             )
             self.failedRun.plotFD()
             self.assertEqualArray(_p.call_args[0], [np.nan, np.nan])
@@ -591,12 +629,26 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotZ()
             self.assertEqual(_p.call_count, 1)
             self.assertEqualArray(_p.call_args[0], fpom.stripRepeated(run.zdat, 0, 1))
-            self.assertEqual(_p.call_args[1], {"label": "label", "ls": "-", "c": "k",})
+            self.assertEqual(
+                _p.call_args[1],
+                {
+                    "label": "label",
+                    "ls": "-",
+                    "c": "k",
+                },
+            )
             _xl.assert_called_once_with("$x$")
             _yl.assert_called_once_with(r"$z$")
             _xs.assert_called_once_with("log")
             self.explanatory.plotZ(ls=":", lc="r", lab="l")
-            self.assertEqual(_p.call_args[1], {"label": "l", "ls": ":", "c": "r",})
+            self.assertEqual(
+                _p.call_args[1],
+                {
+                    "label": "l",
+                    "ls": ":",
+                    "c": "r",
+                },
+            )
             self.failedRun.plotZ()
             self.assertEqualArray(_p.call_args[0], [[np.nan, np.nan, np.nan]] * 2)
 
@@ -614,12 +666,26 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotW()
             self.assertEqual(_p.call_count, 1)
             self.assertEqualArray(_p.call_args[0], fpom.stripRepeated(run.zdat, 0, 2))
-            self.assertEqual(_p.call_args[1], {"label": "label", "ls": "-", "c": "k",})
+            self.assertEqual(
+                _p.call_args[1],
+                {
+                    "label": "label",
+                    "ls": "-",
+                    "c": "k",
+                },
+            )
             _xl.assert_called_once_with("$x$")
             _yl.assert_called_once_with(r"$w$")
             _xs.assert_called_once_with("log")
             self.explanatory.plotW(ls=":", lc="r", lab="l")
-            self.assertEqual(_p.call_args[1], {"label": "l", "ls": ":", "c": "r",})
+            self.assertEqual(
+                _p.call_args[1],
+                {
+                    "label": "l",
+                    "ls": ":",
+                    "c": "r",
+                },
+            )
             self.failedRun.plotW()
             self.assertEqualArray(_p.call_args[0], [[np.nan, np.nan, np.nan]] * 2)
 
@@ -642,12 +708,26 @@ class TestFortEPiaNORun(FPTestCase):
                     np.asarray([[x[0], x[1] / x[2]] for x in run.zdat]), 0, 1
                 ),
             )
-            self.assertEqual(_p.call_args[1], {"label": "label", "ls": "-", "c": "k",})
+            self.assertEqual(
+                _p.call_args[1],
+                {
+                    "label": "label",
+                    "ls": "-",
+                    "c": "k",
+                },
+            )
             _xl.assert_called_once_with("$x$")
             _yl.assert_called_once_with(r"$z/w$")
             _xs.assert_called_once_with("log")
             self.explanatory.plotZoverW(ls=":", lc="r", lab="l")
-            self.assertEqual(_p.call_args[1], {"label": "l", "ls": ":", "c": "r",})
+            self.assertEqual(
+                _p.call_args[1],
+                {
+                    "label": "l",
+                    "ls": ":",
+                    "c": "r",
+                },
+            )
             self.failedRun.plotZoverW()
             self.assertEqualArray(_p.call_args[0], [[np.nan, np.nan, np.nan]] * 2)
 
@@ -671,7 +751,14 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_p.call_count, 1)
             xv, yv = fpom.stripRepeated(run.zdat, 0, 1)
             self.assertEqualArray(_p.call_args[0], np.asarray([xv, [0.0 for x in xv]]))
-            self.assertEqual(_p.call_args[1], {"label": "label", "ls": "-", "c": "k",})
+            self.assertEqual(
+                _p.call_args[1],
+                {
+                    "label": "label",
+                    "ls": "-",
+                    "c": "k",
+                },
+            )
             _xl.assert_called_once_with("$x$")
             _yl.assert_called_once_with(r"$z-z_{\rm ref}$")
             _xs.assert_called_once_with("log")
@@ -680,7 +767,14 @@ class TestFortEPiaNORun(FPTestCase):
             run1.plotDeltaZ(run)
             self.assertEqualArray(_p.call_args[0], np.asarray([xv, 0.1 * yv]))
             self.explanatory.plotDeltaZ(run, lab="l", ls=":", lc="r")
-            self.assertEqual(_p.call_args[1], {"label": "l", "ls": ":", "c": "r",})
+            self.assertEqual(
+                _p.call_args[1],
+                {
+                    "label": "l",
+                    "ls": ":",
+                    "c": "r",
+                },
+            )
             self.failedRun.plotDeltaZ(run)
             self.assertEqualArray(_p.call_args[0], [[np.nan, np.nan, np.nan]] * 2)
             run.plotDeltaZ(self.failedRun)
@@ -696,10 +790,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 0, 0] = np.array(
@@ -760,10 +872,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 0, 0] = np.array(
@@ -822,10 +952,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 1, 0] = np.array(
@@ -906,10 +1054,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 1, 0] = np.array(
@@ -989,10 +1155,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 0, 0] = np.array(
@@ -1058,10 +1242,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 0, 0] = np.array(
@@ -1133,10 +1335,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 0, 0] = np.array(
@@ -1183,7 +1403,8 @@ class TestFortEPiaNORun(FPTestCase):
             x, yv = run.interpolateRhoIJ(1, 1, 2.5, mass=True)
             self.assertEqualArray(_plt.call_args[0], [x, yv])
             self.assertEqual(
-                _plt.call_args[1], {"label": "lab", "ls": "-", "c": "k"},
+                _plt.call_args[1],
+                {"label": "lab", "ls": "-", "c": "k"},
             )
 
     def test_plotdRhoDiagY(self):
@@ -1196,10 +1417,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 0, 0] = np.array(
@@ -1248,7 +1487,8 @@ class TestFortEPiaNORun(FPTestCase):
             x, yv = run.interpolateRhoIJ(1, 1, 2.5, mass=True)
             self.assertEqualArray(_plt.call_args[0], [x, np.gradient(yv, x)])
             self.assertEqual(
-                _plt.call_args[1], {"label": "lab", "ls": "-", "c": "k"},
+                _plt.call_args[1],
+                {"label": "lab", "ls": "-", "c": "k"},
             )
 
     def test_plotRhoOffDiagY(self):
@@ -1262,10 +1502,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 1, 0] = np.array(
@@ -1346,10 +1604,28 @@ class TestFortEPiaNORun(FPTestCase):
         run.rho = np.asarray([])
         run.rhoM = np.asarray([])
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 1, 0] = np.array(
@@ -1470,10 +1746,12 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotNeff()
             _plt.assert_called_once()
             self.assertEqualArray(
-                _plt.call_args[0], fpom.stripRepeated(data, 0, 1),
+                _plt.call_args[0],
+                fpom.stripRepeated(data, 0, 1),
             )
             self.assertEqual(
-                _plt.call_args[1], {"ls": "-", "c": "k", "label": run.label},
+                _plt.call_args[1],
+                {"ls": "-", "c": "k", "label": run.label},
             )
             self.assertEqual(_sv.call_args[0][0], os.path.join(run.folder, "Neff.dat"))
             self.assertEqualArray(_sv.call_args[0][1], data)
@@ -1497,10 +1775,12 @@ class TestFortEPiaNORun(FPTestCase):
             _xl.assert_called_once_with("$x$")
             _plt.assert_called_once()
             self.assertEqualArray(
-                _plt.call_args[0], fpom.stripRepeated(data, 0, 1),
+                _plt.call_args[0],
+                fpom.stripRepeated(data, 0, 1),
             )
             self.assertEqual(
-                _plt.call_args[1], {"ls": ":", "c": "r", "label": "mylabel"},
+                _plt.call_args[1],
+                {"ls": ":", "c": "r", "label": "mylabel"},
             )
             self.assertEqual(_sv.call_count, 0)
             self.assertEqual(_int.call_count, 0)
@@ -1527,7 +1807,8 @@ class TestFortEPiaNORun(FPTestCase):
             _xl.assert_called_once_with("$x$")
             _plt.assert_called_once()
             self.assertEqualArray(
-                _plt.call_args[0], fpom.stripRepeated(data, 0, 1),
+                _plt.call_args[0],
+                fpom.stripRepeated(data, 0, 1),
             )
             self.assertEqual(_sv.call_count, 0)
             self.assertEqual(_int.call_count, 0)
@@ -1570,10 +1851,22 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
-                {"label": "total", "c": "k", "ls": "-", "lw": 1,},
+                {
+                    "label": "total",
+                    "c": "k",
+                    "ls": "-",
+                    "lw": 1,
+                },
             )
             for ix, lab in enumerate(
-                [r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$", r"$\nu_\mu$", r"$\nu_\tau$",]
+                [
+                    r"$\gamma$",
+                    "$e$",
+                    r"$\mu$",
+                    r"$\nu_e$",
+                    r"$\nu_\mu$",
+                    r"$\nu_\tau$",
+                ]
             ):
                 self.assertEqualArray(
                     _plt.call_args_list[1 + ix][0],
@@ -1581,7 +1874,12 @@ class TestFortEPiaNORun(FPTestCase):
                 )
                 self.assertEqual(
                     _plt.call_args_list[1 + ix][1],
-                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 1,},
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 1,
+                    },
                 )
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
@@ -1589,7 +1887,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
-                {"label": r"$\gamma+e$", "c": "#00ccff", "ls": ":", "lw": 1,},
+                {
+                    "label": r"$\gamma+e$",
+                    "c": "#00ccff",
+                    "ls": ":",
+                    "lw": 1,
+                },
             )
             self.assertEqualArray(
                 _plt.call_args_list[-1][0],
@@ -1600,7 +1903,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-1][1],
-                {"label": r"$\gamma+e+\mu$", "c": "#6666ff", "ls": "--", "lw": 1,},
+                {
+                    "label": r"$\gamma+e+\mu$",
+                    "c": "#6666ff",
+                    "ls": "--",
+                    "lw": 1,
+                },
             )
         # some tweaks on the inputs
         run.endens = np.c_[run.endens, run.endens[:, 7]]
@@ -1637,7 +1945,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
-                {"label": "total", "c": "k", "ls": "-", "lw": 2,},
+                {
+                    "label": "total",
+                    "c": "k",
+                    "ls": "-",
+                    "lw": 2,
+                },
             )
             ii = 1
             for ix, lab in enumerate(labels):
@@ -1649,7 +1962,12 @@ class TestFortEPiaNORun(FPTestCase):
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
-                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 2,},
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 2,
+                    },
                 )
                 ii += 1
             self.assertEqualArray(
@@ -1658,7 +1976,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
-                {"label": r"$\gamma+e$", "c": "#002233", "ls": "-", "lw": 2,},
+                {
+                    "label": r"$\gamma+e$",
+                    "c": "#002233",
+                    "ls": "-",
+                    "lw": 2,
+                },
             )
             self.assertEqualArray(
                 _plt.call_args_list[-1][0],
@@ -1669,7 +1992,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-1][1],
-                {"label": r"$\gamma+e+\mu$", "c": "#557788", "ls": ":", "lw": 2,},
+                {
+                    "label": r"$\gamma+e+\mu$",
+                    "c": "#557788",
+                    "ls": ":",
+                    "lw": 2,
+                },
             )
         skip = [False, False, False, False, False, False, False]
         with patch("matplotlib.pyplot.plot") as _plt:
@@ -1693,7 +2021,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
-                {"label": "total", "c": "k", "ls": "-", "lw": 2,},
+                {
+                    "label": "total",
+                    "c": "k",
+                    "ls": "-",
+                    "lw": 2,
+                },
             )
             ii = 1
             for ix, lab in enumerate(labels):
@@ -1705,7 +2038,12 @@ class TestFortEPiaNORun(FPTestCase):
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
-                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 2,},
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 2,
+                    },
                 )
                 ii += 1
         with patch("matplotlib.pyplot.plot") as _plt:
@@ -1731,7 +2069,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
-                {"label": "newlab", "c": "k", "ls": "--", "lw": 2,},
+                {
+                    "label": "newlab",
+                    "c": "k",
+                    "ls": "--",
+                    "lw": 2,
+                },
             )
             ii = 1
             for ix, lab in enumerate(labels):
@@ -1743,7 +2086,12 @@ class TestFortEPiaNORun(FPTestCase):
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
-                    {"label": "newlab", "c": colors[ix], "ls": "--", "lw": 2,},
+                    {
+                        "label": "newlab",
+                        "c": colors[ix],
+                        "ls": "--",
+                        "lw": 2,
+                    },
                 )
                 ii += 1
             self.assertEqualArray(
@@ -1752,7 +2100,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
-                {"label": "newlab", "c": "#002233", "ls": "--", "lw": 2,},
+                {
+                    "label": "newlab",
+                    "c": "#002233",
+                    "ls": "--",
+                    "lw": 2,
+                },
             )
             self.assertEqualArray(
                 _plt.call_args_list[-1][0],
@@ -1763,7 +2116,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-1][1],
-                {"label": "newlab", "c": "#557788", "ls": "--", "lw": 2,},
+                {
+                    "label": "newlab",
+                    "c": "#557788",
+                    "ls": "--",
+                    "lw": 2,
+                },
             )
 
     def test_plotEntropy(self):
@@ -1789,10 +2147,22 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
-                {"label": "total", "c": "k", "ls": "-", "lw": 1,},
+                {
+                    "label": "total",
+                    "c": "k",
+                    "ls": "-",
+                    "lw": 1,
+                },
             )
             for ix, lab in enumerate(
-                [r"$\gamma$", "$e$", r"$\mu$", r"$\nu_e$", r"$\nu_\mu$", r"$\nu_\tau$",]
+                [
+                    r"$\gamma$",
+                    "$e$",
+                    r"$\mu$",
+                    r"$\nu_e$",
+                    r"$\nu_\mu$",
+                    r"$\nu_\tau$",
+                ]
             ):
                 self.assertEqualArray(
                     _plt.call_args_list[1 + ix][0],
@@ -1800,7 +2170,12 @@ class TestFortEPiaNORun(FPTestCase):
                 )
                 self.assertEqual(
                     _plt.call_args_list[1 + ix][1],
-                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 1,},
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 1,
+                    },
                 )
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
@@ -1808,7 +2183,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
-                {"label": r"$\gamma+e$", "c": "#00ccff", "ls": ":", "lw": 1,},
+                {
+                    "label": r"$\gamma+e$",
+                    "c": "#00ccff",
+                    "ls": ":",
+                    "lw": 1,
+                },
             )
             self.assertEqualArray(
                 _plt.call_args_list[-1][0],
@@ -1819,7 +2199,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-1][1],
-                {"label": r"$\gamma+e+\mu$", "c": "#6666ff", "ls": "--", "lw": 1,},
+                {
+                    "label": r"$\gamma+e+\mu$",
+                    "c": "#6666ff",
+                    "ls": "--",
+                    "lw": 1,
+                },
             )
         # some tweaks on the inputs
         run.entropy = np.c_[run.entropy, run.entropy[:, 7]]
@@ -1856,7 +2241,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
-                {"label": "total", "c": "k", "ls": "-", "lw": 2,},
+                {
+                    "label": "total",
+                    "c": "k",
+                    "ls": "-",
+                    "lw": 2,
+                },
             )
             ii = 1
             for ix, lab in enumerate(labels):
@@ -1868,7 +2258,12 @@ class TestFortEPiaNORun(FPTestCase):
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
-                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 2,},
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 2,
+                    },
                 )
                 ii += 1
             self.assertEqualArray(
@@ -1877,7 +2272,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
-                {"label": r"$\gamma+e$", "c": "#002233", "ls": "-", "lw": 2,},
+                {
+                    "label": r"$\gamma+e$",
+                    "c": "#002233",
+                    "ls": "-",
+                    "lw": 2,
+                },
             )
             self.assertEqualArray(
                 _plt.call_args_list[-1][0],
@@ -1888,7 +2288,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-1][1],
-                {"label": r"$\gamma+e+\mu$", "c": "#557788", "ls": ":", "lw": 2,},
+                {
+                    "label": r"$\gamma+e+\mu$",
+                    "c": "#557788",
+                    "ls": ":",
+                    "lw": 2,
+                },
             )
         skip = [False, False, False, False, False, False, False]
         with patch("matplotlib.pyplot.plot") as _plt:
@@ -1912,7 +2317,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
-                {"label": "total", "c": "k", "ls": "-", "lw": 2,},
+                {
+                    "label": "total",
+                    "c": "k",
+                    "ls": "-",
+                    "lw": 2,
+                },
             )
             ii = 1
             for ix, lab in enumerate(labels):
@@ -1924,7 +2334,12 @@ class TestFortEPiaNORun(FPTestCase):
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
-                    {"label": lab, "c": colors[ix], "ls": styles[ix], "lw": 2,},
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 2,
+                    },
                 )
                 ii += 1
         with patch("matplotlib.pyplot.plot") as _plt:
@@ -1950,7 +2365,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
-                {"label": "newlab", "c": "k", "ls": "--", "lw": 2,},
+                {
+                    "label": "newlab",
+                    "c": "k",
+                    "ls": "--",
+                    "lw": 2,
+                },
             )
             ii = 1
             for ix, lab in enumerate(labels):
@@ -1962,7 +2382,12 @@ class TestFortEPiaNORun(FPTestCase):
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
-                    {"label": "newlab", "c": colors[ix], "ls": "--", "lw": 2,},
+                    {
+                        "label": "newlab",
+                        "c": colors[ix],
+                        "ls": "--",
+                        "lw": 2,
+                    },
                 )
                 ii += 1
             self.assertEqualArray(
@@ -1971,7 +2396,12 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
-                {"label": "newlab", "c": "#002233", "ls": "--", "lw": 2,},
+                {
+                    "label": "newlab",
+                    "c": "#002233",
+                    "ls": "--",
+                    "lw": 2,
+                },
             )
             self.assertEqualArray(
                 _plt.call_args_list[-1][0],
@@ -1982,8 +2412,95 @@ class TestFortEPiaNORun(FPTestCase):
             )
             self.assertEqual(
                 _plt.call_args_list[-1][1],
-                {"label": "newlab", "c": "#557788", "ls": "--", "lw": 2,},
+                {
+                    "label": "newlab",
+                    "c": "#557788",
+                    "ls": "--",
+                    "lw": 2,
+                },
             )
+
+    def test_plotNumberDensity(self):
+        """test plotNumberDensity"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotNumberDensity()
+            run.number = None
+            run.plotNumberDensity()
+            run.number = [0, 1, 2]
+            run.plotNumberDensity()
+            self.assertEqual(_plt.call_count, 0)
+        run = self.explanatory
+        colors = ["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]
+        styles = ["-", "-", "-", ":", "-.", "--", "-"]
+        skip = [False, False, False, False, False, False, False]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotNumberDensity()
+            self.assertEqual(_plt.call_count, 6)
+            for ix, lab in enumerate(
+                [
+                    r"$\gamma$",
+                    "$e$",
+                    r"$\mu$",
+                    r"$\nu_e$",
+                    r"$\nu_\mu$",
+                    r"$\nu_\tau$",
+                ]
+            ):
+                self.assertEqualArray(
+                    _plt.call_args_list[ix][0],
+                    [run.number[:, 0], run.number[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ix][1],
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 1,
+                    },
+                )
+        # some tweaks on the inputs
+        run.number = np.c_[run.number, run.number[:, 7]]
+        colors = ["b", "w", "m", "#ff9933", "c", "#ff9933", "#ff00ff"]
+        styles = [":", "-", ".", ":", ".", ":", "-"]
+        skip = [False, True, False, False, True, True, False]
+        labels = [
+            r"a$\gamma$",
+            "a$e$",
+            r"a$\mu$",
+            r"a$\nu_e$",
+            r"a$\nu_\mu$",
+            r"a$\nu_\tau$",
+            r"a$\nu_s$",
+        ]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotNumberDensity(
+                labels=labels,
+                colors=colors,
+                styles=styles,
+                skip=skip,
+                lw=2,
+            )
+            self.assertEqual(_plt.call_count, 4)
+            ii = 0
+            for ix, lab in enumerate(labels):
+                if skip[ix]:
+                    continue
+                self.assertEqualArray(
+                    _plt.call_args_list[ii][0],
+                    [run.number[:, 0], run.number[:, 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ii][1],
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 2,
+                    },
+                )
+                ii += 1
 
     def test_doAllPlots(self):
         """test doAllPlots"""
@@ -2145,10 +2662,28 @@ class TestFortEPiaNORun(FPTestCase):
         with self.assertRaises(IndexError):
             run.integrateRho_yn(0, 2)
         run.rho = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.rhoM = np.asarray(
-            [[[None, None], [None, None],], [[None, None], [None, None],],],
+            [
+                [
+                    [None, None],
+                    [None, None],
+                ],
+                [
+                    [None, None],
+                    [None, None],
+                ],
+            ],
         )
         run.yv = np.linspace(0.01, 20, 200)
         run.rho[0, 0, 0] = np.array(
@@ -2305,7 +2840,10 @@ class TestPrepareIni(unittest.TestCase):
                     help=r"use the $\sin^2$ of the mixing angles as input",
                 ),
                 call(
-                    "--dm21", type=float, default=0.0, help=r"define $\Delta m^2_{21}$",
+                    "--dm21",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\Delta m^2_{21}$",
                 ),
                 call(
                     "--dm31",
@@ -2315,7 +2853,10 @@ class TestPrepareIni(unittest.TestCase):
                     + "(pass negative value for inverted ordering)",
                 ),
                 call(
-                    "--dm41", type=float, default=0.0, help=r"define $\Delta m^2_{41}$",
+                    "--dm41",
+                    type=float,
+                    default=0.0,
+                    help=r"define $\Delta m^2_{41}$",
                 ),
                 call(
                     "--th12",
@@ -2367,7 +2908,10 @@ class TestPrepareIni(unittest.TestCase):
                     help="print a string stating the current position only after N derivatives",
                 ),
                 call(
-                    "--Nx", type=int, default=200, help="number of points to save in x",
+                    "--Nx",
+                    type=int,
+                    default=200,
+                    help="number of points to save in x",
                 ),
                 call("--x_in", type=float, default=0.001, help="initial value of x"),
                 call("--x_fin", type=float, default=35, help="final value of x"),
@@ -2445,6 +2989,11 @@ class TestPrepareIni(unittest.TestCase):
                     help="enable saving the evolution of the full neutrino density matrix",
                 ),
                 call(
+                    "--save_number",
+                    action="store_true",
+                    help="enable saving the evolution of the number density for each component",
+                ),
+                call(
                     "--save_z",
                     action="store_true",
                     help="enable saving the evolution of the photon temperature z",
@@ -2512,6 +3061,7 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.save_fd, False)
         self.assertEqual(args.save_Neff, False)
         self.assertEqual(args.save_nuDens, False)
+        self.assertEqual(args.save_number, False)
         self.assertEqual(args.save_z, False)
         for l in [
             ["--ordering=NO"],
@@ -2553,6 +3103,7 @@ class TestPrepareIni(unittest.TestCase):
             ["--save_fd"],
             ["--save_Neff"],
             ["--save_nuDens"],
+            ["--save_number"],
             ["--save_z"],
         ]:
             args = parser.parse_args(baseargs + l)
@@ -2589,6 +3140,7 @@ class TestPrepareIni(unittest.TestCase):
             ["--save_fd=a"],
             ["--save_Neff=a"],
             ["--save_nuDens=a"],
+            ["--save_number=a"],
             ["--save_z=a"],
         ]:
             with self.assertRaises(SystemExit):
@@ -2598,7 +3150,13 @@ class TestPrepareIni(unittest.TestCase):
 
     def test_oscParams(self):
         """test oscParams"""
-        args = Namespace(**{"use_sinsq": True, "dm21": 1.23, "th12": 0.01,})
+        args = Namespace(
+            **{
+                "use_sinsq": True,
+                "dm21": 1.23,
+                "th12": 0.01,
+            }
+        )
         for a in ["a+s", "as", "1p1", "1+1"]:
             args.numodel = a
             self.assertEqual(
@@ -2827,6 +3385,7 @@ class TestPrepareIni(unittest.TestCase):
                 "save_fd": True,
                 "save_Neff": True,
                 "save_nuDens": True,
+                "save_number": True,
                 "save_z": True,
                 "qed_corrections": "no",
             }
@@ -2868,6 +3427,7 @@ class TestPrepareIni(unittest.TestCase):
                 "save_fd": "T",
                 "save_Neff": "T",
                 "save_nuDens": "T",
+                "save_number": "T",
                 "save_z": "T",
                 "ftqed_temperature_corr": "F",
                 "ftqed_ord3": "F",
@@ -2904,6 +3464,7 @@ class TestPrepareIni(unittest.TestCase):
                 "save_fd": False,
                 "save_Neff": False,
                 "save_nuDens": False,
+                "save_number": False,
                 "save_z": False,
                 "qed_corrections": "o2",
             }
@@ -2945,6 +3506,7 @@ class TestPrepareIni(unittest.TestCase):
                 "save_fd": "F",
                 "save_Neff": "F",
                 "save_nuDens": "F",
+                "save_number": "F",
                 "save_z": "F",
                 "ftqed_temperature_corr": "T",
                 "ftqed_ord3": "F",
@@ -3047,6 +3609,7 @@ class TestPrepareIni(unittest.TestCase):
             "save_fd": "F",
             "save_Neff": "F",
             "save_nuDens": "F",
+            "save_number": "F",
             "save_z": "F",
         }
         with self.assertRaises(OSError):
@@ -3092,6 +3655,7 @@ class TestPrepareIni(unittest.TestCase):
             "save_nuDens_evolution = F",
             "save_z_evolution = F",
             "save_energy_entropy_evolution = F",
+            "save_number_evolution = F",
             "dlsoda_rtol = %s" % 1e-4,
             "verbose = vb",
             "Nprintderivs = 123",

@@ -378,6 +378,7 @@ module fpConfig
 		save_energy_entropy_evolution = read_ini_logical("save_energy_entropy_evolution", .true.)
 		save_Neff = read_ini_logical("save_Neff", .true.)
 		save_nuDens_evolution = read_ini_logical("save_nuDens_evolution", .true.)
+		save_number_evolution = read_ini_logical("save_number_evolution", .true.)
 		save_w_evolution = read_ini_logical("save_w_evolution", .true.)
 		save_z_evolution = read_ini_logical("save_z_evolution", .true.)
 

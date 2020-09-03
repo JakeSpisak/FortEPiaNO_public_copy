@@ -123,6 +123,7 @@ program tests
 		save_energy_entropy_evolution = .true.
 		save_Neff = .true.
 		save_nuDens_evolution = .true.
+		save_number_evolution = .true.
 		save_w_evolution = .true.
 		save_z_evolution = .true.
 		call setMixingMatrix()

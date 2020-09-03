@@ -243,6 +243,10 @@ class FortEPiaNORun:
             self.entropy = np.loadtxt("%s/entropy.dat" % folder)
         except (IOError, OSError):
             self.entropy = np.nan
+        try:
+            self.number = np.loadtxt("%s/numberDensity.dat" % folder)
+        except (IOError, OSError):
+            self.number = np.nan
         self.rho = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         try:
@@ -280,7 +284,8 @@ class FortEPiaNORun:
                     self.deltarhofin.append(
                         float(
                             re.search(
-                                "dRho_%s[ =]*([-\d.]*)" % (i + 1), self.resume,
+                                "dRho_%s[ =]*([-\d.]*)" % (i + 1),
+                                self.resume,
                             ).group(1)
                         )
                     )
@@ -1246,6 +1251,70 @@ class FortEPiaNORun:
                 ls=gems if not allstyles else allstyles,
                 lw=lw,
             )
+
+    def plotNumberDensity(
+        self,
+        labels=[
+            r"$\gamma$",
+            "$e$",
+            r"$\mu$",
+            r"$\nu_e$",
+            r"$\nu_\mu$",
+            r"$\nu_\tau$",
+            r"$\nu_s$",
+        ],
+        colors=["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"],
+        styles=["-", "-", "-", ":", "-.", "--", "-"],
+        skip=[False, False, False, False, False, False, False],
+        lw=1,
+        allstyles=None,
+        alllabels=None,
+    ):
+        """Plot the evolution of the number density of each species
+
+        Parameters:
+            labels (default [
+                    r"$\gamma$",
+                    "$e$",
+                    r"$\mu$",
+                    r"$\nu_e$",
+                    r"$\nu_\mu$",
+                    r"$\nu_\tau$",
+                    r"$\nu_s$",
+                ]):
+                the list of labels for all the lines
+            colors (default
+                ["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]):
+                a list of colors for each line
+            styles (default ["-", "-", "-", ":", "-.", "--", "-"]):
+                a list of styles for each line
+            skip (default [False]*7): True or False for each line
+                to skip it and do not plot it
+            lw (default 1): line width for the lines
+            allstyles (default None): if it evaluates to True,
+                a common line style for the all the lines
+            alllabels (default None): if it evaluates to True,
+                a common label for all the lines
+        """
+        try:
+            self.number[:, 0]
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
+        for ix, lab in enumerate(labels):
+            if skip[ix]:
+                continue
+            try:
+                plt.plot(
+                    self.number[:, 0],
+                    self.number[:, 2 + ix],
+                    label=lab if alllabels is None else alllabels,
+                    c=colors[ix],
+                    ls=styles[ix] if not allstyles else allstyles,
+                    lw=lw,
+                )
+            except IndexError:
+                pass
 
     def doAllPlots(self, yref=5.0, color="k"):
         """Produce a series of plots for the given simulation

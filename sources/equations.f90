@@ -445,12 +445,14 @@ module fpEquations
 		real(dl) :: neff, z, w
 		integer, parameter :: iu = 8972
 		character(len=200) :: fname
-		procedure (nuDensity_integrator), pointer :: nuDensityInt
+		procedure (nuDensity_integrator), pointer :: nuDensityInt, nuNumDensInt
 
 		if (use_gauss_laguerre) then
 			nuDensityInt => nuDensityGL
+			nuNumDensInt => nuNumberDensityGL
 		else
 			nuDensityInt => nuDensityNC
+			nuNumDensInt => nuNumberDensityNC
 		end if
 
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=', x
@@ -514,6 +516,22 @@ module fpEquations
 				0.d0, &
 #endif
 				nuEnDens(1:flavorNumber)*four_thirds/w
+			close(iu)
+		end if
+		if (save_number_evolution) then
+			do k=1, flavorNumber
+				nuEnDens(k) = nuNumDensInt(k, k)*nuFactor(k)
+			end do
+			call openFile(iu, trim(outputFolder)//'/numberDensity.dat', firstWrite)
+			write(iu, multidblfmt) x, z, &
+				photonNumberDensity(z), &
+				electrons%numberDensity(x, z, .false.), &
+#ifndef NO_MUONS
+				muons%numberDensity(x, z, .false.), &
+#else
+				0.d0, &
+#endif
+				nuEnDens(1:flavorNumber)
 			close(iu)
 		end if
 		if (save_z_evolution) then
