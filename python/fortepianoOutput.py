@@ -190,7 +190,16 @@ class FortEPiaNORun:
     compute integrals of the density matrix or other things
     """
 
-    def __init__(self, folder, nnu=3, full=True, label="", plots=False, verbose=True):
+    def __init__(
+        self,
+        folder,
+        nnu=3,
+        full=True,
+        label="",
+        plots=False,
+        verbose=True,
+        deltas=False,
+    ):
         """Read the entire output of FortEPiaNO from a specific folder.
         It will ignore non-existing files and store all the available
         information for further processing (plots, ...)
@@ -209,6 +218,8 @@ class FortEPiaNORun:
                 after having read all the files
             verbose (default True): if True, print more error messages
                 (e.g. when the folder is not found or w is not saved)
+            deltas (default False): if True, print the relative variation
+                of energy and number density for each neutrino
         """
         self.folder = folder
         self.full = full
@@ -239,6 +250,28 @@ class FortEPiaNORun:
             self.endens = np.loadtxt("%s/energyDensity.dat" % folder)
         except (IOError, OSError):
             self.endens = np.nan
+        else:
+            try:
+                self.endens[:, :]
+            except IndexError:
+                pass
+            else:
+                if deltas:
+                    print(
+                        "delta energy density:\t"
+                        + "\t".join(
+                            [
+                                "nu%d: %f%%"
+                                % (
+                                    i + 1,
+                                    (self.endens[-1, 5 + i] - self.endens[0, 5 + i])
+                                    / self.endens[0, 5 + i]
+                                    * 100,
+                                )
+                                for i in range(nnu)
+                            ]
+                        )
+                    )
         try:
             self.entropy = np.loadtxt("%s/entropy.dat" % folder)
         except (IOError, OSError):
@@ -247,6 +280,28 @@ class FortEPiaNORun:
             self.number = np.loadtxt("%s/numberDensity.dat" % folder)
         except (IOError, OSError):
             self.number = np.nan
+        else:
+            try:
+                self.number[:, :]
+            except IndexError:
+                pass
+            else:
+                if deltas:
+                    print(
+                        "delta number density:\t"
+                        + "\t".join(
+                            [
+                                "nu%d: %f%%"
+                                % (
+                                    i + 1,
+                                    (self.number[-1, 5 + i] - self.number[0, 5 + i])
+                                    / self.number[0, 5 + i]
+                                    * 100,
+                                )
+                                for i in range(nnu)
+                            ]
+                        )
+                    )
         self.rho = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         try:
