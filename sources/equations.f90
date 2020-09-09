@@ -548,7 +548,11 @@ module fpEquations
 			write(iu, multidblfmt) x, t, z, &
 				photonDensity(z), &
 				electrons%energyDensity(x, z, .false.), &
+#ifndef NO_MUONS
 				muons%energyDensity(x, z, .false.), &
+#else
+				0.d0, &
+#endif
 				nuEnDens(1:flavorNumber), &
 				vec(ntot-2)
 #else
@@ -568,7 +572,11 @@ module fpEquations
 			write(iu, multidblfmt) x, t, z, &
 				photonEntropy(z), &
 				electrons%entropy(x, z), &
+#ifndef NO_MUONS
 				muons%entropy(x, z), &
+#else
+				0.d0, &
+#endif
 				nuEnDens(1:flavorNumber)*four_thirds/w
 #else
 			write(iu, multidblfmt) x, z, &

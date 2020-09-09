@@ -776,6 +776,7 @@ program tests
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
+#ifndef NOINTERPOLATION
 		res = dzodxcoef_interp_func(0.01d0)
 		call assert_double("A test 1", res(1), 7.23268d0, 1d-5)
 		call assert_double("B test 1", res(2), 0.00919711d0, 1d-4)
@@ -785,6 +786,7 @@ program tests
 		res = dzodxcoef_interp_func(5d0)
 		call assert_double_rel("A test 3", res(1), 0.034036d0, 1d-5)
 		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
+#endif
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_tests_JKG
@@ -803,12 +805,14 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 		call printTestBlockName("dz/dx functions")
+#ifndef NOINTERPOLATION
 		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 1", ydot(n), 7.11765d0, 8d-3)
 		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 2", ydot(n), -0.0946571d0, 7d-6)
 		call dz_o_dx_old(6.d0, 1.2d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 6d-6)
+#endif
 
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 1a", ydot(n), 7.11765d0, 5d-5)
@@ -832,12 +836,14 @@ program tests
 		call assert_double("dme2F test 4", dme2_electronFull(1.23d0, 0.d0, 1.198d0), 0.02905573d0, 1d-6)
 		call assert_double("dme2F test 5", dme2_electronFull(7.6d0, 0.d0, 1.3d0), 0.025975010d0, 1d-6)
 		call assert_double("dme2F test 6", dme2_electronFull(35.d0, 0.d0, 1.39d0), 0.029529326d0, 1d-6)
+#ifndef NOINTERPOLATION
 		call assert_double("dme2 test 1", dme2_electron(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2 test 2", dme2_electron(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2 test 3", dme2_electron(0.5d0, 0.d0, 1.1d0),  0.026655522d0, 1d-5)
 		call assert_double("dme2 test 4", dme2_electron(1.23d0, 0.d0, 1.198d0), 0.02905573d0, 1d-5)
 		call assert_double("dme2 test 5", dme2_electron(7.6d0, 0.d0, 1.3d0), 0.025975010d0, 1d-5)
 		call assert_double("dme2 test 6", dme2_electron(35.d0, 0.d0, 1.39d0), 0.029529326d0, 1d-5)
+#endif
 		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), 1.3d0, 1d-7)
 		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), 8.944272d0, 1d-7)
 
@@ -850,12 +856,14 @@ program tests
 		call assert_double("dme2F w log test 4", dme2_electronFull(1.23d0, 0.01d0, 1.198d0), 0.024518372d0, 2d-5)
 		call assert_double("dme2F w log test 5", dme2_electronFull(7.6d0, 1.d0, 1.3d0), 0.025216151d0, 2d-5)
 		call assert_double("dme2F w log test 6", dme2_electronFull(35.d0, 0.88d0, 1.39d0), 0.029529326d0, 1d-6)
+#ifndef NOINTERPOLATION
 		call assert_double("dme2nl test 1", dme2_nolog(0.05d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2nl test 2", dme2_nolog(0.05d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2nl test 3", dme2_nolog(0.5d0, 1.1d0),  0.026655522d0, 1d-5)
 		call assert_double("dme2nl test 4", dme2_nolog(1.23d0, 1.198d0), 0.02905573d0, 1d-5)
 		call assert_double("dme2nl test 5", dme2_nolog(7.6d0, 1.3d0), 0.025975010d0, 1d-5)
 		call assert_double("dme2nl test 6", dme2_nolog(35.d0, 1.39d0), 0.029529326d0, 1d-5)
+#endif
 		call assert_double("dme2F logt test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0, .false.), 0.022915468d0, 1d-6)
 		call assert_double("dme2F logt test 2", dme2_electronFull(0.05d0, 10.d0, 1.0003d0, .false.), 0.022915468d0, 1d-6)
 		ftqed_log_term=.false.
@@ -2985,10 +2993,15 @@ program tests
 
 	subroutine do_timing_tests
 		timing_tests = .true.
+#ifndef NOINTERPOLATION
 		call test_dzodx_speed
+#endif
 		call test_nuDens_speed
 		call time_electron_energyDensity
+
+#ifndef NOINTERPOLATION
 		call init_interp_dme2_e
+#endif
 		call init_interp_FD
 		call init_interp_d123
 		call test_speed_coll_int

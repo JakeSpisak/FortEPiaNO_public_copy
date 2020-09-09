@@ -363,12 +363,12 @@ module fpConfig
 				write(*,*) 'Reheating temperature: ', Trh
 				rhoPhi_in=(overallFactor/(3.d0*t_in*sec2eV/2.d0))**2
 				write(*,*) 'Initial condition on the phi density: ', rhoPhi_in
-				rhoPhi_in=rhoPhi_in*(x_in**3/m_e**4) !paso a densidad comoving (adim)
+				rhoPhi_in=rhoPhi_in*(x_in**3/m_e**4) !convert to comoving density
 			else
 				call criticalError("Invalid reheating temperature: must be positive. Do not compile LOW_REHEATING to use the code without low-reheating")
 			end if
 
-			write(*,*) 'The adimensional initial condition is: ', rhoPhi_in
+			write(*,*) 'The comoving initial condition is: ', rhoPhi_in
 
 			!Compute GammaPhi
 			GammaPhi=((Trh/0.7)**2)/sec2eV
