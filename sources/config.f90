@@ -218,7 +218,7 @@ module fpConfig
 #endif
 
 		allocate(nuDensVec(ntot))
-		if (save_BBN)&
+		if (save_BBN .and. trim(outputFolder).ne."")&
 			call openFile(3978, trim(outputFolder)//"/y_grid.dat", .true.)
 		if(save_fd .and. trim(outputFolder).ne."")&
 			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)
@@ -231,7 +231,7 @@ module fpConfig
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdme = fermiDirac(y_arr(ix)/z_in)
 			fdm = fermiDirac(y_arr(ix))
-			if (save_BBN)&
+			if (save_BBN .and. trim(outputFolder).ne."")&
 				write(3978, multidblfmt) y_arr(ix)
 			if(save_fd .and. trim(outputFolder).ne."")&
 				write(3154, multidblfmt) y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
@@ -259,7 +259,7 @@ module fpConfig
 		end do
 		if(save_fd .and. trim(outputFolder).ne."")&
 			close(3154)
-		if(save_BBN)&
+		if(save_BBN .and. trim(outputFolder).ne."")&
 			close(3978)
 
 		deallocate(diag_el)

@@ -39,6 +39,9 @@ program tests
 	call do_test_GL
 	call do_test_matterPotential
 	call do_test_diagonalization
+#ifdef LOW_REHEATING
+	call do_low_reheating_tests
+#endif
 
 	write(*,*) ""
 	write(*,*) ""
@@ -111,6 +114,7 @@ program tests
 			massSplittings(3) = 0.0025153d0
 		end if
 		z_in=1.0000575
+		save_BBN = .true.
 		save_fd = .true.
 		save_energy_entropy_evolution = .true.
 		save_Neff = .true.
@@ -127,6 +131,13 @@ program tests
 		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
 		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
 		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
+#ifdef LOW_REHEATING
+		Trh=25.d0
+		t_in=t0*(x_in/x0)**(1.5d0)
+		rhoPhi_in=(overallFactor/(3.d0*t_in*sec2eV/2.d0))**2
+		rhoPhi_in=rhoPhi_in*(x_in**3/m_e**4) !convert to comoving density
+		GammaPhi=((Trh/0.7)**2)/sec2eV
+#endif
 	end subroutine do_tests_initialization
 
 	subroutine do_basic_tests
@@ -2990,6 +3001,37 @@ program tests
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_diagonalization
+
+#ifdef LOW_REHEATING
+	subroutine do_low_reheating_tests
+		real(dl) :: tmp, x, z, r
+		integer :: n
+		real(dl), dimension(:), allocatable :: ydot
+
+		n=ntot
+		allocate(ydot(n))
+
+		call printTestBlockName("low reheating")
+
+		x=0.123d0
+		z=1.23d0
+		r=42.5d0
+		call drhoPhi_o_dx(x, z, r, ydot, n)
+			tmp = x*r
+		call assert_double_rel("drhoPhi_o_dx test 1", ydot(n-2), -tmp*GammaPhi*overallFactor / (m_e*m_e*sqrt(totalRadiationDensity(x,z) + tmp)), 1d-7)
+
+		x=1.073d0
+		z=1.44d0
+		r=0.9d0
+		call drhoPhi_o_dx(x, z, r, ydot, n)
+		tmp = x*r
+		call assert_double_rel("drhoPhi_o_dx test 2", ydot(n-2), -tmp*GammaPhi*overallFactor / (m_e*m_e*sqrt(totalRadiationDensity(x,z) + tmp)), 1d-7)
+
+		deallocate(ydot)
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_low_reheating_tests
+#endif
 
 	subroutine do_timing_tests
 		timing_tests = .true.
