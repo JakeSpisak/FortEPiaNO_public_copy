@@ -55,7 +55,12 @@ default_osc_act = {
     },
 }
 default_osc_ster = {
-    "Gariazzo&al": {"dm41": 1.29, "th14": 0.01, "th24": 0.0, "th34": 0.0,},
+    "Gariazzo&al": {
+        "dm41": 1.29,
+        "th14": 0.01,
+        "th24": 0.0,
+        "th34": 0.0,
+    },
 }
 
 
@@ -242,6 +247,11 @@ def setParser():
         "--dlsoda_rtol", type=float, default=1e-6, help="relative tolerance for DLSODA"
     )
     parser.add_argument(
+        "--save_BBN",
+        action="store_true",
+        help="enable saving the output for PArthENoPE",
+    )
+    parser.add_argument(
         "--save_energy_entropy",
         action="store_true",
         help="enable saving the evolution of the energy density and entropy for each component",
@@ -250,11 +260,6 @@ def setParser():
         "--save_fd",
         action="store_true",
         help="enable saving the y grid and the corresponding Fermi-Dirac to fd.dat",
-    )
-    parser.add_argument(
-        "--save_BBN",
-        action="store_true",
-        help="enable saving the output for PArthENoPE",
     )
     parser.add_argument(
         "--save_Neff", action="store_true", help="enable saving the evolution of Neff"
@@ -312,7 +317,15 @@ def oscParams(args):
             osc["sterile"] = [False, False, False]
             osc["factors"] = [1, 1, 1]
         if (
-            args.numodel in ["3p1", "3+1", "3p0", "3+0", "3nu", "3",]
+            args.numodel
+            in [
+                "3p1",
+                "3+1",
+                "3p0",
+                "3+0",
+                "3nu",
+                "3",
+            ]
             and args.default_active in default_osc_act.keys()
         ):
             for p in params_active:
@@ -359,7 +372,7 @@ def getIniValues(args):
         "y_min",
         "y_cen",
         "y_max",
-	"Trh",
+        "Trh",
     ]:
         values[p] = getattr(args, p)
     values["factors"] = "\n".join(
@@ -414,7 +427,14 @@ def getIniValues(args):
     values["dlsoda_rtol"] = args.dlsoda_rtol
     values["folder"] = args.outputfolder
     values["Nprintderivs"] = args.verbose_deriv_freq
-    for p in ["save_energy_entropy", "save_fd", "save_Neff", "save_nuDens", "save_z", "save_BBN"]:
+    for p in [
+        "save_energy_entropy",
+        "save_fd",
+        "save_Neff",
+        "save_nuDens",
+        "save_z",
+        "save_BBN",
+    ]:
         values[p] = "T" if getattr(args, p) else "F"
     values["use_GL"] = "F" if args.no_GL else "T"
     return values

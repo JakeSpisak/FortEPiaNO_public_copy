@@ -219,6 +219,24 @@ class FortEPiaNORun:
             if verbose:
                 print("non-existing folder: %s" % folder)
             return
+        self.lowReheating = False
+        self.Trhini = None
+        try:
+            with open("%s/ini.log" % folder) as _ini:
+                self.ini = _ini.read()
+        except FileNotFoundError:
+            self.ini = ""
+        else:
+            self.ini = self.ini.replace("\n", " ")
+            try:
+                self.Trhini = float(
+                    re.search("Trh[ =]*([E+\-\d.]*)", self.ini).group(1)
+                )
+            except (AttributeError, ValueError):
+                pass
+            else:
+                if self.Trhini > 0:
+                    self.lowReheating = True
         try:
             fdy = np.loadtxt("%s/fd.dat" % folder)
         except (IOError, OSError):
@@ -247,50 +265,48 @@ class FortEPiaNORun:
         self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         try:
             with open("%s/resume.dat" % folder) as _f:
-                self.resume = _f.readlines()
+                self.resume = _f.read()
         except FileNotFoundError:
-            self.resume = [""] * (self.nnu + 2)
+            self.resume = ""
             self.hasResume = False
         else:
+            self.resume = self.resume.replace("\n", " ")
             self.hasResume = True
         if self.hasResume:
             try:
-                self.Neff = float(
-                    re.match("Neff[ =]*([-\d.]*)", self.resume[-1]).group(1)
-                )
-            except ValueError:
+                self.Neff = float(re.search("Neff[ =]*([-\d.]*)", self.resume).group(1))
+            except (AttributeError, ValueError):
                 self.Neff = np.nan
             try:
                 self.wfin = float(
-                    re.match("final w[ =]*([-\d.]*)", self.resume[0]).group(1)
+                    re.search("final w[ =]*([-\d.]*)", self.resume).group(1)
                 )
-            except AttributeError:
+            except (AttributeError, ValueError):
                 if verbose:
-                    print("final w is not in resume.dat")
-                zlineindex = 0
+                    print("cannot read w from resume.dat")
                 self.wfin = np.nan
-            except ValueError:
-                if verbose:
-                    print("error reading w in resume.dat")
-                zlineindex = 1
-                self.wfin = np.nan
-            else:
-                zlineindex = 1
             try:
                 self.zfin = float(
-                    re.match("final z[ =]*([-\d.]*)", self.resume[zlineindex]).group(1)
+                    re.search("final z[ =]*([-\d.]*)", self.resume).group(1)
                 )
-            except ValueError:
+            except (AttributeError, ValueError):
                 self.zfin = np.nan
+            try:
+                self.Trh = float(re.search("Trh[ =]*([-\d.]*)", self.resume).group(1))
+            except (AttributeError, ValueError):
+                self.Trh = np.nan
+            else:
+                if self.Trh != self.Trhini:
+                    raise ValueError("Trh from ini.log and from resume.dat differ.")
         self.deltarhofin = []
         for i in range(self.nnu):
             if self.hasResume:
                 try:
                     self.deltarhofin.append(
                         float(
-                            re.match(
+                            re.search(
                                 "dRho_%s[ =]*([-\d.]*)" % (i + 1),
-                                self.resume[i + 1 + zlineindex],
+                                self.resume,
                             ).group(1)
                         )
                     )
