@@ -998,8 +998,8 @@ module fpEquations
 		write(9876,"('Neff    = ',F9.6)") tmp
 
 #ifdef LOW_REHEATING
-		write(*,"('Trh    = ',F9.6)") Trh
-		write(9876,"('Trh    = ',F9.6)") Trh
+		write(*,"('Trh    = ',F11.6)") Trh
+		write(9876,"('Trh    = ',F11.6)") Trh
 #endif
 		close(9876)
 	end subroutine finalresults
