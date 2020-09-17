@@ -254,7 +254,11 @@ class FortEPiaNORun:
         try:
             self.Neffdat = np.loadtxt("%s/Neff.dat" % folder)
         except (IOError, OSError):
-            self.Neffdat = np.asarray([[np.nan, np.nan, np.nan]])
+            self.Neffdat = np.asarray(
+                [[np.nan, np.nan, np.nan, np.nan]]
+                if self.lowReheating
+                else [[np.nan, np.nan, np.nan]]
+            )
         try:
             self.endens = np.loadtxt("%s/energyDensity.dat" % folder)
         except (IOError, OSError):
@@ -1016,6 +1020,7 @@ class FortEPiaNORun:
         endensx=0,
         endensgamma=2,
         endensnu0=5,
+        useT=False,
     ):
         """Plot the evolution of Neff as a function of x.
         If not available from Neff.dat,
@@ -1034,6 +1039,9 @@ class FortEPiaNORun:
                 the photon energy density column in self.endens
             endensnu0 (default 5): index of
                 the first neutrino energy density column in self.endens
+            useT (default False): if the run was performed considering
+                a low reheating scenario,
+                plot Neff as a function of t instead of x
         """
         if hasattr(self, "Neffdat") and not np.isnan(self.Neffdat[0, 0]):
             data = self.Neffdat
@@ -1043,12 +1051,12 @@ class FortEPiaNORun:
             except (AttributeError, TypeError):
                 print(traceback.format_exc())
                 try:
-                    self.zdat[:, 0:2][:]
+                    self.zdat[:, (0, self.zCol)][:]
                 except (AttributeError, TypeError):
                     print(traceback.format_exc())
                     return
                 rhogammas = np.array(
-                    [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, 0:2]]
+                    [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zCol)]]
                 )
             try:
                 rns = np.sum(
@@ -1074,25 +1082,59 @@ class FortEPiaNORun:
                                 ]
                             ),
                         ]
-                        for ix, [x, z] in enumerate(self.zdat[:, 0:2])
+                        for ix, [x, z] in enumerate(self.zdat[:, (0, self.zCol)])
                     ]
                 )
             frhonu = interp1d(*stripRepeated(rhonus, 0, 1))
             frhoga = interp1d(*stripRepeated(rhogammas, 0, 1))
-            data = np.asarray(
-                [
+            if self.lowReheating:
+                try:
+                    tv = self.endens[:, endensx + 1]
+                except (AttributeError, TypeError):
+                    print(traceback.format_exc())
+                    try:
+                        tv = self.zdat[:, 1]
+                    except (AttributeError, TypeError):
+                        print(traceback.format_exc())
+                        return
+                data = np.asarray(
                     [
-                        x,
-                        8.0 / 7.0 * frhonu(x) / frhoga(x),
-                        8.0 / 7.0 * frhonu(x) / frhoga(x) * (11.0 / 4.0) ** (4.0 / 3.0),
+                        [
+                            x,
+                            t,
+                            8.0 / 7.0 * frhonu(x) / frhoga(x),
+                            8.0
+                            / 7.0
+                            * frhonu(x)
+                            / frhoga(x)
+                            * (11.0 / 4.0) ** (4.0 / 3.0),
+                        ]
+                        for x, t in zip(rhogammas[:, 0], tv)
                     ]
-                    for x in rhogammas[:, 0]
-                ]
-            )
+                )
+            else:
+                data = np.asarray(
+                    [
+                        [
+                            x,
+                            8.0 / 7.0 * frhonu(x) / frhoga(x),
+                            8.0
+                            / 7.0
+                            * frhonu(x)
+                            / frhoga(x)
+                            * (11.0 / 4.0) ** (4.0 / 3.0),
+                        ]
+                        for x in rhogammas[:, 0]
+                    ]
+                )
             print(os.path.join(self.folder, "Neff.dat"))
             np.savetxt(os.path.join(self.folder, "Neff.dat"), data, fmt="%.7e")
         plt.plot(
-            *stripRepeated(data, 0, 1),
+            *stripRepeated(
+                data,
+                1 if self.lowReheating and useT else 0,
+                2 if self.lowReheating else 1,
+            ),
             ls=ls,
             c=lc,
             label=self.label if lab is None else lab
