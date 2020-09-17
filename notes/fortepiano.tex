@@ -878,8 +878,11 @@ $z_{\rm in} = 1.098$ for $x_{\rm in}=0.05$ (suitable for the three-neutrino case
 \label{ssec:momenta}
 In order to follow the evolution of Eq.~\eqref{eq:varrho-B4}, we discretise its dependence on $y$ and evolve each of the momentum in $x$.
 One of the most interesting ways to make the code more precise and faster is related to the choice of the $y_i$.
-Discretising the momenta with a linear or logarithmic spacing works, but it is not the most efficient
-way to generate the grid.
+Discretising the momenta with a linear or logarithmic spacing works%
+\footnote{Note that a logarithmic spacing will introduce biases in the numerical calculation
+and that the final numbers of
+the neutrino energy density and effective number may be artificially increased.},
+but it is not the most efficient way to generate the grid.
 Inspired by one of the methods used in \texttt{CLASS} (see \cite{Lesgourgues:2011rh}),
 we deeply tested and finally considered a spacing based on the Gauss--Laguerre (GL) integration method.
 The crucial point of the calculation is to compute the energy density of neutrinos,
