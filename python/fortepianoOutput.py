@@ -219,6 +219,7 @@ class FortEPiaNORun:
             if verbose:
                 print("non-existing folder: %s" % folder)
             return
+        self.zCol = 1
         self.lowReheating = False
         self.Trhini = None
         try:
@@ -237,6 +238,7 @@ class FortEPiaNORun:
             else:
                 if self.Trhini > 0:
                     self.lowReheating = True
+                    self.zCol = 2
         try:
             fdy = np.loadtxt("%s/fd.dat" % folder)
         except (IOError, OSError):
@@ -1175,19 +1177,25 @@ class FortEPiaNORun:
             return
         plt.plot(
             self.endens[:, 0],
-            np.asarray([np.sum(cl[2:]) for cl in self.endens]),
+            np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.endens]),
             label="total" if alllabels is None else alllabels,
             c="k",
             ls="-" if not allstyles else allstyles,
             lw=lw,
         )
+        if (
+            self.lowReheating
+            and self.endens.shape[1] == 10
+            and labels[-1] == r"$\nu_s$"
+        ):
+            labels[-1] = r"$\phi$"
         for ix, lab in enumerate(labels):
             if skip[ix]:
                 continue
             try:
                 plt.plot(
                     self.endens[:, 0],
-                    self.endens[:, 2 + ix],
+                    self.endens[:, self.zCol + 1 + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1198,7 +1206,7 @@ class FortEPiaNORun:
         if gamma_e:
             plt.plot(
                 self.endens[:, 0],
-                self.endens[:, 2] + self.endens[:, 3],
+                self.endens[:, self.zCol + 1] + self.endens[:, self.zCol + 2],
                 label=r"$\gamma+e$" if alllabels is None else alllabels,
                 c=gec,
                 ls=ges if not allstyles else allstyles,
@@ -1207,7 +1215,9 @@ class FortEPiaNORun:
         if gamma_e_mu:
             plt.plot(
                 self.endens[:, 0],
-                self.endens[:, 2] + self.endens[:, 3] + self.endens[:, 4],
+                self.endens[:, self.zCol + 1]
+                + self.endens[:, self.zCol + 2]
+                + self.endens[:, self.zCol + 3],
                 label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
                 c=gemc,
                 ls=gems if not allstyles else allstyles,
@@ -1284,7 +1294,7 @@ class FortEPiaNORun:
             return
         plt.plot(
             self.entropy[:, 0],
-            np.asarray([np.sum(cl[2:]) for cl in self.entropy]),
+            np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.entropy]),
             label="total" if alllabels is None else alllabels,
             c="k",
             ls="-" if not allstyles else allstyles,
@@ -1296,7 +1306,7 @@ class FortEPiaNORun:
             try:
                 plt.plot(
                     self.entropy[:, 0],
-                    self.entropy[:, 2 + ix],
+                    self.entropy[:, self.zCol + 1 + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1307,7 +1317,7 @@ class FortEPiaNORun:
         if gamma_e:
             plt.plot(
                 self.entropy[:, 0],
-                self.entropy[:, 2] + self.entropy[:, 3],
+                self.entropy[:, self.zCol + 1] + self.entropy[:, self.zCol + 2],
                 label=r"$\gamma+e$" if alllabels is None else alllabels,
                 c=gec,
                 ls=ges if not allstyles else allstyles,
@@ -1316,7 +1326,9 @@ class FortEPiaNORun:
         if gamma_e_mu:
             plt.plot(
                 self.entropy[:, 0],
-                self.entropy[:, 2] + self.entropy[:, 3] + self.entropy[:, 4],
+                self.entropy[:, self.zCol + 1]
+                + self.entropy[:, self.zCol + 2]
+                + self.entropy[:, self.zCol + 3],
                 label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
                 c=gemc,
                 ls=gems if not allstyles else allstyles,

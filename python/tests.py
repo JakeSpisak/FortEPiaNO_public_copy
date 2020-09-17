@@ -327,9 +327,11 @@ class TestFortEPiaNORun(FPTestCase):
             ini = _ini.read()
         self.assertEqual(run.ini, ini.replace("\n", " "))
         if "Trh" in ini:
+            self.assertEqual(run.zCol, 2)
             self.assertEqual(run.Trhini, 25.0)
             self.assertTrue(run.lowReheating)
         else:
+            self.assertEqual(run.zCol, 1)
             self.assertEqual(run.Trhini, None)
             self.assertFalse(run.lowReheating)
         fc = np.loadtxt("%s/fd.dat" % folder)
@@ -400,6 +402,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "ini"))
         self.assertFalse(hasattr(run, "Trhini"))
         self.assertFalse(hasattr(run, "lowReheating"))
+        self.assertFalse(hasattr(run, "zCol"))
         self.runAllPlots(run)
 
         # repeat creating some bad resume file, e.g. with nans
@@ -1860,10 +1863,13 @@ class TestFortEPiaNORun(FPTestCase):
         skip = [False, False, False, False, False, False, False]
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotEnergyDensity()
-            self.assertEqual(_plt.call_count, 9)
+            self.assertEqual(_plt.call_count, 10 if run.lowReheating else 9)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+                [
+                    run.endens[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.endens]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -1886,7 +1892,7 @@ class TestFortEPiaNORun(FPTestCase):
             ):
                 self.assertEqualArray(
                     _plt.call_args_list[1 + ix][0],
-                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[1 + ix][1],
@@ -1897,9 +1903,26 @@ class TestFortEPiaNORun(FPTestCase):
                         "lw": 1,
                     },
                 )
+            if run.lowReheating:
+                self.assertEqualArray(
+                    _plt.call_args_list[2 + ix][0],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 2 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[2 + ix][1],
+                    {
+                        "label": r"$\phi$",
+                        "c": colors[ix + 1],
+                        "ls": styles[ix + 1],
+                        "lw": 1,
+                    },
+                )
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, run.zCol + 1] + run.endens[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -1914,7 +1937,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.endens[:, 0],
-                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                    run.endens[:, run.zCol + 1]
+                    + run.endens[:, run.zCol + 2]
+                    + run.endens[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -1957,7 +1982,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 7)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+                [
+                    run.endens[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.endens]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -1974,7 +2002,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -1988,7 +2016,10 @@ class TestFortEPiaNORun(FPTestCase):
                 ii += 1
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, run.zCol + 1] + run.endens[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2003,7 +2034,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.endens[:, 0],
-                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                    run.endens[:, run.zCol + 1]
+                    + run.endens[:, run.zCol + 2]
+                    + run.endens[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2033,7 +2066,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 8)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+                [
+                    run.endens[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.endens]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2050,7 +2086,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2081,7 +2117,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 10)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+                [
+                    run.endens[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.endens]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2098,7 +2137,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2112,7 +2151,10 @@ class TestFortEPiaNORun(FPTestCase):
                 ii += 1
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, run.zCol + 1] + run.endens[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2127,7 +2169,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.endens[:, 0],
-                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                    run.endens[:, run.zCol + 1]
+                    + run.endens[:, run.zCol + 2]
+                    + run.endens[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2159,7 +2203,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 9)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+                [
+                    run.entropy[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2182,7 +2229,7 @@ class TestFortEPiaNORun(FPTestCase):
             ):
                 self.assertEqualArray(
                     _plt.call_args_list[1 + ix][0],
-                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                    [run.entropy[:, 0], run.entropy[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[1 + ix][1],
@@ -2195,7 +2242,10 @@ class TestFortEPiaNORun(FPTestCase):
                 )
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, run.zCol + 1] + run.entropy[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2210,7 +2260,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.entropy[:, 0],
-                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                    run.entropy[:, run.zCol + 1]
+                    + run.entropy[:, run.zCol + 2]
+                    + run.entropy[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2253,7 +2305,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 7)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+                [
+                    run.entropy[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2270,7 +2325,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                    [run.entropy[:, 0], run.entropy[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2284,7 +2339,10 @@ class TestFortEPiaNORun(FPTestCase):
                 ii += 1
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, run.zCol + 1] + run.entropy[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2299,7 +2357,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.entropy[:, 0],
-                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                    run.entropy[:, run.zCol + 1]
+                    + run.entropy[:, run.zCol + 2]
+                    + run.entropy[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2329,7 +2389,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 8)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+                [
+                    run.entropy[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2346,7 +2409,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                    [run.entropy[:, 0], run.entropy[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2377,7 +2440,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 10)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+                [
+                    run.entropy[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2394,7 +2460,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                    [run.entropy[:, 0], run.entropy[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2408,7 +2474,10 @@ class TestFortEPiaNORun(FPTestCase):
                 ii += 1
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, run.zCol + 1] + run.entropy[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2423,7 +2492,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.entropy[:, 0],
-                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                    run.entropy[:, run.zCol + 1]
+                    + run.entropy[:, run.zCol + 2]
+                    + run.entropy[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
