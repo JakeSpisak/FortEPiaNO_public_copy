@@ -1127,7 +1127,7 @@ class FortEPiaNORun:
                         for x in rhogammas[:, 0]
                     ]
                 )
-            print(os.path.join(self.folder, "Neff.dat"))
+            print("Saving Neff to %s" % os.path.join(self.folder, "Neff.dat"))
             np.savetxt(os.path.join(self.folder, "Neff.dat"), data, fmt="%.7e")
         plt.plot(
             *stripRepeated(

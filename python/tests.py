@@ -337,14 +337,19 @@ class TestFortEPiaNORun(FPTestCase):
         fc = np.loadtxt("%s/fd.dat" % folder)
         self.assertEqualArray(run.yv, fc[:, 0])
         self.assertEqualArray(run.fd, fc[:, 1])
+        self.assertEqual(fc.shape[1], 2)
         fc = np.loadtxt("%s/z.dat" % folder)
         self.assertEqualArray(run.zdat, fc)
+        self.assertEqual(fc.shape[1], 4 if run.lowReheating else 3)
         fc = np.loadtxt("%s/Neff.dat" % folder)
         self.assertEqualArray(run.Neffdat, fc)
+        self.assertEqual(fc.shape[1], 4 if run.lowReheating else 3)
         fc = np.loadtxt("%s/energyDensity.dat" % folder)
         self.assertEqualArray(run.endens, fc)
+        self.assertEqual(fc.shape[1], 10 if run.lowReheating else 8)
         fc = np.loadtxt("%s/entropy.dat" % folder)
         self.assertEqualArray(run.entropy, fc)
+        self.assertEqual(fc.shape[1], 9 if run.lowReheating else 8)
         self.assertTrue(hasattr(run, "resume"))
         self.assertTrue(run.hasResume)
         self.assertIsInstance(run.deltarhofin, list)
@@ -1905,7 +1910,6 @@ class TestFortEPiaNORun(FPTestCase):
             side_effect=[1.0, 2.0, 1.1, 2.2, 1.2, 2.4],
         ) as _int:
             run.plotNeff()
-            print("\n\n\n\n\n\n")
             _plt.assert_called_once()
             self.assertEqualArray(
                 _plt.call_args[0],
@@ -1930,7 +1934,6 @@ class TestFortEPiaNORun(FPTestCase):
             side_effect=[1.0, 2.0, 1.1, 2.2, 1.2, 2.4],
         ) as _int:
             run.plotNeff(useT=True)
-            print("\n\n\n\n\n\n")
             _plt.assert_called_once()
             self.assertEqualArray(
                 _plt.call_args[0],
