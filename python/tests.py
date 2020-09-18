@@ -384,6 +384,13 @@ class TestFortEPiaNORun(FPTestCase):
                 self.assertEqualArray(run.rho[i, j, 0], fc)
                 fc = np.loadtxt("%s/nuDens_nd_%d%d_im.dat" % (folder, i + 1, j + 1))
                 self.assertEqualArray(run.rho[i, j, 1], fc)
+        # testing output for BBN
+        fc = np.loadtxt("%s/BBN.dat" % folder)
+        self.assertEqual(fc.shape[1], 4)
+        fc = np.loadtxt("%s/rho_tot.dat" % folder)
+        self.assertEqual(fc.shape[1], 3 if run.lowReheating else 2)
+        fc = np.loadtxt("%s/nuDens_diag1_BBN.dat" % folder)
+        self.assertEqual(fc.shape[1], 2 + len(run.yv))
         # now just do plots in order to see that everything works till the end
         self.runAllPlots(run)
 
