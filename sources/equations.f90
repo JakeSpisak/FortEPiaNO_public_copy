@@ -126,6 +126,16 @@ module fpEquations
 		end do
 	end subroutine vec_2_densMat
 
+#ifdef LOW_REHEATING
+	elemental function getNewTx(tx, xend, deltax, rhoTot, rhoPhi)
+		real(dl) :: getNewTx
+		real(dl), intent(in) :: tx, xend, deltax, rhoTot, rhoPhi
+		getNewTx = tx &
+			+ deltax * xend * overallFactor / sec2eV / m_e_sq &
+			/ sqrt(rhoTot + xend*rhoPhi)
+	end function getNewTx
+#endif
+
 #ifndef NOINTERPOLATION
 	subroutine init_interp_jkyg12
 		real(dl) :: num, den, xoz, numw, denw
@@ -649,7 +659,7 @@ module fpEquations
 		real(dl) :: xstart, xend, xchk
 		integer :: ix, nchk, ix_in
 #ifdef LOW_REHEATING
-		real(dl) :: tx, deltax
+		real(dl) :: tx
 #endif
 		character(len=3) :: istchar
 		character(len=100) :: tmpstring
@@ -712,6 +722,7 @@ module fpEquations
 		nuDensVec(ntot-2) = rhoPhi_in
 		nuDensVec(ntot-1) = -0.99
 		nuDensVec(ntot) = -0.99
+		tx = t_in
 #else
 		nuDensVec(ntot-1) = z_in - 1.d0 !neutrino temperature start at same value as photon temperature
 		nuDensVec(ntot) = z_in - 1.d0
@@ -740,14 +751,8 @@ module fpEquations
 #endif
 		end if
 
-#ifdef LOW_REHEATING
-		tx=t_in
-#endif
 		do ix=ix_in+1, Nx
 			xend   = x_arr(ix)
-#ifdef LOW_REHEATING
-			deltax = xend - xstart
-#endif
 			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") xstart, xend
 			call addToLog("[solver] Start DLSODA..."//trim(tmpstring))
 
@@ -769,12 +774,7 @@ module fpEquations
 			end if
 			call writeCheckpoints(ntot, xend, nuDensVec)
 #ifdef LOW_REHEATING
-			tx = tx &
-				+ deltax * xend * overallFactor / sec2eV / m_e**2 &
-				/ sqrt( &
-					totalRadiationDensity(xend, nuDensVec(ntot)+1.d0) &
-					+ xend*nuDensVec(ntot-2) &
-				)
+			tx = getNewTx(tx, xend, xend - xstart, totalRadiationDensity(xend, nuDensVec(ntot)+1.d0), nuDensVec(ntot-2))
 			call saveRelevantInfo(xend, tx, nuDensVec)
 #else
 			call saveRelevantInfo(xend, nuDensVec)

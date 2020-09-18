@@ -3004,7 +3004,7 @@ program tests
 
 #ifdef LOW_REHEATING
 	subroutine do_low_reheating_tests
-		real(dl) :: tmp, x, z, r
+		real(dl) :: tmp, x, z, r, xin, t
 		integer :: n
 		real(dl), dimension(:), allocatable :: ydot
 
@@ -3026,6 +3026,49 @@ program tests
 		call drhoPhi_o_dx(x, z, r, ydot, n)
 		tmp = x*r
 		call assert_double_rel("drhoPhi_o_dx test 2", ydot(n-2), -tmp*GammaPhi*overallFactor / (m_e*m_e*sqrt(totalRadiationDensity(x,z) + tmp)), 1d-7)
+
+		t = 1d-3
+		x = 23.d0
+		xin = 20.d0
+		r = 12.d0
+		z = 1.4d0
+		call assert_double_rel( &
+			"getNewTx test 1", &
+			getNewTx(t, x, x-xin, r, z), &
+			t + (x-xin) * x * overallFactor / sec2eV / m_e_sq / sqrt(r + x*z), &
+			1d-6 &
+		)
+		t = 4.5d0
+		x = 2.36d0
+		xin = 1.d0
+		r = 0.12d0
+		z = 9.d0
+		call assert_double_rel( &
+			"getNewTx test 2", &
+			getNewTx(t, x, x-xin, r, z), &
+			t + (x-xin) * x * overallFactor / sec2eV / m_e_sq / sqrt(r + x*z), &
+			1d-6 &
+		)
+
+		t_in = 85.d0
+		rhoPhi_in = 1024.d0
+		GammaPhi = 1241.d0
+		xin = 0.03d0
+		t = 12.44d0
+		call init_lowReheating(xin, t)
+		call assert_double_rel("t_in test 1", t_in, t0 * (xin/x0)**(1.5d0), 1d-7)
+		call assert_double_rel("rhoPhi_in test 1", rhoPhi_in, (overallFactor/(1.5d0*t_in*sec2eV))**2* (xin**3/m_e**4), 1d-7)
+		call assert_double_rel("GammaPhi test 1", GammaPhi, (t/0.7)**2/sec2eV, 1d-7)
+
+		t_in = 0.08d0
+		rhoPhi_in = 1.d-2
+		GammaPhi = 1.241d0
+		xin = 0.3d0
+		t = 2.44d0
+		call init_lowReheating(xin, t)
+		call assert_double_rel("t_in test 2", t_in, t0 * (xin/x0)**(1.5d0), 1d-7)
+		call assert_double_rel("rhoPhi_in test 2", rhoPhi_in, (overallFactor/(1.5d0*t_in*sec2eV))**2* (xin**3/m_e**4), 1d-7)
+		call assert_double_rel("GammaPhi test 2", GammaPhi, (t/0.7)**2/sec2eV, 1d-7)
 
 		deallocate(ydot)
 		call printTotalTests

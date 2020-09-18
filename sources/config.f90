@@ -280,6 +280,25 @@ module fpConfig
 #endif
 	end subroutine init_fermions
 
+#ifdef LOW_REHEATING
+	subroutine init_lowReheating(x_in, Trh)
+		real(dl), intent(in) :: x_in, Trh
+
+		!Initial time
+		t_in = t0 * (x_in/x0)**(1.5d0)
+
+		write(*,*) 'Reheating temperature: ', Trh
+		rhoPhi_in = (overallFactor/(1.5d0*t_in*sec2eV))**2
+		write(*,*) 'Initial condition on the phi density: ', rhoPhi_in
+		rhoPhi_in = rhoPhi_in * (x_in**3/m_e**4) !convert to comoving density
+		write(*,*) 'The comoving initial condition is: ', rhoPhi_in
+
+		!Compute GammaPhi
+		GammaPhi = (Trh/0.7)**2/sec2eV
+		write(*,*) 'Initial GammaPhi: ', GammaPhi
+	end subroutine init_lowReheating
+#endif
+
 	subroutine initConfig()
 		use omp_lib
 		character(len=300) :: tmparg, tmpstr
@@ -353,27 +372,13 @@ module fpConfig
 #ifndef NOINTERPOLATION
 			call criticalError("Cannot use interpolations with Low-Reheating!")
 #endif
-
 			!Reading reheating temperature
-			Trh= read_ini_real('Trh', 0.d0)
-			!Initial time
-			t_in=t0*(x_in/x0)**(1.5d0)
-
-			if (Trh .gt. 0.d0) then
-				write(*,*) 'Reheating temperature: ', Trh
-				rhoPhi_in=(overallFactor/(3.d0*t_in*sec2eV/2.d0))**2
-				write(*,*) 'Initial condition on the phi density: ', rhoPhi_in
-				rhoPhi_in=rhoPhi_in*(x_in**3/m_e**4) !convert to comoving density
-			else
+			Trh = read_ini_real('Trh', 0.d0)
+			if (Trh .le. 0.d0) then
 				call criticalError("Invalid reheating temperature: must be positive. Do not compile LOW_REHEATING to use the code without low-reheating")
 			end if
-
-			write(*,*) 'The comoving initial condition is: ', rhoPhi_in
-
-			!Compute GammaPhi
-			GammaPhi=((Trh/0.7)**2)/sec2eV
-
-			write(*,*) 'Initial GammaPhi: ', GammaPhi
+			!compute other quantities
+			call init_lowReheating(x_in, Trh)
 #endif
 
 			y_min = read_ini_real('y_min', 0.01d0)
