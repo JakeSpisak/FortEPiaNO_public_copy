@@ -958,6 +958,7 @@ module fpEquations
 		real(dl) :: ndeq, tmp, w, z
 		real(dl), dimension(:), allocatable :: tmpvec
 		integer :: ix, iy
+		type(cmplxMatNN), dimension(:), allocatable :: rho_mass
 
 		if (use_gauss_laguerre) then
 			nuDensityInt => nuDensityGL
@@ -965,6 +966,10 @@ module fpEquations
 			nuDensityInt => nuDensityNC
 		end if
 
+		w = nuDensVec(ntot-1) + 1.d0
+		z = nuDensVec(ntot) + 1.d0
+
+		!save final diagonal elements of the neutrino density matrix, in flavor basis
 		call openFile(9876, trim(outputFolder)//'/rho_final.dat', .true.)
 		allocate(tmpvec(flavorNumber))
 		do iy=1, nY
@@ -974,10 +979,25 @@ module fpEquations
 			write(9876, multidblfmt) nuDensMatVecFD(iy)%y, tmpvec
 		end do
 		close(9876)
+		!save final diagonal elements of the neutrino density matrix, in mass basis
+		allocate(rho_mass(Ny))
+		call updateMatterDensities(x_arr(Nx), z)
+		!$omp parallel do shared(rho_mass) private(iy) schedule(static)
+		do iy=1, Ny
+			rho_mass(iy) = rho_diag_mass(iy)
+		end do
+		!$omp end parallel do
+		call openFile(9876, trim(outputFolder)//'/rhomass_final.dat', .true.)
+		do iy=1, nY
+			do ix=1, flavorNumber
+				tmpvec(ix)=rho_mass(iy)%re(ix, ix)
+			end do
+			write(9876, multidblfmt) nuDensMatVecFD(iy)%y, tmpvec
+		end do
+		close(9876)
+		deallocate(rho_mass)
 		deallocate(tmpvec)
 
-		w = nuDensVec(ntot-1) + 1.d0
-		z = nuDensVec(ntot) + 1.d0
 		call openFile(9876, trim(outputFolder)//'/resume.dat', .true.)
 		if (save_w_evolution) then
 			write(*,"('final w = ',F11.8)") w
