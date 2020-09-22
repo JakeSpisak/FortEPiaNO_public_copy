@@ -391,6 +391,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(fc.shape[1], 3 if run.lowReheating else 2)
         fc = np.loadtxt("%s/nuDens_diag1_BBN.dat" % folder)
         self.assertEqual(fc.shape[1], 2 + len(run.yv))
+        raise NotImplementedError("missing BBN tests")
         # now just do plots in order to see that everything works till the end
         self.runAllPlots(run)
 
@@ -474,6 +475,21 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.label, "l")
         self.assertEqual(run.nnu, 2)
         self.assertFalse(run.verbose)
+
+    def test_drhonu_dx(self):
+        raise NotImplementedError
+
+    def test_drhonu_dx_savgol(self):
+        raise NotImplementedError
+
+    def test_Tgamma(self):
+        raise NotImplementedError
+
+    def test_N_func(self):
+        raise NotImplementedError
+
+    def test_N_savgol(self):
+        raise NotImplementedError
 
     def test_interpolateRhoIJ(self):
         """test interpolateRhoIJ"""
@@ -2684,6 +2700,12 @@ class TestFortEPiaNORun(FPTestCase):
                     "lw": 2,
                 },
             )
+
+    def test_plotPArthENoPE(self):
+        """test plotPArthENoPE"""
+        run = self.explanatory
+        run.plotPArthENoPE()
+        raise NotImplementedError
 
     def test_doAllPlots(self):
         """test doAllPlots"""

@@ -21,6 +21,7 @@ except ImportError:
 try:
     from scipy.interpolate import interp1d
     from scipy.integrate import quad
+    from scipy.signal import savgol_filter
 except ImportError:
     print("Cannot import scipy...may raise errors later")
     interp1d = None
@@ -36,6 +37,7 @@ styles = ["-", "--", ":", "-."] * 2
 markers = [".", "+", "x", "^", "*", "h", "D"]
 
 PISQD15 = np.pi ** 2 / 15.0
+ELECTRONMASS_MEV = 0.5109989461
 
 
 def finalizePlot(
@@ -222,6 +224,7 @@ class FortEPiaNORun:
         self.zCol = 1
         self.lowReheating = False
         self.Trhini = None
+        self.hasBBN = False
         try:
             with open("%s/ini.log" % folder) as _ini:
                 self.ini = _ini.read()
@@ -342,9 +345,111 @@ class FortEPiaNORun:
                 )
             except (IOError, OSError):
                 self.rhoM[i, i, 0] = np.nan
+        if (
+            os.path.exists("%s/BBN.dat" % folder)
+            and os.path.exists("%s/rho_tot.dat" % folder)
+            and os.path.exists("%s/nuDens_diag1_BBN.dat" % folder)
+        ):
+            self.hasBBN = True
+            # read main quantities and prepare N function
+            self.bbn = np.loadtxt("%s/BBN.dat" % folder)
+            try:
+                xvec = self.bbn[:, 0]
+                zvec = self.bbn[:, 1]
+                rhobarnu = self.bbn[:, 3]
+            except IndexError:
+                print("Error in the structure of the BBN.dat file: cannot find columns")
+                self.hasBBN = False
+            finally:
+                # read x values at which (rho_rad >= 0.99 rho_tot) for the first time
+                rhos = np.loadtxt("%s/rho_tot.dat" % folder)
+                x99 = 0.0
+                try:
+                    rho_rad = rhos[:, 1]
+                    if self.lowReheating:
+                        rho_tot = rhos[:, 2]
+                    else:
+                        rho_tot = rhos[:, 1]
+                except IndexError:
+                    print(
+                        "Error in the structure of the rho_tot.dat file: cannot find columns"
+                    )
+                    self.hasBBN = False
+                finally:
+                    for x, t, r in zip(xvec, rho_tot, rho_rad):
+                        if r < 0.99 * t:
+                            x99 = x
+                        else:
+                            break
+                    self.filter99 = np.where(xvec > x99)
+                    self.parthenope = np.c_[
+                        self.bbn[self.filter99],
+                        np.clip(self.drhonu_dx_savgol[self.filter99], 1e-16, None),
+                        rho_rad[self.filter99],
+                        rho_tot[self.filter99],
+                    ]
+                    self.parthenope_cols = [
+                        "x",
+                        "z",
+                        "w",
+                        "rhobarnu",
+                        "drhobarnu_dx",
+                        "rho_rad",
+                        "rho_tot",
+                    ]
+                    try:
+                        np.savetxt(
+                            "%s/parthenope.dat" % folder,
+                            self.parthenope,
+                            fmt="%15.7e",
+                            header="".join(["%16s" % s for s in self.parthenope_cols])[
+                                3:
+                            ],
+                        )
+                        np.savetxt("%s/parthenope_yi.dat" % folder, self.yv, "%15.7e")
+                        data = np.loadtxt("%s/nuDens_diag1_BBN.dat" % folder)
+                        np.savetxt(
+                            "%s/parthenope_rhoee.dat" % folder,
+                            data[:, 1:][self.filter99],
+                            "%15.7e",
+                        )
+                    except IOError:
+                        print("Cannot write the outputs for PArtENoPE!")
         self.printTableLine()
         if plots:
             self.doAllPlots()
+
+    @property
+    def drhonu_dx(self):
+        return np.gradient(self.bbn[:, 3], self.bbn[:, 0]) if self.hasBBN else np.nan
+
+    @property
+    def drhonu_dx_savgol(self):
+        return (
+            savgol_filter(np.clip(self.drhonu_dx, 1e-10, None), 51, 1)
+            if self.hasBBN
+            else np.nan
+        )
+
+    @property
+    def Tgamma(self):
+        return (
+            self.bbn[:, 1] * ELECTRONMASS_MEV / self.bbn[:, 0]
+            if self.hasBBN
+            else np.nan
+        )
+
+    @property
+    def N_func(self):
+        return (
+            self.bbn[:, 0] * self.drhonu_dx / self.bbn[:, 1] ** 4
+            if self.hasBBN
+            else np.nan
+        )
+
+    @property
+    def N_savgol(self):
+        return savgol_filter(np.clip(self.N_func, 1e-11, None), 75, 1)
 
     def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False, mass=False):
         """Interpolate any entry of the density matrix at a given y,
@@ -1376,6 +1481,11 @@ class FortEPiaNORun:
                 ls=gems if not allstyles else allstyles,
                 lw=lw,
             )
+
+    def plotPArthENoPE(self):
+        """Plot quantities that are employed in the PArthENoPE code for BBN"""
+        # can plot rhobarnu, drhobarnu/dx or N, with or without filter
+        # as a function of x, z, Tgamma
 
     def doAllPlots(self, yref=5.0, color="k"):
         """Produce a series of plots for the given simulation
