@@ -364,23 +364,20 @@ class FortEPiaNORun:
             try:
                 self.bbn[:, 3]
                 xvec = self.bbn[:, 0]
-            except IndexError:
+            except (TypeError, IndexError):
                 print("Error in the structure of the BBN.dat file: cannot find columns")
                 self.hasBBN = False
-            finally:
+            else:
                 # read x values at which (rho_rad >= 0.99 rho_tot) for the first time
-                rhos = np.loadtxt("%s/rho_tot.dat" % folder)
+                self.summedrhos = np.loadtxt("%s/rho_tot.dat" % folder)
                 x99 = 0.0
                 try:
-                    rho_rad = rhos[:, 1]
-                    if self.lowReheating:
-                        rho_tot = rhos[:, 2]
-                    else:
-                        rho_tot = rhos[:, 1]
-                except IndexError:
+                    rho_tot = self.summedrhos[:, 2 if self.lowReheating else 1]
+                    rho_rad = self.summedrhos[:, 1]
+                except (TypeError, IndexError):
                     print("Error in the structure of rho_tot.dat: cannot find columns")
                     self.hasBBN = False
-                finally:
+                else:
                     x99 = next(
                         x for x, t, r in zip(xvec, rho_tot, rho_rad) if r >= 0.99 * t
                     )
@@ -401,23 +398,32 @@ class FortEPiaNORun:
                         "rho_tot",
                     ]
                     try:
-                        np.savetxt(
-                            "%s/parthenope.dat" % folder,
-                            self.parthenope,
-                            fmt="%15.7e",
-                            header="".join(["%16s" % s for s in self.parthenope_cols])[
-                                3:
-                            ],
-                        )
-                        np.savetxt("%s/parthenope_yi.dat" % folder, self.yv, "%15.7e")
                         data = np.loadtxt("%s/nuDens_diag1_BBN.dat" % folder)
-                        np.savetxt(
-                            "%s/parthenope_rhoee.dat" % folder,
-                            data[:, 2:][self.filter99],
-                            "%15.7e",
+                        data[:, 2:][self.filter99]
+                    except (IndexError, TypeError):
+                        print(
+                            "Error in the structure of nuDens_diag1_BBN.dat: cannot find columns"
                         )
-                    except IOError:
-                        print("Cannot write the outputs for PArtENoPE!")
+                    else:
+                        try:
+                            np.savetxt(
+                                "%s/parthenope.dat" % folder,
+                                self.parthenope,
+                                fmt="%15.7e",
+                                header="".join(
+                                    ["%16s" % s for s in self.parthenope_cols]
+                                )[3:],
+                            )
+                            np.savetxt(
+                                "%s/parthenope_yi.dat" % folder, self.yv, fmt="%15.7e"
+                            )
+                            np.savetxt(
+                                "%s/parthenope_rhoee.dat" % folder,
+                                data[:, 2:][self.filter99],
+                                fmt="%15.7e",
+                            )
+                        except IOError:
+                            print("Cannot write the outputs for PArtENoPE!")
 
     @property
     def drhonu_dx(self):

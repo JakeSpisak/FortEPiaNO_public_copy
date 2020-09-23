@@ -398,6 +398,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqualArray(fc.shape, (Nx, 2 + len(run.yv)))
         self.assertTrue(run.hasBBN)
         self.assertEqualArray(run.bbn.shape, (Nx, 4))
+        self.assertEqualArray(run.summedrhos.shape, (Nx, 3 if run.lowReheating else 2))
         x99 = next(
             x
             for x, t, r in zip(
@@ -457,6 +458,9 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "ini"))
         self.assertFalse(hasattr(run, "Trhini"))
         self.assertFalse(hasattr(run, "zCol"))
+        self.assertFalse(hasattr(run, "bbn"))
+        self.assertFalse(hasattr(run, "parthenope"))
+        self.assertFalse(hasattr(run, "filter99"))
         self.runAllPlots(run)
 
         # repeat creating some bad resume file, e.g. with nans
@@ -518,6 +522,87 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.label, "l")
         self.assertEqual(run.nnu, 2)
         self.assertFalse(run.verbose)
+
+    def test_prepareBBN_failures(self):
+        """test the error management in the prepareBBN function"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.yv = np.array([0.1 * i for i in range(10)])
+        self.assertFalse(run.hasBBN)
+        for res in [[True, True, False], [True, False, True], [False, True, True]]:
+            with patch("os.path.exists", side_effect=res) as _fe:
+                run.prepareBBN()
+                self.assertFalse(run.hasBBN)
+                self.assertFalse(hasattr(run, "parthenope"))
+        rungood = self.explanatory
+        with patch("os.path.exists", return_value=True) as _fe:
+            with patch("numpy.loadtxt", return_value=np.array([0, 1, 2, 3.0])) as _lt:
+                run.prepareBBN()
+                self.assertFalse(run.hasBBN)
+                self.assertEqualArray(run.bbn, np.array([0, 1, 2, 3.0]))
+                _lt.assert_called_once_with("%s/BBN.dat" % run.folder)
+            _fe.assert_any_call("%s/BBN.dat" % run.folder)
+            _fe.assert_any_call("%s/rho_tot.dat" % run.folder)
+            _fe.assert_any_call("%s/nuDens_diag1_BBN.dat" % run.folder)
+            with patch(
+                "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1])]
+            ) as _lt:
+                run.prepareBBN()
+                self.assertEqual(_lt.call_count, 2)
+                _lt.assert_any_call("%s/BBN.dat" % run.folder)
+                _lt.assert_any_call("%s/rho_tot.dat" % run.folder)
+                if run.lowReheating:
+                    self.assertFalse(run.hasBBN)
+            with patch(
+                "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1, 2.0])]
+            ) as _lt:
+                run.prepareBBN()
+                self.assertFalse(run.hasBBN)
+            with patch(
+                "numpy.loadtxt",
+                side_effect=[rungood.bbn, rungood.summedrhos, np.array([0.0, 1, 2.0])],
+            ) as _lt, patch("numpy.savetxt") as _st:
+                run.prepareBBN()
+                self.assertEqual(_lt.call_count, 3)
+                _lt.assert_any_call("%s/BBN.dat" % run.folder)
+                _lt.assert_any_call("%s/rho_tot.dat" % run.folder)
+                _lt.assert_any_call("%s/nuDens_diag1_BBN.dat" % run.folder)
+                self.assertTrue(run.hasBBN)
+                self.assertEqual(_st.call_count, 0)
+            with patch(
+                "numpy.loadtxt",
+                side_effect=[
+                    rungood.bbn,
+                    rungood.summedrhos,
+                    np.array([[0.0, 1, 2.0], [3.0, 4.0, 5]]),
+                ],
+            ) as _lt, patch("numpy.savetxt") as _st:
+                run.prepareBBN()
+                self.assertTrue(run.hasBBN)
+                self.assertEqual(_st.call_count, 0)
+            with patch(
+                "numpy.loadtxt",
+                side_effect=[rungood.bbn, rungood.summedrhos, rungood.bbn],
+            ) as _lt, patch("numpy.savetxt") as _st:
+                run.prepareBBN()
+                self.assertTrue(run.hasBBN)
+                self.assertEqual(_st.call_count, 3)
+                print(_st.call_args_list)
+                for i, n in enumerate(
+                    ["parthenope", "parthenope_yi", "parthenope_rhoee"]
+                ):
+                    self.assertEqual(
+                        _st.call_args_list[i][0][0], "%s/%s.dat" % (run.folder, n)
+                    )
+                for i, n in enumerate(
+                    [run.parthenope, run.yv, run.bbn[:, 2:][run.filter99]]
+                ):
+                    self.assertEqualArray(_st.call_args_list[i][0][1], n)
+                for i in range(3):
+                    self.assertEqual(_st.call_args_list[i][1]["fmt"], "%15.7e")
+                self.assertEqual(
+                    _st.call_args_list[0][1]["header"],
+                    "".join(["%16s" % s for s in run.parthenope_cols])[3:],
+                )
 
     def test_drhonu_dx(self):
         """test the drhonu_dx property"""
