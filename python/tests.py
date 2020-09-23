@@ -339,6 +339,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqualArray(run.fd, fc[:, 1])
         self.assertEqual(fc.shape[1], 2)
         fc = np.loadtxt("%s/z.dat" % folder)
+        Nx = len(fc)
         self.assertEqualArray(run.zdat, fc)
         self.assertEqual(fc.shape[1], 4 if run.lowReheating else 3)
         fc = np.loadtxt("%s/Neff.dat" % folder)
@@ -389,13 +390,48 @@ class TestFortEPiaNORun(FPTestCase):
         fc = np.loadtxt("%s/rho_final_mass.dat" % folder)
         self.assertEqualArray(fc.shape, (len(run.yv), 1 + run.nnu))
         # testing output for BBN
-        fc = np.loadtxt("%s/BBN.dat" % folder)
-        self.assertEqual(fc.shape[1], 4)
-        fc = np.loadtxt("%s/rho_tot.dat" % folder)
-        self.assertEqual(fc.shape[1], 3 if run.lowReheating else 2)
+        bbn = np.loadtxt("%s/BBN.dat" % folder)
+        self.assertEqualArray(bbn.shape, (Nx, 4))
+        rhos = np.loadtxt("%s/rho_tot.dat" % folder)
+        self.assertEqualArray(rhos.shape, (Nx, 3 if run.lowReheating else 2))
         fc = np.loadtxt("%s/nuDens_diag1_BBN.dat" % folder)
-        self.assertEqual(fc.shape[1], 2 + len(run.yv))
-        raise NotImplementedError("missing BBN tests")
+        self.assertEqualArray(fc.shape, (Nx, 2 + len(run.yv)))
+        self.assertTrue(run.hasBBN)
+        self.assertEqualArray(run.bbn.shape, (Nx, 4))
+        x99 = next(
+            x
+            for x, t, r in zip(
+                bbn[:, 0], rhos[:, 2 if run.lowReheating else 1], rhos[:, 1]
+            )
+            if r >= 0.99 * t
+        )
+        f99 = np.where(bbn[:, 0] >= x99)
+        self.assertEqualArray(run.filter99, f99)
+        Nx99 = len(run.filter99[0])
+        if run.lowReheating:
+            self.assertGreater(Nx, Nx99)
+        else:
+            self.assertEqual(Nx99, Nx)
+        self.assertEqualArray(run.parthenope.shape, (Nx99, 7))
+        self.assertEqual(
+            run.parthenope_cols,
+            [
+                "x",
+                "z",
+                "w",
+                "rhobarnu",
+                "drhobarnu_dx",
+                "rho_rad",
+                "rho_tot",
+            ],
+        )
+        for f, s in [
+            ["parthenope", (Nx99, 7)],
+            ["parthenope_yi", (len(run.yv),)],
+            ["parthenope_rhoee", (Nx99, len(run.yv))],
+        ]:
+            fc = np.loadtxt("%s/%s.dat" % (folder, f))
+            self.assertEqualArray(fc.shape, s)
         # now just do plots in order to see that everything works till the end
         self.runAllPlots(run)
 

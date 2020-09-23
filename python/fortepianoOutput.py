@@ -345,6 +345,14 @@ class FortEPiaNORun:
                 )
             except (IOError, OSError):
                 self.rhoM[i, i, 0] = np.nan
+        self.prepareBBN()
+        self.printTableLine()
+        if plots:
+            self.doAllPlots()
+
+    def prepareBBN(self):
+        """Read BBN files and prepare output for PArthENoPE"""
+        folder = self.folder
         if (
             os.path.exists("%s/BBN.dat" % folder)
             and os.path.exists("%s/rho_tot.dat" % folder)
@@ -354,9 +362,8 @@ class FortEPiaNORun:
             # read main quantities and prepare N function
             self.bbn = np.loadtxt("%s/BBN.dat" % folder)
             try:
+                self.bbn[:, 3]
                 xvec = self.bbn[:, 0]
-                zvec = self.bbn[:, 1]
-                rhobarnu = self.bbn[:, 3]
             except IndexError:
                 print("Error in the structure of the BBN.dat file: cannot find columns")
                 self.hasBBN = False
@@ -371,17 +378,13 @@ class FortEPiaNORun:
                     else:
                         rho_tot = rhos[:, 1]
                 except IndexError:
-                    print(
-                        "Error in the structure of the rho_tot.dat file: cannot find columns"
-                    )
+                    print("Error in the structure of rho_tot.dat: cannot find columns")
                     self.hasBBN = False
                 finally:
-                    for x, t, r in zip(xvec, rho_tot, rho_rad):
-                        if r < 0.99 * t:
-                            x99 = x
-                        else:
-                            break
-                    self.filter99 = np.where(xvec > x99)
+                    x99 = next(
+                        x for x, t, r in zip(xvec, rho_tot, rho_rad) if r >= 0.99 * t
+                    )
+                    self.filter99 = np.where(xvec >= x99)
                     self.parthenope = np.c_[
                         self.bbn[self.filter99],
                         np.clip(self.drhonu_dx_savgol[self.filter99], 1e-16, None),
@@ -410,14 +413,11 @@ class FortEPiaNORun:
                         data = np.loadtxt("%s/nuDens_diag1_BBN.dat" % folder)
                         np.savetxt(
                             "%s/parthenope_rhoee.dat" % folder,
-                            data[:, 1:][self.filter99],
+                            data[:, 2:][self.filter99],
                             "%15.7e",
                         )
                     except IOError:
                         print("Cannot write the outputs for PArtENoPE!")
-        self.printTableLine()
-        if plots:
-            self.doAllPlots()
 
     @property
     def drhonu_dx(self):
