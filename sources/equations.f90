@@ -987,7 +987,7 @@ module fpEquations
 			rho_mass(iy) = rho_diag_mass(iy)
 		end do
 		!$omp end parallel do
-		call openFile(9876, trim(outputFolder)//'/rhomass_final.dat', .true.)
+		call openFile(9876, trim(outputFolder)//'/rho_final_mass.dat', .true.)
 		do iy=1, nY
 			do ix=1, flavorNumber
 				tmpvec(ix)=rho_mass(iy)%re(ix, ix)

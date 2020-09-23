@@ -384,6 +384,10 @@ class TestFortEPiaNORun(FPTestCase):
                 self.assertEqualArray(run.rho[i, j, 0], fc)
                 fc = np.loadtxt("%s/nuDens_nd_%d%d_im.dat" % (folder, i + 1, j + 1))
                 self.assertEqualArray(run.rho[i, j, 1], fc)
+        fc = np.loadtxt("%s/rho_final.dat" % folder)
+        self.assertEqualArray(fc.shape, (len(run.yv), 1 + run.nnu))
+        fc = np.loadtxt("%s/rho_final_mass.dat" % folder)
+        self.assertEqualArray(fc.shape, (len(run.yv), 1 + run.nnu))
         # testing output for BBN
         fc = np.loadtxt("%s/BBN.dat" % folder)
         self.assertEqual(fc.shape[1], 4)
@@ -398,6 +402,8 @@ class TestFortEPiaNORun(FPTestCase):
     def test_failing(self):
         """test few failing examples with FortEPiaNORun"""
         run = fpom.FortEPiaNORun("output/nonexistent/folder/")
+        self.assertFalse(run.lowReheating)
+        self.assertFalse(run.hasBBN)
         self.assertFalse(hasattr(run, "yv"))
         self.assertFalse(hasattr(run, "fd"))
         self.assertFalse(hasattr(run, "zdat"))
@@ -414,7 +420,6 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "deltarhofin"))
         self.assertFalse(hasattr(run, "ini"))
         self.assertFalse(hasattr(run, "Trhini"))
-        self.assertFalse(hasattr(run, "lowReheating"))
         self.assertFalse(hasattr(run, "zCol"))
         self.runAllPlots(run)
 
@@ -445,6 +450,8 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.resume, resume.replace("\n", " "))
         self.assertTrue(run.hasResume)
         self.assertEqualArray(run.deltarhofin, [np.nan, np.nan, np.nan])
+        self.assertFalse(run.lowReheating)
+        self.assertFalse(run.hasBBN)
         self.runAllPlots(run)
 
     def test_init(self):
@@ -477,19 +484,86 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(run.verbose)
 
     def test_drhonu_dx(self):
-        raise NotImplementedError
+        """test the drhonu_dx property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.hasBBN = False
+        self.assertTrue(np.isnan(run.drhonu_dx))
+        run.hasBBN = True
+        with self.assertRaises(AttributeError):
+            run.drhonu_dx
+        run.bbn = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(run.drhonu_dx, np.gradient(run.bbn[:, 3], run.bbn[:, 0]))
 
     def test_drhonu_dx_savgol(self):
-        raise NotImplementedError
+        """test the drhonu_dx_savgol property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.hasBBN = False
+        self.assertTrue(np.isnan(run.drhonu_dx_savgol))
+        run.hasBBN = True
+        with self.assertRaises(AttributeError):
+            run.drhonu_dx_savgol
+        run.bbn = np.array(self.explanatory.bbn)
+        self.assertEqualArray(
+            run.drhonu_dx_savgol,
+            fpom.savgol_filter(np.clip(run.drhonu_dx, 1e-10, None), 51, 1),
+        )
 
     def test_Tgamma(self):
-        raise NotImplementedError
+        """test the Tgamma property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.hasBBN = False
+        self.assertTrue(np.isnan(run.Tgamma))
+        run.hasBBN = True
+        with self.assertRaises(AttributeError):
+            run.Tgamma
+        run.bbn = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(
+            run.Tgamma, run.bbn[:, 1] * fpom.ELECTRONMASS_MEV / run.bbn[:, 0]
+        )
 
     def test_N_func(self):
-        raise NotImplementedError
+        """test the N_func property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.hasBBN = False
+        self.assertTrue(np.isnan(run.N_func))
+        run.hasBBN = True
+        with self.assertRaises(AttributeError):
+            run.N_func
+        run.bbn = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(
+            run.N_func, run.bbn[:, 0] * run.drhonu_dx / run.bbn[:, 1] ** 4
+        )
 
     def test_N_savgol(self):
-        raise NotImplementedError
+        """test the N_savgol property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.hasBBN = False
+        self.assertTrue(np.isnan(run.N_savgol))
+        run.hasBBN = True
+        with self.assertRaises(AttributeError):
+            run.N_savgol
+        run.bbn = np.array(self.explanatory.bbn)
+        self.assertEqualArray(
+            run.N_savgol, fpom.savgol_filter(np.clip(run.N_func, 1e-11, None), 75, 1)
+        )
 
     def test_interpolateRhoIJ(self):
         """test interpolateRhoIJ"""

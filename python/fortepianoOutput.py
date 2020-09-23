@@ -217,14 +217,14 @@ class FortEPiaNORun:
         self.label = label
         self.verbose = verbose
         self.nnu = nnu
+        self.hasBBN = False
+        self.lowReheating = False
         if not os.path.exists(folder):
             if verbose:
                 print("non-existing folder: %s" % folder)
             return
         self.zCol = 1
-        self.lowReheating = False
         self.Trhini = None
-        self.hasBBN = False
         try:
             with open("%s/ini.log" % folder) as _ini:
                 self.ini = _ini.read()
@@ -421,10 +421,12 @@ class FortEPiaNORun:
 
     @property
     def drhonu_dx(self):
+        """return drhonu/dx"""
         return np.gradient(self.bbn[:, 3], self.bbn[:, 0]) if self.hasBBN else np.nan
 
     @property
     def drhonu_dx_savgol(self):
+        """return a filtered version of drhonu/dx"""
         return (
             savgol_filter(np.clip(self.drhonu_dx, 1e-10, None), 51, 1)
             if self.hasBBN
@@ -433,6 +435,7 @@ class FortEPiaNORun:
 
     @property
     def Tgamma(self):
+        """return T_gamma"""
         return (
             self.bbn[:, 1] * ELECTRONMASS_MEV / self.bbn[:, 0]
             if self.hasBBN
@@ -441,6 +444,7 @@ class FortEPiaNORun:
 
     @property
     def N_func(self):
+        """return the N function used in PArthENoPE"""
         return (
             self.bbn[:, 0] * self.drhonu_dx / self.bbn[:, 1] ** 4
             if self.hasBBN
@@ -449,7 +453,12 @@ class FortEPiaNORun:
 
     @property
     def N_savgol(self):
-        return savgol_filter(np.clip(self.N_func, 1e-11, None), 75, 1)
+        """return a filtered version of the N function used in PArthENoPE"""
+        return (
+            savgol_filter(np.clip(self.N_func, 1e-11, None), 75, 1)
+            if self.hasBBN
+            else np.nan
+        )
 
     def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False, mass=False):
         """Interpolate any entry of the density matrix at a given y,
