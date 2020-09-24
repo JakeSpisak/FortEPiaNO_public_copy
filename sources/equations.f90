@@ -656,7 +656,7 @@ module fpEquations
 	end subroutine saveRelevantInfo
 
 	subroutine solver
-		real(dl) :: xstart, xend, xchk
+		real(dl) :: xstart, xend, xchk, xs
 		integer :: ix, nchk, ix_in
 #ifdef LOW_REHEATING
 		real(dl) :: tx
@@ -752,6 +752,7 @@ module fpEquations
 		end if
 
 		do ix=ix_in+1, Nx
+			xs = xstart
 			xend   = x_arr(ix)
 			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") xstart, xend
 			call addToLog("[solver] Start DLSODA..."//trim(tmpstring))
@@ -774,7 +775,7 @@ module fpEquations
 			end if
 			call writeCheckpoints(ntot, xend, nuDensVec)
 #ifdef LOW_REHEATING
-			tx = getNewTx(tx, xend, xend - xstart, totalRadiationDensity(xend, nuDensVec(ntot)+1.d0), nuDensVec(ntot-2))
+			tx = getNewTx(tx, xend, xend - xs, totalRadiationDensity(xend, nuDensVec(ntot)+1.d0), nuDensVec(ntot-2))
 			call saveRelevantInfo(xend, tx, nuDensVec)
 #else
 			call saveRelevantInfo(xend, nuDensVec)
