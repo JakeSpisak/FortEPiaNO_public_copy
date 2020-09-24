@@ -364,6 +364,10 @@ class FortEPiaNORun:
             try:
                 self.bbn[:, 3]
                 xvec = self.bbn[:, 0]
+                assert np.allclose(xvec, self.zdat[:, 0])
+                assert np.allclose(
+                    self.bbn[:, 1], self.zdat[:, 2 if self.lowReheating else 1]
+                )
             except (TypeError, IndexError):
                 print("Error in the structure of the BBN.dat file: cannot find columns")
                 self.hasBBN = False
@@ -426,9 +430,34 @@ class FortEPiaNORun:
                             print("Cannot write the outputs for PArtENoPE!")
 
     @property
+    def x(self):
+        """return x"""
+        return self.zdat[:, 0]
+
+    @property
+    def z(self):
+        """return z"""
+        return self.zdat[:, 2 if self.lowReheating else 1]
+
+    @property
+    def Tgamma(self):
+        """return T_gamma"""
+        return self.z * ELECTRONMASS_MEV / self.x
+
+    @property
+    def t(self):
+        """return t, if available"""
+        return self.zdat[:, 1] if self.lowReheating else np.nan
+
+    @property
+    def rhonu(self):
+        """return rhonu (total neutrino energy density)"""
+        return self.bbn[:, 3] if self.hasBBN else np.nan
+
+    @property
     def drhonu_dx(self):
         """return drhonu/dx"""
-        return np.gradient(self.bbn[:, 3], self.bbn[:, 0]) if self.hasBBN else np.nan
+        return np.gradient(self.rhonu, self.x) if self.hasBBN else np.nan
 
     @property
     def drhonu_dx_savgol(self):
@@ -440,22 +469,9 @@ class FortEPiaNORun:
         )
 
     @property
-    def Tgamma(self):
-        """return T_gamma"""
-        return (
-            self.bbn[:, 1] * ELECTRONMASS_MEV / self.bbn[:, 0]
-            if self.hasBBN
-            else np.nan
-        )
-
-    @property
     def N_func(self):
         """return the N function used in PArthENoPE"""
-        return (
-            self.bbn[:, 0] * self.drhonu_dx / self.bbn[:, 1] ** 4
-            if self.hasBBN
-            else np.nan
-        )
+        return self.x * self.drhonu_dx / self.z ** 4 if self.hasBBN else np.nan
 
     @property
     def N_savgol(self):
@@ -1497,10 +1513,29 @@ class FortEPiaNORun:
                 lw=lw,
             )
 
-    def plotPArthENoPE(self):
-        """Plot quantities that are employed in the PArthENoPE code for BBN"""
-        # can plot rhobarnu, drhobarnu/dx or N, with or without filter
-        # as a function of x, z, Tgamma
+    def plotPArthENoPE(self, x="x", y="drhonu_dx", filter99=True, **kwargs):
+        """Plot quantities that are employed in the PArthENoPE code for BBN
+
+        Parameters:
+            x (default "x"): the name of the quantity to plot in the x axis
+            y (default "drhonu_dx"): the name of the quantity to plot in the y axis
+            filter99 (default True): apply the filter to consider only
+                points for which rho_rad > 0.99 rho_tot
+            **kwargs: parameters to be passed to plt.plot
+        """
+        allowed_x = ["x", "z", "Tgamma"]
+        if self.lowReheating:
+            allowed_x.append("t")
+        allowed_y = ["rhonu", "drhonu_dx", "drhonu_dx_savgol", "N_func", "N_savgol"]
+        for f, a in [[x, allowed_x], [y, allowed_y]]:
+            if f not in a:
+                raise AttributeError(
+                    "Cannot plot the requested quantity '%s'. " % f
+                    + "Allowed ones are: %s" % a
+                )
+        xv = getattr(self, x)[self.filter99] if filter99 else getattr(self, x)
+        yv = getattr(self, y)[self.filter99] if filter99 else getattr(self, y)
+        plt.plot(xv, yv, **kwargs)
 
     def doAllPlots(self, yref=5.0, color="k"):
         """Produce a series of plots for the given simulation

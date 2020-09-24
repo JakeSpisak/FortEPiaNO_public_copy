@@ -355,6 +355,11 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertTrue(run.hasResume)
         self.assertIsInstance(run.deltarhofin, list)
         if run.lowReheating:
+            self.assertTrue(np.isclose(run.x[0], 0.01, rtol=1e-4))
+            self.assertTrue(np.isclose(run.x[-1], 35.0, rtol=1e-4))
+            self.assertTrue(np.isclose(run.z[0], 0.01, rtol=1e-4))
+            self.assertTrue(np.isclose(run.t[0], 0.001, rtol=1e-4))
+            self.assertTrue(np.isclose(run.t[-1], 7.04632596e03, rtol=1e-2))
             self.assertTrue(np.isclose(run.Trh, 25.0, atol=1e-4))
             self.assertTrue(np.isclose(run.Neff, 3.0441, atol=1e-4))
             self.assertTrue(np.isclose(run.wfin, 0.67134, atol=1e-4))
@@ -363,6 +368,9 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertTrue(np.isclose(run.deltarhofin[1], -0.794223, atol=1e-4))
             self.assertTrue(np.isclose(run.deltarhofin[2], -0.794323, atol=1e-4))
         else:
+            self.assertTrue(np.isclose(run.x[0], 0.01, rtol=1e-4))
+            self.assertTrue(np.isclose(run.x[-1], 35.0, rtol=1e-4))
+            self.assertTrue(np.isclose(run.z[0], 1.0288, rtol=1e-4))
             self.assertTrue(np.isclose(run.Neff, 3.0430, atol=1e-4))
             self.assertTrue(np.isclose(run.wfin, 1.0965, atol=1e-4))
             self.assertTrue(np.isclose(run.zfin, 1.5357, atol=1e-4))
@@ -534,6 +542,8 @@ class TestFortEPiaNORun(FPTestCase):
                 self.assertFalse(run.hasBBN)
                 self.assertFalse(hasattr(run, "parthenope"))
         rungood = self.explanatory
+        run.zdat = np.array([[1, 2, 3.0]])
+        run.lowReheating = rungood.lowReheating
         with patch("os.path.exists", return_value=True) as _fe:
             with patch("numpy.loadtxt", return_value=np.array([0, 1, 2, 3.0])) as _lt:
                 run.prepareBBN()
@@ -543,6 +553,12 @@ class TestFortEPiaNORun(FPTestCase):
             _fe.assert_any_call("%s/BBN.dat" % run.folder)
             _fe.assert_any_call("%s/rho_tot.dat" % run.folder)
             _fe.assert_any_call("%s/nuDens_diag1_BBN.dat" % run.folder)
+            with patch(
+                "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1])]
+            ) as _lt, self.assertRaises(AssertionError):
+                run.prepareBBN()
+                self.assertFalse(run.hasBBN)
+            run.zdat = rungood.zdat
             with patch(
                 "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1])]
             ) as _lt:
@@ -586,7 +602,6 @@ class TestFortEPiaNORun(FPTestCase):
                 run.prepareBBN()
                 self.assertTrue(run.hasBBN)
                 self.assertEqual(_st.call_count, 3)
-                print(_st.call_args_list)
                 for i, n in enumerate(
                     ["parthenope", "parthenope_yi", "parthenope_rhoee"]
                 ):
@@ -604,6 +619,67 @@ class TestFortEPiaNORun(FPTestCase):
                     "".join(["%16s" % s for s in run.parthenope_cols])[3:],
                 )
 
+    def test_x(self):
+        """test the x property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.zdat = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(run.x, run.zdat[:, 0])
+
+    def test_z(self):
+        """test the z property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.lowReheating = False
+        run.zdat = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(run.z, run.zdat[:, 1])
+        run.lowReheating = True
+        self.assertEqualArray(run.z, run.zdat[:, 2])
+
+    def test_Tgamma(self):
+        """test the Tgamma property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.lowReheating = False
+        run.zdat = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(
+            run.Tgamma, run.zdat[:, 1] * fpom.ELECTRONMASS_MEV / run.zdat[:, 0]
+        )
+        run.lowReheating = True
+        self.assertEqualArray(
+            run.Tgamma, run.zdat[:, 2] * fpom.ELECTRONMASS_MEV / run.zdat[:, 0]
+        )
+
+    def test_t(self):
+        """test the t property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.lowReheating = False
+        run.zdat = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(run.t, np.nan)
+        run.lowReheating = True
+        self.assertEqualArray(run.t, run.zdat[:, 1])
+
     def test_drhonu_dx(self):
         """test the drhonu_dx property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
@@ -619,6 +695,7 @@ class TestFortEPiaNORun(FPTestCase):
                 [13.4, 14.5, 15.6, 16.7],
             ]
         )
+        run.zdat = run.bbn
         self.assertEqualArray(run.drhonu_dx, np.gradient(run.bbn[:, 3], run.bbn[:, 0]))
 
     def test_drhonu_dx_savgol(self):
@@ -630,28 +707,10 @@ class TestFortEPiaNORun(FPTestCase):
         with self.assertRaises(AttributeError):
             run.drhonu_dx_savgol
         run.bbn = np.array(self.explanatory.bbn)
+        run.zdat = run.bbn
         self.assertEqualArray(
             run.drhonu_dx_savgol,
             fpom.savgol_filter(np.clip(run.drhonu_dx, 1e-10, None), 51, 1),
-        )
-
-    def test_Tgamma(self):
-        """test the Tgamma property"""
-        run = fpom.FortEPiaNORun("output/nonexistent")
-        run.hasBBN = False
-        self.assertTrue(np.isnan(run.Tgamma))
-        run.hasBBN = True
-        with self.assertRaises(AttributeError):
-            run.Tgamma
-        run.bbn = np.array(
-            [
-                [11.0, 12.0, 13.0, 14.0],
-                [12.3, 13.4, 14.5, 15.6],
-                [13.4, 14.5, 15.6, 16.7],
-            ]
-        )
-        self.assertEqualArray(
-            run.Tgamma, run.bbn[:, 1] * fpom.ELECTRONMASS_MEV / run.bbn[:, 0]
         )
 
     def test_N_func(self):
@@ -669,6 +728,7 @@ class TestFortEPiaNORun(FPTestCase):
                 [13.4, 14.5, 15.6, 16.7],
             ]
         )
+        run.zdat = run.bbn
         self.assertEqualArray(
             run.N_func, run.bbn[:, 0] * run.drhonu_dx / run.bbn[:, 1] ** 4
         )
@@ -682,6 +742,7 @@ class TestFortEPiaNORun(FPTestCase):
         with self.assertRaises(AttributeError):
             run.N_savgol
         run.bbn = np.array(self.explanatory.bbn)
+        run.zdat = run.bbn
         self.assertEqualArray(
             run.N_savgol, fpom.savgol_filter(np.clip(run.N_func, 1e-11, None), 75, 1)
         )
@@ -2899,8 +2960,40 @@ class TestFortEPiaNORun(FPTestCase):
     def test_plotPArthENoPE(self):
         """test plotPArthENoPE"""
         run = self.explanatory
-        run.plotPArthENoPE()
-        raise NotImplementedError
+        with patch("matplotlib.pyplot.plot") as _p:
+            with self.assertRaises(AttributeError):
+                run.plotPArthENoPE(x="a")
+            with self.assertRaises(AttributeError):
+                run.plotPArthENoPE(y="a")
+            _p.assert_not_called()
+            run.plotPArthENoPE()
+            _p.assert_called_once()
+            self.assertEqualArray(_p.call_args[0][0], run.x[run.filter99])
+            self.assertEqualArray(_p.call_args[0][1], run.drhonu_dx[run.filter99])
+            self.assertEqual(_p.call_args[1], {})
+        for x in (
+            ["x", "z", "Tgamma", "t"] if run.lowReheating else ["x", "z", "Tgamma"]
+        ):
+            with patch("matplotlib.pyplot.plot") as _p:
+                run.plotPArthENoPE(x=x)
+                self.assertEqualArray(_p.call_args[0][0], getattr(run, x)[run.filter99])
+        for y in ["rhonu", "drhonu_dx", "drhonu_dx_savgol", "N_func", "N_savgol"]:
+            with patch("matplotlib.pyplot.plot") as _p:
+                run.plotPArthENoPE(y=y)
+                self.assertEqualArray(_p.call_args[0][1], getattr(run, y)[run.filter99])
+        with patch("matplotlib.pyplot.plot") as _p:
+            run.plotPArthENoPE(c="k", ls="abc")
+            self.assertEqual(_p.call_args[1], {"c": "k", "ls": "abc"})
+        with patch("matplotlib.pyplot.plot") as _p:
+            run.plotPArthENoPE(x="z", c="k", y="N_func", ls="abc")
+            self.assertEqualArray(_p.call_args[0][0], run.z[run.filter99])
+            self.assertEqualArray(_p.call_args[0][1], run.N_func[run.filter99])
+            self.assertEqual(_p.call_args[1], {"c": "k", "ls": "abc"})
+        with patch("matplotlib.pyplot.plot") as _p:
+            run.plotPArthENoPE(x="z", c="k", y="N_func", ls="abc", filter99=False)
+            self.assertEqualArray(_p.call_args[0][0], run.z)
+            self.assertEqualArray(_p.call_args[0][1], run.N_func)
+            self.assertEqual(_p.call_args[1], {"c": "k", "ls": "abc"})
 
     def test_doAllPlots(self):
         """test doAllPlots"""
