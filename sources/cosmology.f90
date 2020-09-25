@@ -4,7 +4,6 @@ module fpCosmology
 	use utilities
 	use fpErrors
 	use ftqed
-	use fpInteractions
 	use linear_interpolation_module
 	implicit none
 
@@ -22,6 +21,7 @@ module fpCosmology
 		procedure :: energyDensityFull => nonRelativistic_energyDensity_full !full integral of the energy density
 		procedure :: energyDensity => nonRelativistic_energyDensity !interpolated energy density
 		procedure :: entropy => nonRelativistic_entropy !entropy
+		procedure :: numberDensity => nonRelativistic_numberDensity_full !number density
 		procedure :: pressureFull => nonRelativistic_pressure_full !pressure
 		procedure :: pressure => nonRelativistic_pressure !interpolated pressure
 	end type nonRelativistic_fermion
@@ -52,6 +52,13 @@ module fpCosmology
 	end function
 
 	!photons
+	elemental function photonNumberDensity(z)
+		real(dl) :: photonNumberDensity
+		real(dl), intent(in) :: z
+
+		photonNumberDensity = zetaOfThreex2DPISQ * z**3
+	end function photonNumberDensity
+
 	elemental function photonDensity(z)
 		real(dl) :: photonDensity
 		real(dl), intent(in) :: z
@@ -94,6 +101,31 @@ module fpCosmology
 		integrand_uX_Ek_nonRel = u**n/(squ2w2*(1.d0+expsqu2w2))
 	end function integrand_uX_Ek_nonRel
 
+	pure function nonRelativistic_numberDensity_full(cls, x, z, elTherMass) result (nredf)!fermion + antifermion
+		class(nonRelativistic_fermion), intent(in) :: cls
+		real(dl) :: nredf
+		real(dl), intent(in) :: x,z
+		logical, intent(in) :: elTherMass
+		real(dl) :: nx, ny, Emk
+		integer :: i
+
+		nredf = 0.d0
+		if (x .lt. cls%x_enDens_cut) then
+			nx = x * cls%mass_factor
+			do i=1, N_opt_y
+			ny = opt_y(i)
+			if (elTherMass) then
+				Emk = Ebare_i_dme(nx, ny, dme2_electronFull(nx, ny, z))
+			else
+				Emk = E_k_m(ny, nx)
+			end if
+				nredf = nredf + opt_y_w(i) * fermiDirac(Emk/z)
+			end do
+			nredf = nredf / PISQD2
+			!the factor is given by g = 2(elicity) * 2(f+\bar f)
+		end if
+	end function nonRelativistic_numberDensity_full
+
 	pure function nonRelativistic_energyDensity_full(cls, x, z, elTherMass) result (nredf)!fermion + antifermion
 		class(nonRelativistic_fermion), intent(in) :: cls
 		real(dl) :: nredf
@@ -117,7 +149,7 @@ module fpCosmology
 		real(dl), intent(in) :: x, z
 		logical, intent(in) :: elTherMass
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		ed = nonRelativistic_energyDensity_full(cls, x, z, elTherMass)
 #else
 		if (cls%isElectron .and. elTherMass) then
@@ -163,7 +195,7 @@ module fpCosmology
 		real(dl), intent(in) :: x, z
 		logical, intent(in) :: elTherMass
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		ed = nonRelativistic_pressure_full(cls, x, z, elTherMass)
 #else
 		call cls%pressInterp%evaluate(x, z, ed)
@@ -199,7 +231,7 @@ module fpCosmology
 		cls%mass_factor = mass_factor
 		cls%x_enDens_cut = xcut
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		allocate(ednt_vec(interp_nx, interp_nz))
 		allocate(edwt_vec(interp_nx, interp_nz))
 		allocate(p_vec(interp_nx, interp_nz))
@@ -224,13 +256,13 @@ module fpCosmology
 		call random_number(z)
 		x=(x_fin-x_in)*x + x_in
 		z=0.4d0*z + z_in
-		write(*,"(' [cosmo] test energyDensity interpolation in ',*(E12.5))") x, z
+		write(*,"(' [cosmo] test energyDensity/pressure interpolation in x,z=',*(E12.5))") x, z
 		t1 = cls%energyDensityFull(x, z, thmass)
 		t2 = cls%energyDensity(x, z, thmass)
-		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
+		write(*,"(' [cosmo] comparing energy density (true vs interp): ',*(E17.10))") t1, t2
 		t1 = cls%pressureFull(x, z, thmass)
 		t2 = cls%pressure(x, z, thmass)
-		write(*,"(' [cosmo] comparison electron density (true vs interp): ',*(E17.10))") t1, t2
+		write(*,"(' [cosmo] comparing pressure (true vs interp): ',*(E17.10))") t1, t2
 #endif
 		call addToLog("[cosmo] ...done!")
 	end subroutine nonRelativistic_initialize
@@ -252,14 +284,89 @@ module fpCosmology
 		oj(2) = o**2 * j + y
 	end function
 
-	!functions for neutrino energy density
+	!functions for neutrino number and energy density
+	function nuNumberDensityNC(i1, i2, reim)
+		real(dl) :: nuNumberDensityNC, y
+		integer, intent(in) :: i1, i2
+		logical, intent(in), optional :: reim
+		integer :: ix
+		logical :: useim
+
+		useim=.false.
+		if (present(reim)) then
+			if (.not.reim) &
+				useim=.true.
+		end if
+		if (useim) then
+			do ix=1, Ny
+				y = y_arr(ix)
+				fy_arr(ix) = y*y * nuDensMatVecFD(ix)%im(i1, i2)
+			end do
+		else
+			do ix=1, Ny
+				y = y_arr(ix)
+				fy_arr(ix) = y*y * nuDensMatVecFD(ix)%re(i1, i2)
+			end do
+		end if
+		nuNumberDensityNC = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
+	end function nuNumberDensityNC
+
+	function nuNumberDensityGL(i1, i2, reim)
+		real(dl) :: nuNumberDensityGL
+		integer, intent(in) :: i1, i2
+		logical, intent(in), optional :: reim
+		integer :: ix
+		logical :: useim
+
+		useim=.false.
+		if (present(reim)) then
+			if (.not.reim) &
+				useim=.true.
+		end if
+		if (useim) then
+			do ix=1, Ny
+				fy_arr(ix) = nuDensMatVecFD(ix)%im(i1, i2) / y_arr(ix)
+			end do
+		else
+			do ix=1, Ny
+				fy_arr(ix) = nuDensMatVecFD(ix)%re(i1, i2) / y_arr(ix)
+			end do
+		end if
+		nuNumberDensityGL = integral_GL_1d(w_gl_arr, fy_arr) / PISQ
+	end function nuNumberDensityGL
+
+	function allNuNumberDensity()
+		use fpInterfaces1
+		real(dl) :: allNuNumberDensity
+		integer :: ix
+		procedure (nuDensity_integrator), pointer :: nuNumberDensityInt
+
+		if (use_gauss_laguerre) then
+			nuNumberDensityInt => nuNumberDensityGL
+		else
+			nuNumberDensityInt => nuNumberDensityNC
+		end if
+
+		allNuNumberDensity = 0.d0
+		do ix=1, flavorNumber
+			allNuNumberDensity = allNuNumberDensity + nuNumberDensityInt(ix, ix)*nuFactor(ix)
+		end do
+		allNuNumberDensity = allNuNumberDensity
+	end function allNuNumberDensity
+
 	function nuDensityNC(i1, i2, reim)
 		real(dl) :: nuDensityNC, y
 		integer, intent(in) :: i1, i2
 		logical, intent(in), optional :: reim
 		integer :: ix
+		logical :: useim
 
-		if (present(reim) .and. .not.reim) then
+		useim=.false.
+		if (present(reim)) then
+			if (.not.reim) &
+				useim=.true.
+		end if
+		if (useim) then
 			do ix=1, Ny
 				y = y_arr(ix)
 				fy_arr(ix) = y*y*y * nuDensMatVecFD(ix)%im(i1, i2)
@@ -278,8 +385,14 @@ module fpCosmology
 		integer, intent(in) :: i1, i2
 		logical, intent(in), optional :: reim
 		integer :: ix
+		logical :: useim
 
-		if (present(reim) .and. .not.reim) then
+		useim=.false.
+		if (present(reim)) then
+			if (.not.reim) &
+				useim=.true.
+		end if
+		if (useim) then
 			do ix=1, Ny
 				fy_arr(ix) = nuDensMatVecFD(ix)%im(i1, i2)
 			end do

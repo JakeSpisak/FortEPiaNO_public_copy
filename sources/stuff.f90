@@ -29,6 +29,7 @@ module fpStuff
 		deallocate(nuMasses, nuFactor, sterile)
 		deallocate(mixMat, mixMatInv)
 		deallocate(nuMassesMat, leptonDensities)
+		deallocate(dampTermYYYWdy)
 		deallocate(dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu)
 		deallocate(GL_mat, GR_mat, GLR_vec)
 		deallocate(mixingAngles, massSplittings)
@@ -506,7 +507,7 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sc re semilin>")
 		call tic(timer1)
@@ -529,7 +530,7 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<ann re semilin>")
 		call tic(timer1)
@@ -552,9 +553,9 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res1 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<reset>")
 		call tic(timer1)
@@ -565,8 +566,8 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res1 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res1 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sep ann, sc>")
 		call tic(timer1)
@@ -577,7 +578,7 @@ enddo                                                   !SG-PF
 			collArgs%z = 0.4d0*z + z_in
 			ifail=0
 			itrans=0
-			res2 = integrate_coll_int_NC(coll_nue_3_int, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_int, collArgs, F_ab_ann_re, F_ab_sc_re)
 		end do
 		call toc(timer1, "<sum ann+sc>")
 		
@@ -612,7 +613,7 @@ enddo                                                   !SG-PF
 		integrate_dRhoNu = params%evaluate(y)
 	end function integrate_dRhoNu
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	subroutine dz_o_dx_old(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		real(dl), intent(in) :: x,z
 		integer, intent(in) :: n
@@ -939,6 +940,172 @@ enddo                                                   !SG-PF
 
 		call addToLog("[cosmology] ...done!")
 	end subroutine test_nuDens_speed
+
+	!kappa function for damping terms (YYYW)
+	elemental function kappa_damp(a, b, c)
+		real(dl) :: kappa_damp
+		real(dl), intent(in) :: a, b, c
+		kappa_damp = a*a*(c-b) - 2.d0/3.d0*a* (c**3-b**3) + (c**5-b**5)/5.d0
+	end function kappa_damp
+
+	!function that returns the integrand of the nunu damping coefficient in YYYW terms using K kernels
+	elemental function nunu_damp_integrand(p, p1, q)
+		real(dl) :: nunu_damp_integrand
+		real(dl), intent(in) :: p, q, p1
+		real(dl) :: q1
+		real(dl) :: as, bs, cs, ap, bp, cp
+		real(dl) :: fq, fp1, fq1
+		q1 = p + q - p1
+
+		cs = p + q
+		as = cs**2
+		bs = max(abs(p-q), abs(p1-q1))
+
+		ap = (q - p1)**2
+		bp = abs(p1 - q)
+		cp = min(p+q1, q+p1)
+
+		fq = fermiDirac(q)
+		fp1 = fermiDirac(p1)
+		fq1 = fermiDirac(q1)
+
+		nunu_damp_integrand = &
+			(kappa_damp(as, bs, cs) + 2.d0 * kappa_damp(ap, bp, cp)) &
+			* ((1.d0-fq)*fp1*fq1 + fq*(1.d0-fp1)*(1.d0-fq1))
+	end function nunu_damp_integrand
+
+	!integral of the above function
+	pure function dy_damping(y)
+		real(dl) :: dy_damping
+		real(dl), intent(in) :: y
+		integer :: ia, ib
+		integer, parameter :: nydamp = 2**10
+		real(dl), dimension(:), allocatable :: ya, dya
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(ya(nydamp), dya(nydamp))
+		ya = linspace(0.d0, 100.d0, nydamp)
+		do ia=1, nydamp-1
+			dya(ia) = ya(ia+1) - ya(ia)
+		end do
+		allocate(fy2_arr(nydamp, nydamp))
+		fy2_arr = 0.d0
+		do ia=1, nydamp
+			do ib=1, nydamp
+				if (ya(ib) .gt. ya(ia)-y) &
+					fy2_arr(ia, ib) = nunu_damp_integrand(y, ya(ia), ya(ib))
+			end do
+		end do
+		dy_damping = integral_NC_2d(nydamp, nydamp, dya, dya, fy2_arr) / y**3
+		deallocate(ya, dya, fy2_arr)
+	end function dy_damping
+
+	!function that returns the integrand of the nunu damping coefficient in YYYW terms using PI kernels
+	elemental function nunu_damp_integrand_pi(p, p1, q)
+		real(dl) :: nunu_damp_integrand_pi
+		real(dl), intent(in) :: p, q, p1
+		real(dl), dimension(2) :: pi2
+		real(dl) :: q1, fq, fp1, fq1
+
+		nunu_damp_integrand_pi = 0.d0
+		q1 = p + q - p1
+		if ( &
+			.not.(q1.lt.0.d0 &
+			.or. p .gt.p1+q +q1 &
+			.or. q .gt.p +p1+q1 &
+			.or. p1.gt.p +q +q1 &
+			.or. q1.gt.p +q +p1 &
+			) &
+		) then
+			pi2 = PI2_ne_f(p, q, p1, q1, q, q1)
+			fq = fermiDirac(q)
+			fp1 = fermiDirac(p1)
+			fq1 = fermiDirac(q1)
+			nunu_damp_integrand_pi = &
+				(pi2(2) + 2.d0 * pi2(1)) &
+				* ((1.d0-fq)*fp1*fq1 + fq*(1.d0-fp1)*(1.d0-fq1))
+		end if
+	end function nunu_damp_integrand_pi
+
+	!integral of the above function
+	pure function dy_damping_pi(y)
+		real(dl) :: dy_damping_pi
+		real(dl), intent(in) :: y
+		integer :: ia, ib
+		real(dl), dimension(:,:), allocatable :: fy2_arr
+
+		allocate(fy2_arr(Ny, Ny))
+		fy2_arr = 0.d0
+		do ia=1, Ny
+			do ib=1, Ny
+				fy2_arr(ia, ib) = nunu_damp_integrand_pi(y, y_arr(ia), y_arr(ib))
+			end do
+		end do
+		dy_damping_pi = integral_GL_2d(Ny, w_gl_arr2, w_gl_arr2, fy2_arr) / y**3
+		deallocate(fy2_arr)
+	end function dy_damping_pi
+
+	pure function F_nu_sc_da(n1, n2, n3, n4, i, j)
+		real(dl) :: F_nu_sc_da
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k
+		real(dl), dimension(:), allocatable :: t2r, t4r
+		real(dl) :: s24r
+
+		F_nu_sc_da = 0.d0
+
+		if (i.ne.j) &
+			return
+		allocate(t2r(flavorNumber), t4r(flavorNumber))
+		do k=1, flavorNumber
+			s24r = n2%re(k, k)*n4%re(k, k)
+			t2r(k) = n4%re(k, k) - s24r
+			t4r(k) = n2%re(k, k) - s24r
+		end do
+		F_nu_sc_da = &
+			n3%re(i,i) * (t2r(i) + sum(t2r)) &
+			+ (1.d0 - n3%re(i,i)) * (t4r(i) + sum(t4r))
+		deallocate(t2r, t4r)
+		F_nu_sc_da = 2.d0 * F_nu_sc_da ! +h.c.
+	end function F_nu_sc_da
+
+	pure function F_nu_pa_da(n1, n2, n3, n4, i, j)
+		real(dl) :: F_nu_pa_da
+		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+		integer, intent(in) :: i, j
+		integer :: k
+		real(dl), dimension(:), allocatable :: t2r, t4r
+		real(dl) :: sBr
+
+		F_nu_pa_da = 0.d0
+
+		if (i.ne.j) &
+			return
+
+		allocate(t2r(flavorNumber), t4r(flavorNumber))
+		!first line: sAr -> 12, sBr->34
+		do k=1, flavorNumber
+			sBr = n4%re(k, k)*n3%re(k, k)
+			t2r(k) = sBr
+			t4r(k) = sBr + 1.d0 - n4%re(k, k) - n3%re(k, k)
+		end do
+		F_nu_pa_da = F_nu_pa_da &
+			+ (1.d0 - n2%re(i,i)) * (t2r(i) + sum(t2r)) &
+			+ n2%re(i,i) * (t4r(i) + sum(t4r))
+		!second line: sAr -> 13, sBr->24
+		do k=1, flavorNumber
+			sBr = n4%re(k, k)*n2%re(k, k)
+			t2r(k) = n4%re(k, k) - sBr
+			t4r(k) = n2%re(k, k) - sBr
+		end do
+		F_nu_pa_da = F_nu_pa_da &
+			+ n3%re(i,i) * (t2r(i) + sum(t2r)) &
+			+ (1.d0 - n3%re(i,i)) * (t4r(i) + sum(t4r))
+		deallocate(t2r, t4r)
+		F_nu_pa_da = 2.d0 * F_nu_pa_da ! +h.c.
+	end function F_nu_pa_da
+
 
 	subroutine init_interp_d123
 		real(dl), dimension(:,:,:,:), allocatable :: d2, d3, pi1_12, pi1_13
@@ -1567,7 +1734,7 @@ enddo                                                   !SG-PF
 		end if
 	end function coll_nue_int_im
 
-	pure function coll_nue_3_ann_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
+	pure function coll_nue_ann_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
 		use fpInterfaces1
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
@@ -1575,11 +1742,11 @@ enddo                                                   !SG-PF
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_ann_int_w
-		coll_nue_3_ann_int_w = coll_nue_3_ann_int(iy, yx, obj, F_ab_ann)
-	end function coll_nue_3_ann_int_w
+		real(dl) :: coll_nue_ann_int_w
+		coll_nue_ann_int_w = coll_nue_ann_int(iy, yx, obj, F_ab_ann)
+	end function coll_nue_ann_int_w
 
-	pure function coll_nue_3_sc_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
+	pure function coll_nue_sc_int_w(iy, yx, obj, F_ab_ann, F_ab_sc)
 		use fpInterfaces1
 		implicit None
 		procedure (F_annihilation) :: F_ab_ann
@@ -1587,9 +1754,9 @@ enddo                                                   !SG-PF
 		integer, intent(in) :: iy
 		real(dl), intent(in) :: yx
 		type(coll_args), intent(in) :: obj
-		real(dl) :: coll_nue_3_sc_int_w
-		coll_nue_3_sc_int_w = coll_nue_3_sc_int(iy, yx, obj, F_ab_sc)
-	end function coll_nue_3_sc_int_w
+		real(dl) :: coll_nue_sc_int_w
+		coll_nue_sc_int_w = coll_nue_sc_int(iy, yx, obj, F_ab_sc)
+	end function coll_nue_sc_int_w
 
 	pure SUBROUTINE region(ndim,x,j,c,d)
 		use precision

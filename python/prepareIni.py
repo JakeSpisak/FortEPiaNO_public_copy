@@ -86,10 +86,32 @@ def setParser():
         help="define the neutrino model that must be used",
     )
     parser.add_argument(
-        "collisional",
-        choices=["zero", "complete", "damping", "diagonal"],
-        help="define the scheme for the collision integrals",
+        "--collint_diagonal_zero",
+        action="store_true",
+        help="set to zero the diagonal contributions of collision terms",
     )
+    parser.add_argument(
+        "--collint_offdiag_nodamp",
+        action="store_true",
+        help="use full integrals instead of damping terms for the off-diagonal collision terms",
+    )
+    parser.add_argument(
+        "--collint_damping_type",
+        choices=["zero", "yyyw", "McKellar:1992ja"],
+        default="yyyw",
+        help="define the scheme for the off-diagonal contribution of collision integrals."
+        + "Use 'zero' to ignore all the off-diagonal components, "
+        + "'yyyw' to use the expressions from YYYW or "
+        + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
+    )
+    for c in ["nue", "nunu"]:
+        for d in ["d", "od"]:
+            parser.add_argument(
+                "--collint_%s_no_%s" % (d, c),
+                action="store_true",
+                help="disable %s contributions to %s damping terms"
+                % (c, "diagonal" if d == "d" else "off-diagonal"),
+            )
     parser.add_argument(
         "--qed_corrections",
         choices=["no", "o2", "o3", "o2ln", "o3ln"],
@@ -270,6 +292,11 @@ def setParser():
         help="enable saving the evolution of the full neutrino density matrix",
     )
     parser.add_argument(
+        "--save_number",
+        action="store_true",
+        help="enable saving the evolution of the number density for each component",
+    )
+    parser.add_argument(
         "--save_z",
         action="store_true",
         help="enable saving the evolution of the photon temperature z",
@@ -384,14 +411,16 @@ def getIniValues(args):
             for i, f in enumerate(values["sterile"])
         ]
     )
-    values["coll_offdiag"] = (
+    values["collint_diagonal_zero"] = "T" if args.collint_diagonal_zero else "F"
+    values["collint_offdiag_damping"] = "F" if args.collint_offdiag_nodamp else "T"
+    values["collint_damping_type"] = (
         0
-        if args.collisional == "zero"
+        if args.collint_damping_type == "zero"
         else 1
-        if args.collisional == "complete"
+        if args.collint_damping_type == "yyyw"
         else 2
-        if args.collisional == "damping"
-        else 3
+        if args.collint_damping_type == "McKellar:1992ja"
+        else 1
     )
     if args.qed_corrections == "no":
         values["ftqed_temperature_corr"] = "F"
@@ -399,14 +428,8 @@ def getIniValues(args):
         values["ftqed_log_term"] = "F"
     else:
         values["ftqed_temperature_corr"] = "T"
-        if "o3" in args.qed_corrections:
-            values["ftqed_ord3"] = "T"
-        else:
-            values["ftqed_ord3"] = "F"
-        if "ln" in args.qed_corrections:
-            values["ftqed_log_term"] = "T"
-        else:
-            values["ftqed_log_term"] = "F"
+        values["ftqed_ord3"] = "T" if "o3" in args.qed_corrections else "F"
+        values["ftqed_log_term"] = "T" if "ln" in args.qed_corrections else "F"
     if any(
         [
             a != 1e-6
@@ -428,10 +451,15 @@ def getIniValues(args):
     values["folder"] = args.outputfolder
     values["Nprintderivs"] = args.verbose_deriv_freq
     for p in [
+        "collint_d_no_nue",
+        "collint_d_no_nunu",
+        "collint_od_no_nue",
+        "collint_od_no_nunu",
         "save_energy_entropy",
         "save_fd",
         "save_Neff",
         "save_nuDens",
+        "save_number",
         "save_z",
         "save_BBN",
     ]:
@@ -467,7 +495,14 @@ dm41 = {dm41:}
 
 Trh = {Trh:}
 
-collision_offdiag = {coll_offdiag:}
+collint_diagonal_zero = {collint_diagonal_zero:}
+collint_offdiag_damping = {collint_offdiag_damping:}
+collint_damping_type = {collint_damping_type:}
+collint_d_no_nue = {collint_d_no_nue:}
+collint_d_no_nunu = {collint_d_no_nunu:}
+collint_od_no_nue = {collint_od_no_nue:}
+collint_od_no_nunu = {collint_od_no_nunu:}
+
 ftqed_temperature_corr = {ftqed_temperature_corr:}
 ftqed_ord3 = {ftqed_ord3:}
 ftqed_log_term = {ftqed_log_term:}
@@ -492,6 +527,7 @@ save_nuDens_evolution = {save_nuDens:}
 save_z_evolution = {save_z:}
 save_energy_entropy_evolution = {save_energy_entropy:}
 save_BBN = {save_BBN:}
+save_number_evolution = {save_number:}
 
 {dlsoda_atol:}
 dlsoda_rtol = {dlsoda_rtol:}

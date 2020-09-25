@@ -15,7 +15,10 @@ directories:
 	mkdir -p bin/ log/ $(BUILD_DIR)
 
 clean: 
-	rm -rf bin/* build*/
+	rm -rf build*/
+
+cleanall: clean
+	rm -rf bin/*
 
 installpython:
 	python setup.py install --user

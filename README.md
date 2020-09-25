@@ -55,11 +55,15 @@ Additional commands for the makefile include:
 * `make clean` to remove all compiled files.
 * `make tests` to compile a set of numerical tests (run them with `bin/tests`). If you modify the code, they will tell you if everything is still working as expected.
 
-Moreover, some parts of the code can be disabled using precompilation flags. For example:
+Moreover, some parts of the code can be enabled or disabled using precompilation flags.
+For example (add the option to the `make` command):
 
-* `make NO_MUONS=1` disables the contribution of muons to the energy budget of the universe;
-* `make LOW_REHEATING=1` enables calculations for the low-reheating model;
-* `make FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.
+* `GLR_ZERO_MOMENTUM=1` uses the `G_L` and `G_R` values at zero-momentum transfer from [https://doi.org/10.1016/j.ppnp.2013.03.004](https://doi.org/10.1016/j.ppnp.2013.03.004) instead of the default ones.
+* `FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.
+* `FULL_F_NU=1` allows to use the full matrix product in the F_nu phase space functions that compute nunu scattering and pair annihilation. If not used, only diagonal elements of the neutrino density matrix will be used.
+* `LOW_REHEATING=1` enables calculations for the low-reheating model;
+* `NO_MUONS=1` disables the contribution of muons to the energy budget of the universe.
+* `NO_NUE_ANNIHILATION=1` disables the contribution from neutrino to electron annihilation processes to collision integrals.
 
 **WARNING**: the test suite will not work if the flag `NO_MUONS=1` is activated, or even if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
 
@@ -67,7 +71,7 @@ Moreover, some parts of the code can be disabled using precompilation flags. For
 The code, in the default compilation setup, is designed to avoid computing several integrals at each step and to use an interpolation instead.
 This mostly concerns integrals of energy densities (photons, charged leptons) and of the functions that describe electromagnetic corrections, including the coefficients in the dz/dx and dw/dx expressions.
 
-In order to change this default behaviour and use the full expressions at each step, at the expense of slightly slowing down the calculation, one can compile the code using `make NOINTERPOLATION=1`, so that the interpolations will be disabled.
+In order to change this default behaviour and use the full expressions at each step, at the expense of slightly slowing down the calculation, one can compile the code using `make NO_INTERPOLATION=1`, so that the interpolations will be disabled.
 For the default configuration in the `ini/explanatory.ini` file, the actual change in the final effective number of neutrinos is smaller than `1e-4` and the execution takes approximately 15% longer.
 
 
@@ -103,6 +107,8 @@ For possible plotting functions include:
 * `plotNeff`: plot the evolution of the effective number of neutrinos, which is correctly normalized only at very early times or today;
 * `plotEnergyDensity`: plot the evolution of the energy density of the different components and their sum;
 * `plotEntropy`: plot the evolution of the entropy density of the different components and their sum;
+* `plotNumberDensity`: plot the evolution of the number density of the different components and their sum;
+* `plotPArthENoPE`: plot quantities relevant for the BBN calculations performed by PArthENoPE;
 * `doAllPlots`: it will create a series of pdf plots in the output folder, calling
 `plotZ`, `plotW`, `plotRhoFin`, `plotRhoDiagY`, `plotRhoOffDiagY`, `plotdRhoOffDiagY`,
 for flavor and mass eigenstates if available.

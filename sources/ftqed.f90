@@ -8,7 +8,7 @@ module ftqed
 
 	real(dl), parameter :: upper = 1.d2
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	type(linear_interp_2d) :: dmeNLCorr
 	type(linear_interp_3d) :: dmeCorr
 #endif
@@ -369,7 +369,7 @@ module ftqed
 	end function deltaEntropyTot_em
 
 	!electron mass corrections for collision integrals
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	subroutine init_interp_dme2_e
 		real(dl), dimension(:,:), allocatable :: dmg_vec
 		real(dl), dimension(:,:,:), allocatable :: dme_vec
@@ -500,7 +500,7 @@ module ftqed
 		end if
 	end function dme2_electronFull
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	function dme2_electron(x, y, z)
 		real(dl) :: dme2_electron
 		real(dl), intent(in) :: x, y, z
@@ -510,7 +510,7 @@ module ftqed
 	end function dme2_electron
 #endif
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	function dme2_nolog(x, z)
 		real(dl) :: dme2_nolog
 		real(dl), intent(in) :: x, z

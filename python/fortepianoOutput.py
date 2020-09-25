@@ -192,7 +192,16 @@ class FortEPiaNORun:
     compute integrals of the density matrix or other things
     """
 
-    def __init__(self, folder, nnu=3, full=True, label="", plots=False, verbose=True):
+    def __init__(
+        self,
+        folder,
+        nnu=3,
+        full=True,
+        label="",
+        plots=False,
+        verbose=True,
+        deltas=False,
+    ):
         """Read the entire output of FortEPiaNO from a specific folder.
         It will ignore non-existing files and store all the available
         information for further processing (plots, ...)
@@ -211,6 +220,8 @@ class FortEPiaNORun:
                 after having read all the files
             verbose (default True): if True, print more error messages
                 (e.g. when the folder is not found or w is not saved)
+            deltas (default False): if True, print the relative variation
+                of energy and number density for each neutrino
         """
         self.folder = folder
         self.full = full
@@ -266,10 +277,58 @@ class FortEPiaNORun:
             self.endens = np.loadtxt("%s/energyDensity.dat" % folder)
         except (IOError, OSError):
             self.endens = np.nan
+        else:
+            try:
+                self.endens[:, :]
+            except IndexError:
+                pass
+            else:
+                if deltas:
+                    print(
+                        "delta energy density:\t"
+                        + "\t".join(
+                            [
+                                "nu%d: %f%%"
+                                % (
+                                    i + 1,
+                                    (self.endens[-1, 5 + i] - self.endens[0, 5 + i])
+                                    / self.endens[0, 5 + i]
+                                    * 100,
+                                )
+                                for i in range(nnu)
+                            ]
+                        )
+                    )
         try:
             self.entropy = np.loadtxt("%s/entropy.dat" % folder)
         except (IOError, OSError):
             self.entropy = np.nan
+        try:
+            self.number = np.loadtxt("%s/numberDensity.dat" % folder)
+        except (IOError, OSError):
+            self.number = np.nan
+        else:
+            try:
+                self.number[:, :]
+            except IndexError:
+                pass
+            else:
+                if deltas:
+                    print(
+                        "delta number density:\t"
+                        + "\t".join(
+                            [
+                                "nu%d: %f%%"
+                                % (
+                                    i + 1,
+                                    (self.number[-1, 5 + i] - self.number[0, 5 + i])
+                                    / self.number[0, 5 + i]
+                                    * 100,
+                                )
+                                for i in range(nnu)
+                            ]
+                        )
+                    )
         self.rho = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         try:
@@ -1513,6 +1572,70 @@ class FortEPiaNORun:
                 lw=lw,
             )
 
+    def plotNumberDensity(
+        self,
+        labels=[
+            r"$\gamma$",
+            "$e$",
+            r"$\mu$",
+            r"$\nu_e$",
+            r"$\nu_\mu$",
+            r"$\nu_\tau$",
+            r"$\nu_s$",
+        ],
+        colors=["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"],
+        styles=["-", "-", "-", ":", "-.", "--", "-"],
+        skip=[False, False, False, False, False, False, False],
+        lw=1,
+        allstyles=None,
+        alllabels=None,
+    ):
+        """Plot the evolution of the number density of each species
+
+        Parameters:
+            labels (default [
+                    r"$\gamma$",
+                    "$e$",
+                    r"$\mu$",
+                    r"$\nu_e$",
+                    r"$\nu_\mu$",
+                    r"$\nu_\tau$",
+                    r"$\nu_s$",
+                ]):
+                the list of labels for all the lines
+            colors (default
+                ["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]):
+                a list of colors for each line
+            styles (default ["-", "-", "-", ":", "-.", "--", "-"]):
+                a list of styles for each line
+            skip (default [False]*7): True or False for each line
+                to skip it and do not plot it
+            lw (default 1): line width for the lines
+            allstyles (default None): if it evaluates to True,
+                a common line style for the all the lines
+            alllabels (default None): if it evaluates to True,
+                a common label for all the lines
+        """
+        try:
+            self.number[:, 0]
+        except (AttributeError, TypeError):
+            print(traceback.format_exc())
+            return
+        for ix, lab in enumerate(labels):
+            if skip[ix]:
+                continue
+            try:
+                plt.plot(
+                    self.number[:, 0],
+                    self.number[:, self.zCol + 1 + ix],
+                    label=lab if alllabels is None else alllabels,
+                    c=colors[ix],
+                    ls=styles[ix] if not allstyles else allstyles,
+                    lw=lw,
+                )
+            except IndexError:
+                pass
+
     def plotPArthENoPE(self, x="x", y="drhonu_dx", filter99=True, **kwargs):
         """Plot quantities that are employed in the PArthENoPE code for BBN
 
@@ -1523,6 +1646,8 @@ class FortEPiaNORun:
                 points for which rho_rad > 0.99 rho_tot
             **kwargs: parameters to be passed to plt.plot
         """
+        if not self.hasBBN:
+            return
         allowed_x = ["x", "z", "Tgamma"]
         if self.lowReheating:
             allowed_x.append("t")
@@ -1555,7 +1680,7 @@ class FortEPiaNORun:
         finalizePlot(
             "%s/rho_diag.pdf" % self.folder,
             xlab="$x$",
-            ylab=r"$\rho$",
+            ylab=r"$\rho_{\alpha\alpha}$",
             xscale="log",
             yscale="log",
         )
@@ -1565,7 +1690,7 @@ class FortEPiaNORun:
         finalizePlot(
             "%s/rho_mass_diag.pdf" % self.folder,
             xlab="$x$",
-            ylab=r"$\rho$",
+            ylab=r"$\rho_{\alpha\alpha}$",
             xscale="log",
             yscale="log",
         )
@@ -1589,6 +1714,9 @@ class FortEPiaNORun:
                 for j in range(i + 1, self.nnu):
                     self.plotdRhoOffDiagY(i, j, yref, lc=colors[2 * i + j - 1])
             finalizePlot("%s/drho_offdiag.pdf" % self.folder)
+
+        self.plotNeff(lc=color, axes=False)
+        finalizePlot("%s/Neff.pdf" % self.folder, legend=False, Neff_axes=True)
 
     def integrateRho_yn(self, inu, n, ix=-1, show=False, mass=False):
         """Compute the integral

@@ -318,6 +318,8 @@ class TestFortEPiaNORun(FPTestCase):
         run.plotNeff()
         run.plotEnergyDensity()
         run.plotEntropy()
+        run.plotNumberDensity()
+        run.plotPArthENoPE()
 
     def test_example(self):
         """test an example with FortEPiaNORun from explanatory.ini"""
@@ -351,6 +353,9 @@ class TestFortEPiaNORun(FPTestCase):
         fc = np.loadtxt("%s/entropy.dat" % folder)
         self.assertEqualArray(run.entropy, fc)
         self.assertEqual(fc.shape[1], 9 if run.lowReheating else 8)
+        fc = np.loadtxt("%s/numberDensity.dat" % folder)
+        self.assertEqualArray(run.number, fc)
+        self.assertEqual(fc.shape[1], 9 if run.lowReheating else 8)
         self.assertTrue(hasattr(run, "resume"))
         self.assertTrue(run.hasResume)
         self.assertIsInstance(run.deltarhofin, list)
@@ -361,7 +366,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertTrue(np.isclose(run.t[0], 0.001, rtol=1e-4))
             self.assertTrue(np.isclose(run.t[-1], 7.04632596e03, rtol=1e-2))
             self.assertTrue(np.isclose(run.Trh, 25.0, atol=1e-4))
-            self.assertTrue(np.isclose(run.Neff, 3.0441, atol=1e-4))
+            self.assertTrue(np.isclose(run.Neff, 3.04372, atol=1e-4))
             self.assertTrue(np.isclose(run.wfin, 0.67134, atol=1e-4))
             self.assertTrue(np.isclose(run.zfin, 0.94024, atol=1e-4))
             self.assertTrue(np.isclose(run.deltarhofin[0], -0.793962, atol=1e-4))
@@ -371,7 +376,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertTrue(np.isclose(run.x[0], 0.01, rtol=1e-4))
             self.assertTrue(np.isclose(run.x[-1], 35.0, rtol=1e-4))
             self.assertTrue(np.isclose(run.z[0], 1.0288, rtol=1e-4))
-            self.assertTrue(np.isclose(run.Neff, 3.0430, atol=1e-4))
+            self.assertTrue(np.isclose(run.Neff, 3.0429, atol=1e-4))
             self.assertTrue(np.isclose(run.wfin, 1.0965, atol=1e-4))
             self.assertTrue(np.isclose(run.zfin, 1.5357, atol=1e-4))
             self.assertTrue(np.isclose(run.deltarhofin[0], 0.4667, atol=1e-4))
@@ -455,6 +460,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "Neffdat"))
         self.assertFalse(hasattr(run, "endens"))
         self.assertFalse(hasattr(run, "entropy"))
+        self.assertFalse(hasattr(run, "number"))
         self.assertFalse(hasattr(run, "Neff"))
         self.assertFalse(hasattr(run, "wfin"))
         self.assertFalse(hasattr(run, "zfin"))
@@ -483,6 +489,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.zfin, 1.5)
         self.assertTrue(np.isnan(run.endens))
         self.assertTrue(np.isnan(run.entropy))
+        self.assertTrue(np.isnan(run.number))
         self.assertEqual(len(run.rho), 3)
         self.assertEqual(len(run.rho[0]), 3)
         self.assertEqual(len(run.rho), 3)
@@ -2957,6 +2964,88 @@ class TestFortEPiaNORun(FPTestCase):
                 },
             )
 
+    def test_plotNumberDensity(self):
+        """test plotNumberDensity"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotNumberDensity()
+            run.number = None
+            run.plotNumberDensity()
+            run.number = [0, 1, 2]
+            run.plotNumberDensity()
+            self.assertEqual(_plt.call_count, 0)
+        run = self.explanatory
+        colors = ["r", "b", "g", "#ff9933", "#ff9933", "#ff9933", "#ff00ff"]
+        styles = ["-", "-", "-", ":", "-.", "--", "-"]
+        skip = [False, False, False, False, False, False, False]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotNumberDensity()
+            self.assertEqual(_plt.call_count, 6)
+            for ix, lab in enumerate(
+                [
+                    r"$\gamma$",
+                    "$e$",
+                    r"$\mu$",
+                    r"$\nu_e$",
+                    r"$\nu_\mu$",
+                    r"$\nu_\tau$",
+                ]
+            ):
+                self.assertEqualArray(
+                    _plt.call_args_list[ix][0],
+                    [run.number[:, 0], run.number[:, run.zCol + 1 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ix][1],
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 1,
+                    },
+                )
+        # some tweaks on the inputs
+        run.number = np.c_[run.number, run.number[:, 7]]
+        colors = ["b", "w", "m", "#ff9933", "c", "#ff9933", "#ff00ff"]
+        styles = [":", "-", ".", ":", ".", ":", "-"]
+        skip = [False, True, False, False, True, True, False]
+        labels = [
+            r"a$\gamma$",
+            "a$e$",
+            r"a$\mu$",
+            r"a$\nu_e$",
+            r"a$\nu_\mu$",
+            r"a$\nu_\tau$",
+            r"a$\nu_s$",
+        ]
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotNumberDensity(
+                labels=labels,
+                colors=colors,
+                styles=styles,
+                skip=skip,
+                lw=2,
+            )
+            self.assertEqual(_plt.call_count, 4)
+            ii = 0
+            for ix, lab in enumerate(labels):
+                if skip[ix]:
+                    continue
+                self.assertEqualArray(
+                    _plt.call_args_list[ii][0],
+                    [run.number[:, 0], run.number[:, run.zCol + 1 + ix]],
+                )
+                self.assertEqual(
+                    _plt.call_args_list[ii][1],
+                    {
+                        "label": lab,
+                        "c": colors[ix],
+                        "ls": styles[ix],
+                        "lw": 2,
+                    },
+                )
+                ii += 1
+
     def test_plotPArthENoPE(self):
         """test plotPArthENoPE"""
         run = self.explanatory
@@ -3003,6 +3092,8 @@ class TestFortEPiaNORun(FPTestCase):
         ) as _fp, patch("fortepianoOutput.FortEPiaNORun.plotZ") as _plZ, patch(
             "fortepianoOutput.FortEPiaNORun.plotW"
         ) as _plW, patch(
+            "fortepianoOutput.FortEPiaNORun.plotNeff"
+        ) as _plNf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
         ) as _plRdy, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoFin"
@@ -3015,6 +3106,7 @@ class TestFortEPiaNORun(FPTestCase):
             _cl.assert_called_once_with()
             _plZ.assert_called_once_with(lc="k", lab="z")
             _plW.assert_called_once_with(lc="k", ls=":", lab="w")
+            _plNf.assert_called_once_with(lc="k", axes=False)
             self.assertEqual(_plRdy.call_count, 6)
             for i in range(run.nnu):
                 _plRdy.assert_any_call(i, 5.0, fpom.styles[i], lc=fpom.colors[i])
@@ -3041,14 +3133,14 @@ class TestFortEPiaNORun(FPTestCase):
                     call(
                         "%s/rho_diag.pdf" % run.folder,
                         xlab="$x$",
-                        ylab=r"$\rho$",
+                        ylab=r"$\rho_{\alpha\alpha}$",
                         xscale="log",
                         yscale="log",
                     ),
                     call(
                         "%s/rho_mass_diag.pdf" % run.folder,
                         xlab="$x$",
-                        ylab=r"$\rho$",
+                        ylab=r"$\rho_{\alpha\alpha}$",
                         xscale="log",
                         yscale="log",
                     ),
@@ -3062,6 +3154,7 @@ class TestFortEPiaNORun(FPTestCase):
                     ),
                     call("%s/rho_offdiag.pdf" % run.folder),
                     call("%s/drho_offdiag.pdf" % run.folder),
+                    call("%s/Neff.pdf" % run.folder, legend=False, Neff_axes=True),
                 ]
             )
 
@@ -3070,6 +3163,8 @@ class TestFortEPiaNORun(FPTestCase):
         ) as _fp, patch("fortepianoOutput.FortEPiaNORun.plotZ") as _plZ, patch(
             "fortepianoOutput.FortEPiaNORun.plotW"
         ) as _plW, patch(
+            "fortepianoOutput.FortEPiaNORun.plotNeff"
+        ) as _plNf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
         ) as _plRdy, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoFin"
@@ -3082,6 +3177,7 @@ class TestFortEPiaNORun(FPTestCase):
             _cl.assert_called_once_with()
             _plZ.assert_called_once_with(lc="abc", lab="z")
             _plW.assert_called_once_with(lc="abc", ls=":", lab="w")
+            _plNf.assert_called_once_with(lc="abc", axes=False)
             self.assertEqual(_plRdy.call_count, 6)
             for i in range(run.nnu):
                 _plRdy.assert_any_call(i, 2.5, fpom.styles[i], lc=fpom.colors[i])
@@ -3108,14 +3204,14 @@ class TestFortEPiaNORun(FPTestCase):
                     call(
                         "%s/rho_diag.pdf" % run.folder,
                         xlab="$x$",
-                        ylab=r"$\rho$",
+                        ylab=r"$\rho_{\alpha\alpha}$",
                         xscale="log",
                         yscale="log",
                     ),
                     call(
                         "%s/rho_mass_diag.pdf" % run.folder,
                         xlab="$x$",
-                        ylab=r"$\rho$",
+                        ylab=r"$\rho_{\alpha\alpha}$",
                         xscale="log",
                         yscale="log",
                     ),
@@ -3129,6 +3225,7 @@ class TestFortEPiaNORun(FPTestCase):
                     ),
                     call("%s/rho_offdiag.pdf" % run.folder),
                     call("%s/drho_offdiag.pdf" % run.folder),
+                    call("%s/Neff.pdf" % run.folder, legend=False, Neff_axes=True),
                 ]
             )
 
@@ -3246,14 +3343,43 @@ class TestPrepareIni(unittest.TestCase):
                     help="define the neutrino model that must be used",
                 ),
                 call(
-                    "collisional",
-                    choices=[
-                        "zero",
-                        "complete",
-                        "damping",
-                        "diagonal",
-                    ],
-                    help="define the scheme for the collision integrals",
+                    "--collint_diagonal_zero",
+                    action="store_true",
+                    help="set to zero the diagonal contributions of collision terms",
+                ),
+                call(
+                    "--collint_offdiag_nodamp",
+                    action="store_true",
+                    help="use full integrals instead of damping terms for the off-diagonal collision terms",
+                ),
+                call(
+                    "--collint_damping_type",
+                    choices=["zero", "yyyw", "McKellar:1992ja"],
+                    default="yyyw",
+                    help="define the scheme for the off-diagonal contribution of collision integrals."
+                    + "Use 'zero' to ignore all the off-diagonal components, "
+                    + "'yyyw' to use the expressions from YYYW or "
+                    + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
+                ),
+                call(
+                    "--collint_d_no_nue",
+                    action="store_true",
+                    help="disable nue contributions to diagonal damping terms",
+                ),
+                call(
+                    "--collint_d_no_nunu",
+                    action="store_true",
+                    help="disable nunu contributions to diagonal damping terms",
+                ),
+                call(
+                    "--collint_od_no_nue",
+                    action="store_true",
+                    help="disable nue contributions to off-diagonal damping terms",
+                ),
+                call(
+                    "--collint_od_no_nunu",
+                    action="store_true",
+                    help="disable nunu contributions to off-diagonal damping terms",
                 ),
                 call(
                     "--qed_corrections",
@@ -3456,6 +3582,11 @@ class TestPrepareIni(unittest.TestCase):
                     help="enable saving the evolution of the full neutrino density matrix",
                 ),
                 call(
+                    "--save_number",
+                    action="store_true",
+                    help="enable saving the evolution of the number density for each component",
+                ),
+                call(
                     "--save_z",
                     action="store_true",
                     help="enable saving the evolution of the photon temperature z",
@@ -3474,18 +3605,14 @@ class TestPrepareIni(unittest.TestCase):
         """test that there are no errors in the parsing process"""
         parser = pim.setParser()
         with self.assertRaises(SystemExit):
-            args = parser.parse_args(["inifile", "outdir", "3nu"])
+            args = parser.parse_args(["inifile", "outdir"])
         with self.assertRaises(SystemExit):
-            args = parser.parse_args(["inifile", "outdir", "abc", "complete"])
+            args = parser.parse_args(["inifile", "outdir", "abc"])
         with self.assertRaises(SystemExit):
             args = parser.parse_args(["inifile", "outdir", "3nu", "abc"])
-        with self.assertRaises(SystemExit):
-            args = parser.parse_args(["inifile", "outdir", "3nu", "complete", "abc"])
         for p in ["3nu", "2nu", "3+1", "2+1", "1+1"]:
-            args = parser.parse_args(["inifile", "outdir", p, "zero"])
-        for p in ["zero", "complete", "damping", "diagonal"]:
-            args = parser.parse_args(["inifile", "outdir", "3nu", p])
-        baseargs = ["inifile", "outdir", "3nu", "complete"]
+            args = parser.parse_args(["inifile", "outdir", p])
+        baseargs = ["inifile", "outdir", "3nu"]
         args = parser.parse_args(baseargs)
         self.assertEqual(args.ordering, "NO")
         self.assertEqual(args.default_active, "VLC")
@@ -3516,10 +3643,19 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.dlsoda_atol_d, 1.0e-6)
         self.assertEqual(args.dlsoda_atol_o, 1.0e-6)
         self.assertEqual(args.no_GL, False)
+        self.assertEqual(args.collint_diagonal_zero, False)
+        self.assertEqual(args.collint_offdiag_nodamp, False)
+        self.assertEqual(args.collint_damping_type, "yyyw")
+        self.assertEqual(args.collint_d_no_nue, False)
+        self.assertEqual(args.collint_d_no_nunu, False)
+        self.assertEqual(args.collint_od_no_nue, False)
+        self.assertEqual(args.collint_od_no_nunu, False)
+        self.assertEqual(args.save_BBN, False)
         self.assertEqual(args.save_energy_entropy, False)
         self.assertEqual(args.save_fd, False)
         self.assertEqual(args.save_Neff, False)
         self.assertEqual(args.save_nuDens, False)
+        self.assertEqual(args.save_number, False)
         self.assertEqual(args.save_z, False)
         for l in [
             ["--ordering=NO"],
@@ -3557,10 +3693,12 @@ class TestPrepareIni(unittest.TestCase):
             ["--dlsoda_atol_d=1.2e-6"],
             ["--dlsoda_atol_o=1.2e-6"],
             ["--no_GL"],
+            ["--save_BBN"],
             ["--save_energy_entropy"],
             ["--save_fd"],
             ["--save_Neff"],
             ["--save_nuDens"],
+            ["--save_number"],
             ["--save_z"],
         ]:
             args = parser.parse_args(baseargs + l)
@@ -3593,10 +3731,12 @@ class TestPrepareIni(unittest.TestCase):
             ["--dlsoda_atol_d=abc"],
             ["--dlsoda_atol_o=abc"],
             ["--no_GL=a"],
+            ["--save_BBN=a"],
             ["--save_energy_entropy=a"],
             ["--save_fd=a"],
             ["--save_Neff=a"],
             ["--save_nuDens=a"],
+            ["--save_number=a"],
             ["--save_z=a"],
         ]:
             with self.assertRaises(SystemExit):
@@ -3815,7 +3955,9 @@ class TestPrepareIni(unittest.TestCase):
         args = Namespace(
             **{
                 "verbose": "vb",
-                "collisional": "zero",
+                "collint_diagonal_zero": False,
+                "collint_offdiag_nodamp": False,
+                "collint_damping_type": "yyyw",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -3832,11 +3974,16 @@ class TestPrepareIni(unittest.TestCase):
                 "outputfolder": "abcd",
                 "verbose_deriv_freq": 123,
                 "no_GL": True,
+                "collint_d_no_nue": True,
+                "collint_d_no_nunu": True,
+                "collint_od_no_nue": True,
+                "collint_od_no_nunu": True,
                 "save_BBN": True,
                 "save_energy_entropy": True,
                 "save_fd": True,
                 "save_Neff": True,
                 "save_nuDens": True,
+                "save_number": True,
                 "save_z": True,
                 "qed_corrections": "no",
             }
@@ -3852,7 +3999,13 @@ class TestPrepareIni(unittest.TestCase):
                 "verbose": "vb",
                 "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
                 "sterile": "sterile1 = F\nsterile2 = T",
-                "coll_offdiag": 0,
+                "collint_diagonal_zero": "F",
+                "collint_offdiag_damping": "T",
+                "collint_damping_type": 1,
+                "collint_d_no_nue": "T",
+                "collint_d_no_nunu": "T",
+                "collint_od_no_nue": "T",
+                "collint_od_no_nunu": "T",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -3874,6 +4027,7 @@ class TestPrepareIni(unittest.TestCase):
                 "save_fd": "T",
                 "save_Neff": "T",
                 "save_nuDens": "T",
+                "save_number": "T",
                 "save_z": "T",
                 "ftqed_temperature_corr": "F",
                 "ftqed_ord3": "F",
@@ -3883,7 +4037,9 @@ class TestPrepareIni(unittest.TestCase):
         args = Namespace(
             **{
                 "verbose": "vb",
-                "collisional": "complete",
+                "collint_diagonal_zero": True,
+                "collint_offdiag_nodamp": True,
+                "collint_damping_type": "zero",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -3898,6 +4054,10 @@ class TestPrepareIni(unittest.TestCase):
                 "dlsoda_atol_d": 1e-6,
                 "dlsoda_atol_o": 1e-6,
                 "dlsoda_rtol": 1e-4,
+                "collint_d_no_nue": False,
+                "collint_d_no_nunu": False,
+                "collint_od_no_nue": False,
+                "collint_od_no_nunu": False,
                 "outputfolder": "abcd",
                 "verbose_deriv_freq": 123,
                 "no_GL": False,
@@ -3906,6 +4066,7 @@ class TestPrepareIni(unittest.TestCase):
                 "save_fd": False,
                 "save_Neff": False,
                 "save_nuDens": False,
+                "save_number": False,
                 "save_z": False,
                 "qed_corrections": "o2",
             }
@@ -3921,7 +4082,9 @@ class TestPrepareIni(unittest.TestCase):
                 "verbose": "vb",
                 "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
                 "sterile": "sterile1 = F\nsterile2 = T",
-                "coll_offdiag": 1,
+                "collint_diagonal_zero": "T",
+                "collint_offdiag_damping": "F",
+                "collint_damping_type": 0,
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
@@ -3931,6 +4094,10 @@ class TestPrepareIni(unittest.TestCase):
                 "y_min": 0.01,
                 "y_cen": 1,
                 "y_max": 20,
+                "collint_d_no_nue": "F",
+                "collint_d_no_nunu": "F",
+                "collint_od_no_nue": "F",
+                "collint_od_no_nunu": "F",
                 "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-5
                 + "dlsoda_atol_d = %s\n" % 1e-5
                 + "dlsoda_atol_o = %s\n" % 1e-5,
@@ -3943,13 +4110,14 @@ class TestPrepareIni(unittest.TestCase):
                 "save_fd": "F",
                 "save_Neff": "F",
                 "save_nuDens": "F",
+                "save_number": "F",
                 "save_z": "F",
                 "ftqed_temperature_corr": "T",
                 "ftqed_ord3": "F",
                 "ftqed_log_term": "F",
             },
         )
-        args.collisional = "damping"
+        args.collint_damping_type = "McKellar:1992ja"
         args.qed_corrections = "o3"
         args.dlsoda_atol_z = 1e-7
         args.dlsoda_atol_d = 1e-6
@@ -3959,7 +4127,7 @@ class TestPrepareIni(unittest.TestCase):
             return_value={"factors": [2, 1], "sterile": [False, True]},
         ) as _op:
             values = pim.getIniValues(args)
-        self.assertEqual(values["coll_offdiag"], 2)
+        self.assertEqual(values["collint_damping_type"], 2)
         self.assertEqual(values["ftqed_temperature_corr"], "T")
         self.assertEqual(values["ftqed_ord3"], "T")
         self.assertEqual(values["ftqed_log_term"], "F")
@@ -3969,7 +4137,7 @@ class TestPrepareIni(unittest.TestCase):
             + "dlsoda_atol_d = %s\n" % 1e-6
             + "dlsoda_atol_o = %s\n" % 1e-6,
         )
-        args.collisional = "abcd"
+        args.collint_damping_type = "abcd"
         args.qed_corrections = "o2ln"
         args.dlsoda_atol_z = 1e-6
         args.dlsoda_atol_d = 1e-7
@@ -3979,7 +4147,7 @@ class TestPrepareIni(unittest.TestCase):
             return_value={"factors": [2, 1], "sterile": [False, True]},
         ) as _op:
             values = pim.getIniValues(args)
-        self.assertEqual(values["coll_offdiag"], 3)
+        self.assertEqual(values["collint_damping_type"], 1)
         self.assertEqual(values["ftqed_temperature_corr"], "T")
         self.assertEqual(values["ftqed_ord3"], "F")
         self.assertEqual(values["ftqed_log_term"], "T")
@@ -4017,7 +4185,13 @@ class TestPrepareIni(unittest.TestCase):
             "Trh": 123.0,
             "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
             "sterile": "sterile1 = F\nsterile2 = T",
-            "coll_offdiag": 1,
+            "collint_diagonal_zero": "F",
+            "collint_offdiag_damping": "T",
+            "collint_damping_type": "1",
+            "collint_d_no_nue": "F",
+            "collint_d_no_nunu": "F",
+            "collint_od_no_nue": "F",
+            "collint_od_no_nunu": "F",
             "Nx": 200,
             "x_in": 0.001,
             "x_fin": 35,
@@ -4041,6 +4215,7 @@ class TestPrepareIni(unittest.TestCase):
             "save_fd": "F",
             "save_Neff": "F",
             "save_nuDens": "F",
+            "save_number": "F",
             "save_z": "F",
         }
         with self.assertRaises(OSError):
@@ -4060,8 +4235,14 @@ class TestPrepareIni(unittest.TestCase):
             "theta24 = 0.2",
             "theta34 = 0.3",
             "dm41 = 1.23",
-            "collision_offdiag = 1",
+            "collint_diagonal_zero = F",
+            "collint_offdiag_damping = T",
+            "collint_damping_type = 1",
             "ftqed_temperature_corr = F",
+            "collint_d_no_nue = F",
+            "collint_d_no_nunu = F",
+            "collint_od_no_nue = F",
+            "collint_od_no_nunu = F",
             "ftqed_ord3 = T",
             "ftqed_log_term = T",
             "Nx = 200",
@@ -4075,11 +4256,13 @@ class TestPrepareIni(unittest.TestCase):
             "y_max = 20",
             "outputFolder = abcd/",
             "checkpoint = T",
+            "save_BBN = F",
             "save_fd = F",
             "save_Neff = F",
             "save_nuDens_evolution = F",
             "save_z_evolution = F",
             "save_energy_entropy_evolution = F",
+            "save_number_evolution = F",
             "dlsoda_rtol = %s" % 1e-4,
             "verbose = vb",
             "Nprintderivs = 123",

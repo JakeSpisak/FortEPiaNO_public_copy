@@ -14,28 +14,32 @@ program tests
 	write(*,*) ""
 	write(*,*) ""
 	write(*,"(a)") "Initializations"
-	call do_tests_initialization
+	call do_test_initialization
 	call init_fermions
 	call allocate_interpNuDens
 
 	call do_basic_tests
 	call do_test_NC_integrals
 	call do_test_commutator
-	call do_tests_JKG
-	call do_tests_dme2
-	call do_tests_cosmology
+	call do_test_JKG
+	call do_test_dme2
+	call do_test_cosmology
 	call do_test_nu_matrices
-	call do_tests_dzodx
-	call do_tests_dme2
-	call do_tests_Di
-	call do_tests_Pi_ij
+	call do_test_dzodx
+	call do_test_dme2
+	call do_test_Di
+	call do_test_Pi_ij
 	call do_f_ann_sc_re_tests_eq
 	call do_f_ann_sc_re_tests_full
-	call do_tests_coll_int
+	call do_test_F_nu
+	call do_test_interp_nudens
+	call do_test_collint_nunu
+	call do_test_coll_int
 	call do_test_drho_dx
 	call do_test_collision_terms
 	call do_test_damping_factors
 	call do_test_zin
+	call do_test_damping_yyyw
 	call do_test_GL
 	call do_test_matterPotential
 	call do_test_diagonalization
@@ -54,7 +58,7 @@ program tests
 
 	contains
 
-	subroutine do_tests_initialization
+	subroutine do_test_initialization
 		real(dl), dimension(:), allocatable :: fake
 		integer :: ix
 
@@ -74,7 +78,6 @@ program tests
 		interp_zmin = interp_zmin0
 		interp_zmax = interp_zmax0
 		allocate(x_arr(Nx), y_arr(Ny))
-		allocate(dy_arr(Ny), fy_arr(Ny))
 		x_in    = 0.001d0
 		x_fin   = 40.d0
 		logx_in  = log10(x_in)
@@ -86,11 +89,12 @@ program tests
 		Nylog = 1
 		use_gauss_laguerre = .false.
 		y_arr = linspace(y_min, y_max, Ny)
-		do ix=1, Ny-1
-			dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
-		end do
-		dy_arr(Ny) = 0.d0
-		collision_offdiag = 1
+		call finish_y_arrays
+		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
+		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
+		collint_damping_type = 2
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .false.
 		damping_read_zero = .false.
 		ftqed_temperature_corr = .true.
 		ftqed_log_term = .false.
@@ -114,11 +118,16 @@ program tests
 			massSplittings(3) = 0.0025153d0
 		end if
 		z_in=1.0000575
+		collint_d_no_nue = .false.
+		collint_d_no_nunu = .false.
+		collint_od_no_nue = .false.
+		collint_od_no_nunu = .false.
 		save_BBN = .true.
 		save_fd = .true.
 		save_energy_entropy_evolution = .true.
 		save_Neff = .true.
 		save_nuDens_evolution = .true.
+		save_number_evolution = .true.
 		save_w_evolution = .true.
 		save_z_evolution = .true.
 		call setMixingMatrix()
@@ -138,7 +147,7 @@ program tests
 		rhoPhi_in=rhoPhi_in*(x_in**3/m_e**4) !convert to comoving density
 		GammaPhi=((Trh/0.7)**2)/sec2eV
 #endif
-	end subroutine do_tests_initialization
+	end subroutine do_test_initialization
 
 	subroutine do_basic_tests
 		real(dl), dimension(:), allocatable :: tarr
@@ -146,6 +155,18 @@ program tests
 		character(len=30) :: tmparg
 
 		call printTestBlockName("basic tests")
+
+		collint_damping_type = 0
+		collint_offdiag_damping = .false.
+		call assert_logical("has_offdiagonal 1", has_offdiagonal(), .true.)
+		collint_damping_type = 2
+		collint_offdiag_damping = .true.
+		call assert_logical("has_offdiagonal 2", has_offdiagonal(), .true.)
+		collint_damping_type = 0
+		call assert_logical("has_offdiagonal 3", has_offdiagonal(), .false.)
+		collint_damping_type = 2
+		collint_offdiag_damping = .false.
+
 		N = 12
 		allocate(tarr(N))
 		tarr = linspace(0.0d0, 11.d0, N)
@@ -173,6 +194,12 @@ program tests
 
 		call assert_double_rel("y_arr linlog 1", y_arr(1), 0.01d0, 1d-7)
 		call assert_double_rel("y_arr linlog 2", y_arr(2), 0.21191919191919d0, 1d-7)
+
+		call assert_double_rel("FD 1", fermiDirac(0.d0), 0.5d0, 1d-7)
+		call assert_double_rel("FD 2", fermiDirac(5.d0), 0.0066928509242848554d0, 1d-7)
+		call assert_double_rel("FD 3", fermiDirac(20.d0), 2.0611536181902037d-09, 1d-7)
+		call assert_double_rel("f_eq saved A", feq_arr(1), fermiDirac(y_arr(1)), 1d-3)
+		call assert_double_rel("f_eq saved B", feq_arr(Ny), fermiDirac(y_arr(Ny)), 1d-3)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_basic_tests
@@ -346,11 +373,7 @@ program tests
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix A ',2I1)") i,j
-				if (abs(m(i,j)).gt.1d-16) then
-					call assert_double_rel(trim(tmparg), leptonDensities(i,j), m(i,j), er(i))
-				else
-					call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-16, er(i))
 				write(tmparg,"('nu density matrix re A ',2I1)") i,j
 				call assert_double(trim(tmparg), nuDensities%re(i,j), 0.d0, 1d-7)
 				write(tmparg,"('nu density matrix im A ',2I1)") i,j
@@ -377,11 +400,7 @@ program tests
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix B ',2I1)") i,j
-				if (abs(m(i,j)).gt.1d-16) then
-					call assert_double_rel(trim(tmparg), leptonDensities(i,j), m(i,j), er(i))
-				else
-					call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-16, er(i))
 				write(tmparg,"('nu density matrix re B ',2I1)") i,j
 				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 5d-7)
 				write(tmparg,"('nu density matrix im B ',2I1)") i,j
@@ -417,7 +436,7 @@ program tests
 		call resetTestCounter
 	end subroutine do_test_nu_matrices
 
-	subroutine do_tests_cosmology
+	subroutine do_test_cosmology
 		real(dl), dimension(:), allocatable :: ndmv_re
 		integer :: i, iy
 
@@ -460,30 +479,35 @@ program tests
 			end do
 		end do
 		call assert_double_rel("nuDensNC test 1", nuDensityNC(1, 1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuNumDensNC test 1", nuNumberDensityNC(1, 1), 0.182690742d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 2", nuDensityNC(1, 1), 0.5d0*1.54346d0, 1d-4)
+		call assert_double_rel("nuDensNC test 2", nuDensityNC(1, 1), 0.77173d0, 1d-4)
+		call assert_double_rel("nuNumDensNC test 2", nuNumberDensityNC(1, 1), 0.22759009d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 3", nuDensityNC(1, 1), 0.5d0*3.49577d0, 2d-4)
+		call assert_double_rel("nuDensNC test 3", nuDensityNC(1, 1), 1.74788d0, 2d-4)
+		call assert_double_rel("nuNumDensNC test 3", nuNumberDensityNC(1, 1), 0.420183d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 4", nuDensityNC(2, 2), 0.5d0*2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuDensNC test 4", nuDensityNC(2, 2), 2.d0*2.02814d0, 5d-4)
+		call assert_double_rel("nuNumDensNC test 4", nuNumberDensityNC(2, 2), 2.d0*0.469762d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
 			end do
 		end do
-		call assert_double_rel("nuDensNC test 5", nuDensityNC(3, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuDensNC test 5", nuDensityNC(3, 3), 3.d0*0.582667d0, 1d-4)
+		call assert_double_rel("nuNumDensNC test 5", nuNumberDensityNC(3, 3), 3.d0*0.18434d0, 1d-4)
 		call assert_double("nuDensNC test 6", nuDensityNC(1, 2), 0.0d0, 1d-7)
 		call assert_double("nuDensNC test 7", nuDensityNC(1, 2, .false.), 0.0d0, 1d-7)
 		do iy=1, Ny
@@ -645,6 +669,24 @@ program tests
 		call assert_double_rel("muEntropy test 2", muons%entropy(0.076d0, 1.d0), 4.87363d-5, 1d-2)
 		call assert_double_rel("muEntropy test 3", muons%entropy(0.076d0, 1.32d0), 0.0027439d0, 1d-3)
 		call assert_double("muEntropy test 4", muons%entropy(1.d1, 1.2d0), 0.d0, 1d-10)
+
+		call assert_double_rel("photNumDens test 1", photonNumberDensity(1.002d0), 0.24505211d0, 1d-7)
+		call assert_double_rel("photNumDens test 2", photonNumberDensity(1.34d0), 0.58609723d0, 1d-7)
+		call assert_double_rel("photNumDens test 3", photonNumberDensity(1.d0), 0.243587656d0, 1d-7)
+
+		call assert_double_rel("elNumDens test 1", electrons%numberDensity(1.d0, 1.d0, .false.), 0.306994d0, 1d-4)
+		call assert_double_rel("elNumDens test 2", electrons%numberDensity(0.076d0, 1.32d0, .false.), 0.839831d0, 1d-4)
+		call assert_double_rel("elNumDens test 3", electrons%numberDensity(1.d1, 1.2d0, .false.), 0.00313722d0, 1d-4)
+		call assert_double_rel("elNumDens test 4", electrons%numberDensity(2.d1, 1.2d0, .false.), 1.92439d-6, 1d-4)
+		call assert_double_rel("elNumDens test 5", electrons%numberDensity(3.d1, 1.2d0, .false.), 8.19998d-10, 1d-4)
+
+		call assert_double("muonNumDens test 1", muons%numberDensity(1.d0, 1.d0, .false.), 0.d0, 1d-15)
+		call assert_double_rel("muonNumDens test 2", muons%numberDensity(1.d-1, 1.32d0, .false.), 6.40237d-6, 1d-4)
+		call assert_double_rel("muonNumDens test 3", muons%numberDensity(1.d-2, 1.2d0, .false.), 0.395254d0, 1d-4)
+		call assert_double_rel("muonNumDens test 4", muons%numberDensity(3.d-3, 1.2d0, .false.), 0.600954d0, 1d-4)
+		call assert_double_rel("muonNumDens test 5", muons%numberDensity(1.d-3, 1.d0, .false.), 0.362419d0, 1d-4)
+		call assert_double("muonNumDens test 6", muons%numberDensity(4.d0, 1.3d0, .false.), 0.d0, 1d-15)
+
 		ftqed_temperature_corr = .true.
 
 		do i=1, flavorNumber
@@ -656,9 +698,9 @@ program tests
 
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_cosmology
+	end subroutine do_test_cosmology
 
-	subroutine do_tests_JKG
+	subroutine do_test_JKG
 		real(dl), dimension(2) :: res
 		integer :: ix
 
@@ -787,7 +829,7 @@ program tests
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		res = dzodxcoef_interp_func(0.01d0)
 		call assert_double("A test 1", res(1), 7.23268d0, 1d-5)
 		call assert_double("B test 1", res(2), 0.00919711d0, 1d-4)
@@ -800,9 +842,9 @@ program tests
 #endif
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_JKG
+	end subroutine do_test_JKG
 
-	subroutine do_tests_dzodx
+	subroutine do_test_dzodx
 		integer :: n
 		real(dl), dimension(:), allocatable :: ydot
 		integer :: m
@@ -816,7 +858,7 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 		call printTestBlockName("dz/dx functions")
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
 		call assert_double_rel("dz_o_dx test 1", ydot(n), 7.11765d0, 8d-3)
 		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
@@ -837,9 +879,9 @@ program tests
 		deallocate(ydot)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_dzodx
+	end subroutine do_test_dzodx
 
-	subroutine do_tests_dme2
+	subroutine do_test_dme2
 		call printTestBlockName("dme2")
 		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.022915468d0, 1d-6)
 		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.022915468d0, 1d-6)!here no log term, the flag is set to false
@@ -847,7 +889,7 @@ program tests
 		call assert_double("dme2F test 4", dme2_electronFull(1.23d0, 0.d0, 1.198d0), 0.02905573d0, 1d-6)
 		call assert_double("dme2F test 5", dme2_electronFull(7.6d0, 0.d0, 1.3d0), 0.025975010d0, 1d-6)
 		call assert_double("dme2F test 6", dme2_electronFull(35.d0, 0.d0, 1.39d0), 0.029529326d0, 1d-6)
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		call assert_double("dme2 test 1", dme2_electron(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2 test 2", dme2_electron(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2 test 3", dme2_electron(0.5d0, 0.d0, 1.1d0),  0.026655522d0, 1d-5)
@@ -867,7 +909,7 @@ program tests
 		call assert_double("dme2F w log test 4", dme2_electronFull(1.23d0, 0.01d0, 1.198d0), 0.024518372d0, 2d-5)
 		call assert_double("dme2F w log test 5", dme2_electronFull(7.6d0, 1.d0, 1.3d0), 0.025216151d0, 2d-5)
 		call assert_double("dme2F w log test 6", dme2_electronFull(35.d0, 0.88d0, 1.39d0), 0.029529326d0, 1d-6)
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		call assert_double("dme2nl test 1", dme2_nolog(0.05d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2nl test 2", dme2_nolog(0.05d0, 1.0003d0), 0.02292d0, 1d-5)
 		call assert_double("dme2nl test 3", dme2_nolog(0.5d0, 1.1d0),  0.026655522d0, 1d-5)
@@ -881,9 +923,9 @@ program tests
 
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_dme2
+	end subroutine do_test_dme2
 
-	subroutine do_tests_Di
+	subroutine do_test_Di
 		call printTestBlockName("D_i functions")
 		call assert_double("D1 test 1", D1_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
 		call assert_double("D1 test 2", D1_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
@@ -937,9 +979,9 @@ program tests
 		call assert_double_rel("D3p test 6", D3_bis(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_Di
+	end subroutine do_test_Di
 
-	subroutine do_tests_Pi_ij
+	subroutine do_test_Pi_ij
 		real(dl), dimension(2) :: temp_v2
 		call printTestBlockName("Pi(yi,yj) functions")
 		call assert_double("Pi_1_12 test 1", PI1_12_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.00933333d0, 1d-7)
@@ -979,7 +1021,7 @@ program tests
 		call assert_double("Pi_2_12 test 4", temp_v2(2), 9420.8d0, 1d-7)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_Pi_ij
+	end subroutine do_test_Pi_ij
 
 	subroutine do_f_ann_sc_re_tests_eq
 		integer :: ix, iy
@@ -1670,11 +1712,7 @@ program tests
 			do iy=1, flavorNumber
 				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//"re", F_ab_ann_re(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatA(ix,iy), 1d-5)
-				if (abs(tmpmatB(ix,iy)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-5)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7, 1d-5)
 			end do
 		end do
 		!LL
@@ -1689,11 +1727,7 @@ program tests
 				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//"re", F_ab_sc_re(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy), tmpmatA(ix,iy), 1d-5)
 				r2 = F_ab_sc_im(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy)
-				if (abs(tmpmatB(ix,iy)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-5)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7, 1d-5)
 			end do
 		end do
 		call deallocateCmplxMat(nA)
@@ -1702,7 +1736,7 @@ program tests
 		call resetTestCounter
 	end subroutine do_f_ann_sc_re_tests_full
 
-	subroutine do_tests_coll_int
+	subroutine do_test_coll_int
 		real(dl) :: x,z,dme2
 		type(coll_args) :: collArgs
 		integer :: i, j, iy1, iy
@@ -1759,7 +1793,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 fake "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1773,7 +1807,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 fake "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1793,7 +1827,7 @@ program tests
 		collArgs%ix2 = 1
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
+				fy2_arr(i,j) = coll_nue_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
 		write(*,*) ""
@@ -1806,7 +1840,7 @@ program tests
 		close(987)
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
+				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
 			end do
 		end do
 		call openFile(987, "test_ann3_re.dat", .true.)
@@ -1821,7 +1855,7 @@ program tests
 		tmparrA = (/1d-6, 1d-6, 1d-6/)
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
-		res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+		res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 		call assert_double("test coll sc 3 sing 1", res2, tmparrS(1), tmparrA(1))
 		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 		call assert_double("test coll sc 4 sing 1", res1, tmparrS(1), tmparrA(1))
@@ -1829,7 +1863,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 sing "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 sing "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
@@ -1847,7 +1881,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1862,7 +1896,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1880,7 +1914,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -1905,7 +1939,7 @@ program tests
 		collArgs%ix2 = 3
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
+				fy2_arr(i,j) = coll_nue_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
 		call openFile(987, "test_sc3b_re.dat", .true.)
@@ -1916,7 +1950,7 @@ program tests
 		close(987)
 		do i=1, Ny
 			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_3_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
+				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
 			end do
 		end do
 		call openFile(987, "test_ann3b_re.dat", .true.)
@@ -1933,7 +1967,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i+3
-			res2=coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
 			call assert_double_rel("test coll sc 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll sc 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1952,7 +1986,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll sc 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
@@ -1967,7 +2001,7 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i+3
-			res2=coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
 			call assert_double_rel("test coll ann 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
 			call assert_double_rel("test coll ann 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
@@ -1986,7 +2020,7 @@ program tests
 !			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
 !			write(tmparg,"('test coll ann 4 b - ',2I1)") i, i
 !			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			write(tmparg,"('test coll ann 3 b - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
 !			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
@@ -2032,8 +2066,8 @@ program tests
 				write(tmparg,"('coll sc integrand full ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
-				res1 = coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
-				res2 = coll_nue_3_sc_int(21, 5.2d0, collArgs, F_ab_sc_im)
+				res1 = coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
+				res2 = coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_im)
 				call assert_double_rel(trim(tmparg)//"re", res1, tmpmatA(i,j), tmparrA(i))
 				if (i.eq.j) then
 					call assert_double(trim(tmparg)//"im", res2, tmpmatB(i,j), 1d-7)
@@ -2056,8 +2090,8 @@ program tests
 				write(tmparg,"('coll ann integrand full ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
-				res1 = coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
-				res2 = coll_nue_3_ann_int(21, 3.d0, collArgs, F_ab_ann_im)
+				res1 = coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
+				res2 = coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_im)
 				call assert_double_rel(trim(tmparg)//"re", res1, tmpmatA(i,j), tmparrA(i))
 				if (i.eq.j) then
 					call assert_double(trim(tmparg)//"im", res2, tmpmatB(i,j), 1d-7)
@@ -2070,34 +2104,55 @@ program tests
 		deallocate(ndmv_re)
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_tests_coll_int
+	end subroutine do_test_coll_int
 
-	pure real(dl) function fakecollint1(a, b, o, F_ab_ann, F_ab_sc)
+	pure real(dl) function fakecollintnue1(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
-		fakecollint1=1.d0
+		fakecollintnue1=1.d0
 	end function
-	pure real(dl) function fakecollint0(a, b, o, F_ab_ann, F_ab_sc)
+	pure real(dl) function fakecollintnue0(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
-		fakecollint0=0.d0
+		fakecollintnue0=0.d0
 	end function
-	pure real(dl) function fakecollinty(a, b, o, F_ab_ann, F_ab_sc)
+	pure real(dl) function fakecollintnuey(a, b, o, F_ab_ann, F_ab_sc)
 		use variables
 		integer, intent(in) :: a
 		real(dl), intent(in) :: b
 		type(coll_args), intent(in) :: o
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
-		fakecollinty=1.d4*b**2
+		fakecollintnuey=1.d4*b**2
+	end function
+	pure real(dl) function fakecollintnunu1(a, b, o, F_nu_sc, F_nu_pa)
+		use variables
+		integer, intent(in) :: a, b
+		type(coll_args), intent(in) :: o
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		fakecollintnunu1=1.d0
+	end function
+	pure real(dl) function fakecollintnunu0(a, b, o, F_nu_sc, F_nu_pa)
+		use variables
+		integer, intent(in) :: a, b
+		type(coll_args), intent(in) :: o
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		fakecollintnunu0=0.d0
+	end function
+	pure real(dl) function fakecollintnunuy(a, b, o, F_nu_sc, F_nu_pa)
+		use variables
+		integer, intent(in) :: a, b
+		type(coll_args), intent(in) :: o
+		procedure (Fnunu) :: F_nu_sc, F_nu_pa
+		fakecollintnunuy=1.d4*b**2
 	end function
 
 	subroutine do_test_collision_terms
@@ -2118,7 +2173,7 @@ program tests
 		dme2 = 0.1d0
 		call printTestBlockName("Collision_terms")
 		collArgs%ix1 = 1
-		collArgs%ix1 = 1
+		collArgs%ix2 = 1
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
@@ -2137,20 +2192,54 @@ program tests
 		tmpmatB(3,:) = (/-348548., -348548., 0./)
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms f ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
+		tmpmatA(1,:) = (/348548, 0, 0/)
+		tmpmatA(2,:) = (/0, 348548, 0/)
+		tmpmatA(3,:) = (/0, 0, 348548/)
+		tmpmatB(1,:) = (/0., 0., 0./)
+		tmpmatB(2,:) = (/0., 0., 0./)
+		tmpmatB(3,:) = (/0., 0., 0./)
+		collint_damping_type = 0
+		collint_offdiag_damping = .true.
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms zod ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
+			end do
+		end do
+		tmpmatA(1,:) = (/0, 348548, 348548/)
+		tmpmatA(2,:) = (/348548, 0, 348548/)
+		tmpmatA(3,:) = (/348548, 348548, 0/)
+		tmpmatB(1,:) = (/0., 348548., 348548./)
+		tmpmatB(2,:) = (/-348548., 0., 348548./)
+		tmpmatB(3,:) = (/-348548., -348548., 0./)
+		collint_damping_type = 2
+		collint_diagonal_zero = .true.
+		collint_offdiag_damping = .false.
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms zd ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
+			end do
+		end do
+		collint_diagonal_zero = .false.
 
 		x=0.05d0
 		iy1 = 7 !1.22151515151515
@@ -2199,23 +2288,15 @@ program tests
 		tmpmatB(3,:) = (/0., 0., 0./)
 		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
 		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
-		cts = get_collision_terms(collArgs, coll_nue_3_int)
+		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 !		write(*,multidblfmt)cts
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms r ',2I1)") i,j
-				if (abs(tmpmatA(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				end if
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 		call printTotalTests
@@ -2260,23 +2341,19 @@ program tests
 		res%im(1,:) = (/0., 8504.49, 30182.6/)
 		res%im(2,:) = (/-8504.49, 0., -698.419/)
 		res%im(3,:) = (/-30182.6, 698.419, 0./)
-		call drhoy_dx_fullMat(outp, x, z, iy, dme2, sqrtraddens, fakecollint0)
+		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx a ',2I1)") i,j
-				if (abs(res%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
-				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-3)
 				else
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
+					call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				end if
-				if (abs(res%im(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
-				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-2)
 				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-4)
+					call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 2d-4)
 				end if
 			end do
 		end do
@@ -2288,23 +2365,19 @@ program tests
 		res%im(1,:) = (/0., 9293.06, 30971.2/)
 		res%im(2,:) = (/-9293.06, 0., 90.1601/)
 		res%im(3,:) = (/-30971.2, -90.1601, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint1)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue1, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx b ',2I1)") i,j
-				if (abs(res%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
-				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 3d-3)
 				else
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
+					call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				end if
-				if (abs(res%im(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
-				elseif ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
+				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-2)
 				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
+					call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 				end if
 			end do
 		end do
@@ -2333,20 +2406,12 @@ program tests
 		res%im(1,:) = (/0., 369833., 410950./)
 		res%im(2,:) = (/-369833., 0., 6598.44/)
 		res%im(3,:) = (/-410950., -6598.44, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollint0)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx c ',2I1)") i,j
-				if (abs(res%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
-				end if
-				if (abs(res%im(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 			end do
 		end do
 
@@ -2356,20 +2421,12 @@ program tests
 		res%im(1,:) = (/0., 369983., 411100./)
 		res%im(2,:) = (/-369983., 0., 6748.46/)
 		res%im(3,:) = (/-411100., -6748.46, 0./)
-		call drhoy_dx_fullMat(outp,x,z,iy, dme2, sqrtraddens, fakecollinty)
+		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollintnuey, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx d ',2I1)") i,j
-				if (abs(res%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-4)
-				end if
-				if (abs(res%im(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-4)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 			end do
 		end do
 		GLR_vec = GLR_vectmp
@@ -2391,7 +2448,9 @@ program tests
 
 		call allocateCmplxMat(cts)
 
-		collision_offdiag = 2
+		collint_damping_type = 2
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .true.
 
 		x = 0.75d0
 		iy1 = 7 !1.22151515151515
@@ -2418,53 +2477,49 @@ program tests
 
 		!2+1
 		sterile(3) = .true.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/0., -0.928646, -6.56674/)
 		tmpmatA(2,:) = (/0., 0., -7.45108/)
 		tmpmatA(3,:) = (/0., 0., 0./)
 		tmpmatB(1,:) = (/0., 0.0000928646, -0.000596976/)
 		tmpmatB(2,:) = (/0., 0., 0.000331159/)
 		tmpmatB(3,:) = (/0., 0., 0./)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 2+1 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 
 !		!3+0
 		sterile(3) = .false.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/0., -0.928646, -3.06453/)
 		tmpmatA(2,:) = (/0., 0., -1.76139/)
 		tmpmatA(3,:) = (/0., 0., 0./)
 		tmpmatB(1,:) = (/0., 0.0000928646, -0.000278594/)
 		tmpmatB(2,:) = (/0., 0., 0.0000782838/)
 		tmpmatB(3,:) = (/0., 0., 0./)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 3+0 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 
@@ -2474,53 +2529,49 @@ program tests
 		call allocateStuff
 		!1+1
 		sterile(2) = .true.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/0., -1.98992, 0./)
 		tmpmatA(2,:) = (/0., 0., 0./)
 		tmpmatA(3,:) = (/0., 0., 0./)
 		tmpmatB(1,:) = (/0., 0.000198992, 0./)
 		tmpmatB(2,:) = (/0., 0., 0./)
 		tmpmatB(3,:) = (/0., 0., 0./)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 1+1 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 
 		!2+0
 		sterile(2) = .false.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/0., -0.928646, 0./)
 		tmpmatA(2,:) = (/0., 0., 0./)
 		tmpmatA(3,:) = (/0., 0., 0./)
 		tmpmatB(1,:) = (/0., 0.0000928646, 0./)
 		tmpmatB(2,:) = (/0., 0., 0./)
 		tmpmatB(3,:) = (/0., 0., 0./)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 2+0 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
-				if (abs(tmpmatB(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
 
@@ -2528,7 +2579,7 @@ program tests
 		flavNumSqu = flavorNumber**2
 		call deallocateStuff
 		call allocateStuff
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		do ix=1, Ny
 			deallocate(nuDensMatVecFD(ix)%re, nuDensMatVecFD(ix)%im)
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
@@ -2547,27 +2598,25 @@ program tests
 		!3+1
 		sterile = .false.
 		sterile(4) = .true.
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		tmpmatA(1,:) = (/-0.928646, -3.06453, -2.38791/)
 		tmpmatA(2,:) = (/0., -1.76139, -1.32464/)
 		tmpmatA(3,:) = (/0., 0., -3.80833/)
 		tmpmatB(1,:) = (/0.0000928646, -0.000278594, -0.0198992/)
 		tmpmatB(2,:) = (/0., 0.0000782838, 0.0331159/)
 		tmpmatB(3,:) = (/0., 0., -0.0827898/)
+		tmpmatA = tmpmatA * z**4
+		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollinty)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 3+1 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i, j-1), tmparrA(i))
-				if (abs(tmpmatB(i,j-1)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), tmparrS(i))
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i, j-1), 1d-7, tmparrS(i))
 			end do
 		end do
 
@@ -2576,12 +2625,15 @@ program tests
 		flavNumSqu = flavorNumber**2
 		call deallocateStuff
 		call allocateStuff
-		call setDampingFactorCoeffs
+		call setDampingFactors
 		do ix=1, Ny
 			deallocate(nuDensMatVecFD(ix)%re, nuDensMatVecFD(ix)%im)
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
 		end do
-		collision_offdiag = 1
+		collint_damping_type = 2
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .false.
+		sterile = .false.
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_damping_factors
@@ -2601,6 +2653,7 @@ program tests
 		use_gauss_laguerre = .true.
 		do nx=50, 10, -1
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
+			call finish_y_arrays
 
 			allocate(fx1(nx))
 			do ix=1,nx
@@ -2652,6 +2705,7 @@ program tests
 		do nix=1, 9
 			nx = nix*5+5
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
+			call finish_y_arrays
 			collArgs%y1 = xa(collArgs%iy)
 			y_arr = loglinspace(y_min, collArgs%y1, y_max, Ny, 10)
 			do ix=1, Ny-1
@@ -2672,13 +2726,13 @@ program tests
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				tmparrA(nix,ix) = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				tmparrA(nix,ix) = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			end do
 
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				tmparrB(nix,ix) = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				tmparrB(nix,ix) = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 			end do
 		end do
 
@@ -2704,9 +2758,9 @@ program tests
 		tmperrA(9,:) = (/0.05, 0.02, 0.025/)
 		tmperrB(9,:) = (/0.021, 0.03, 0.03/)
 		do nix=3, 9
-			nx = nix*5+5
-			Ny=nx
+			Ny=nix*5+5
 			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+			call finish_y_arrays
 			do ix=1, Ny-1
 				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
 			end do
@@ -2728,66 +2782,64 @@ program tests
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_coll_int_GL(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_coll_int_NC(coll_nue_3_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				inta = integrate_collint_nue_GL(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				intb = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrA(nix,ix), (inta-tmparrA(nix,ix))/inta, (intb-tmparrA(nix,ix))/intb
 				write(tmparg,"('test coll sc GL, N=',I2,' - ',2I1)") Ny, ix, ix
-				if (abs(tmparrA(nix,ix)).gt.1d-30) then
-					call assert_double_rel_verb(trim(tmparg), inta, tmparrA(nix,ix), tmperrA(nix,ix))
-				else
-					call assert_double_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30)
-				end if
+				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30, tmperrA(nix,ix))
 			end do
 
 			write(*,*) ""
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_coll_int_GL(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_coll_int_NC(coll_nue_3_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				inta = integrate_collint_nue_GL(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+				intb = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 !				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrB(nix,ix), (inta-tmparrB(nix,ix))/inta, (intb-tmparrB(nix,ix))/intb
 				write(tmparg,"('test coll ann GL, N=',I2,' - ',2I1)") Ny, ix, ix
-				if (abs(tmparrB(nix,ix)).gt.1d-30) then
-					call assert_double_rel_verb(trim(tmparg), inta, tmparrB(nix,ix), tmperrB(nix,ix))
-				else
-					call assert_double_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30)
-				end if
+				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30, tmperrB(nix,ix))
 			end do
 		end do
 
 		call printTestBlockName("other applications of GL quadrature")
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+		call finish_y_arrays
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
 			end do
 		end do
 		call assert_double_rel("nuDensGL test 1", nuDensityGL(1, 1), 0.575727d0, 1d-4)
+		call assert_double_rel("nuNumDensGL test 1", nuNumberDensityGL(1, 1), 0.182690742d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
 			end do
 		end do
 		call assert_double_rel("nuDensGL test 2", nuDensityGL(1, 1), 0.5d0*1.54346d0, 1d-4)
+		call assert_double_rel("nuNumDensGL test 2", nuNumberDensityGL(1, 1), 0.22759009d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
 			end do
 		end do
 		call assert_double_rel("nuDensGL test 3", nuDensityGL(1, 1), 0.5d0*3.49577d0, 2d-4)
+		call assert_double_rel("nuNumDensGL test 3", nuNumberDensityGL(1, 1), 0.420183d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
 			end do
 		end do
 		call assert_double_rel("nuDensGL test 4", nuDensityGL(2, 2), 0.5d0*2.d0*4.05629d0, 5d-4)
+		call assert_double_rel("nuNumDensGL test 4", nuNumberDensityGL(2, 2), 2.d0*0.469762d0, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
 			end do
 		end do
 		call assert_double_rel("nuDensGL test 5", nuDensityGL(3, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
+		call assert_double_rel("nuNumDensGL test 5", nuNumberDensityGL(3, 3), 3.d0*0.18434d0, 1d-4)
 
 		call assert_double_rel("nuDensEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
 		call assert_double_rel("nuDensEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
@@ -2798,6 +2850,7 @@ program tests
 		nuFactor(1:3)=1.d0
 		Ny=25
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+		call finish_y_arrays
 		ydot = 0.d0
 		do m=1, Ny
 			ydot((m-1)*flavNumSqu + 1) = 1.d0/y_arr(m)
@@ -2805,6 +2858,10 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 
+		feq_arr = 0.d0
+		do ix=1, Ny
+			feq_arr(ix) = fermiDirac(y_arr(ix))
+		end do
 		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
 		call assert_double("dz_o_dx test 1a", ydot(n), 7.15311d0, 5d-5)
 		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), 7.15311d0, 5d-5)
@@ -2858,11 +2915,7 @@ program tests
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff A ',2I1)") i,j
-				if (abs(Heff%re(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7, 1d-7)
 				call assert_double(trim(tmparg)//"re", Heff%im(i,j), r2(i,j), 1d-7)
 			end do
 		end do
@@ -2870,16 +2923,8 @@ program tests
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff_cmplx A ',2I1)") i,j
-				if (abs(r1(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
-				end if
-				if (abs(r2(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7, 1d-7)
+				call assert_double_rel_safe(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7, 1d-7)
 			end do
 		end do
 		!B
@@ -2899,32 +2944,16 @@ program tests
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff B ',2I1)") i,j
-				if (abs(r1(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7)
-				end if
-				if (abs(r2(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", Heff%im(i,j), r2(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", Heff%im(i,j), r2(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", Heff%re(i,j), r1(i,j), 1d-7, 1d-7)
+				call assert_double_rel_safe(trim(tmparg)//"im", Heff%im(i,j), r2(i,j), 1d-7, 1d-7)
 			end do
 		end do
 		Heffc = H_eff_cmplx(0.7d0)
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff_cmplx B ',2I1)") i,j
-				if (abs(r1(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7)
-				end if
-				if (abs(r2(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", dble(Heffc(i,j)), r1(i,j), 1d-7, 1d-7)
+				call assert_double_rel_safe(trim(tmparg)//"im", dimag(Heffc(i,j)), r2(i,j), 1d-7, 1d-7)
 			end do
 		end do
 
@@ -2963,11 +2992,7 @@ program tests
 		rv = (/1.,2.,3.,0.,0.,0./)
 		do i=1, maxFlavorNumber
 			write(tmparg,"('HEigensystem ',I1)") i
-			if (abs(rv(i)).lt.1d-7) then
-				call assert_double(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7)
-			else
-				call assert_double_rel(trim(tmparg)//"re", tmpvec(i), rv(i), 2d-3)
-			end if
+			call assert_double_rel_safe(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7, 2d-3)
 		end do
 
 		do iy=1, Ny
@@ -2989,11 +3014,7 @@ program tests
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('rho mass basis ',2I1)") i,j
-				if (abs(r1(i,j)).lt.1d-7) then
-					call assert_double(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7)
-				else
-					call assert_double_rel(trim(tmparg)//"re", m%re(i,j), r1(i,j), 2d-3)
-				end if
+				call assert_double_rel_safe(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7, 2d-3)
 				call assert_double(trim(tmparg)//"im", m%im(i,j), r2(i,j), 1d-7)
 			end do
 		end do
@@ -3001,6 +3022,791 @@ program tests
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_diagonalization
+
+	subroutine do_test_damping_yyyw
+		real(dl) :: x,w,z,dme2
+		integer :: ix, iy1, iy
+		real(dl) :: y,res1,res2
+		type(coll_args) :: collArgs
+		real(dl), dimension(3) :: tmparrS, tmparrA
+		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
+		character(len=300) :: tmparg
+		type(cmplxMatNN) :: cts
+
+		call allocateCmplxMat(cts)
+
+		call printTestBlockName("damping factors a la YYYW")
+
+		Ny=50
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+		call finish_y_arrays
+		call assert_double_rel("dy_damping_pi 3.        ", dy_damping_pi(3.d0        ),  94.545d0, 2d-2)
+		call assert_double_rel("dy_damping_pi 0.001     ", dy_damping_pi(0.001d0     ), 129.894d0, 2d-2)
+		call assert_double_rel("dy_damping_pi 0.00359381", dy_damping_pi(0.00359381d0), 129.933d0, 2d-2)
+		call assert_double_rel("dy_damping_pi 0.0129155 ", dy_damping_pi(0.0129155d0 ), 129.397d0, 2d-2)
+		call assert_double_rel("dy_damping_pi 0.0464159 ", dy_damping_pi(0.0464159d0 ), 128.161d0, 2d-2)
+		call assert_double_rel("dy_damping_pi 0.16681   ", dy_damping_pi(0.16681d0   ), 124.039d0, 2d-2)
+		call assert_double_rel("dy_damping_pi 0.599484  ", dy_damping_pi(0.599484d0  ), 112.398d0, 1d-2)
+		call assert_double_rel("dy_damping_pi 2.15443   ", dy_damping_pi(2.15443d0   ),  95.919d0, 1d-2)
+		call assert_double_rel("dy_damping_pi 7.74264   ", dy_damping_pi(7.74264d0   ),  97.543d0, 1d-2)
+		call assert_double_rel("dy_damping_pi 20.0000   ", dy_damping_pi(20.0000d0   ),  99.787d0, 7d-2)
+
+		Ny=100
+		deallocate(y_arr)
+		allocate(y_arr(Ny))
+		y_arr = linspace(y_min, y_max, Ny)
+		call assert_double_rel("dy_damping_fit 3.        ", dy_damping_fit(3.d0        ),  94.545d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.001     ", dy_damping_fit(0.001d0     ), 129.894d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.00359381", dy_damping_fit(0.00359381d0), 129.933d0, 2d-3)
+		call assert_double_rel("dy_damping_fit 0.0129155 ", dy_damping_fit(0.0129155d0 ), 129.397d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.0464159 ", dy_damping_fit(0.0464159d0 ), 128.161d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.16681   ", dy_damping_fit(0.16681d0   ), 124.039d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 0.599484  ", dy_damping_fit(0.599484d0  ), 112.398d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 2.15443   ", dy_damping_fit(2.15443d0   ),  95.919d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 7.74264   ", dy_damping_fit(7.74264d0   ),  97.543d0, 3d-3)
+		call assert_double_rel("dy_damping_fit 20.0000   ", dy_damping_fit(20.0000d0   ),  99.787d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 27.8256   ", dy_damping_fit(27.8256d0   ), 100.130d0, 1d-3)
+		call assert_double_rel("dy_damping_fit 100.      ", dy_damping_fit(100.d0      ), 100.772d0, 2d-3)
+
+		call assert_double_rel("kappa A", -15.4485396d0, kappa_damp(12.d0, 0.44d0, 0.33d0), 1d-7)
+		call assert_double_rel("kappa B", -0.12818209d0, kappa_damp(1.d0, 0.14d0, 0.01d0), 1d-7)
+
+		call assert_double_rel("nunu_damp_integrand A", 3.948450853637d-6, nunu_damp_integrand(0.01d0, 3.d0, 5.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand B", -3.34556795185d0,  nunu_damp_integrand(0.01d0, 13.d0, 5.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand C", -37.225769332d0,   nunu_damp_integrand(0.01d0, 3.d0, 1.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand D", 366.6887058d0,     nunu_damp_integrand(10.d0, 3.d0, 5.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand E", -0.080526245965d0, nunu_damp_integrand(10.d0, 30.d0, 5.d0), 1d-7)
+		call assert_double_rel("nunu_damp_integrand F", 328.64337311d0,    nunu_damp_integrand(10.d0, 3.d0, 1.d0), 1d-7)
+
+		call assert_double_rel("dy_damping 3.        ", dy_damping(3.d0        ),  94.545d0, 2d-2)
+		call assert_double_rel("dy_damping 0.001     ", dy_damping(0.001d0     ), 129.894d0, 2d-2)
+		call assert_double_rel("dy_damping 0.00359381", dy_damping(0.00359381d0), 129.933d0, 2d-2)
+		call assert_double_rel("dy_damping 0.0129155 ", dy_damping(0.0129155d0 ), 129.397d0, 2d-2)
+		call assert_double_rel("dy_damping 0.0464159 ", dy_damping(0.0464159d0 ), 128.161d0, 2d-2)
+		call assert_double_rel("dy_damping 0.16681   ", dy_damping(0.16681d0   ), 124.039d0, 2d-2)
+		call assert_double_rel("dy_damping 0.599484  ", dy_damping(0.599484d0  ), 112.398d0, 1d-2)
+		call assert_double_rel("dy_damping 2.15443   ", dy_damping(2.15443d0   ),  95.919d0, 1d-2)
+		call assert_double_rel("dy_damping 7.74264   ", dy_damping(7.74264d0   ),  97.543d0, 1d-2)
+		call assert_double_rel("dy_damping 20.0000   ", dy_damping(20.0000d0   ),  99.787d0, 3d-2)
+		call assert_double_rel("dy_damping 27.8256   ", dy_damping(27.8256d0   ), 100.130d0, 2d-2)
+		call assert_double_rel("dy_damping 100.      ", dy_damping(100.d0      ), 100.772d0, 2d-2)
+
+		collint_damping_type = 1
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .true.
+		call setDampingFactors
+
+		call assert_double_rel("dy_damping saved A", dampTermYYYWdy(1), 129.894d0*y_arr(1)**3, 3d-3)
+		call assert_double_rel("dy_damping saved B", dampTermYYYWdy(Ny), dy_damping_fit(y_arr(Ny))*y_arr(Ny)**3, 2d-3)
+
+		call assert_double_rel("c Nue  1,2", dampTermMatrixCoeffNue (1,2), 0.714d0, 1d-2)
+		call assert_double_rel("c Nue  1,3", dampTermMatrixCoeffNue (1,3), 0.714d0, 1d-2)
+		call assert_double_rel("c Nue  2,3", dampTermMatrixCoeffNue (2,3), 0.2514d0, 1d-2)
+		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 2.d0, 1d-2)
+		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 2.d0, 1d-2)
+		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 2.d0, 1d-2)
+
+		! tests for comparing with complete terms
+		x = 0.75d0
+		iy1 = 7 !1.22151515151515
+		z = 1.186d0
+		dme2 = 0.1d0
+		collArgs%x = x
+		collArgs%z = z
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = dme2
+		do iy=1, Ny
+			y = y_arr(iy)
+			nuDensMatVecFD(iy)%re(1,:) = (/1.1d0*fermiDirac(y), 10.d0, 33.d0/)
+			nuDensMatVecFD(iy)%re(2,:) = (/10.d0, 1.1d0*fermiDirac(y), 46.d0/)
+			nuDensMatVecFD(iy)%re(3,:) = (/33.d0, 46.d0, 1.1d0*fermiDirac(y)/)
+			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0/)
+			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0/)
+			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
+		end do
+
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
+		res1 = integrate_collint_nue_NC(fakecollintnuey, collArgs, F_ab_ann_re, F_ab_sc_re) &
+			* collTermFactor/(y_arr(iy1)**2*x**4)
+!		call printMat(cts%re)
+		do ix=1, 3
+			write(tmparg,"('damping YYYW d A',2I1)") ix,iy
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
+			do iy=ix+1, 3
+				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
+				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
+					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
+					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%re(ix,iy) &
+					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					1d-4)
+				call assert_double_rel(trim(tmparg)//" im", cts%im(ix, iy), &
+					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
+					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(ix,iy) &
+					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					1d-4)
+			end do
+		end do
+		x = 4.75d0
+		iy1 = 3
+        w = 1.234d0
+		z = 1.386d0
+		collArgs%x = x
+		collArgs%w = w
+		collArgs%z = z
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
+		res1 = integrate_collint_nue_NC(fakecollintnuey, collArgs, F_ab_ann_re, F_ab_sc_re) &
+			* collTermFactor/(y_arr(iy1)**2*x**4)
+!		call printMat(cts%re)
+		do ix=1, 3
+			write(tmparg,"('damping YYYW d B',2I1)") ix,ix
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
+			do iy=ix+1, 3
+				write(tmparg,"('damping YYYW od B',2I1)") ix,iy
+				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
+					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
+					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%re(ix,iy) &
+					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					1d-4)
+				call assert_double_rel(trim(tmparg)//" im", cts%im(ix, iy), &
+					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
+					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(ix,iy) &
+					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					1d-4)
+			end do
+		end do
+
+		collint_damping_type = 2
+		collint_diagonal_zero = .false.
+		collint_offdiag_damping = .false.
+		call setDampingFactors
+
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_damping_yyyw
+
+	subroutine do_test_F_nu
+		integer :: i, j
+		real(dl) :: res
+		real(dl), dimension(3, 3) :: Fpr, Fpi, Fsr, Fsi
+		character(len=300) :: tmparg
+		type(cmplxMatNN) :: m1, m2, m3, m4
+
+		call allocateCmplxMat(m1)
+		call allocateCmplxMat(m2)
+		call allocateCmplxMat(m3)
+		call allocateCmplxMat(m4)
+
+		call printTestBlockName("phase space functions for nunu")
+
+#ifdef FULL_F_NU
+		m1%re(1,:) = (/1.1d0, 0.2d0, 0.3d0/)
+		m1%re(2,:) = (/0.2d0, 1.3d0, 0.d0/)
+		m1%re(3,:) = (/0.3d0, 0.d0, 2.d0/)
+		m1%im(1,:) = (/0.d0, 0.d0, -0.3d0/)
+		m1%im(2,:) = (/0.d0, 0.d0, -0.4d0/)
+		m1%im(3,:) = (/0.3d0, 0.4d0, 0.d0/)
+
+		m2%re(1,:) = (/2.1d0, 0.1d0, 0.1d0/)
+		m2%re(2,:) = (/0.1d0, 2.3d0, 0.d0/)
+		m2%re(3,:) = (/0.1d0, 0.d0, 2.d0/)
+		m2%im(1,:) = (/0.d0, 0.1d0, -0.2d0/)
+		m2%im(2,:) = (/-0.1d0, 0.d0, -0.15d0/)
+		m2%im(3,:) = (/0.2d0, 0.15d0, 0.d0/)
+
+		m3%re(1,:) = (/1.3d0, -0.2d0, 0.d0/)
+		m3%re(2,:) = (/-0.2d0, 1.4d0, 0.d0/)
+		m3%re(3,:) = (/0.d0, 0.d0, 1.5d0/)
+		m3%im(1,:) = (/0.d0, 0.01d0, 0.11d0/)
+		m3%im(2,:) = (/-0.01d0, 0.d0, -0.11d0/)
+		m3%im(3,:) = (/-0.11d0, 0.11d0, 0.d0/)
+
+		m4%re(1,:) = (/1.9d0, 0.01d0, 0.d0/)
+		m4%re(2,:) = (/0.01d0, 1.7d0, 0.13d0/)
+		m4%re(3,:) = (/0.d0, 0.13d0, 1.8d0/)
+		m4%im(1,:) = (/0.d0, 0.d0, 0.1d0/)
+		m4%im(2,:) = (/0.d0, 0.d0, 0.13d0/)
+		m4%im(3,:) = (/-0.1d0, -0.13d0, 0.d0/)
+
+		Fsr(1,:) = (/-2.07923d0, 6.34496d0, 5.41588d0/)
+		Fsr(2,:) = (/6.34496d0, 0.37778d0, -0.17484d0/)
+		Fsr(3,:) = (/5.41588d0, -0.17484d0, 10.6444d0/)
+		Fsi(1,:) = (/0.d0, 0.068105d0, -6.89441d0/)
+		Fsi(2,:) = (/-0.068105d0, 0.d0, -6.13617d0/)
+		Fsi(3,:) = (/6.89441d0, 6.13617d0, 0.d0/)
+
+		Fpr(1,:) = (/-3.71726d0, 11.7786d0, 11.3093d0/)
+		Fpr(2,:) = (/11.7786d0, 2.2042d0, -0.12906d0/)
+		Fpr(3,:) = (/11.3093d0, -0.12906d0, 23.0392d0/)
+		Fpi(1,:) = (/0.d0, 0.79126d0, -13.9696d0/)
+		Fpi(2,:) = (/-0.79126d0, 0.d0, -15.1604d0/)
+		Fpi(3,:) = (/13.9696d0, 15.1604d0, 0.d0/)
+#else
+		m1%re(1,:) = (/1.1d0, 0.d0, 0.d0/)
+		m1%re(2,:) = (/0.d0, 2.2d0, 0.d0/)
+		m1%re(3,:) = (/0.d0, 0.d0, 1.5d0/)
+		m1%im = 0.d0
+		m2%re(1,:) = (/1.3d0, 0.d0, 0.d0/)
+		m2%re(2,:) = (/0.d0, 1.4d0, 0.d0/)
+		m2%re(3,:) = (/0.d0, 0.d0, 1.1d0/)
+		m2%im = 0.d0
+		m3%re(1,:) = (/2.1d0, 0.d0, 0.d0/)
+		m3%re(2,:) = (/0.d0, 1.7d0, 0.d0/)
+		m3%re(3,:) = (/0.d0, 0.d0, 1.2d0/)
+		m3%im = 0.d0
+		m4%re(1,:) = (/1.6d0, 0.d0, 0.d0/)
+		m4%re(2,:) = (/0.d0, 1.9d0, 0.d0/)
+		m4%re(3,:) = (/0.d0, 0.d0, 1.0d0/)
+		m4%im = 0.d0
+		Fsr(1,:) = (/-6.06d0, 0.d0, 0.d0/)
+		Fsr(2,:) = (/0.d0, -1.596d0, 0.d0/)
+		Fsr(3,:) = (/0.d0, 0.d0, 0.504d0/)
+		Fsi=0.d0
+		Fpr(1,:) = (/-10.968d0, 0.d0, 0.d0/)
+		Fpr(2,:) = (/0.d0, -2.844d0, 0.d0/)
+		Fpr(3,:) = (/0.d0, 0.d0, -2.854d0/)
+		Fpi=0.d0
+#endif
+		do i=1, 3
+			do j=i,3
+				write(tmparg,"('F_nu_sc ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", F_nu_sc_re(m1, m2, m3, m4, i, j), Fsr(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", F_nu_sc_im(m1, m2, m3, m4, i, j), Fsi(i,j), 1d-7, 1d-4)
+
+				write(tmparg,"('F_nu_pa ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", F_nu_pa_re(m1, m2, m3, m4, i, j), Fpr(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", F_nu_pa_im(m1, m2, m3, m4, i, j), Fpi(i,j), 1d-7, 1d-4)
+			end do
+		end do
+
+		call deallocateCmplxMat(m1)
+		call deallocateCmplxMat(m2)
+		call deallocateCmplxMat(m3)
+		call deallocateCmplxMat(m4)
+
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_F_nu
+
+	subroutine do_test_interp_nudens
+		integer :: i, j
+		real(dl), dimension(2, 2) :: ndr, ndi
+		type(cmplxMatNN) :: nm
+		type(cmplxMatNN), dimension(:), allocatable :: vdm
+		character(len=300) :: tmparg
+
+		call printTestBlockName("interpolation of nudens")
+		allocate(vdm(3))
+		do i=1, 3
+			allocate(vdm(i)%re(2,2), vdm(i)%im(2,2))
+			vdm(i)%y = i
+		end do
+		vdm(3)%y = 10.
+		vdm(1)%re(1,:) = (/1.1*fermiDirac(1.d0),0.3d0/)
+		vdm(1)%re(2,:) = (/0.12d0,2.*fermiDirac(1.d0)/)
+		vdm(2)%re(1,:) = (/1.3*fermiDirac(2.d0),-0.2d0/)
+		vdm(2)%re(2,:) = (/0.16d0,1.2*fermiDirac(2.d0)/)
+		vdm(3)%re(1,:) = (/1.9*fermiDirac(10.d0),0.d0/)
+		vdm(3)%re(2,:) = (/0.d0,1.1*fermiDirac(10.d0)/)
+		ndr(1,:) = (/1.2*fermiDirac(1.5d0),0.05d0/)
+		ndr(2,:) = (/0.05d0,1.6*fermiDirac(1.5d0)/)
+		vdm(1)%im(1,:) = (/10.,2./)
+		vdm(1)%im(2,:) = (/-0.4,0./)
+		vdm(2)%im(1,:) = (/0.,0.2/)
+		vdm(2)%im(2,:) = (/0.4,0./)
+		vdm(3)%im(1,:) = (/0.,0.1/)
+		vdm(3)%im(2,:) = (/0.2,1.1/)
+		ndi(1,:) = (/0.,1.1/)
+		ndi(2,:) = (/-1.1,0./)
+		nm = get_interpolated_nudens(vdm, 1.5d0, 2, 3)
+		call assert_double("ndr A y", nm%y, 1.5d0, 1d-7)
+		do i=1,2
+			do j=1,2
+				write(tmparg,"('ndr A ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", nm%re(i,j), ndr(i,j), 1d-7)
+				call assert_double(trim(tmparg)//"im", nm%im(i,j), ndi(i,j), 1d-7)
+			end do
+		end do
+		call deallocateCmplxMat(nm)
+
+		ndr(1,:) = (/1.75*fermiDirac(8.d0),-0.05d0/)
+		ndr(2,:) = (/-0.05d0,1.125*fermiDirac(8.d0)/)
+		ndi(1,:) = (/0.,0.125/)
+		ndi(2,:) = (/-0.125,0./)
+		nm = get_interpolated_nudens(vdm, 8.d0, 2, 3)
+		call assert_double("ndr B y", nm%y, 8.d0, 1d-7)
+		do i=1,2
+			do j=1,2
+				write(tmparg,"('ndr B ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", nm%re(i,j), ndr(i,j), 1d-7)
+				call assert_double(trim(tmparg)//"im", nm%im(i,j), ndi(i,j), 1d-7)
+			end do
+		end do
+		call deallocateCmplxMat(nm)
+
+		ndr(1,:) = (/0.,0./)
+		ndr(2,:) = (/0.,0./)
+		ndi(1,:) = (/0.,0./)
+		ndi(2,:) = (/0.,0./)
+		nm = get_interpolated_nudens(vdm, 0.1d0, 2, 3)
+		call assert_double("ndr C y", nm%y, 0.1d0, 1d-7)
+		do i=1,2
+			do j=1,2
+				write(tmparg,"('ndr C ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", nm%re(i,j), ndr(i,j), 1d-7)
+				call assert_double(trim(tmparg)//"im", nm%im(i,j), ndi(i,j), 1d-7)
+			end do
+		end do
+		call deallocateCmplxMat(nm)
+
+		ndr(1,:) = (/0.,0./)
+		ndr(2,:) = (/0.,0./)
+		ndi(1,:) = (/0.,0./)
+		ndi(2,:) = (/0.,0./)
+		nm = get_interpolated_nudens(vdm, 20.d0, 2, 3)
+		call assert_double("ndr D y", nm%y, 20.d0, 1d-7)
+		do i=1,2
+			do j=1,2
+				write(tmparg,"('ndr D ',2I1)") i,j
+				call assert_double(trim(tmparg)//"re", nm%re(i,j), ndr(i,j), 1d-7)
+				call assert_double(trim(tmparg)//"im", nm%im(i,j), ndi(i,j), 1d-7)
+			end do
+		end do
+		call deallocateCmplxMat(nm)
+
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_interp_nudens
+
+	subroutine do_test_collint_nunu
+		integer :: i, j, iy1, iy2, iy3
+		real(dl) :: y2, y3, y4, fsc, fpa, res1, res2, ey
+		real(dl), dimension(3, 3) :: ndr, ndi, er, ei
+		type(coll_args) :: collArgs
+		type(cmplxMatNN) :: n4, cts
+		real(dl), dimension(2) :: pi2_vec
+		character(len=300) :: tmparg
+
+		call printTestBlockName("collision integrals of nunu")
+		collArgs%x = 0.05d0
+		collArgs%z = 1.06d0
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = 0.0d0
+
+		Ny=50
+		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
+		call finish_y_arrays
+		!print*,"y range (GL):",y_arr(1),y_arr(Ny)
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1,1) = 1.0d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2,2) = 1.1d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(3,3) = 0.9d0 * y_arr(j) * fermiDirac(y_arr(j))
+		end do
+
+		!A
+		iy1=7
+		iy2=2
+		iy3=5
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr = 0.d0
+		ndr(1,1) = 0.0000980353d0
+		ndr(2,2) = 0.000103827d0
+		ndr(3,3) = 0.0000919177d0
+		ndi = 0.d0
+		er = 2d-3
+		ei = 1d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu int A ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		!B
+		iy1=10
+		iy2=4
+		iy3=7
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,1) = 0.0132253d0
+		ndr(2,2) = 0.0136399d0
+		ndr(3,3) = 0.0127086d0
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu int B ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		!full integral
+		!A
+		iy1=10
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,1) = 397.484d0
+		ndr(2,2) = 400.475d0
+		ndr(3,3) = 390.577d0
+		er = 1d-2
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral A ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		!B
+		iy1=5
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,1) = 33.3417d0
+		ndr(2,2) = 36.3735d0
+		ndr(3,3) = 30.3581d0
+		er = 4d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral B ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+#ifdef FULL_F_NU
+		!C
+		iy1=7
+		iy2=2
+		iy3=5
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1, 1) = 1.d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(1, 2) = 0.1d0
+			nuDensMatVecFD(j)%re(1, 3) = 0.d0
+			nuDensMatVecFD(j)%re(2, 2) = 1.1d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2, 3) = -0.1d0 * y_arr(j)
+			nuDensMatVecFD(j)%re(3, 3) = 0.9d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2, 1) = nuDensMatVecFD(j)%re(1, 2)
+			nuDensMatVecFD(j)%re(3, 1) = nuDensMatVecFD(j)%re(1, 3)
+			nuDensMatVecFD(j)%re(3, 2) = nuDensMatVecFD(j)%re(2, 3)
+			nuDensMatVecFD(j)%im(1, 2) = 0.d0
+			nuDensMatVecFD(j)%im(1, 3) = 0.1d0 * y_arr(j)
+			nuDensMatVecFD(j)%im(2, 3) = 0.2d0
+			nuDensMatVecFD(j)%im(2, 1) = - nuDensMatVecFD(j)%im(1, 2)
+			nuDensMatVecFD(j)%im(3, 1) = - nuDensMatVecFD(j)%im(1, 3)
+			nuDensMatVecFD(j)%im(3, 2) = - nuDensMatVecFD(j)%im(2, 3)
+		end do
+
+		ndr(1,:) = (/0.000143589, -0.0000141319, 8.50652e-6/)
+		ndr(2,:) = (/-0.0000141319,0.000059132,-0.0000158772/)
+		ndr(3,:) = (/8.50652e-6,-0.0000158772,0.0000680116/)
+		ndi(1,:) = (/0.,3.68626e-7, -0.0000304404/)
+		ndi(2,:) = (/-3.68626e-7,0.,3.3967e-6/)
+		ndi(3,:) = (/0.0000304404,-3.3967e-6,0./)
+		er(1,:) = (/1d-3,5d-3,1d-3/)
+		er(2,:) = (/5d-3,2d-3,2d-3/)
+		er(3,:) = (/1d-3,2d-3,2d-3/)
+		ei(1,:) = (/1d-3,4d-3,1d-3/)
+		ei(2,:) = (/4d-3,1d-3,5d-2/)
+		ei(3,:) = (/1d-3,5d-2,1d-3/)
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu int C ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", coll_nunu_int(iy2, iy3, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		!full integral
+		!A
+		iy1=10
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,:) = (/2.23945e6, -219146., 117805./)
+		ndr(2,:) = (/-219146., 2.36926e6, 6.06044e6/)
+		ndr(3,:) = (/117805., 6.06044e6, 2.8301e6/)
+		ndi(1,:) = (/0.,- 813455., -6.02848e6/)
+		ndi(2,:) = (/813455.,0.,-266218./)
+		ndi(3,:) = (/6.02848e6,266218.,0./)
+		er(1,:) = (/1.2d-1, 1.0d-1, 1.0d-1/)
+		er(2,:) = (/1.0d-1, 1.1d-1, 1.2d-1/)
+		er(3,:) = (/1.0d-1, 1.2d-1, 1.1d-1/)
+		ei(1,:) = (/1.0d-1, 1.1d-1, 1.2d-1/)
+		ei(2,:) = (/1.1d-1, 1.0d-1, 1.0d-1/)
+		ei(3,:) = (/1.2d-1, 1.0d-1, 1.0d-1/)
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral C ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_GL(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+#endif
+
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1,1) = (1.0d0 ) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2,2) = (1.0d0 ) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(3,3) = (1.0d0 ) * fermiDirac(y_arr(j))
+		end do
+		do j=0, 5
+			if (j.eq.0) then
+				collArgs%iy=1
+			else
+				collArgs%iy = j*10
+			end if
+			if (j.eq.5) then
+				ey = 0.15d0
+			elseif(j.eq.1) then
+				ey=0.02d0
+			else
+				ey=1.d-2
+			end if
+			collArgs%y1 = y_arr(collArgs%iy)
+			res1=integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_da, F_nu_pa_da)/collArgs%y1**3/8.d0
+			res2=dy_damping_fit(collArgs%y1)
+			!print*,"s",collargs%y1,res1,res2
+			write(tmparg,"('dy-sim GL',I1)") j
+			call assert_double_rel_safe(trim(tmparg), res1, res2, 1d-7, ey)
+		end do
+
+		!back to linlog momenta -> NC method
+		Ny=100
+		y_arr = linspace(y_min, y_max, Ny)
+		call finish_y_arrays
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1,1) = 1.0d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2,2) = 1.1d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(3,3) = 0.9d0 * y_arr(j) * fermiDirac(y_arr(j))
+		end do
+
+		!A
+		iy1=20
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr = 0.d0
+		ndi = 0.d0
+		ndr(1,1) = -365.198d0
+		ndr(2,2) = -820.405d0
+		ndr(3,3) = 55.3159d0
+		er = 1d-3
+		er(3,3) = 2d-2
+		ei = 1d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral NC A ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		!B
+		iy1=4
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,1) = 193.541d0
+		ndr(2,2) = 204.772d0
+		ndr(3,3) = 181.685d0
+		er = 1d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral NC B ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+#ifdef FULL_F_NU
+		!C
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1, 1) = 1.d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(1, 2) = 0.1d0
+			nuDensMatVecFD(j)%re(1, 3) = 0.d0
+			nuDensMatVecFD(j)%re(2, 2) = 1.1d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2, 3) = -0.1d0 * y_arr(j)
+			nuDensMatVecFD(j)%re(3, 3) = 0.9d0 * y_arr(j) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2, 1) = nuDensMatVecFD(j)%re(1, 2)
+			nuDensMatVecFD(j)%re(3, 1) = nuDensMatVecFD(j)%re(1, 3)
+			nuDensMatVecFD(j)%re(3, 2) = nuDensMatVecFD(j)%re(2, 3)
+			nuDensMatVecFD(j)%im(1, 2) = 0.d0
+			nuDensMatVecFD(j)%im(1, 3) = 0.1d0 * y_arr(j)
+			nuDensMatVecFD(j)%im(2, 3) = 0.2d0
+			nuDensMatVecFD(j)%im(2, 1) = - nuDensMatVecFD(j)%im(1, 2)
+			nuDensMatVecFD(j)%im(3, 1) = - nuDensMatVecFD(j)%im(1, 3)
+			nuDensMatVecFD(j)%im(3, 2) = - nuDensMatVecFD(j)%im(2, 3)
+		end do
+
+		iy1=7
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		ndr(1,:) = (/5.05623e6, -468304., 241699./)
+		ndr(2,:) = (/-468304., 5.36981e6, 1.29749e7/)
+		ndr(3,:) = (/241699., 1.29749e7, 6.2691e6/)
+		ndi(1,:) = (/0., -1.73808e6, -1.29012e7/)
+		ndi(2,:) = (/1.73808e6, 0., -591614./)
+		ndi(3,:) = (/1.29012e7, 591614., 0./)
+		er = 1d-3
+		ei = 1d-3
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				collArgs%ix1 = i
+				collArgs%ix2 = j
+				write(tmparg,"('nunu integral NC C ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_re, F_nu_pa_re), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_im, F_nu_pa_im), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+#endif
+
+		!now test that get_collision_terms does what expected
+		call allocateCmplxMat(cts)
+		collArgs%ix1 = 1
+		collArgs%ix2 = 1
+		collArgs%x = 0.05d0
+		collArgs%z = 1.06d0
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = 0.0d0
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+
+		res1 = integrate_collint_nunu_NC(fakecollintnunu1, collArgs, F_nu_sc_re, F_nu_pa_re)
+		cts = get_collision_terms(collArgs, fakecollintnue0, fakecollintnunu1)
+		cts%re(:,:) = cts%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		cts%im(:,:) = cts%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+#ifdef FULL_F_NU
+		ndr = res1/4.d0
+		ndi(1,:) = (/    0.d0,  res1/4., res1/4./)
+		ndi(2,:) = (/-res1/4.,     0.d0, res1/4./)
+		ndi(3,:) = (/-res1/4., -res1/4.,    0.d0/)
+#else
+		ndr(1,:) = (/res1/4.,     0.d0,    0.d0/)
+		ndr(2,:) = (/   0.d0,  res1/4.,    0.d0/)
+		ndr(3,:) = (/   0.d0,     0.d0, res1/4./)
+		ndi = 0.d0
+#endif
+		er = 1d-7
+		ei = 1d-7
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms nunu A ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		res1 = integrate_collint_nunu_NC(fakecollintnunu1, collArgs, F_nu_sc_re, F_nu_pa_re)
+		res2 = integrate_collint_nue_NC(fakecollintnue1, collArgs, F_ab_sc_re, F_ab_ann_re)
+		cts = get_collision_terms(collArgs, fakecollintnue1, fakecollintnunu1)
+		cts%re(:,:) = cts%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		cts%im(:,:) = cts%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+#ifdef FULL_F_NU
+		ndr = res1/4.d0 + res2
+		ndi(1,:) = (/         0.d0,  res1/4.+res2, res1/4.+res2/)
+		ndi(2,:) = (/-res1/4.-res2,          0.d0, res1/4.+res2/)
+		ndi(3,:) = (/-res1/4.-res2, -res1/4.-res2,         0.d0/)
+#else
+		ndr(1,:) = (/res1/4. + res2,            res2,           res2/)
+		ndr(2,:) = (/          res2,  res1/4. + res2,           res2/)
+		ndr(3,:) = (/          res2,            res2, res1/4. + res2/)
+		ndi(1,:) = (/ 0.d0, +res2, res2/)
+		ndi(2,:) = (/-res2,  0.d0, res2/)
+		ndi(3,:) = (/-res2, -res2, 0.d0/)
+#endif
+		er = 1d-7
+		ei = 1d-7
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms nunu B ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+
+		do j=1, Ny
+			nuDensMatVecFD(j)%y=y_arr(j)
+			nuDensMatVecFD(j)%re=0.d0
+			nuDensMatVecFD(j)%im=0.d0
+			nuDensMatVecFD(j)%re(1,1) = (1.0d0 ) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(2,2) = (1.0d0 ) * fermiDirac(y_arr(j))
+			nuDensMatVecFD(j)%re(3,3) = (1.0d0 ) * fermiDirac(y_arr(j))
+		end do
+		do j=0, 5
+			if (j.eq.0) then
+				collArgs%iy=1
+			else
+				collArgs%iy = j*10
+			end if
+			collArgs%y1 = y_arr(collArgs%iy)
+			res1=integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_da, F_nu_pa_da)/collArgs%y1**3/8.d0
+			res2=dy_damping_fit(collArgs%y1)
+			!print*,"s",collargs%y1,res1,res2
+			write(tmparg,"('dy-sim GL',I1)") j
+			call assert_double_rel_safe(trim(tmparg), res1, res2, 1d-7, 1d-2)
+		end do
+
+		collArgs%z = 1.1d0
+		collArgs%y2 = 0.d0
+		collArgs%y3 = 0.d0
+		collArgs%y4 = 0.d0
+		collArgs%dme2 = 0.0d0
+		collArgs%iy = iy1
+		collArgs%y1 = y_arr(iy1)
+		collArgs%x = 0.06d0
+		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
+		call printMat(cts%re)
+		cts = get_collision_terms(collArgs, fakecollintnue0, coll_nunu_int)
+		call printMat(cts%re)
+
+		collArgs%x = 0.1d0
+		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
+		call printMat(cts%re)
+		cts = get_collision_terms(collArgs, fakecollintnue0, coll_nunu_int)
+		call printMat(cts%re)
+
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_collint_nunu
 
 #ifdef LOW_REHEATING
 	subroutine do_low_reheating_tests
@@ -3078,13 +3884,13 @@ program tests
 
 	subroutine do_timing_tests
 		timing_tests = .true.
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		call test_dzodx_speed
 #endif
 		call test_nuDens_speed
 		call time_electron_energyDensity
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 		call init_interp_dme2_e
 #endif
 		call init_interp_FD

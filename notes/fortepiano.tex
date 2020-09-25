@@ -118,6 +118,7 @@ Other matrices that we need to define are
 while the interaction matrices used in the the collision terms,
 presented in section~\ref{sec:collint}, are
 \begin{equation}
+\label{eq:gLR}
 G^L=\text{diag}(g_L, \tilde g_L, \tilde g_L, 0,\ldots)\,,
 \qquad
 G^R=\text{diag}(g_R, g_R, g_R, 0,\ldots)\,,
@@ -575,10 +576,10 @@ $\rho_{\nu_i}$ the one of the $i$-th neutrino.
 \label{sec:collint}
 The full collision terms are defined by the sum
 of the contributions from neutrino--electron/positron scattering and
-$e^\pm$ annihilation into neutrinos.
-We neglect other reactions, such as $\mu^\pm$ annihilation (which only affects at very early temperatures when everything is in equilibrium)
-and neutrino--neutrino scattering.
-We therefore have \cite{deSalas:2016ztq}
+$e^\pm$ annihilation into neutrinos,
+plus neutrino--neutrino interactions.
+We neglect other reactions, such as $\mu^\pm$ annihilation (which only affects at very early temperatures when everything is in equilibrium).
+We therefore have \cite{deSalas:2016ztq,Bennett:inprep}
 %
 \begin{eqnarray}
 \mathcal{I}[\varrho(y)]
@@ -589,7 +590,11 @@ We therefore have \cite{deSalas:2016ztq}
 \\
 \mathcal{I}^u
 &\equiv&
-\mathcal{I}_{\rm sc}^u + \mathcal{I}_{\rm ann}^u\,,
+\mathcal{I}_{\rm sc}^u
++ \mathcal{I}_{\rm ann}^u
++ \mathcal{I}_{\nu\nu}^u
++ \mathcal{I}_{\nu\bar\nu}^u
+\,,
 \label{eq:unnormcollint}
 \\
 \mathcal{I}_{\rm sc} ^u
@@ -623,6 +628,25 @@ We therefore have \cite{deSalas:2016ztq}
     +F_{\rm ann}^{LR}\left(\varrho^{(1)}, \varrho^{(2)}, f_e^{(3)}, f_{e^+}^{(4)}\right)
     \right]\nonumber
 \right\}\,,
+\\
+\mathcal{I}_{\nu\nu} ^u
+&=&
+\frac{1}{4}
+\int {\rm d}y_2 {\rm d}y_3\,
+\Pi_2^\nu(y, y_2)
+F_{\nu\nu}\left(\varrho^{(1)}, \varrho^{(2)}, \varrho^{(3)}, \varrho^{(4)}\right)
+\,,
+\label{eq:I_nunu}
+\\
+\mathcal{I}_{\nu\bar\nu} ^u
+&=&
+\frac{1}{4}
+\int {\rm d}y_2 {\rm d}y_3\,
+\Pi_2^\nu(y, y_4)
+F_{\nu\bar\nu}\left(\varrho^{(1)}, \varrho^{(2)}, \varrho^{(3)}, \varrho^{(4)}\right)
+% F_{\nu\bar\nu}\left(\varrho^{(1)}, \bar\varrho^{(2)}, \varrho^{(3)}, \bar\varrho^{(4)}\right)
+\label{eq:I_nubarnu}
+\,,
 \end{eqnarray}
 where $E^2_i = \sqrt{x^2+y_i^2+\delta m_e^2}$ and
 \begin{eqnarray}
@@ -649,6 +673,14 @@ y\,y_2\,E_3\,E_4\,D_1 + D_3 + y\,E_3 D_2(y_2,y_4,y,y_3) + y_2\,E_4 D_2(y,y_3,y_2
 \Pi_2^a(y,y_4)/2
 &=&
 y\,y_2\,E_3\,E_4\,D_1 + D_3 + y_2\,E_3 D_2(y,y_4,y_2,y_3) + y\,E_4 D_2(y_2,y_3,y,y_4),
+\\
+\Pi_2^\nu(y,y_2)/2
+&=&
+y\,y_2\,y_3\,y_4\,D_1 + D_3 - y\,y_2 D_2(y_3,y_4,y,y_2) - y_3\,y_4 D_2(y,y_2,y_3,y_4),
+\\
+\Pi_2^\nu(y,y_4)/2
+&=&
+y\,y_2\,y_3\,y_4\,D_1 + D_3 + y_2\,y_3 D_2(y,y_4,y_2,y_3) + y\,y_4 D_2(y_2,y_3,y,y_4),
 \end{eqnarray}
 %
 where the functions $D_i$ have the following definitions \cite{Dolgov:1997mb}:
@@ -680,7 +712,7 @@ D_3(a,b,c,d)
 The three functions can be written in a more efficient way for the calculation,
 since they can be solved analytically, see e.g.~\cite{Blaschke:2016xxt} for the complete expressions.
 
-Finally, the functions that define the phase space factors in the collision terms are \cite{deSalas:2016ztq}:
+Finally, the functions that define the phase space factors in the collision terms are \cite{deSalas:2016ztq,Bennett:inprep}:
 \begin{eqnarray}
 F_{\rm sc}^{ab}\left(\varrho^{(1)}, f_e^{(2)}, \varrho^{(3)}, f_e^{(4)}\right)
 &=&
@@ -696,18 +728,90 @@ f_e^{(3)}f_e^{(4)}\left[G^a(1-\varrho^{(2)})G^b(1-\varrho^{(1)})+(1-\varrho^{(1)
 &-&
 (1-f_e^{(3)})(1-f_e^{(4)})\left[G^a\varrho^{(2)}G^b\varrho^{(1)}+\varrho^{(1)}G^b\varrho^{(2)}G^a\right],
 \label{eq:F_ab_ann}
+\\
+F_{\nu\nu}\left(\varrho^{(1)}, \varrho^{(2)}, \varrho^{(3)}, \varrho^{(4)}\right)
+&=&
+\left(1-\varrho^{(1)}\right)\varrho^{(3)}
+\left[\left(1-\varrho^{(2)}\right)\varrho^{(4)}+\mathrm{Tr}(\cdots)\right]
+\nonumber\\
+&-&
+\varrho^{(1)}\left(1-\varrho^{(3)}\right)
+\left[\varrho^{(2)}\left(1-\varrho^{(4)}\right)+\mathrm{Tr}(\cdots)\right]
++\mathrm{h.c.}
+\label{eq:F_nunu}\\
+F_{\nu\bar\nu}\left(\varrho^{(1)}, \varrho^{(2)}, \varrho^{(3)}, \varrho^{(4)}\right)
+&=&
+\left(1-\varrho^{(1)}\right)\left(1-\varrho^{(2)}\right)
+\left[\varrho^{(4)}\varrho^{(3)}+\mathrm{Tr}(\cdots)\right]
+\nonumber\\
+&-&
+\varrho^{(1)}\varrho^{(2)}
+\left[\left(1-\varrho^{(4)}\right)\left(1-\varrho^{(3)}\right)+\mathrm{Tr}(\cdots)\right]
+\nonumber\\
+&+&
+\left(1-\varrho^{(1)}\right)\varrho^{(3)}
+\left[\varrho^{(4)}\left(1-\varrho^{(2)}\right)+\mathrm{Tr}(\cdots)\right]
+\nonumber\\
+&-&
+\varrho^{(1)}\left(1-\varrho^{(3)}\right)
+\left[\left(1-\varrho^{(4)}\right)\varrho^{(2)}+\mathrm{Tr}(\cdots)\right]
+% F_{\nu\bar\nu}\left(\varrho^{(1)}, \bar\varrho^{(2)}, \varrho^{(3)}, \bar\varrho^{(4)}\right)
+% &=&
+% \left(1-\varrho^{(1)}\right)\left(1-\bar\varrho^{(2)}\right)
+% \left[\bar\varrho^{(4)}\varrho^{(3)}+\mathrm{Tr}(\cdots)\right]
+% \nonumber\\
+% &-&
+% \varrho^{(1)}\bar\varrho^{(2)}
+% \left[\left(1-\bar\varrho^{(4)}\right)\left(1-\varrho^{(3)}\right)+\mathrm{Tr}(\cdots)\right]
+% \nonumber\\
+% &+&
+% \left(1-\varrho^{(1)}\right)\varrho^{(3)}
+% \left[\bar\varrho^{(4)}\left(1-\bar\varrho^{(2)}\right)+\mathrm{Tr}(\cdots)\right]
+% \nonumber\\
+% &-&
+% \varrho^{(1)}\left(1-\varrho^{(3)}\right)
+% \left[\left(1-\bar\varrho^{(4)}\right)\bar\varrho^{(2)}+\mathrm{Tr}(\cdots)\right]
++\mathrm{h.c.},
+\label{eq:F_nubarnu}
 \end{eqnarray}
 where $\varrho^{(i)}=\varrho(y_i)$ and $f_e^{(i)}=f_{\rm FD}(y_i, z)$ represent the momentum distribution function
-of the various particles.
+of the various particles,
+and $\mathrm{Tr}(\cdots)$ denotes the trace of the term immediately before it.
 The full expression for these functions should take into account the lepton asymmetry and distinguish
 the momentum distributions of leptons/neutrinos from those of antilepton/antineutrinos.
 Since we do not include lepton asymmetry, we just report the expressions without the heavier notation
 required to distinguish the various terms.
 
-The code we use can compute the collision terms according to Eqs.~\eqref{eq:I_sc} and \eqref{eq:I_ann},
+Concerning the neutrino--neutrino collision terms \cite{Bennett:inprep},
+there are few more points to be discussed.
+We can see from Eqs.~\eqref{eq:F_nunu}--\eqref{eq:F_nubarnu} that the expressions include
+up to four products of the neutrino density matrices.
+With a smart implementation of the integration methods
+(see sections~\ref{ssec:momenta} and \ref{ssec:integrals}),
+one can use for three of the terms (namely, the ones containing $y_1$, $y_2$ and $y_3$)
+the values obtained on the momentum grid.
+For the fourth occurrence, $\varrho(y_4)$, an interpolation is needed.
+We tested several possibilities, and implemented a scheme that computes
+the linear interpolation of $\varrho_{\alpha\alpha}/f_{\rm FD}$ on the diagonal,
+and the linear interpolation of $\varrho_{\alpha\beta}$ ($\alpha\neq\beta$) for the off-diagonal,
+as it guarantees a better numerical stability (see \cite{Bennett:inprep}).
+Nevertheless, the selection of the momentum grid may have a strong impact on the results obtained using
+neutrino--neutrino collision terms, as we will discuss in section~\ref{ssec:precision}.
+We have also verified that the numerical values of \Neff\ obtained including the integrals in
+Eqs.~\eqref{eq:I_nunu}--\eqref{eq:I_nubarnu}
+does not vary significantly if we consider only the diagonal components of $\varrho$,
+or we instead consider the full matrix.
+The reason is that the off-diagonal terms are typically much smaller than the diagonal ones,
+so that their combinations are suppressed and give a small contribution to the collision terms.
+Ignoring the off-diagonal terms, therefore, gives a very precise result with a slightly smaller computational cost.
+Notice also that the implementation of the neutrino--neutrino collision terms as described here
+is the first that allows to compute off-diagonal collision terms
+taking into account the full neutrino density matrix \cite{Bennett:inprep}.
+
+The code can compute the collision terms according to Eqs.~\eqref{eq:I_sc}--\eqref{eq:I_nubarnu},
 but the integrals are very expensive.
-For the non-diagonal terms of the collision matrix we therefore use the
-damping approximation, in the form
+For the non-diagonal terms of the collision matrix we therefore allow the possibility to use
+damping approximations, in the form
 %
 \begin{equation}
 \mathcal{I}^u_{\alpha\beta}(\varrho) = -D_{\alpha\beta} \varrho_{\alpha\beta},
@@ -717,9 +821,14 @@ for $\alpha \neq \beta$.
 Notice that $\mathcal{I}^u_{\alpha\beta}(\varrho)$ is the unnormalized term
 defined in Eq.~\eqref{eq:unnormcollint}.
 The expressions for the coefficients $D_{\alpha\beta}$ depend on the elements considered.
-The coefficients were derived for example in \cite{McKellar:1992ja},
+In case more than one sterile state is considered, the terms $D_{s_is_j}$ are always zero.
+For the rest of the terms, two possibilities are implemented in the code.
+
+\todo[inline]{Yvonne}
+
+The second possibility is to implement the coefficients derived in \cite{McKellar:1992ja},
 see also \cite{Enqvist:1991qj,Bell:1998ds},
-and can be written as
+which can be written as
 %
 \begin{eqnarray}
 D_{e\mu}/F=D_{e\tau}/F & = & 15 + 8\sin^4\theta_W\,,\\
@@ -728,8 +837,7 @@ D_{es}/F & = & 29 + 12\sin^2\theta_W + 24\sin^4\theta_W\,,\\
 D_{\mu s}/F = D_{\tau s}/F & = & 29 - 12\sin^2\theta_W + 24\sin^4\theta_W\,,
 \end{eqnarray}
 where
-$F=7\pi^4 y^3/135$ is a common normalisation coefficient.
-In case more than one sterile state is considered, the terms $D_{s_is_j}$ are always zero.
+$F=7\pi^4 z^4 y^3/135$ is a common normalisation coefficient.
 
 
 \section{Solver and initial conditions}
@@ -747,7 +855,7 @@ is a modification of the Double-precision Livermore Solver for Ordinary Differen
 which includes an automatic switching between stiff and non-stiff problems
 of the form ${\rm d}y/{\rm d}t = f(t,y)$.
 In the stiff case, it treats the Jacobian matrix ${\rm d}f/{\rm d}y$ as either a dense (full) or a banded matrix, and as either user-supplied or internally approximated by difference quotients.
-It uses Adams methods (predictor-corrector) in the non-stiff case, and Backward Differentiation Formula (BDF) methods (the Gear methods) in the stiff case.
+It uses Adams methods (predictor--corrector) in the non-stiff case, and Backward Differentiation Formula (BDF) methods (the Gear methods) in the stiff case.
 The linear systems that arise are solved by direct methods (LU factor/solve).
 For more details, see the original publications  \cite{hindmarsh1982odepack,dlsoda1}.
 
@@ -759,7 +867,7 @@ from even earlier times ($z_0=1$ at $T_0=10\, m_\mu$, $x_0=m_e/T_0$) until $x_{\
 The obtained value $z_{\rm in}$ is then considered as the temperature of equilibrium
 of the entire plasma. Concerning the neutrino density matrix at $x_{\rm in}$, all off-diagonal elements and the diagonal ones for sterile
 neutrinos are fixed to zero, while the diagonal elements corresponding to active neutrinos are 
-Fermi-Dirac distributions with a temperature $z_{\rm in}$.
+Fermi--Dirac distributions with a temperature $z_{\rm in}$.
 For typical values that we use in the code,
 we have $z_{\rm in}-1=2.9\e{-4}$ for $x_{\rm in}=0.001$ (which we use for the 3+1 cases)
 or
@@ -770,10 +878,13 @@ $z_{\rm in} = 1.098$ for $x_{\rm in}=0.05$ (suitable for the three-neutrino case
 \label{ssec:momenta}
 In order to follow the evolution of Eq.~\eqref{eq:varrho-B4}, we discretise its dependence on $y$ and evolve each of the momentum in $x$.
 One of the most interesting ways to make the code more precise and faster is related to the choice of the $y_i$.
-Discretising the momenta with a linear or logarithmic spacing works, but it is not the most efficient
-way to generate the grid.
+Discretising the momenta with a linear or logarithmic spacing works%
+\footnote{Note that a logarithmic spacing will introduce biases in the numerical calculation
+and that the final numbers of
+the neutrino energy density and effective number may be artificially increased.},
+but it is not the most efficient way to generate the grid.
 Inspired by one of the methods used in \texttt{CLASS} (see \cite{Lesgourgues:2011rh}),
-we deeply tested and finally considered a spacing based on the Gauss-Laguerre integration method.
+we deeply tested and finally considered a spacing based on the Gauss--Laguerre (GL) integration method.
 The crucial point of the calculation is to compute the energy density of neutrinos,
 given by
 %
@@ -785,8 +896,8 @@ given by
 \mathrm{d}y\, y^3\,\varrho_{\alpha\alpha}(y),
 \end{equation}
 %
-where $\varrho_{\alpha\alpha}(y)$ will be close to a Fermi-Dirac distribution and in any case always exponentially suppressed.
-The Gauss-Laguerre quadrature (see e.g.~\cite{NR})
+where $\varrho_{\alpha\alpha}(y)$ will be close to a Fermi--Dirac distribution and in any case always exponentially suppressed.
+The Gauss--Laguerre quadrature (see e.g.~\cite{NR})
 is a method that is designed to optimise the solution of integrals of the type
 \begin{equation}
 I
@@ -808,7 +919,7 @@ Since our momentum distribution function is not directly proportional to $e^{-y}
 we consider $f(x)=e^y\,\varrho_{\alpha\alpha}(y)$,
 in order to rescale the weights appropriately.
 
-For the simple purpose of integrating the Fermi-Dirac distribution, very few points are typically required.
+For the simple purpose of integrating the Fermi--Dirac distribution, very few points are typically required.
 \texttt{CLASS}, for example, uses order of ten points for integrating the neutrino distribution.
 In our case the non-thermal distortions must be computed accurately, and in particular
 when evolving the thermalisation of a sterile neutrino we need more precision on the small momenta.
@@ -818,21 +929,24 @@ selecting only the $N_y\leq N$ nodes for which $y_i<20$.
 In this way we can increase the number of points at small $y$ and the resolution on the thermalisation processes
 without having to compute a large number of points at high momentum.
 The number of points we can use is limited by the accuracy of the algorithm that computes the $w_i$.
-For the \texttt{gaulag} routine \cite{NR}, our setup allows to reach $N_y\sim50$ when $N\sim350$.
+For the \texttt{gaulag} routine \cite{NR}, our setup allows to reach $N_y\sim50$ when $N\sim350$,
+when $y_i<20$.
 This number of momentum nodes is already large enough to reach a precision
 much better than one per mille on \Neff, which is the same we could obtain with a linear spacing of the points
 and $N_y=100$ \cite{deSalas:2016ztq}.
 Since the evaluation of the collision integrals scales as $N_y^2$
 and the number of derivatives in Eq.~\eqref{eq:drho_dx_nxn} scales with $N_y$,
 this ensures a significant gain.
-We further comment on this point in the next sections.
+Unfortunately, since the method used to compute the GL nodes does not allow to increase $N_y$ arbitrarily,
+the GL method has limitations when the neutrino--neutrino collision terms are considered.
+We further comment on these points in the next sections.
 
 
 \section{Numerical calculation of 1D and 2D integrals}
 \label{ssec:integrals}
 Most of the processing time is spent to compute the collision integrals
 discussed in section~\ref{sec:collint}, which are two-dimensional integrals in the momentum.
-We compute the integrals using a two-dimensional version of the Gauss-Laguerre method,
+We compute the integrals using a two-dimensional version of the Gauss--Laguerre method,
 which has been tested to be precise enough,
 %
 \begin{equation}
@@ -844,13 +958,13 @@ w_i\,w_j\,f_{ij}
 \end{equation}
 This works under the assumption that $f(x,y)$ is exponentially suppressed both in $x$ and $y$.
 Such assumption is valid in our case, as the functions $F_{ab}$ always contain products of momentum distribution functions,
-which are typically very close to the Fermi-Dirac.
-The only exception is the case of the additional neutrino, for which the distribution can be very different from the Fermi-Dirac,
+which are typically very close to the Fermi--Dirac.
+The only exception is the case of the additional neutrino, for which the distribution can be very different from the Fermi--Dirac,
 but in any case it is always exponentially suppressed, since the lowest momenta
 are always populated first and its momentum distribution can never exceed the one of standard neutrinos.
 
 When using a linear/logarithmic spacing of points, instead
-we perform the integrals using a composite two-dimensional Newton-Cotes formula of order 1 \cite{newtoncotes}:
+we perform the integrals using a composite two-dimensional Newton--Cotes (NC) formula of order 1 \cite{newtoncotes}:
 \begin{equation}
 \int_{x_1}^{x_N}\int_{y_1}^{y_M}{\rm d}x\, {\rm d}y\, f(x, y)
 =
@@ -880,14 +994,14 @@ with a short computation time.
 For the two-dimensional integrals, the selected momentum grid
 fully defines the integration procedure, and the precision is always good
 when using a reasonable number of points.
-Depending on the function, we may adopt the Gauss-Laguerre, Newton-Cotes or Romberg integration \cite{Romberg:1955}
+Depending on the function, we may adopt the Gauss--Laguerre, Newton--Cotes or Romberg integration \cite{Romberg:1955}
 methods for the one-dimensional integrals.
 In particular, for the electron and muon energy densities
 and for most of the funcions that enter the calculation of Eq.~\eqref{eq:dz_dx_nxn}
-we use a Gauss-Laguerre method on a dedicated grid of up to 110 points
+we use a Gauss--Laguerre method on a dedicated grid of up to 110 points
 for the most complicated functions.
 In one single case, the $K'(r)$ function derived from Eq.~\eqref{eq:k},
-the result obtained with the Gauss-Laguerre method
+the result obtained with the Gauss--Laguerre method
 did not reach the requested precision and we decided to use a Romberg integration instead.
 Although this requires a longer computation time, it only affects the initialisation stage,
 as in the code we interpolate over the pre-computed values.
@@ -900,12 +1014,14 @@ for all the computations required in the code.
 We have tested our code with the results available in the literature and
 verified the robustness of our findings against changes in the settings used in the calculations.
 In particular, we refer to the high-precision results in the three-neutrino case of \cite{deSalas:2016ztq},
-from which we have adopted all the equations.
+from which we have adopted most of the equations.
+Most of the results summarized here are discussed more in details in \cite{Gariazzo:2019gyi,Bennett:inprep}.
 
 Concerning the value of \Neff\ that we obtain using only active neutrinos,
+if we ignore neutrino--neutrino collision terms,
 we verified that we can reach much better than per mille stability on $\Neff=3.044$
-using $N_y\geq20$ points spaced with the Gauss-Laguerre method,
-if the tolerance for \dlsoda%
+using $N_y\geq20$ points spaced with the Gauss--Laguerre method,
+if the tolerance for \dlsoda~%
 \footnote{For simplicity, we assume the same numerical value for both the relative and absolute tolerance.
 The algorithm will always match the most stringent of the two requirements.}
 is $10^{-6}$.
@@ -921,6 +1037,31 @@ with respect to the most precise case considered here
 ($N_y=50$, tolerance $10^{-6}$).
 Using a tolerance of $10^{-4}$ gives a value of \Neff\ which is stable
 at the level of few per mille, and still better than 1\%.
+
+A full calculation of \Neff, in any case, must be performed taking into account also the neutrino--neutrino collision terms.
+Including them raises \Neff\ by approximately 0.002,
+depending on the values of the oscillation parameters and the considered momentum grid.
+Mostly because of the interpolation required to compute $\varrho(y_4)$
+in Eqs.~\eqref{eq:F_nunu}--\eqref{eq:F_nubarnu},
+the numerical uncertainties grow significantly:
+when a coarse grid is considered, the interpolation is much less precise
+and the final results are much more instable.
+As expected, however, the instability decreases when the number of momentum nodes is increased.
+It is worth noticing that a GL grid tends to give a slightly higher estimation of \Neff\
+than a grid with linearly spaced momentum nodes, with a difference of $\sim0.001$
+between the GL case with $N_y=50$ and a mixed linear/logarithmic spacing with $N_y=100$,
+when requiring all the nodes to satisfy $y_i<20$.
+Since our GL method does not allow to increase arbitrarily the number of nodes
+when imposing the upper limit on their value,
+we cannot have a more precise estimate of the effect of the momentum grid,
+nor to determine at which $N_y$ the two different momentum grid schemes
+converge to the same value of \Neff\ when requiring a higher precision.
+
+Considering the implementation of the off-diagonal collision terms,
+we find that the \Neff\ output does not change significantly if we use the full integrals or the damping terms,
+both for neutrino--neutrino and neutrino--electron contributions.
+The damping formulas are sufficiently good to obtain a very precise result and allow to save
+a lot of computation time.
 
 If we repeat the same exercise in the 3+1 scheme,
 using $\dmsq{41}=1.29$~eV$^2$,
@@ -946,49 +1087,141 @@ due to the very small initial value $z_{\rm in}-1$,
 and are never really required for our purposes.
 
 More details on the precision of numerical calculations and the dependence of \Neff\ on physical parameters
-(including Fermi constant, Weinberg angle, $W$ boson mass and neutrino mixing parameters)
+(including Fermi constant, Weinberg angle mass and neutrino mixing parameters)
 are discussed in \cite{Bennett:inprep}, considering the three-neutrino case only.
-We report here some of the main results, summarized in the various panels of Fig.~\ref{fig:precision}.
 In order to study the accuracy of the numerical calculations as functions of the physical parameters,
 the tolerance for \dlsoda\ has been set to $10^{-7}$.
 Considering variations for the physical parameters in the allowed $3\sigma$ range
 (from \cite{deSalas:2017kay} for the neutrino mixing parameters,
 from \cite{Tanabashi:2018oca} for the weak interaction parameters),
-we see that the stability of \Neff\ is at the $10^{-4}$ level or better (upper left panel).
-A similar precision is obtained when changing the way the off-diagonal terms (upper right panel).
-Altering $x_{\rm in}$ (lower left panel), which controls the initial time in the code,
+we see that the stability of \Neff\ is at the $10^{-4}$ level or better.
+A similar precision is obtained when changing the way the off-diagonal terms.
+Altering $x_{\rm in}$, which controls the initial time in the code,
 only affects \Neff\ at the $10^{-5}$ level.
-More critical is the dependence on $N_y$ (lower right panel),
+More critical is the dependence on $N_y$,
 which controls the number and the position of the nodes of the momentum grid.
 Varying $N_y$ between 25 and 50 only alters the final result at the $10^{-4}$ level,
-so that it is safe to quote our suggested number $\Neff=3.0430$ when considering 3 neutrinos.
-An estimate of the theoretical and numerical uncertainty on this number is of order $10^{-4}$.
+if neutrino--neutrino collision terms are ignored,
+but has a much bigger impact if they are considered.
+In general, variations up to 0.001 can be expected
+if one includes neutrino--neutrino collisions and changes the momentum grid
+(using a linear spacing or a GL one for the $y$ nodes),
+assuming that a sufficiently high number of nodes is considered
+($N_y\geq40$ for GL spacing of the nodes, $N_y\geq80$ for a linear one).
+
+As a summary, a reasonable estimate of the theoretical and numerical uncertainty on the recommended value
+obtained considering three active neutrinos,
+$\Neff=3.045$,
+is of order $10^{-3}$.
 
 
-\begin{figure}
-\centering
-\includegraphics[width=0.49\textwidth]{plots/combined}
-\includegraphics[width=0.49\textwidth]{plots/od}
-\includegraphics[width=0.49\textwidth]{plots/xin}
-\includegraphics[width=0.49\textwidth]{plots/ny}
-\caption{
-\label{fig:precision}
-Absolute variations of \Neff\ as a function of the physical parameters (upper left)
-or of some crucial numerical settings:
-the different contributions to the off-diagonal terms of the collision integrals (upper right),
-the initial value $x_{\rm in}$ (lower left),
-the number of nodes in the $y$ grid (lower right).
-}
-\end{figure}
+\section{Defaults parameters}
+\label{ssec:default}
+The numerical constants in the code (defined in \texttt{sources/const.f90})
+are mostly taken from \cite{Tanabashi:2018oca}.
+The default configuration of the code (\texttt{ini/explanatory.ini}) is the following:
+\begin{itemize}
+\item
+\textbf{Neutrino parameters}: three active neutrinos (\texttt{flavorNumber = 3}), with mixing parameters from \cite{Tanabashi:2018oca}:
+\texttt{givesinsq = T} (the following parameters \texttt{thetaij} provide the value of $\sin^2\theta_{ij}$),
+\texttt{theta12 = 0.297},
+\texttt{theta13 = 0.0215},
+\texttt{theta23 = 0.425},
+\texttt{dm21 = 7.37e-05} (eV$^2$),
+\texttt{dm31 = 0.00256} (eV$^2$).
+%
+\item
+\textbf{Collision integrals}: non-zero (\texttt{collint\_diagonal\_zero = F}) diagonal terms
+computed taking into account only the contribution from neutrino--electron interactions
+(\texttt{collint\_d\_no\_nue = F}, \texttt{collint\_d\_no\_nunu = T}),
+off-diagonal terms computed using damping approximations
+(\texttt{collint\_offdiag\_damping = T})
+from Eqs.~\eqref{eq:damping_yyyw} (\texttt{collint\_damping\_type = 1}),
+also in this case considering only the neutrino--electron interactions
+(\texttt{collint\_od\_no\_nue = F}, \texttt{collint\_od\_no\_nunu = T}).
+%
+\item
+\textbf{FTQED}:
+finite temperature corrections are enabled
+(\texttt{ftqed\_temperature\_corr = T}),
+using third order corrections (\texttt{ftqed\_ord3 = T})
+but no logarithmic ones (\texttt{ftqed\_log\_term = F}),
+and including corrections to the electron mass in the matter potentials
+(\texttt{ftqed\_e\_mth\_leptondens = T}).
+%
+\item
+\textbf{Grid settings}:
+the $x$ range is considered between
+\texttt{x\_in = 0.05} and
+\texttt{x\_fin = 35},
+and the quantities saved in \texttt{Nx = 500} bins.
+For the momentum grid, the default configuration considers \texttt{Ny = 30} momentum nodes
+spaced according to the Gauss--Laguerre method (\texttt{use\_gauss\_laguerre = T}),
+as neutrino--neutrino collision terms are disabled.
+Remember that a correct run with neutrino--neutrino collisions is better performed
+using a much denser momentum grid, that will require to disable the Gauss--Laguerre nodes selection.
+%
+\item
+\textbf{Output settings}:
+the default output folder is \texttt{outputFolder = output},
+checkpoint are active (\texttt{checkpoint = T}),
+if a \texttt{resume.dat} file is present in the output folder it will be removed and the run repeated
+(\texttt{force\_replace = T}),
+all the outputs are enabled (%
+\texttt{save\_energy\_entropy\_evolution = T},
+\texttt{save\_fd = T},
+\texttt{save\_Neff = T},
+\texttt{save\_nuDens\_evolution = T},
+\texttt{save\_w\_evolution = T},
+\texttt{save\_z\_evolution = T}%
+).
+%
+\item \textbf{Precision}:
+\texttt{dlsoda\_rtol = 1.d-6},
+\texttt{dlsoda\_atol\_z = 1.d-6},
+\texttt{dlsoda\_atol\_d = 1.d-6},
+\texttt{dlsoda\_atol\_o = 1.d-6}.
+\end{itemize}
+For more available parameters and the description of all of them, see \texttt{ini/explanatory.ini}.
+
+
+\section{Precompiler options}
+\label{ssec:precompiler}
+The compilation of \fortepiano\ may be performed including a number of precompiler options
+that alter the behaviour of the code.
+The advantage of precompiler options is that the related features are enabled or disabled
+before the code is compiled, and their existence in the source code
+does not affect the execution speed when they are disabled.
+
+Available precompiler options currently include:
+\begin{itemize}
+\item \texttt{GLR\_ZERO\_MOMENTUM}: use $g_L$, $\tilde g_L$ and $g_R$ values
+computed at zero momentum transfer \cite{Erler:2013xha} in Eq.~\eqref{eq:gLR}.
+\item \texttt{FULL\_F\_AB}: full matrix multiplication
+when computing neutrino--electron collision integrals
+(Eqs.~\eqref{eq:F_ab_sc} and \eqref{eq:F_ab_ann}).
+No effect on the code execution unless the diagonal matrices $G_{L,R}$ are modified to be off-diagonal.
+\item \texttt{FULL\_F\_NU}: take into account the full neutrino density matrix
+when computing neutrino--neutrino collision integrals
+(Eqs.~\eqref{eq:F_nunu} and \eqref{eq:F_nubarnu}).
+By default, the code only considers the diagonal elements of the neutrino density matrix,
+as off-diagonal ones are typically much smaller.
+\item \texttt{NO\_INTERPOLATION}: do not interpolate electron/muon energy densities and FTQED corrections
+(enabled by default to save time). Incompatible with the use of logarithmic FTQED corrections.
+\item \texttt{NO\_MUONS}: disable muon contributions to total energy density and matter potentials.
+\item \texttt{NO\_NUE\_ANNIHILATION}: disable contribution from $\nu\bar\nu\leftrightarrow e^+e^-$ processes to collision integrals.
+\item \texttt{TESTSPEED}: compute a speed test with a timing of the first 1000 derivatives.
+\end{itemize}
 
 
 
 \acknowledgments
 We thank J.J.~Bennett and G.~Buldgen for helping spotting
 some issue in the treatment of finite temperature corrections
-and for support in implementing the higher order correction terms.
+and for support in implementing the higher order correction terms,
+and M.~Escudero~Abenza for useful comments and suggestions.
 
-This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska-Curie grant agreement No 796941.
+This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska Curie grant agreement No 796941.
 
 
 \bibliographystyle{JHEP}

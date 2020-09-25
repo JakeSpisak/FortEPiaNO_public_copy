@@ -14,7 +14,7 @@ module fpEquations
 	use fpInterfaces1
 	implicit none
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	type(bspline_1d) :: dzodx_A_interp, dzodx_B_interp
 	type(bspline_1d) :: dwodx_A_interp, dwodx_B_interp
 	type(bspline_1d) :: dzodx_eq_interp
@@ -82,7 +82,7 @@ module fpEquations
 				vec(k+i-1) = nuDensMatVec(m)%re(i,i)
 			end do
 			k=k+flavorNumber
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+			if (has_offdiagonal()) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						vec(k) = nuDensMatVec(m)%re(i,j)
@@ -97,7 +97,6 @@ module fpEquations
 	subroutine vec_2_densMat(vec)
 		real(dL), dimension(:), intent(in) :: vec
 		integer :: i,j,k,m
-		real(dL) :: fd
 
 		k=1
 		do m=1, Ny
@@ -106,7 +105,7 @@ module fpEquations
 				nuDensMatVec(m)%im(i,i) = 0.d0
 			end do
 			k=k+flavorNumber
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+			if (has_offdiagonal()) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						nuDensMatVec(m)%re(i,j) = vec(k)
@@ -119,9 +118,8 @@ module fpEquations
 			end if
 			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
 			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
-			fd = fermiDirac(y_arr(m))
 			do i=1, flavorNumber
-				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * fd
+				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * feq_arr(m)
 			end do
 		end do
 	end subroutine vec_2_densMat
@@ -136,7 +134,7 @@ module fpEquations
 	end function getNewTx
 #endif
 
-#ifndef NOINTERPOLATION
+#ifndef NO_INTERPOLATION
 	subroutine init_interp_jkyg12
 		real(dl) :: num, den, xoz, numw, denw
 		real(dl), dimension(:), allocatable :: A, B
@@ -231,7 +229,7 @@ module fpEquations
 		real(dl) :: nudrho
 		real(dl), dimension(2) :: coeffs
 		integer :: ix, m
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		integer :: j
 		real(dl) :: num, den, xoz, numw, denw
 		real(dl), dimension(2) :: g12, fContr, elContr0
@@ -249,7 +247,7 @@ module fpEquations
 				do ix=1, flavorNumber
 					nudrho = nudrho + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 				end do
-				fy_arr(m) = nudrho * fermiDirac(y_arr(m))
+				fy_arr(m) = nudrho * feq_arr(m)
 			end do
 			!$omp end parallel do
 			nudrho = integral_GL_1d(w_gl_arr, fy_arr)
@@ -260,13 +258,13 @@ module fpEquations
 				do ix=1, flavorNumber
 					nudrho = nudrho + ydot((m-1)*flavNumSqu + ix) * nuFactor(ix)
 				end do
-				fy_arr(m) = y_arr(m)**3 * nudrho * fermiDirac(y_arr(m))
+				fy_arr(m) = y_arr(m)**3 * nudrho * feq_arr(m)
 			end do
 			!$omp end parallel do
 			nudrho = integral_NC_1d(Ny, dy_arr, fy_arr)
 		end if
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		xoz = x/z
 		g12 = G12_funcFull(x, z)
 		num = g12(1)
@@ -314,7 +312,7 @@ module fpEquations
 		real(dl), dimension(n), intent(in) :: vars
 		real(dl), dimension(n), intent(out) :: ydot
 		real(dl) :: z, xoz, coeff
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		integer :: j
 		real(dl) :: num, den
 		real(dl), dimension(2) :: g12, fContr
@@ -325,7 +323,7 @@ module fpEquations
 		z = vars(n)+1.d0
 		xoz=x/z
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		g12 = G12_funcFull(x, z)
 		num = g12(1)
 		den = PISQ/7.5d0 + g12(2)
@@ -505,12 +503,14 @@ module fpEquations
 		real(dl) :: neff, z, w
 		integer, parameter :: iu = 8972
 		character(len=200) :: fname
-		procedure (nuDensity_integrator), pointer :: nuDensityInt
+		procedure (nuDensity_integrator), pointer :: nuDensityInt, nuNumDensInt
 
 		if (use_gauss_laguerre) then
 			nuDensityInt => nuDensityGL
+			nuNumDensInt => nuNumberDensityGL
 		else
 			nuDensityInt => nuDensityNC
+			nuNumDensInt => nuNumberDensityNC
 		end if
 
 		write(fname, '(A,'//dblfmt//')') '[output] Saving info at x=', x
@@ -524,7 +524,7 @@ module fpEquations
 				write(fname, '(A,I1,A)') trim(outputFolder)//'/nuDens_diag', k, '.dat'
 				call nuDens_to_file(iu, k, k, x, nuDensMatVecFD, .true., trim(fname))
 			end do
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+			if (has_offdiagonal()) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						write(fname, '(A,I1,I1,A)') trim(outputFolder)//'/nuDens_nd_', i, j, '_re.dat'
@@ -556,6 +556,9 @@ module fpEquations
 			call openFile(iu, trim(outputFolder)//'/energyDensity.dat', firstWrite)
 #ifdef LOW_REHEATING
 			write(iu, multidblfmt) x, t, z, &
+#else
+			write(iu, multidblfmt) x, z, &
+#endif
 				photonDensity(z), &
 				electrons%energyDensity(x, z, .false.), &
 #ifndef NO_MUONS
@@ -563,33 +566,19 @@ module fpEquations
 #else
 				0.d0, &
 #endif
+#ifdef LOW_REHEATING
 				nuEnDens(1:flavorNumber), &
 				vec(ntot-2)
 #else
-			write(iu, multidblfmt) x, z, &
-				photonDensity(z), &
-				electrons%energyDensity(x, z, .false.), &
-#ifndef NO_MUONS
-				muons%energyDensity(x, z, .false.), &
-#else
-				0.d0, &
-#endif
 				nuEnDens(1:flavorNumber)
 #endif
 			close(iu)
 			call openFile(iu, trim(outputFolder)//'/entropy.dat', firstWrite)
 #ifdef LOW_REHEATING
 			write(iu, multidblfmt) x, t, z, &
-				photonEntropy(z), &
-				electrons%entropy(x, z), &
-#ifndef NO_MUONS
-				muons%entropy(x, z), &
-#else
-				0.d0, &
-#endif
-				nuEnDens(1:flavorNumber)*four_thirds/w
 #else
 			write(iu, multidblfmt) x, z, &
+#endif
 				photonEntropy(z), &
 				electrons%entropy(x, z), &
 #ifndef NO_MUONS
@@ -598,7 +587,26 @@ module fpEquations
 				0.d0, &
 #endif
 				nuEnDens(1:flavorNumber)*four_thirds/w
+			close(iu)
+		end if
+		if (save_number_evolution) then
+			do k=1, flavorNumber
+				nuEnDens(k) = nuNumDensInt(k, k)*nuFactor(k)
+			end do
+			call openFile(iu, trim(outputFolder)//'/numberDensity.dat', firstWrite)
+#ifdef LOW_REHEATING
+			write(iu, multidblfmt) x, t, z, &
+#else
+			write(iu, multidblfmt) x, z, &
 #endif
+				photonNumberDensity(z), &
+				electrons%numberDensity(x, z, .false.), &
+#ifndef NO_MUONS
+				muons%numberDensity(x, z, .false.), &
+#else
+				0.d0, &
+#endif
+				nuEnDens(1:flavorNumber)
 			close(iu)
 		end if
 		if (save_z_evolution) then
@@ -696,7 +704,7 @@ module fpEquations
 				atol(k+i-1) = dlsoda_atol_d
 			end do
 			k = k + flavorNumber
-			if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+			if (has_offdiagonal()) then
 				do i = 1, flavorNumber-1
 					do j = i+1, flavorNumber
 						atol(k) = dlsoda_atol_o
@@ -800,13 +808,14 @@ module fpEquations
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver
 
-	pure subroutine drhoy_dx_fullMat(matrix, x, z, iy, dme2, sqrtraddens, Fint)
+	pure subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, dme2, sqrtraddens, Fint_nue, Fint_nunu)
 		use fpInterfaces2
-		procedure (collision_integrand) :: Fint
+		procedure (collision_integrand_nue) :: Fint_nue
+		procedure (collision_integrand_nunu) :: Fint_nunu
 		type(cmplxMatNN), intent(out) :: matrix
-		real(dl), intent(in) :: x, z, dme2, sqrtraddens
+		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: iy
-		real(dl) :: y, overallNorm, fd, cf
+		real(dl) :: y, overallNorm, cf
 		integer :: ix
 		type(coll_args) :: collArgs
 		type(cmplxMatNN) :: tmpmat
@@ -816,6 +825,7 @@ module fpEquations
 		y = nuDensMatVecFD(iy)%y
 
 		collArgs%x = x
+		collArgs%w = w
 		collArgs%z = z
 		collArgs%y1 = y
 		collArgs%dme2 = dme2
@@ -833,33 +843,32 @@ module fpEquations
 		matrix%im = - tmpmat%im * cf
 		matrix%re = tmpmat%re * cf
 
-		tmpmat = get_collision_terms(collArgs, Fint)
+		tmpmat = get_collision_terms(collArgs, Fint_nue, Fint_nunu)
 		matrix%re = matrix%re + tmpmat%re
 		matrix%im = matrix%im + tmpmat%im
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
-		fd = fermiDirac(y)
 		do ix=1, flavorNumber
-			matrix%re(ix,ix) = matrix%re(ix,ix) / fd
+			matrix%re(ix,ix) = matrix%re(ix,ix) / feq_arr(iy)
 			matrix%im(ix,ix) = 0.d0
 		end do
 	end subroutine drhoy_dx_fullMat
 
-	pure subroutine drho_y_dx(x, z, m, dme2, sqrtraddens, n, ydot)
+	pure subroutine drho_y_dx(x, w, z, m, dme2, sqrtraddens, n, ydot)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
-		real(dl), intent(in) :: x, z, dme2, sqrtraddens
+		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
 		integer :: i, j, k
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x, z, m, dme2, sqrtraddens, coll_nue_3_int)
+		call drhoy_dx_fullMat(mat, x, w, z, m, dme2, sqrtraddens, coll_nue_int, coll_nunu_int)
 		do i=1, flavorNumber
 			ydot(i) = mat%re(i,i)
 		end do
 		k=flavorNumber+1
-		if (collision_offdiag.ne.0 .and. collision_offdiag.ne.3) then
+		if (has_offdiagonal()) then
 			do i=1, flavorNumber-1
 				do j=i+1, flavorNumber
 					ydot(k) = mat%re(i,j)
@@ -909,7 +918,7 @@ module fpEquations
 #endif
 		call vec_2_densMat(vars)
 
-#ifdef NOINTERPOLATION
+#ifdef NO_INTERPOLATION
 		dme2 = dme2_electronFull(x, 0.d0, z, .false.)
 #else
 		dme2 = dme2_nolog(x, z)
@@ -926,7 +935,7 @@ module fpEquations
 		tmpvec = 0
 		!$omp do schedule(static)
 		do m=1, Ny
-			call drho_y_dx(x, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
+			call drho_y_dx(x, w, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
 			s=(m-1)*flavNumSqu
 			ydot(s+1:s+flavNumSqu) = tmpvec(:)
 		end do

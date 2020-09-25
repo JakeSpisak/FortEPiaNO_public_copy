@@ -25,6 +25,8 @@ module constants
 	real(dl), parameter :: PICub = PI*PI*PI
 	real(dl), parameter :: Gev2eV = 1.d9, Mev2eV = 1.d6
 	real(dl), parameter :: sec2eV = 1.519d21/Mev2ev
+	real(dl), parameter :: zetaOfThree = 1.20205690315959428540d0
+	real(dl), parameter :: zetaOfThreex2DPISQ = zetaOfThree * 2.d0 / PISQ
 
 	real(dl), parameter :: zero = 0.0d0
 
@@ -46,6 +48,16 @@ module constants
 	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
 #endif
 	real(dl), parameter :: cos2thW = 1.d0-sin2thW
+#ifdef GLR_ZERO_MOMENTUM
+	!from 10.1016/j.ppnp.2013.03.004
+	real(dl), parameter :: gLe = 0.727d0
+	real(dl), parameter :: gLmt = -0.273d0
+	real(dl), parameter :: gRemt = 0.233d0
+#else
+	real(dl), parameter :: gLe = sin2thW + 0.5d0
+	real(dl), parameter :: gLmt = sin2thW - 0.5d0
+	real(dl), parameter :: gRemt = sin2thW
+#endif
 	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
 	real(dl), parameter :: electron_charge = sqrt(4*PI*alpha_fine)
 	real(dl), parameter :: electron_charge_sq = electron_charge ** 2
@@ -83,15 +95,20 @@ module variables
 	logical :: checkpoint = .false.
 	logical :: force_replace = .false.
 
-	integer :: collision_offdiag
+	integer :: collint_damping_type
+	logical :: collint_offdiag_damping
+	logical :: collint_diagonal_zero
+	logical :: collint_d_no_nue, collint_d_no_nunu
+	logical :: collint_od_no_nue, collint_od_no_nunu
 	logical :: damping_read_zero
 	logical :: ftqed_temperature_corr
 	logical :: ftqed_log_term
 	logical :: ftqed_ord3
 	logical :: ftqed_e_mth_leptondens
+	logical :: save_BBN
 	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 	logical :: save_energy_entropy_evolution
-	logical :: save_BBN
+	logical :: save_number_evolution
 
 	!variables that will be read from config file
 	logical :: giveSinSq
@@ -111,7 +128,7 @@ module variables
 	end type cmplxMatNN
 
 	type coll_args
-		real(dl) :: y1, y2, y3, y4, x, z, dme2
+		real(dl) :: y1, y2, y3, y4, x, w, z, dme2
 		integer :: ix1, ix2, iy
 	end type coll_args
 
@@ -120,6 +137,7 @@ module variables
 	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	type(cmplxMatNN) :: nuDensities
+	real(dl), dimension(:), allocatable :: dampTermYYYWdy
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
@@ -139,6 +157,7 @@ module variables
 	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
 	real(dl) :: t_in
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
+	real(dl), dimension(:), allocatable :: feq_arr
 	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr, w_gl_arr2
 	real(dl), dimension(:), allocatable :: dy_arr, fy_arr
 	integer :: maxiter
@@ -190,6 +209,11 @@ module variables
 				allocate(m%im(flavorNumber,flavorNumber))
 		end if
 	end subroutine allocateCmplxMat
+
+	elemental function has_offdiagonal()
+		logical :: has_offdiagonal
+		has_offdiagonal = .not.(collint_offdiag_damping .and. collint_damping_type.eq.0)
+	end function has_offdiagonal
 end module variables
 
 module fpInterfaces1
@@ -213,6 +237,14 @@ module fpInterfaces1
 		end function
 	end interface
 	interface
+		pure real(dl) function Fnunu(n1, n2, n3, n4, i, j)
+			use precision
+			use variables
+			type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
+			integer, intent(in) :: i, j
+		end function
+	end interface
+	interface
 		real(dl) function nuDensity_integrator(i1, i2, reim)
 			use precision
 			integer, intent(in) :: i1, i2
@@ -229,7 +261,7 @@ end module fpInterfaces1
 
 module fpInterfaces2
 	interface
-		pure real(dl) function collision_integrand(a, b, o, F_ab_ann, F_ab_sc)
+		pure real(dl) function collision_integrand_nue(a, b, o, F_ab_ann, F_ab_sc)
 			use precision
 			use variables
 			use fpInterfaces1
@@ -240,11 +272,21 @@ module fpInterfaces2
 			type(coll_args), intent(in) :: o
 		end function
 	end interface
+	interface
+		pure real(dl) function collision_integrand_nunu(a, b, o, F_nu_sc, F_nu_pa)
+			use precision
+			use variables
+			use fpInterfaces1
+			procedure (Fnunu) :: F_nu_sc, F_nu_pa
+			integer, intent(in) :: a, b
+			type(coll_args), intent(in) :: o
+		end function
+	end interface
 end module fpInterfaces2
 
 module fpInterfaces3
 	interface
-		pure real(dl) function collision_integrator(f, obj, F_ab_ann, F_ab_sc)
+		pure real(dl) function collision_integrator_nue(f, obj, F_ab_ann, F_ab_sc)
 			use precision
 			use variables
 			use fpInterfaces1
@@ -252,7 +294,19 @@ module fpInterfaces3
 			implicit None
 			procedure (F_annihilation) :: F_ab_ann
 			procedure (F_scattering) :: F_ab_sc
-			procedure (collision_integrand) :: f
+			procedure (collision_integrand_nue) :: f
+			type(coll_args), intent(in) :: obj
+		end function
+	end interface
+	interface
+		pure real(dl) function collision_integrator_nunu(f, obj, F_nu_sc, F_nu_pa)
+			use precision
+			use variables
+			use fpInterfaces1
+			use fpInterfaces2
+			implicit None
+			procedure (Fnunu) :: F_nu_sc, F_nu_pa
+			procedure (collision_integrand_nunu) :: f
 			type(coll_args), intent(in) :: obj
 		end function
 	end interface

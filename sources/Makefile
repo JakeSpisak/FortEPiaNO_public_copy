@@ -1,14 +1,20 @@
 # FLAGS
-# set NO_MUONS=1 to disable muon contributions
-NO_MUONS ?=
-# define TESTSPEED=1 to compute the time required for the first 1000 derivatives
-TESTSPEED ?=
-# enable low reheating
-LOW_REHEATING ?=
+# use G_L and G_R values at zero-momentum transfer instead of the default ones
+GLR_ZERO_MOMENTUM ?=
 # define FULL_F_AB=1 to compute full matrix product in F_AB functions (by default assumes diagonal G matrices)
 FULL_F_AB ?=
-# define NOINTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
-NOINTERPOLATION ?=
+# define FULL_F_NU=1 to compute full matrix product in F_nu functions. If not set, use only diagonal elements
+FULL_F_NU ?=
+# enable low reheating
+LOW_REHEATING ?=
+# define NO_INTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
+NO_INTERPOLATION ?=
+# set NO_MUONS=1 to disable muon contributions
+NO_MUONS ?=
+# set NO_NUE_ANNIHILATION=1 to disable contribution to collision integrals from nunu<->e+e- annihilation processes
+NO_NUE_ANNIHILATION ?=
+# define TESTSPEED=1 to compute the time required for the first 1000 derivatives
+TESTSPEED ?=
 
 F90 ?= ifort
 
@@ -35,20 +41,29 @@ F90=gfortran
 DEBUGFLAGS=-O0 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -p -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
 endif
 
-ifeq ($(NO_MUONS), 1)
-	F90FLAGS += -DNO_MUONS=1
-endif
-ifeq ($(TESTSPEED), 1)
-	F90FLAGS += -DTESTSPEED=1
+ifeq ($(GLR_ZERO_MOMENTUM), 1)
+	F90FLAGS += -DGLR_ZERO_MOMENTUM=1
 endif
 ifeq ($(FULL_F_AB), 1)
 	F90FLAGS += -DFULL_F_AB=1
 endif
-ifeq ($(NOINTERPOLATION), 1)
-	F90FLAGS += -DNOINTERPOLATION=1
+ifeq ($(FULL_F_NU), 1)
+	F90FLAGS += -DFULL_F_NU=1
 endif
 ifeq ($(LOW_REHEATING), 1)
-	F90FLAGS += -DLOW_REHEATING=1 -DNOINTERPOLATION=1
+	F90FLAGS += -DLOW_REHEATING=1 -DNO_INTERPOLATION=1
+endif
+ifeq ($(NO_INTERPOLATION), 1)
+	F90FLAGS += -DNO_INTERPOLATION=1
+endif
+ifeq ($(NO_MUONS), 1)
+	F90FLAGS += -DNO_MUONS=1
+endif
+ifeq ($(NO_NUE_ANNIHILATION), 1)
+	F90FLAGS += -DNO_NUE_ANNIHILATION=1
+endif
+ifeq ($(TESTSPEED), 1)
+	F90FLAGS += -DTESTSPEED=1
 endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
@@ -87,7 +102,7 @@ $(BUILD_DIR)/interactions.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/ftqed.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/cosmology.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
-	$(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/bspline_module.o \
+	$(BUILD_DIR)/utilities.o $(BUILD_DIR)/bspline_module.o \
 	$(BUILD_DIR)/ftqed.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \

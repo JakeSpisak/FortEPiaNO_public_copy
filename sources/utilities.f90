@@ -572,4 +572,48 @@ module utilities
 		deallocate(fval)
 		integrate_ftqed_ln = integrate_ftqed_ln / 2.d0
 	end function integrate_ftqed_ln
+
+	!Interpolation of nu density matrix
+	pure function get_interpolated_nudens(ndmv, y, nf, ny) result(newmat)
+		type(cmplxMatNN) :: newmat
+		type(cmplxMatNN), dimension(:), allocatable, intent(in) :: ndmv
+		real(dl), intent(in) :: y
+		integer, intent(in) :: nf, ny
+		integer :: i, j, iy
+		real(dl) :: fd0, fd1, fdc
+
+		call allocateCmplxMat(newmat)
+		newmat%y = y
+		newmat%re = 0.d0
+		newmat%im = 0.d0
+
+		iy = 0
+		do i=1,ny
+			if (y.gt.ndmv(i)%y) &
+				iy=i
+		end do
+		if(iy.lt.1 .or. iy.ge.ny) &
+			return
+		fd0 = fermiDirac(ndmv(iy)%y)
+		fd1 = fermiDirac(ndmv(iy+1)%y)
+		fdc = fermiDirac(y)
+		do i=1, nf
+			newmat%re(i,i) = ( &
+				ndmv(iy)%re(i,i)/fd0 &
+				+ (y-ndmv(iy)%y) &
+					* (ndmv(iy+1)%re(i,i)/fd1 - ndmv(iy)%re(i,i)/fd0) &
+					/ (ndmv(iy+1)%y-ndmv(iy)%y) &
+				) * fdc
+			do j=i+1, nf
+				newmat%re(i,j) = &
+					ndmv(iy)%re(i,j) &
+					+ (y-ndmv(iy)%y) * (ndmv(iy+1)%re(i,j)-ndmv(iy)%re(i,j))/(ndmv(iy+1)%y-ndmv(iy)%y)
+				newmat%im(i,j) = &
+					ndmv(iy)%im(i,j) &
+					+ (y-ndmv(iy)%y) * (ndmv(iy+1)%im(i,j)-ndmv(iy)%im(i,j))/(ndmv(iy+1)%y-ndmv(iy)%y)
+				newmat%re(j,i) = newmat%re(i,j)
+				newmat%im(j,i) = -newmat%im(i,j)
+			end do
+		end do
+	end function
 end module utilities
