@@ -47,6 +47,7 @@ The code is publicly available at the url
 
 
 \section{Equations}
+\label{sec:equations}
 \fortepiano\ can compute oscillations with up to six neutrinos in the early universe.
 Neutrinos, including the sterile ones, are always treated as ultra-relativistic particles, which is a good approximation if the
 neutrino masses do not exceed $\mathcal{O}(\mbox{a few keV})$,
@@ -337,7 +338,8 @@ with respect to our time parameter $x$.
 The differential equations which the code solves are the following
 \cite{deSalas:2016ztq,Mirizzi:2012we,Saviano:2013ktj,Mangano:2001iu}:
 %
-\begin{eqnarray}\label{eq:drho_dx_nxn}
+\begin{eqnarray}
+\label{eq:drho_dx_nxn}
 \frac{{\rm d}\varrho(y)}{{\rm d}x}
 &=&
 \sqrt{\frac{3 m^2_{\rm Pl}}{8\pi\rho}}
@@ -356,7 +358,8 @@ The differential equations which the code solves are the following
     \right]
     +\frac{m_e^3}{x^4}\mathcal{I(\varrho)}
 \right\}\,,
-\nonumber\\
+%\nonumber
+\\
 \label{eq:dz_dx_nxn}
 \frac{\mathrm{d}z}{\mathrm{d}x}
 &=&
@@ -840,6 +843,108 @@ where
 $F=7\pi^4 z^4 y^3/135$ is a common normalisation coefficient.
 
 
+\section{Low reheating}
+\label{sec:lowreheating}
+The code can also be executed taking into account a simple low-reheating model,
+such as the one considered in \cite{deSalas:2015glj,low_reheating2020}.
+In such model, the Universe is initially in a matter-domination stage,
+where almost the totality of the matter energy density is provided by a massive scalar field,
+which can be the inflaton or another new particle.
+Photons are almost absent at the beginning of the evolution,
+but the decay of the scalar field into standard-model relativistic particles other than neutrinos
+(photons, electrons, muons if any)
+populates the radiation components.
+Neutrinos are populated via weak interactions with charged leptons and may reach equilibrium
+with the rest of the thermal plasma if the decay occurs early enough.
+In case the decay starts too late, the neutrino fluid cannot reach equilibrium
+with the rest of the relativistic particles,
+so that the neutrino energy density is smaller than in the standard case
+and the final \Neff\ is smaller than expected.
+
+In order to compute the evolution of the Universe within a low-reheating scenario,
+the equations discussed in Sec.~\ref{sec:equations} must be modified.
+First of all, one should define a quantity that describes the decay of the scalar field.
+One simple way is to define a reheating temperature $T_{\rm RH}$,
+which at the end of the day is a different way of referring to the decay rate of the massive particle:
+one can write
+\begin{equation}
+\label{eq:gamma_phi}
+\Gamma_\phi
+=
+3H(T_{\rm RH})\,,
+\end{equation}
+where $H$ is the Hubble factor as a function of the reheating temperature.
+Assuming
+\begin{equation}
+\label{eq:H_lr}
+H
+\,,
+\end{equation}
+one obtains that the reheating temperature can be rewritten as
+\begin{equation}
+\label{eq:Trh_gammaphi}
+T_{\rm RH}
+=
+\,.
+\end{equation}
+The evolution of the energy density of the scalar field, in physical coordinates,
+can be written as a function of its decay width:
+\begin{equation}
+\label{eq:rho_phi_physical}
+\rho_\phi
+=
+\,,
+\end{equation}
+while in comoving coordinates the same equation reads:
+\begin{equation}
+\label{eq:rho_phi_comoving}
+\rho_\phi
+=
+\,.
+\end{equation}
+The initial condition on $\rho_\phi$ is computed using:
+\begin{equation}
+\label{eq:rho_phi_initial}
+\rho_\phi^{\rm in}
+=
+\,.
+\end{equation}
+
+
+The other equation we need to modify proceeds from the continuity equation
+of the total energy-momentum in the expanding Universe,
+which in physical coordinates is
+\begin{equation}
+\label{eq:continuity}
+\rho_t
+\,.
+\end{equation}
+From this expression and using Eq.~\eqref{eq:rho_phi_comoving},
+one can derive a modified version of Eq.~\eqref{eq:dz_dx_nxn}
+which describes the evolution of the photon temperature,
+which is the only variable we need to describe the relativistic plasma,
+apart for the neutrino component.
+The comoving photon temperature, in a low-reheating scenario, evolves according to
+\begin{equation}
+dz/dx
+\,,
+\end{equation}
+which is very similar to Eq.~\eqref{eq:dz_dx_nxn}.
+The evolution of the neutrino fluid, instead, is still the one given by Eq.~\eqref{eq:drho_dx_nxn}.
+
+In order to solve the equations in the low-reheating case, therefore,
+we have to compute the evolution of the same variables as in the standard scenario,
+plus the scalar field energy density.
+For convenience, together with the comoving variable $x$, the code also saves the physical time $t$,
+which can be obtained using:
+\begin{equation}
+\label{eq:time_def_rh}
+t
+=
+\,.
+\end{equation}
+
+
 \section{Solver and initial conditions}
 \label{ssec:solver}
 We solve the differential equations with the \dlsoda\ routine
@@ -1115,12 +1220,87 @@ $\Neff=3.045$,
 is of order $10^{-3}$.
 
 
+\section{Output files}
+\label{sec:outputs}
+The successful execution of \fortepiano\ will always store
+a limited number of files in the output folder:
+%
+\begin{itemize}
+%
+\item \texttt{ini.log}: a summary of the input parameters as they are read by the Fortran code.
+%
+\item \texttt{messages.log}: summary of important messages from the code execution.
+%
+\item \texttt{time.log}: a time log which indicates at what time \fortepiano\ started
+and finished the calculation of each $x$ step.
+%
+\item \texttt{rho\_final.dat} and \texttt{rho\_final\_mass.dat}: the final neutrino energy density,
+in flavor or mass basis, respectively.
+The first column of each file contains the grid of momenta $y_i$,
+while the following ones contain $\varrho_{jj}(y_i)$,
+where $j$ is the column index minus one and $i$ is the row index.
+%
+\item \texttt{resume.dat}: it reports the final values of the most important quantities:
+the photon and effective neutrino temperatures, $z$ and $w$,
+the variation in neutrino energy density
+with respect to the expected value at equilibrium,
+the final value of \Neff\ and
+the considered value of $T_{\rm RH}$ (only if low-reheating is considered).
+%
+\end{itemize}
+
+In addition to the minimal output files that we discussed above,
+\fortepiano\ can save many more useful quantities,
+controlled by specific flags in the configuration file:
+%
+\begin{itemize}
+%
+\item \texttt{save\_BBN}: store a set of files that contain quantities employed
+in Big Bang Nucleosynthesis calculations.
+Although the files stored by the Fortran code are incomplete,
+the associated python utilities can be used to complete the information,
+for later use of the results with the \texttt{PArthENoPE} code \cite{Pisanti:2007hk,Consiglio:2017pot}.
+In particular, the relevant quantities are
+$z$, $w$, $\rho_\nu$, $d\rho_\nu/dx$,
+$\rho_{\rm rad}$, $\rho_{\rm tot}$
+and $\varrho_{ee}(y_i)$
+as functions of $x$, plus the grid of momenta, $y_i$.
+The derivative $d\rho_\nu/dx$ is computed by the python code
+using \texttt{numpy.gradient} and smoothed,
+while the rest of the quantities are saved directly by the Fortran code,
+but filtered by the python scripts in order to consider only the values of $x$ for which
+radiation dominates the energy density, i.e.\ $\rho_{\rm rad}>0.99\rho_{\rm tot}$.
+%
+\item \texttt{save\_energy\_entropy\_evolution}:
+save the evolution of the energy density and entropy density of all fluids as a function of $x$.
+%
+\item \texttt{save\_fd}: save the grid of momenta $y_i$ and the initial Fermi-Dirac distribution
+$f_{\rm FD}(y_i)$.
+%
+\item \texttt{save\_Neff}: save the evolution of the effective number \Neff\ as a function of $x$.
+%
+\item \texttt{save\_nuDens\_evolution}:
+save the evolution of each component of the neutrino density matrix as a function of $x$.
+Diagonal and off-diagonal components (real and imaginary part) will be saved, if available.
+%
+\item \texttt{save\_number\_evolution}:
+save the evolution of the number density of all fluids as a function of $x$.
+%
+\item \texttt{save\_w\_evolution}, \texttt{save\_z\_evolution}:
+save the photon and effective neutrino temperatures, $z$ and $w$.
+The latter is not saved if \texttt{save\_z\_evolution} is disabled.
+%
+\end{itemize}
+
+
 \section{Defaults parameters}
 \label{ssec:default}
 The numerical constants in the code (defined in \texttt{sources/const.f90})
 are mostly taken from \cite{Tanabashi:2018oca}.
 The default configuration of the code (\texttt{ini/explanatory.ini}) is the following:
+%
 \begin{itemize}
+%
 \item
 \textbf{Neutrino parameters}: three active neutrinos (\texttt{flavorNumber = 3}), with mixing parameters from \cite{Tanabashi:2018oca}:
 \texttt{givesinsq = T} (the following parameters \texttt{thetaij} provide the value of $\sin^2\theta_{ij}$),
@@ -1167,11 +1347,13 @@ the default output folder is \texttt{outputFolder = output},
 checkpoint are active (\texttt{checkpoint = T}),
 if a \texttt{resume.dat} file is present in the output folder it will be removed and the run repeated
 (\texttt{force\_replace = T}),
-all the outputs are enabled (%
+all the optional outputs are enabled (%
+\texttt{save\_BBN = T},
 \texttt{save\_energy\_entropy\_evolution = T},
 \texttt{save\_fd = T},
 \texttt{save\_Neff = T},
 \texttt{save\_nuDens\_evolution = T},
+\texttt{save\_number\_evolution = T},
 \texttt{save\_w\_evolution = T},
 \texttt{save\_z\_evolution = T}%
 ).
@@ -1181,6 +1363,7 @@ all the outputs are enabled (%
 \texttt{dlsoda\_atol\_z = 1.d-6},
 \texttt{dlsoda\_atol\_d = 1.d-6},
 \texttt{dlsoda\_atol\_o = 1.d-6}.
+%
 \end{itemize}
 For more available parameters and the description of all of them, see \texttt{ini/explanatory.ini}.
 
@@ -1194,25 +1377,35 @@ before the code is compiled, and their existence in the source code
 does not affect the execution speed when they are disabled.
 
 Available precompiler options currently include:
+%
 \begin{itemize}
+%
 \item \texttt{GLR\_ZERO\_MOMENTUM}: use $g_L$, $\tilde g_L$ and $g_R$ values
 computed at zero momentum transfer \cite{Erler:2013xha} in Eq.~\eqref{eq:gLR}.
+%
 \item \texttt{FULL\_F\_AB}: full matrix multiplication
 when computing neutrino--electron collision integrals
 (Eqs.~\eqref{eq:F_ab_sc} and \eqref{eq:F_ab_ann}).
 No effect on the code execution unless the diagonal matrices $G_{L,R}$ are modified to be off-diagonal.
+%
 \item \texttt{FULL\_F\_NU}: take into account the full neutrino density matrix
 when computing neutrino--neutrino collision integrals
 (Eqs.~\eqref{eq:F_nunu} and \eqref{eq:F_nubarnu}).
 By default, the code only considers the diagonal elements of the neutrino density matrix,
 as off-diagonal ones are typically much smaller.
+%
+\item \texttt{LOW\_REHEATING}: enable calculations in a low-reheating model (see Sec.~\ref{sec:lowreheating}).
+%
 \item \texttt{NO\_INTERPOLATION}: do not interpolate electron/muon energy densities and FTQED corrections
 (enabled by default to save time). Incompatible with the use of logarithmic FTQED corrections.
+%
 \item \texttt{NO\_MUONS}: disable muon contributions to total energy density and matter potentials.
+%
 \item \texttt{NO\_NUE\_ANNIHILATION}: disable contribution from $\nu\bar\nu\leftrightarrow e^+e^-$ processes to collision integrals.
+%
 \item \texttt{TESTSPEED}: compute a speed test with a timing of the first 1000 derivatives.
+%
 \end{itemize}
-
 
 
 \acknowledgments
