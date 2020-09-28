@@ -10,6 +10,8 @@ program tests
 	use ftqed
 	implicit none
 
+	logical, parameter :: save_collint_tests=.false.
+
 	call openLogFile
 	write(*,*) ""
 	write(*,*) ""
@@ -1831,24 +1833,26 @@ program tests
 			end do
 		end do
 		write(*,*) ""
-		allocate(tmpfy2_arr(Ny))
-		call openFile(987, "test_sc3_re.dat", .true.)
-		do i=1, Ny
-			tmpfy2_arr = fy2_arr(i,:)
-			write(987,multidblfmt) tmpfy2_arr
-		end do
-		close(987)
-		do i=1, Ny
-			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
+		if (save_collint_tests) then
+			allocate(tmpfy2_arr(Ny))
+			call openFile(987, "test_sc3_re.dat", .true.)
+			do i=1, Ny
+				tmpfy2_arr = fy2_arr(i,:)
+				write(987,multidblfmt) tmpfy2_arr
 			end do
-		end do
-		call openFile(987, "test_ann3_re.dat", .true.)
-		do i=1, Ny
-			tmpfy2_arr = fy2_arr(i,:)
-			write(987,multidblfmt) tmpfy2_arr
-		end do
-		close(987)
+			close(987)
+			do i=1, Ny
+				do j=1, Ny
+					fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
+				end do
+			end do
+			call openFile(987, "test_ann3_re.dat", .true.)
+			do i=1, Ny
+				tmpfy2_arr = fy2_arr(i,:)
+				write(987,multidblfmt) tmpfy2_arr
+			end do
+			close(987)
+		endif
 
 		vk=(/5.2d0,2.3613731184d0/)
 		tmparrS = (/-0.170915d0, -0.1904502d0, -0.46065747d0/)
@@ -1942,23 +1946,26 @@ program tests
 				fy2_arr(i,j) = coll_nue_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
-		call openFile(987, "test_sc3b_re.dat", .true.)
-		do i=1, Ny
-			tmpfy2_arr = fy2_arr(i,:)
-			write(987,multidblfmt) tmpfy2_arr
-		end do
-		close(987)
-		do i=1, Ny
-			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
+		if (save_collint_tests) then
+			call openFile(987, "test_sc3b_re.dat", .true.)
+			do i=1, Ny
+				tmpfy2_arr = fy2_arr(i,:)
+				write(987,multidblfmt) tmpfy2_arr
 			end do
-		end do
-		call openFile(987, "test_ann3b_re.dat", .true.)
-		do i=1, Ny
-			tmpfy2_arr = fy2_arr(i,:)
-			write(987,multidblfmt) tmpfy2_arr
-		end do
-		close(987)
+			close(987)
+			do i=1, Ny
+				do j=1, Ny
+					fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
+				end do
+			end do
+			call openFile(987, "test_ann3b_re.dat", .true.)
+			do i=1, Ny
+				tmpfy2_arr = fy2_arr(i,:)
+				write(987,multidblfmt) tmpfy2_arr
+			end do
+			close(987)
+		deallocate(tmpfy2_arr)
+		endif
 
 		vk=(/5.2d0,14.50977264d0/)
 		tmparrS = (/0.044973361d0, 0.0096546081d0, 0.0096546081d0/)
