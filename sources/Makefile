@@ -41,29 +41,35 @@ F90=gfortran
 DEBUGFLAGS=-O0 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -p -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
 endif
 
+ifeq ($(BUILD_DIR),../build_debug)
+FFLAGS=$(DEBUGFLAGS)
+else
+FFLAGS=$(F90FLAGS)
+endif
+
 ifeq ($(GLR_ZERO_MOMENTUM), 1)
-	F90FLAGS += -DGLR_ZERO_MOMENTUM=1
+	FFLAGS += -DGLR_ZERO_MOMENTUM=1
 endif
 ifeq ($(FULL_F_AB), 1)
-	F90FLAGS += -DFULL_F_AB=1
+	FFLAGS += -DFULL_F_AB=1
 endif
 ifeq ($(FULL_F_NU), 1)
-	F90FLAGS += -DFULL_F_NU=1
+	FFLAGS += -DFULL_F_NU=1
 endif
 ifeq ($(LOW_REHEATING), 1)
-	F90FLAGS += -DLOW_REHEATING=1 -DNO_INTERPOLATION=1
+	FFLAGS += -DLOW_REHEATING=1 -DNO_INTERPOLATION=1
 endif
 ifeq ($(NO_INTERPOLATION), 1)
-	F90FLAGS += -DNO_INTERPOLATION=1
+	FFLAGS += -DNO_INTERPOLATION=1
 endif
 ifeq ($(NO_MUONS), 1)
-	F90FLAGS += -DNO_MUONS=1
+	FFLAGS += -DNO_MUONS=1
 endif
 ifeq ($(NO_NUE_ANNIHILATION), 1)
-	F90FLAGS += -DNO_NUE_ANNIHILATION=1
+	FFLAGS += -DNO_NUE_ANNIHILATION=1
 endif
 ifeq ($(TESTSPEED), 1)
-	F90FLAGS += -DTESTSPEED=1
+	FFLAGS += -DTESTSPEED=1
 endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
@@ -76,12 +82,6 @@ OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 
 OBJ_TESTS=$(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/test_utils.o
-
-ifeq ($(BUILD_DIR),../build_debug)
-FFLAGS=$(DEBUGFLAGS)
-else
-FFLAGS=$(F90FLAGS)
-endif
 
 default: fortepiano
 

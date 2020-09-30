@@ -1833,26 +1833,26 @@ program tests
 			end do
 		end do
 		write(*,*) ""
-		if (save_collint_tests) then
-			allocate(tmpfy2_arr(Ny))
-			call openFile(987, "test_sc3_re.dat", .true.)
-			do i=1, Ny
-				tmpfy2_arr = fy2_arr(i,:)
+		allocate(tmpfy2_arr(Ny))
+		call openFile(987, "test_sc3_re.dat", .true.)
+		do i=1, Ny
+			tmpfy2_arr = fy2_arr(i,:)
+			if (save_collint_tests) &
 				write(987,multidblfmt) tmpfy2_arr
+		end do
+		close(987)
+		do i=1, Ny
+			do j=1, Ny
+				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
 			end do
-			close(987)
-			do i=1, Ny
-				do j=1, Ny
-					fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
-				end do
-			end do
-			call openFile(987, "test_ann3_re.dat", .true.)
-			do i=1, Ny
-				tmpfy2_arr = fy2_arr(i,:)
+		end do
+		call openFile(987, "test_ann3_re.dat", .true.)
+		do i=1, Ny
+			tmpfy2_arr = fy2_arr(i,:)
+			if (save_collint_tests) &
 				write(987,multidblfmt) tmpfy2_arr
-			end do
-			close(987)
-		endif
+		end do
+		close(987)
 
 		vk=(/5.2d0,2.3613731184d0/)
 		tmparrS = (/-0.170915d0, -0.1904502d0, -0.46065747d0/)
@@ -1946,26 +1946,26 @@ program tests
 				fy2_arr(i,j) = coll_nue_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
-		if (save_collint_tests) then
-			call openFile(987, "test_sc3b_re.dat", .true.)
-			do i=1, Ny
-				tmpfy2_arr = fy2_arr(i,:)
+		call openFile(987, "test_sc3b_re.dat", .true.)
+		do i=1, Ny
+			tmpfy2_arr = fy2_arr(i,:)
+			if (save_collint_tests) &
 				write(987,multidblfmt) tmpfy2_arr
+		end do
+		close(987)
+		do i=1, Ny
+			do j=1, Ny
+				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
 			end do
-			close(987)
-			do i=1, Ny
-				do j=1, Ny
-					fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
-				end do
-			end do
-			call openFile(987, "test_ann3b_re.dat", .true.)
-			do i=1, Ny
-				tmpfy2_arr = fy2_arr(i,:)
+		end do
+		call openFile(987, "test_ann3b_re.dat", .true.)
+		do i=1, Ny
+			tmpfy2_arr = fy2_arr(i,:)
+			if (save_collint_tests) &
 				write(987,multidblfmt) tmpfy2_arr
-			end do
-			close(987)
+		end do
+		close(987)
 		deallocate(tmpfy2_arr)
-		endif
 
 		vk=(/5.2d0,14.50977264d0/)
 		tmparrS = (/0.044973361d0, 0.0096546081d0, 0.0096546081d0/)
@@ -3141,8 +3141,8 @@ program tests
 			* collTermFactor/(y_arr(iy1)**2*x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
-			write(tmparg,"('damping YYYW d A',2I1)") ix,iy
-			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
+			write(tmparg,"('damping YYYW d A',2I1)") ix,ix
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 5d-4)
 			do iy=ix+1, 3
 				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
