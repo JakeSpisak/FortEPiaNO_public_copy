@@ -446,6 +446,50 @@ class TestFortEPiaNORun(FPTestCase):
         ]:
             fc = np.loadtxt("%s/%s.dat" % (folder, f))
             self.assertEqualArray(fc.shape, s)
+        # test that "deltas" creates the delta_ed and delta_nd attributes
+        self.assertFalse(hasattr(run, "delta_ed"))
+        self.assertFalse(hasattr(run, "delta_nd"))
+        run = fpom.FortEPiaNORun(folder, label="label", deltas=True)
+        self.assertEqualArray(
+            run.delta_ed,
+            [
+                (run.endens[-1, run.zCol + 4 + i] - run.endens[0, run.zCol + 4 + i])
+                / run.endens[0, run.zCol + 4 + i]
+                * 100
+                for i in range(run.nnu)
+            ],
+        )
+        self.assertEqual(
+            run.tot_delta_ed,
+            (
+                (
+                    np.sum(run.endens[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.endens[0, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                )
+                / np.sum(run.endens[0, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                * 100
+            ),
+        )
+        self.assertEqualArray(
+            run.delta_nd,
+            [
+                (run.number[-1, run.zCol + 4 + i] - run.number[0, run.zCol + 4 + i])
+                / run.number[0, run.zCol + 4 + i]
+                * 100
+                for i in range(run.nnu)
+            ],
+        )
+        self.assertEqual(
+            run.tot_delta_nd,
+            (
+                (
+                    np.sum(run.number[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.number[0, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                )
+                / np.sum(run.number[0, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                * 100
+            ),
+        )
         # now just do plots in order to see that everything works till the end
         self.runAllPlots(run)
 

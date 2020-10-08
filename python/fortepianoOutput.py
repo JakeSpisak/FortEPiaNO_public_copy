@@ -284,6 +284,25 @@ class FortEPiaNORun:
                 pass
             else:
                 if deltas:
+                    self.delta_ed = [
+                        (
+                            self.endens[-1, self.zCol + 4 + i]
+                            - self.endens[0, self.zCol + 4 + i]
+                        )
+                        / self.endens[0, self.zCol + 4 + i]
+                        * 100
+                        for i in range(nnu)
+                    ]
+                    self.tot_delta_ed = (
+                        (
+                            np.sum(self.endens[-1, self.zCol + 4 : self.zCol + 4 + nnu])
+                            - np.sum(
+                                self.endens[0, self.zCol + 4 : self.zCol + 4 + nnu]
+                            )
+                        )
+                        / np.sum(self.endens[0, self.zCol + 4 : self.zCol + 4 + nnu])
+                        * 100
+                    )
                     print(
                         "delta energy density:\t"
                         + "\t".join(
@@ -291,9 +310,7 @@ class FortEPiaNORun:
                                 "nu%d: %f%%"
                                 % (
                                     i + 1,
-                                    (self.endens[-1, 5 + i] - self.endens[0, 5 + i])
-                                    / self.endens[0, 5 + i]
-                                    * 100,
+                                    self.delta_ed[i],
                                 )
                                 for i in range(nnu)
                             ]
@@ -314,17 +331,30 @@ class FortEPiaNORun:
                 pass
             else:
                 if deltas:
+                    self.delta_nd = [
+                        (
+                            self.number[-1, self.zCol + 4 + i]
+                            - self.number[0, self.zCol + 4 + i]
+                        )
+                        / self.number[0, self.zCol + 4 + i]
+                        * 100
+                        for i in range(nnu)
+                    ]
+                    self.tot_delta_nd = (
+                        (
+                            np.sum(self.number[-1, self.zCol + 4 : self.zCol + 4 + nnu])
+                            - np.sum(
+                                self.number[0, self.zCol + 4 : self.zCol + 4 + nnu]
+                            )
+                        )
+                        / np.sum(self.number[0, self.zCol + 4 : self.zCol + 4 + nnu])
+                        * 100
+                    )
                     print(
                         "delta number density:\t"
                         + "\t".join(
                             [
-                                "nu%d: %f%%"
-                                % (
-                                    i + 1,
-                                    (self.number[-1, 5 + i] - self.number[0, 5 + i])
-                                    / self.number[0, 5 + i]
-                                    * 100,
-                                )
+                                "nu%d: %f%%" % (i + 1, self.delta_nd[i])
                                 for i in range(nnu)
                             ]
                         )
