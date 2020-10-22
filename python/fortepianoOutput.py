@@ -677,7 +677,7 @@ class FortEPiaNORun:
 
     def plotFD(self, ls="-", lc="k", lab=None, rescale=1.0, fac=1.0):
         """Plot a Fermi-Dirac distribution in the adopted momentum grid.
-        It may be rescaledappropriately
+        It may be rescaled appropriately
 
         Parameters:
             ls (default "-"): the line style
@@ -1029,7 +1029,18 @@ class FortEPiaNORun:
         plt.xlabel("$y$")
         plt.ylabel(r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$" % ("y^2" if y2 else ""))
 
-    def plotRhoX(self, i1, x, i2=None, ri=0, ls="-", lc="k", y2=False, mass=False):
+    def plotRhoX(
+        self,
+        i1,
+        x,
+        i2=None,
+        ri=0,
+        ls="-",
+        lc="k",
+        y2=False,
+        mass=False,
+        divide_fd=False,
+    ):
         """Plot the y dependence of an element of the density matrix
         at a given x
 
@@ -1047,6 +1058,8 @@ class FortEPiaNORun:
                 multiply the diagonal elements times y**2
             mass (default False): if True, use the density matrix
                 in the mass basis
+            divide_fd (default False): if True,
+                divide by self.fd
         """
         if i2 is None:
             i2 = i1
@@ -1057,12 +1070,14 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        xv, yv = interp
         plt.plot(
-            *interp,
+            xv,
+            yv / self.fd if divide_fd else yv,
             ls=ls,
             c=lc,
             label=r"%s $\alpha\beta$=%d%d %s x=%f"
-            % (self.label, i1 + 1, i2 + 1, "re" if ri == 0 else "im", x)
+            % (self.label, i1 + 1, i2 + 1, "re" if ri == 0 else "im", x),
         )
         plt.xlabel("$y$")
         plt.ylabel(r"$%s\rho_{\alpha\beta}(y)$" % ("y^2" if y2 else ""))
