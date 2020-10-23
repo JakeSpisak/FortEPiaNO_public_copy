@@ -1651,7 +1651,7 @@ class TestFortEPiaNORun(FPTestCase):
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.ylabel"
         ) as _yl:
-            run.plotRhoX(1, 0.5, i2=0, ri=1, ls=":", lc="r", y2=True)
+            run.plotRhoX(1, 0.5, i2=0, ri=1, ls=":", lc="r", y2=True, lab="aaa")
             _yl.assert_called_once_with(r"$y^2\rho_{\alpha\beta}(y)$")
             self.assertEqualArray(
                 _plt.call_args[0],
@@ -1660,8 +1660,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s $\alpha\beta$=%d%d %s x=%f"
-                    % (run.label, 2, 1, "im", 0.5),
+                    "label": r"aaa",
                     "ls": ":",
                     "c": "r",
                 },
@@ -1677,6 +1676,30 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqualArray(
                 _plt.call_args[0],
                 run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True),
+            )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoX(1, 0.5, mass=True, divide_by=2.0)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            self.assertEqualArray(
+                _plt.call_args[0],
+                [x, np.array(y) / 2.0],
+            )
+        with self.assertRaises(AttributeError):
+            run.plotRhoX(1, 0.5, mass=True, divide_fd=True)
+        run.fd = np.linspace(0.1, 10, 200)
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoX(1, 0.5, mass=True, divide_fd=True)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            self.assertEqualArray(
+                _plt.call_args[0],
+                [x, np.array(y) / run.fd],
+            )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoX(1, 0.5, mass=True, divide_fd=True, divide_by=2.0)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            self.assertEqualArray(
+                _plt.call_args[0],
+                [x, np.array(y) / run.fd / 2.0],
             )
 
     def test_plotRhoDiagY(self):
@@ -1760,6 +1783,16 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args[1],
                 {"label": "lab", "ls": "-", "c": "k"},
             )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoDiagY(1, 2.5, "-", mass=True, lab="lab", divide_by=3.0)
+            x, yv = run.interpolateRhoIJ(1, 1, 2.5, mass=True)
+            self.assertEqualArray(_plt.call_args[0], [x, np.asarray(yv) / 3.0])
+            self.assertEqual(
+                _plt.call_args[1],
+                {"label": "lab", "ls": "-", "c": "k"},
+            )
+        with self.assertRaises(TypeError):
+            run.plotRhoDiagY(1, 2.5, "-", mass=True, lab="lab", divide_by="a")
 
     def test_plotdRhoDiagY(self):
         """test plotdRhoDiagY"""
