@@ -245,7 +245,7 @@ class FortEPiaNORun:
             self.ini = self.ini.replace("\n", " ")
             try:
                 self.Trhini = float(
-                    re.search("Trh[ =]*([E+\-\d.]*)", self.ini).group(1)
+                    re.search("Trh =[ ]*([E+\-\d.]*)", self.ini).group(1)
                 )
             except (AttributeError, ValueError):
                 pass
@@ -394,8 +394,11 @@ class FortEPiaNORun:
             except (AttributeError, ValueError):
                 self.Trh = np.nan
             else:
-                if self.Trh != self.Trhini:
-                    raise ValueError("Trh from ini.log and from resume.dat differ.")
+                if not np.isclose(float(self.Trh), float(self.Trhini)):
+                    raise ValueError(
+                        "Trh from ini.log (%e) and from resume.dat (%e) differ."
+                        % (self.Trh, self.Trhini)
+                    )
         self.deltarhofin = []
         for i in range(self.nnu):
             if self.hasResume:

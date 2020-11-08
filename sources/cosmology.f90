@@ -124,6 +124,8 @@ module fpCosmology
 			nredf = nredf / PISQD2
 			!the factor is given by g = 2(elicity) * 2(f+\bar f)
 		end if
+        if (abs(nredf) .lt. 1d-99) &
+            nredf = 0.0d0
 	end function nonRelativistic_numberDensity_full
 
 	pure function nonRelativistic_energyDensity_full(cls, x, z, elTherMass) result (nredf)!fermion + antifermion
@@ -158,6 +160,8 @@ module fpCosmology
 			call cls%enDensNoThMassInterp%evaluate(x, z, ed)
 		end if
 #endif
+        if (abs(ed) .lt. 1d-99) &
+            ed = 0.0d0
 	end function nonRelativistic_energyDensity
 
 	pure function integrate_uX_Ek_nonRel(x, z, mf, elTherMass, n)
@@ -212,6 +216,8 @@ module fpCosmology
 		else
 			entropy = 0.d0
 		end if
+        if (abs(entropy) .lt. 1d-99) &
+            entropy = 0.0d0
 	end function nonRelativistic_entropy
 
 	subroutine nonRelativistic_initialize(cls, fermionName, isElectron, mass_factor, xcut)
