@@ -449,6 +449,9 @@ class FortEPiaNORun:
             os.path.exists("%s/BBN.dat" % folder)
             and os.path.exists("%s/rho_tot.dat" % folder)
             and os.path.exists("%s/nuDens_diag1_BBN.dat" % folder)
+            and not os.path.exists("%s/parthenope.dat" % folder)
+            and not os.path.exists("%s/parthenope_yi.dat" % folder)
+            and not os.path.exists("%s/parthenope_rhoee.dat" % folder)
         ):
             self.hasBBN = True
             # read main quantities and prepare N function
