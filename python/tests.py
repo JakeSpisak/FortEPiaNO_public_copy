@@ -324,6 +324,12 @@ class TestFortEPiaNORun(FPTestCase):
     def test_example(self):
         """test an example with FortEPiaNORun from explanatory.ini"""
         folder = "output/"
+        try:
+            os.remove("%s/parthenope.dat" % folder)
+            os.remove("%s/parthenope_yi.dat" % folder)
+            os.remove("%s/parthenope_rhoee.dat" % folder)
+        except:
+            pass
         run = fpom.FortEPiaNORun(folder, label="label")
         with open("%s/ini.log" % folder) as _ini:
             ini = _ini.read()
@@ -582,12 +588,32 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.nnu, 2)
         self.assertFalse(run.verbose)
 
+    def test_checkZdat(self):
+        """test the checkZdat property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertFalse(run.checkZdat())
+        run.zdat = "abc"
+        self.assertFalse(run.checkZdat())
+        run.zdat = np.array([[np.nan, np.nan, np.nan]])
+        self.assertFalse(run.checkZdat())
+        run.zdat = np.array([[np.nan, np.nan, np.nan], [np.nan, np.nan, np.nan]])
+        self.assertFalse(run.checkZdat())
+        run.zdat = np.array([[1, 2, 3]])
+        self.assertTrue(run.checkZdat())
+        run.zdat = np.array([[1, 2, 3], [4, 5, 6]])
+        self.assertTrue(run.checkZdat())
+
     def test_prepareBBN_failures(self):
         """test the error management in the prepareBBN function"""
         run = fpom.FortEPiaNORun("output/nonexistent")
         run.yv = np.array([0.1 * i for i in range(10)])
         self.assertFalse(run.hasBBN)
-        for res in [[True, True, False], [True, False, True], [False, True, True]]:
+        for res in [
+            [True, True, True, False],
+            [True, True, False, True],
+            [True, False, True, True],
+            [False, True, True, True],
+        ]:
             with patch("os.path.exists", side_effect=res) as _fe:
                 run.prepareBBN()
                 self.assertFalse(run.hasBBN)
@@ -595,6 +621,19 @@ class TestFortEPiaNORun(FPTestCase):
         rungood = self.explanatory
         run.zdat = np.array([[1, 2, 3.0]])
         run.lowReheating = rungood.lowReheating
+        run.yv = np.nan
+        with patch("os.path.exists", return_value=True) as _fe:
+            with patch("numpy.loadtxt", return_value=np.array([0, 1, 2, 3.0])) as _lt:
+                run.prepareBBN()
+                _lt.assert_any_call("%s/BBN.dat" % run.folder)
+                _lt.assert_any_call("%s/y_grid.dat" % run.folder)
+                self.assertEqualArray(run.yv, [0, 1, 2, 3.0])
+                run.yv = np.array([[1, np.nan, 2], [3, 4, 5.0]])
+                _lt.reset_mock()
+                run.prepareBBN()
+                _lt.assert_any_call("%s/y_grid.dat" % run.folder)
+                self.assertEqualArray(run.yv, [0, 1, 2, 3.0])
+        run.yv = np.array([0.1 * i for i in range(10)])
         with patch("os.path.exists", return_value=True) as _fe:
             with patch("numpy.loadtxt", return_value=np.array([0, 1, 2, 3.0])) as _lt:
                 run.prepareBBN()
@@ -602,13 +641,28 @@ class TestFortEPiaNORun(FPTestCase):
                 self.assertEqualArray(run.bbn, np.array([0, 1, 2, 3.0]))
                 _lt.assert_called_once_with("%s/BBN.dat" % run.folder)
             _fe.assert_any_call("%s/BBN.dat" % run.folder)
-            _fe.assert_any_call("%s/rho_tot.dat" % run.folder)
             _fe.assert_any_call("%s/nuDens_diag1_BBN.dat" % run.folder)
+            _fe.assert_any_call("%s/rho_tot.dat" % run.folder)
+            _fe.assert_any_call("%s/y_grid.dat" % run.folder)
             with patch(
-                "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1])]
-            ) as _lt, self.assertRaises(AssertionError):
-                run.prepareBBN()
-                self.assertFalse(run.hasBBN)
+                "numpy.loadtxt",
+                side_effect=[
+                    rungood.bbn,
+                    np.array([0.0, 1]),
+                    rungood.bbn,
+                    np.array([0.0, 1]),
+                ],
+            ) as _lt:
+                with patch(
+                    "fortepianoOutput.FortEPiaNORun.checkZdat", return_value=False
+                ) as _cz:
+                    run.prepareBBN()
+                    self.assertFalse(run.hasBBN)
+                with patch(
+                    "fortepianoOutput.FortEPiaNORun.checkZdat", return_value=True
+                ) as _cz, self.assertRaises(AssertionError):
+                    run.prepareBBN()
+                    self.assertFalse(run.hasBBN)
             run.zdat = rungood.zdat
             with patch(
                 "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1])]
@@ -652,27 +706,42 @@ class TestFortEPiaNORun(FPTestCase):
             ) as _lt, patch("numpy.savetxt") as _st:
                 run.prepareBBN()
                 self.assertTrue(run.hasBBN)
-                self.assertEqual(_st.call_count, 3)
-                for i, n in enumerate(
-                    ["parthenope", "parthenope_yi", "parthenope_rhoee"]
-                ):
+                self.assertEqual(_st.call_count, 0)
+        for fer in [
+            [True, True, True, True, False, True, True],
+            [True, True, True, True, True, False, True],
+            [True, True, True, True, True, True, False],
+        ]:
+            with patch("os.path.exists", side_effect=fer) as _fe:
+                with patch(
+                    "numpy.loadtxt",
+                    side_effect=[rungood.bbn, rungood.summedrhos, rungood.bbn],
+                ) as _lt, patch("numpy.savetxt") as _st:
+                    run.prepareBBN()
+                    self.assertTrue(run.hasBBN)
+                    self.assertEqual(_st.call_count, 3)
+                    for i, n in enumerate(
+                        ["parthenope", "parthenope_yi", "parthenope_rhoee"]
+                    ):
+                        self.assertEqual(
+                            _st.call_args_list[i][0][0], "%s/%s.dat" % (run.folder, n)
+                        )
+                    for i, n in enumerate(
+                        [run.parthenope, run.yv, run.bbn[:, 2:][run.filter99]]
+                    ):
+                        self.assertEqualArray(_st.call_args_list[i][0][1], n)
+                    for i in range(3):
+                        self.assertEqual(_st.call_args_list[i][1]["fmt"], "%15.7e")
                     self.assertEqual(
-                        _st.call_args_list[i][0][0], "%s/%s.dat" % (run.folder, n)
+                        _st.call_args_list[0][1]["header"],
+                        "".join(["%16s" % s for s in run.parthenope_cols])[3:],
                     )
-                for i, n in enumerate(
-                    [run.parthenope, run.yv, run.bbn[:, 2:][run.filter99]]
-                ):
-                    self.assertEqualArray(_st.call_args_list[i][0][1], n)
-                for i in range(3):
-                    self.assertEqual(_st.call_args_list[i][1]["fmt"], "%15.7e")
-                self.assertEqual(
-                    _st.call_args_list[0][1]["header"],
-                    "".join(["%16s" % s for s in run.parthenope_cols])[3:],
-                )
 
     def test_x(self):
         """test the x property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
+        with self.assertRaises(AttributeError):
+            run.x
         run.zdat = np.array(
             [
                 [11.0, 12.0, 13.0, 14.0],
@@ -681,10 +750,23 @@ class TestFortEPiaNORun(FPTestCase):
             ]
         )
         self.assertEqualArray(run.x, run.zdat[:, 0])
+        with patch("fortepianoOutput.FortEPiaNORun.checkZdat", return_value=False):
+            with self.assertRaises(AttributeError):
+                run.x
+            run.bbn = np.array(
+                [
+                    [1.0, 2.0, 3.0, 4.0],
+                    [2.3, 3.4, 4.5, 5.6],
+                    [3.4, 4.5, 5.6, 6.7],
+                ]
+            )
+            self.assertEqualArray(run.x, run.bbn[:, 0])
 
     def test_z(self):
         """test the z property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
+        with self.assertRaises(AttributeError):
+            run.z
         run.lowReheating = False
         run.zdat = np.array(
             [
@@ -694,8 +776,21 @@ class TestFortEPiaNORun(FPTestCase):
             ]
         )
         self.assertEqualArray(run.z, run.zdat[:, 1])
+        with patch("fortepianoOutput.FortEPiaNORun.checkZdat", return_value=False):
+            with self.assertRaises(AttributeError):
+                run.x
+            run.bbn = np.array(
+                [
+                    [1.0, 2.0, 3.0, 4.0],
+                    [2.3, 3.4, 4.5, 5.6],
+                    [3.4, 4.5, 5.6, 6.7],
+                ]
+            )
+            self.assertEqualArray(run.z, run.bbn[:, 1])
         run.lowReheating = True
         self.assertEqualArray(run.z, run.zdat[:, 2])
+        with patch("fortepianoOutput.FortEPiaNORun.checkZdat", return_value=False):
+            self.assertEqualArray(run.z, run.bbn[:, 1])
 
     def test_Tgamma(self):
         """test the Tgamma property"""

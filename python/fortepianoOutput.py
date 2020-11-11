@@ -442,27 +442,38 @@ class FortEPiaNORun:
         if plots:
             self.doAllPlots()
 
+    def checkZdat(self):
+        """Check if zdat has been read from the file or not.
+        If it contains np.nan, assume self.zdat was not read from file
+        """
+        return (
+            hasattr(self, "zdat")
+            and isinstance(self.zdat, np.ndarray)
+            and not np.isnan(self.zdat).all()
+        )
+
     def prepareBBN(self):
         """Read BBN files and prepare output for PArthENoPE"""
         folder = self.folder
         if (
             os.path.exists("%s/BBN.dat" % folder)
-            and os.path.exists("%s/rho_tot.dat" % folder)
             and os.path.exists("%s/nuDens_diag1_BBN.dat" % folder)
-            and not os.path.exists("%s/parthenope.dat" % folder)
-            and not os.path.exists("%s/parthenope_yi.dat" % folder)
-            and not os.path.exists("%s/parthenope_rhoee.dat" % folder)
+            and os.path.exists("%s/rho_tot.dat" % folder)
+            and os.path.exists("%s/y_grid.dat" % folder)
         ):
             self.hasBBN = True
             # read main quantities and prepare N function
             self.bbn = np.loadtxt("%s/BBN.dat" % folder)
+            if np.isnan(self.yv).any():
+                self.yv = np.loadtxt("%s/y_grid.dat" % folder)
             try:
                 self.bbn[:, 3]
                 xvec = self.bbn[:, 0]
-                assert np.allclose(xvec, self.zdat[:, 0])
-                assert np.allclose(
-                    self.bbn[:, 1], self.zdat[:, 2 if self.lowReheating else 1]
-                )
+                if self.checkZdat():
+                    assert np.allclose(xvec, self.zdat[:, 0])
+                    assert np.allclose(
+                        self.bbn[:, 1], self.zdat[:, 2 if self.lowReheating else 1]
+                    )
             except (TypeError, IndexError):
                 print("Error in the structure of the BBN.dat file: cannot find columns")
                 self.hasBBN = False
@@ -504,35 +515,46 @@ class FortEPiaNORun:
                             "Error in the structure of nuDens_diag1_BBN.dat: cannot find columns"
                         )
                     else:
-                        try:
-                            np.savetxt(
-                                "%s/parthenope.dat" % folder,
-                                self.parthenope,
-                                fmt="%15.7e",
-                                header="".join(
-                                    ["%16s" % s for s in self.parthenope_cols]
-                                )[3:],
-                            )
-                            np.savetxt(
-                                "%s/parthenope_yi.dat" % folder, self.yv, fmt="%15.7e"
-                            )
-                            np.savetxt(
-                                "%s/parthenope_rhoee.dat" % folder,
-                                data[:, 2:][self.filter99],
-                                fmt="%15.7e",
-                            )
-                        except IOError:
-                            print("Cannot write the outputs for PArtENoPE!")
+                        if not (
+                            os.path.exists("%s/parthenope.dat" % folder)
+                            and os.path.exists("%s/parthenope_yi.dat" % folder)
+                            and os.path.exists("%s/parthenope_rhoee.dat" % folder)
+                        ):
+                            try:
+                                np.savetxt(
+                                    "%s/parthenope.dat" % folder,
+                                    self.parthenope,
+                                    fmt="%15.7e",
+                                    header="".join(
+                                        ["%16s" % s for s in self.parthenope_cols]
+                                    )[3:],
+                                )
+                                np.savetxt(
+                                    "%s/parthenope_yi.dat" % folder,
+                                    self.yv,
+                                    fmt="%15.7e",
+                                )
+                                np.savetxt(
+                                    "%s/parthenope_rhoee.dat" % folder,
+                                    data[:, 2:][self.filter99],
+                                    fmt="%15.7e",
+                                )
+                            except IOError:
+                                print("Cannot write the outputs for PArtENoPE!")
 
     @property
     def x(self):
         """return x"""
-        return self.zdat[:, 0]
+        return self.zdat[:, 0] if self.checkZdat() else self.bbn[:, 0]
 
     @property
     def z(self):
         """return z"""
-        return self.zdat[:, 2 if self.lowReheating else 1]
+        return (
+            self.zdat[:, 2 if self.lowReheating else 1]
+            if self.checkZdat()
+            else self.bbn[:, 1]
+        )
 
     @property
     def Tgamma(self):
