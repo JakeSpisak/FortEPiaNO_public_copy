@@ -3031,7 +3031,7 @@ program tests
 	end subroutine do_test_diagonalization
 
 	subroutine do_test_damping_yyyw
-		real(dl) :: x,w,z,dme2
+		real(dl) :: x,w,z,dme2,y1
 		integer :: ix, iy1, iy
 		real(dl) :: y,res1,res2
 		type(coll_args) :: collArgs
@@ -3103,19 +3103,17 @@ program tests
 		collint_offdiag_damping = .true.
 		call setDampingFactors
 
-		call assert_double_rel("dy_damping saved A", dampTermYYYWdy(1), 129.894d0*y_arr(1)**3, 3d-3)
-		call assert_double_rel("dy_damping saved B", dampTermYYYWdy(Ny), dy_damping_fit(y_arr(Ny))*y_arr(Ny)**3, 2d-3)
-
-		call assert_double_rel("c Nue  1,2", dampTermMatrixCoeffNue (1,2), 0.714d0, 1d-2)
-		call assert_double_rel("c Nue  1,3", dampTermMatrixCoeffNue (1,3), 0.714d0, 1d-2)
-		call assert_double_rel("c Nue  2,3", dampTermMatrixCoeffNue (2,3), 0.2514d0, 1d-2)
-		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 2.d0, 1d-2)
-		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 2.d0, 1d-2)
-		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 2.d0, 1d-2)
+		call assert_double_rel("c Nue  1,2", dampTermMatrixCoeffNue (1,2), 0.357d0, 1d-2)
+		call assert_double_rel("c Nue  1,3", dampTermMatrixCoeffNue (1,3), 0.357d0, 1d-2)
+		call assert_double_rel("c Nue  2,3", dampTermMatrixCoeffNue (2,3), 0.1257d0, 1d-2)
+		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 1.d0, 1d-2)
 
 		! tests for comparing with complete terms
 		x = 0.75d0
 		iy1 = 7 !1.22151515151515
+		y1 = y_arr(iy1)
 		z = 1.186d0
 		dme2 = 0.1d0
 		collArgs%x = x
@@ -3138,7 +3136,7 @@ program tests
 
 		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		res1 = integrate_collint_nue_NC(fakecollintnuey, collArgs, F_ab_ann_re, F_ab_sc_re) &
-			* collTermFactor/(y_arr(iy1)**2*x**4)
+			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
 			write(tmparg,"('damping YYYW d A',2I1)") ix,ix
@@ -3147,19 +3145,20 @@ program tests
 				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
-					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%re(ix,iy) &
-					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
+					* collTermFactor/(y1**2 * x**4), &
 					1d-4)
 				call assert_double_rel(trim(tmparg)//" im", cts%im(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
-					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(ix,iy) &
-					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%im(ix,iy) &
+					* collTermFactor/(y1**2 * x**4), &
 					1d-4)
 			end do
 		end do
 		x = 4.75d0
 		iy1 = 3
-        w = 1.234d0
+		y1 = y_arr(iy1)
+		w = 1.234d0
 		z = 1.386d0
 		collArgs%x = x
 		collArgs%w = w
@@ -3168,7 +3167,7 @@ program tests
 		collArgs%y1 = y_arr(iy1)
 		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		res1 = integrate_collint_nue_NC(fakecollintnuey, collArgs, F_ab_ann_re, F_ab_sc_re) &
-			* collTermFactor/(y_arr(iy1)**2*x**4)
+			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
 			write(tmparg,"('damping YYYW d B',2I1)") ix,ix
@@ -3177,13 +3176,13 @@ program tests
 				write(tmparg,"('damping YYYW od B',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
-					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%re(ix,iy) &
-					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
+					* collTermFactor/(y1**2 * x**4), &
 					1d-4)
 				call assert_double_rel(trim(tmparg)//" im", cts%im(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
-					* dampTermYYYWdy(iy1) * nuDensMatVecFD(iy1)%im(ix,iy) &
-					* collTermFactor/(y_arr(iy1)**2*x**4), &
+					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%im(ix,iy) &
+					* collTermFactor/(y1**2 * x**4), &
 					1d-4)
 			end do
 		end do

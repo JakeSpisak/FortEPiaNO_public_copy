@@ -811,33 +811,133 @@ Notice also that the implementation of the neutrino--neutrino collision terms as
 is the first that allows to compute off-diagonal collision terms
 taking into account the full neutrino density matrix \cite{Bennett:inprep}.
 
+
+\subsection*{Damping approximation}
 The code can compute the collision terms according to Eqs.~\eqref{eq:I_sc}--\eqref{eq:I_nubarnu},
 but the integrals are very expensive.
 For the non-diagonal terms of the collision matrix we therefore allow the possibility to use
 damping approximations, in the form
 %
 \begin{equation}
-\mathcal{I}^u_{\alpha\beta}(\varrho) = -D_{\alpha\beta} \varrho_{\alpha\beta},
+\mathcal{I}^u_{\alpha\beta}(\varrho) = -D^u_{\alpha\beta} \varrho_{\alpha\beta},
 \end{equation}
 %
 for $\alpha \neq \beta$.
 Notice that $\mathcal{I}^u_{\alpha\beta}(\varrho)$ is the unnormalized term
 defined in Eq.~\eqref{eq:unnormcollint}.
-The expressions for the coefficients $D_{\alpha\beta}$ depend on the elements considered.
-In case more than one sterile state is considered, the terms $D_{s_is_j}$ are always zero.
+The expressions for the coefficients $D^u_{\alpha\beta}$ depend on the elements considered.
+In case more than one sterile state is considered, the terms $D^u_{s_is_j}$ are always zero.
 For the rest of the terms, two possibilities are implemented in the code.
 
-\todo[inline]{Yvonne}
+\paragraph{}
+The first possibility arises from the calculations presented in the Appendix~B of \cite{Bennett:inprep}.
+Notice that the appendix proposes also a damping approximation for diagonal collision terms,
+which however is not implemented in \fortepiano.
+According to \cite{Bennett:inprep}, we have a contribution from neutrino--neutrino interactions
+that is flavour-blind (as expected, since in equilibrium there are the same number of neutrinos
+and antineutrinos of each flavour), and one from neutrino--electron collisions.
+We can write the damping terms in the following forms:
+\begin{eqnarray}
+\big\{D^u(y) \big\}_{\alpha \beta}
+&=&
+\frac{1}{2} \left[\big\{R^u(y) \big\}_\alpha+ \big\{R^u(y) \big\}_\beta \right],
+\label{eq:damping_d_r}
+\\
+%nunu
+\big\{R^u_{\nu \nu}(y) \big\}_{\alpha}
+&=&
+\int {\rm d}y_2 {\rm d}y_3 \,
+\left[\Pi_{2}^{\nu}(y, y_2) + 2 \Pi_{2}^{\nu}(y, y_4) \right]
+\nonumber\\
+&&
+\qquad
+\times
+\Big(
+[1-f_{\rm eq}(y_2)] f_{\rm eq}(y_3) f_{\rm eq}(y_4)
++f_{\rm eq}(y_2) [1-f_{\rm eq}(y_3)][1-f_{\rm eq}(y_4)]
+\Big)
+\nonumber\\
+&\equiv&
+{\cal D}^u(y),
+\label{eq:selfdamping}
+\\
+%nue
+\{R^u_{\nu e}(y)\}_{\alpha}
+&=&
+\frac{1}{2} \,
+\left[(2 \sin^2 \theta_W \pm 1)^2_\alpha + 4 \sin^4 \theta_W\right]
+\int {\rm d}y_2 {\rm d}y_3 \,
+\left[\Pi_{2}^{\nu}(y, y_2) + 2 \Pi_{2}^{\nu}(y, y_4) \right]
+\nonumber\\
+&&
+\qquad
+\times
+\Big(
+[1-f_{\rm eq}(y_2)] f_{\rm eq}(y_3) f_{\rm eq}(y_4)
++f_{\rm eq}(y_2) [1-f_{\rm eq}(y_3)][1-f_{\rm eq}(y_4)]
+\Big)
+\nonumber \\
+&=&
+\frac{1}{4}
+\left[(2 \sin^2 \theta_W \pm 1)^2_\alpha + 4 \sin^4 \theta_W\right] {\cal D}^u(y),
+\label{eq:nuedampingdiag}
+\end{eqnarray}
+where in the prefactor $(2 \sin^2 \theta_W\pm 1)_\alpha$  the plus sign ``$+$'' is understood to apply to $\alpha =e$ and ``$-$'' to $\alpha = \mu, \tau$.
 
+For relativistic Fermi--Dirac distributions, the function ${\cal D}^u(y)$ evaluates to
+\begin{equation}
+{\cal D}^u(y) = 2 y^3 z^4 d(y/z)\,,
+\label{eq:dy}
+\end{equation}
+where $d(s)$ is a number around 100 which can be obtained as a double momentum integral,
+see Eq.~(B.9) in \cite{Bennett:inprep}.
+For computational ease,
+$d(s)$ can be fitted in the interval $s \in [10^{-4},10^3]$ to better than 0.1\% accuracy by the curve
+\begin{equation}
+d_{\rm fit}(s)
+=
+d_0 e^{-1.01 s}
++
+d_\infty (1- e^{-0.01 s})
++
+(e^{-0.01 s}-e^{-1.01 s})
+\left[
+\frac{a_0 + a_1 \ln  (s) + a_2 \ln^2(s)}{1 + b_1 \ln  (s) + b_2 \ln^2(s)}
+\right]\,,
+\label{eq:fittingfunctiondy}
+\end{equation}
+where $d_0 = 129.875$ and $d_\infty = 100.999$ are the asymptotic values of the function as $s \to 0$ and
+$s \to \infty$ respectively, and the fitting coefficients are
+$a_0 = 90.7332$, $a_1 = -48.4473$, $a_2 =20.1219$,
+$b_1 = -0.529157$, and $b_2 = 0.20649$.
+
+
+
+\paragraph{}
 The second possibility is to implement the coefficients derived in \cite{McKellar:1992ja},
 see also \cite{Enqvist:1991qj,Bell:1998ds},
-which can be written as
+under the assumption
+\begin{equation}
+\varrho(y)
+=
+\frac{
+f_{\rm eq}(y)
+}{
+f_{\rm eq}(\langle y\rangle)
+}
+\varrho(\langle y\rangle)\,,
+\end{equation}
+such that (y) at all modes y evolve in phase,
+where $\langle y\rangle$ denotes a representative momentum.
+Upon integration in $y$,
+the procedure yields a thermally-averaged collision term,
+which can be written in the form
 %
 \begin{eqnarray}
-D_{e\mu}/F=D_{e\tau}/F & = & 15 + 8\sin^4\theta_W\,,\\
-D_{\mu\tau}/F & = & 7 - 4\sin^2\theta_W + 8\sin^4\theta_W\,,\\
-D_{es}/F & = & 29 + 12\sin^2\theta_W + 24\sin^4\theta_W\,,\\
-D_{\mu s}/F = D_{\tau s}/F & = & 29 - 12\sin^2\theta_W + 24\sin^4\theta_W\,,
+D^u_{e\mu}/F=D^u_{e\tau}/F & = & 15 + 8\sin^4\theta_W\,,\\
+D^u_{\mu\tau}/F & = & 7 - 4\sin^2\theta_W + 8\sin^4\theta_W\,,\\
+D^u_{es}/F & = & 29 + 12\sin^2\theta_W + 24\sin^4\theta_W\,,\\
+D^u_{\mu s}/F = D^u_{\tau s}/F & = & 29 - 12\sin^2\theta_W + 24\sin^4\theta_W\,,
 \end{eqnarray}
 where
 $F=7\pi^4 z^4 y^3/135$ is a common normalisation coefficient.
@@ -1316,7 +1416,7 @@ computed taking into account only the contribution from neutrino--electron inter
 (\texttt{collint\_d\_no\_nue = F}, \texttt{collint\_d\_no\_nunu = T}),
 off-diagonal terms computed using damping approximations
 (\texttt{collint\_offdiag\_damping = T})
-from Eqs.~\eqref{eq:damping_yyyw} (\texttt{collint\_damping\_type = 1}),
+from Eqs.~\eqref{eq:damping_d_r}--\eqref{eq:fittingfunctiondy} (\texttt{collint\_damping\_type = 1}),
 also in this case considering only the neutrino--electron interactions
 (\texttt{collint\_od\_no\_nue = F}, \texttt{collint\_od\_no\_nunu = T}).
 %
@@ -1414,7 +1514,9 @@ some issue in the treatment of finite temperature corrections
 and for support in implementing the higher order correction terms,
 and M.~Escudero~Abenza for useful comments and suggestions.
 
-This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska Curie grant agreement No 796941.
+This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska Curie grant agreements No
+796941 (ENCORE, until March 2020) and
+754496 (FELLINI, starting October 2020).
 
 
 \bibliographystyle{JHEP}

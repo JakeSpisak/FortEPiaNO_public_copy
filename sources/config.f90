@@ -22,7 +22,6 @@ module fpConfig
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		call allocateCmplxMat(nuDensities)
-		allocate(dampTermYYYWdy(Ny))
 		allocate(dampTermMatrixCoeffNue(nf,nf))
 		allocate(dampTermMatrixCoeffNunu(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))

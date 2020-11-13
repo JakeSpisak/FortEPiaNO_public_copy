@@ -76,7 +76,7 @@ module constants
 	real(dl), parameter :: leptDensFactor = -2*SQRT2*G_F*m_e**6/(m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
 	real(dl), parameter :: overallFactor = planck_mass / sqrt(PIx8D3)
-	real(dl), parameter :: dampTermFactor = -7.d0*PISQ*PISQ/135.d0
+	real(dl), parameter :: dampTermFactor = 7.d0*PISQ*PISQ/135.d0
 
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
 
@@ -137,7 +137,6 @@ module variables
 	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	type(cmplxMatNN) :: nuDensities
-	real(dl), dimension(:), allocatable :: dampTermYYYWdy
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
