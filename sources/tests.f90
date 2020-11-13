@@ -3086,12 +3086,12 @@ program tests
 		collint_offdiag_damping = .true.
 		call setDampingFactors
 
-		call assert_double_rel("c Nue  1,2", dampTermMatrixCoeffNue (1,2), 0.714d0, 1d-2)
-		call assert_double_rel("c Nue  1,3", dampTermMatrixCoeffNue (1,3), 0.714d0, 1d-2)
-		call assert_double_rel("c Nue  2,3", dampTermMatrixCoeffNue (2,3), 0.2514d0, 1d-2)
-		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 2.d0, 1d-2)
-		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 2.d0, 1d-2)
-		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 2.d0, 1d-2)
+		call assert_double_rel("c Nue  1,2", dampTermMatrixCoeffNue (1,2), 0.357d0, 1d-2)
+		call assert_double_rel("c Nue  1,3", dampTermMatrixCoeffNue (1,3), 0.357d0, 1d-2)
+		call assert_double_rel("c Nue  2,3", dampTermMatrixCoeffNue (2,3), 0.1257d0, 1d-2)
+		call assert_double_rel("c Nunu 1,2", dampTermMatrixCoeffNunu(1,2), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 1,3", dampTermMatrixCoeffNunu(1,3), 1.d0, 1d-2)
+		call assert_double_rel("c Nunu 2,3", dampTermMatrixCoeffNunu(2,3), 1.d0, 1d-2)
 
 		! tests for comparing with complete terms
 		x = 0.75d0
@@ -3128,12 +3128,12 @@ program tests
 				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
-					* dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
+					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
 					* collTermFactor/(y1**2 * x**4), &
 					1d-4)
 				call assert_double_rel(trim(tmparg)//" im", cts%im(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
-					* dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%im(ix,iy) &
+					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%im(ix,iy) &
 					* collTermFactor/(y1**2 * x**4), &
 					1d-4)
 			end do
@@ -3159,12 +3159,12 @@ program tests
 				write(tmparg,"('damping YYYW od B',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
-					* dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
+					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
 					* collTermFactor/(y1**2 * x**4), &
 					1d-4)
 				call assert_double_rel(trim(tmparg)//" im", cts%im(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
-					* dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%im(ix,iy) &
+					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%im(ix,iy) &
 					* collTermFactor/(y1**2 * x**4), &
 					1d-4)
 			end do
