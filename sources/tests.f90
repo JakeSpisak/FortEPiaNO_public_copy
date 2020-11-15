@@ -3140,7 +3140,7 @@ program tests
 !		call printMat(cts%re)
 		do ix=1, 3
 			write(tmparg,"('damping YYYW d A',2I1)") ix,ix
-			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 5d-4)
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-3)
 			do iy=ix+1, 3
 				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
