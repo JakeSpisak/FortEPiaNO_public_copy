@@ -966,6 +966,7 @@ module fpEquations
 		use fpInterfaces1
 		procedure (nuDensity_integrator), pointer :: nuDensityInt
 		real(dl) :: ndeq, tmp, w, z
+		real(dl) :: totrhonu, Neff
 		real(dl), dimension(:), allocatable :: tmpvec
 		integer :: ix, iy
 		type(cmplxMatNN), dimension(:), allocatable :: rho_mass
@@ -1015,17 +1016,15 @@ module fpEquations
 		end if
 		write(*,"('final z = ',F11.8)") z
 		write(9876,"('final z = ',F11.8)") z
-		!since it was never taken into account, w must not be used here to get the delta_rho,
-		!otherwise the result is not referring to the same quantity
-		ndeq=nuDensityEq(1.d0)
+		totrhonu = allNuDensity()
+		Neff = Neff_from_rho_z(z)
 		do ix=1, flavorNumber
-			tmp = (nuDensityInt(ix, ix) - ndeq)*nuFactor(ix)/ndeq
-			write(*,"('dRho_',I1,'  = ',F9.6)") ix, tmp
-			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
+			tmp = nuDensityInt(ix, ix)*nuFactor(ix)/totrhonu * Neff
+			write(*,"('deltaNeff_',I1,'  = ',F9.6)") ix, tmp
+			write(9876,"('deltaNeff_',I1,'  = ',F9.6)") ix, tmp
 		end do
-		tmp = Neff_from_rho_z(z)
-		write(*,"('Neff    = ',F9.6)") tmp
-		write(9876,"('Neff    = ',F9.6)") tmp
+		write(*,"('Neff    = ',F9.6)") Neff
+		write(9876,"('Neff    = ',F9.6)") Neff
 
 #ifdef LOW_REHEATING
 		write(*,"('Trh    = ',F11.6)") Trh

@@ -359,8 +359,6 @@ class FortEPiaNORun:
                             ]
                         )
                     )
-        self.rho = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
-        self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
         try:
             with open("%s/resume.dat" % folder) as _f:
                 self.resume = _f.read()
@@ -372,12 +370,14 @@ class FortEPiaNORun:
             self.hasResume = True
         if self.hasResume:
             try:
-                self.Neff = float(re.search("Neff[ =]*([-\d.]*)", self.resume).group(1))
+                self.Neff = float(
+                    re.search("Neff[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
+                )
             except (AttributeError, ValueError):
                 self.Neff = np.nan
             try:
                 self.wfin = float(
-                    re.search("final w[ =]*([-\d.]*)", self.resume).group(1)
+                    re.search("final w[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
                 )
             except (AttributeError, ValueError):
                 if verbose:
@@ -385,12 +385,14 @@ class FortEPiaNORun:
                 self.wfin = np.nan
             try:
                 self.zfin = float(
-                    re.search("final z[ =]*([-\d.]*)", self.resume).group(1)
+                    re.search("final z[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
                 )
             except (AttributeError, ValueError):
                 self.zfin = np.nan
             try:
-                self.Trh = float(re.search("Trh[ =]*([-\d.]*)", self.resume).group(1))
+                self.Trh = float(
+                    re.search("Trh[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
+                )
             except (AttributeError, ValueError):
                 self.Trh = np.nan
             else:
@@ -399,20 +401,41 @@ class FortEPiaNORun:
                         "Trh from ini.log (%e) and from resume.dat (%e) differ."
                         % (self.Trh, self.Trhini)
                     )
-        self.deltarhofin = []
-        for i in range(self.nnu):
-            if self.hasResume:
-                try:
-                    self.deltarhofin.append(
-                        float(
-                            re.search(
-                                "dRho_%s[ =]*([-\d.]*)" % (i + 1),
-                                self.resume,
-                            ).group(1)
+            self.deltaNeffi = np.array([np.nan for i in range(self.nnu)])
+            if re.search("deltaNeff_([\d]+)[ ]*=[ ]*([-\d.]*)", self.resume):
+                search = re.compile("deltaNeff_([\d]+)[ ]*=[ ]*([-\d.]*)")
+                if search.findall(self.resume):
+                    try:
+                        self.deltaNeffi = np.array(
+                            [float(g[1]) for g in search.findall(self.resume)]
                         )
-                    )
+                    except (AttributeError, IndexError):
+                        if self.verbose:
+                            print("cannot read deltaNeffi")
+            else:
+                # this part is kept for compatibility with previous versions
+                search = re.compile("nuFactor([\d]+)[ ]*=[ ]*([E+\-\d.]*)")
+                try:
+                    factors = np.array([float(g[1]) for g in search.findall(self.ini)])
                 except (AttributeError, IndexError):
-                    self.deltarhofin.append(np.nan)
+                    factors = [np.nan] * 6
+                deltarhofin = []
+                search = re.compile("dRho_([\d]+)[ ]*=[ ]*([-\d.]*)")
+                if search.findall(self.resume):
+                    for i, g in enumerate(search.findall(self.resume)):
+                        try:
+                            deltarhofin.append(float(g[1]) + factors[i])
+                        except (AttributeError, IndexError):
+                            deltarhofin.append(np.nan)
+                    deltarhofin = np.array(deltarhofin)
+                    try:
+                        self.deltaNeffi = self.Neff * deltarhofin / np.sum(deltarhofin)
+                    except (AttributeError, ValueError):
+                        if self.verbose:
+                            print("cannot convert old dRho_i to new deltaNeffi")
+        self.rho = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
+        self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
+        for i in range(self.nnu):
             try:
                 self.rho[i, i, 0] = np.loadtxt("%s/nuDens_diag%d.dat" % (folder, i + 1))
             except (IOError, OSError):
@@ -681,7 +704,7 @@ class FortEPiaNORun:
         try:
             self.hasResume
             self.label, self.Neff, self.zfin, self.zdat[-1]
-            [self.deltarhofin[i] for i in range(self.nnu)]
+            [self.deltaNeffi[i] for i in range(self.nnu)]
         except (AttributeError, IndexError):
             print(traceback.format_exc())
             return
@@ -690,7 +713,7 @@ class FortEPiaNORun:
         if self.hasResume:
             deltastr = ""
             for i in range(self.nnu):
-                deltastr += "{:.5f} & ".format(self.deltarhofin[i])
+                deltastr += "{:.5f} & ".format(self.deltaNeffi[i])
             print(
                 "{lab:<15s} & {zfin:.5f} & {deltastr:s}{Neff:.5f}\\\\".format(
                     lab=self.label, Neff=self.Neff, zfin=self.zfin, deltastr=deltastr

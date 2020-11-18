@@ -138,7 +138,7 @@ module fpInteractions
 			write(*,*) "[collint] Example d(y) for damping factors a la YYYW..."
 			write(*,"(3A14)") "y", "f_eq(y)", "d(y)"
 			do ix=1, Ny
-				write(*,"(3E14.6)") y_arr(ix), feq_arr(ix), dy_damping_fit(y_arr(ix)) * y_arr(ix)**3
+				write(*,"(3E14.6)") y_arr(ix), feq_arr(ix), dy_damping_fit(y_arr(ix))
 			end do
 		end if
 	end subroutine setDampingFactorCoeffs
