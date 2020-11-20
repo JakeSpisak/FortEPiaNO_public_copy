@@ -196,11 +196,11 @@ class FortEPiaNORun:
         self,
         folder,
         nnu=3,
-        full=True,
         label="",
+        deltas=False,
+        full=True,
         plots=False,
         verbose=True,
-        deltas=False,
     ):
         """Read the entire output of FortEPiaNO from a specific folder.
         It will ignore non-existing files and store all the available
@@ -211,17 +211,17 @@ class FortEPiaNORun:
             nnu (default 3): number of neutrinos to consider
                 (if more rows/columns of the density matrix exist,
                 they will be ignored)
+            label (default ""): a label to assign
+                to the current FortEPiaNO point in the plots
+            deltas (default False): if True, print the relative variation
+                of energy and number density for each neutrino
             full (default True): if True, read also all the off-diagonal
                 density matrix elements, otherwise ignore them
                 (to save time if not needed in the plots, for example)
-            label (default ""): a label to assign
-                to the current FortEPiaNO point in the plots
             plots (default False): if True, produce a series of plots
                 after having read all the files
             verbose (default True): if True, print more error messages
                 (e.g. when the folder is not found or w is not saved)
-            deltas (default False): if True, print the relative variation
-                of energy and number density for each neutrino
         """
         self.folder = folder
         self.full = full
@@ -234,10 +234,217 @@ class FortEPiaNORun:
             if verbose:
                 print("non-existing folder: %s" % folder)
             return
+        self.readIni()
+        self.readFD()
+        self.readWZ()
+        self.readNeff()
+        self.readEENDensities(deltas)
+        self.readResume()
+        self.readNuDensMatrix(full)
+        self.prepareBBN()
+        self.prepareRhoFinal()
+        self.printTableLine()
+        if plots:
+            self.doAllPlots()
+
+    def checkZdat(self):
+        """Check if zdat has been read from the file or not.
+        If it contains np.nan, assume self.zdat was not read from file
+        """
+        return (
+            hasattr(self, "zdat")
+            and isinstance(self.zdat, np.ndarray)
+            and not np.isnan(self.zdat).all()
+        )
+
+    @property
+    def x(self):
+        """return x"""
+        return self.zdat[:, 0] if self.checkZdat() else self.bbn[:, 0]
+
+    @property
+    def z(self):
+        """return z"""
+        return (
+            self.zdat[:, 2 if self.lowReheating else 1]
+            if self.checkZdat()
+            else self.bbn[:, 1]
+        )
+
+    @property
+    def Tgamma(self):
+        """return T_gamma"""
+        return self.z * ELECTRONMASS_MEV / self.x
+
+    @property
+    def t(self):
+        """return t, if available"""
+        return self.zdat[:, 1] if self.lowReheating else np.nan
+
+    @property
+    def rhonu(self):
+        """return rhonu (total neutrino energy density)"""
+        return self.bbn[:, 3] if self.hasBBN else np.nan
+
+    @property
+    def drhonu_dx(self):
+        """return drhonu/dx"""
+        return np.gradient(self.rhonu, self.x) if self.hasBBN else np.nan
+
+    @property
+    def drhonu_dx_savgol(self):
+        """return a filtered version of drhonu/dx"""
+        return (
+            savgol_filter(np.clip(self.drhonu_dx, 1e-10, None), 51, 1)
+            if self.hasBBN
+            else np.nan
+        )
+
+    @property
+    def N_func(self):
+        """return the N function used in PArthENoPE"""
+        return self.x * self.drhonu_dx / self.z ** 4 if self.hasBBN else np.nan
+
+    @property
+    def N_savgol(self):
+        """return a filtered version of the N function used in PArthENoPE"""
+        return (
+            savgol_filter(np.clip(self.N_func, 1e-11, None), 75, 1)
+            if self.hasBBN
+            else np.nan
+        )
+
+    def readEENDensities(self, deltas=False):
+        """Read energy, entropy and number density,
+        if the files are available
+
+        Parameters:
+            deltas (default False): if True, print the relative variation
+                of energy and number density for each neutrino
+        """
+        refIx = 1 if self.lowReheating else 0
+        try:
+            self.endens = np.loadtxt("%s/energyDensity.dat" % self.folder)
+        except (IOError, OSError):
+            self.endens = np.nan
+        else:
+            try:
+                self.endens[:, :]
+            except IndexError:
+                pass
+            else:
+                if deltas:
+                    self.delta_ed = [
+                        (
+                            self.endens[-1, self.zCol + 4 + i]
+                            - self.endens[refIx, self.zCol + 4 + i]
+                        )
+                        / self.endens[refIx, self.zCol + 4 + i]
+                        * 100
+                        for i in range(self.nnu)
+                    ]
+                    self.tot_delta_ed = (
+                        (
+                            np.sum(
+                                self.endens[
+                                    -1, self.zCol + 4 : self.zCol + 4 + self.nnu
+                                ]
+                            )
+                            - np.sum(
+                                self.endens[
+                                    refIx, self.zCol + 4 : self.zCol + 4 + self.nnu
+                                ]
+                            )
+                        )
+                        / np.sum(
+                            self.endens[refIx, self.zCol + 4 : self.zCol + 4 + self.nnu]
+                        )
+                        * 100
+                    )
+                    print(
+                        "delta energy density:\t"
+                        + "\t".join(
+                            [
+                                "nu%d: %f%%"
+                                % (
+                                    i + 1,
+                                    self.delta_ed[i],
+                                )
+                                for i in range(self.nnu)
+                            ]
+                        )
+                    )
+        try:
+            self.entropy = np.loadtxt("%s/entropy.dat" % self.folder)
+        except (IOError, OSError):
+            self.entropy = np.nan
+        try:
+            self.number = np.loadtxt("%s/numberDensity.dat" % self.folder)
+        except (IOError, OSError):
+            self.number = np.nan
+        else:
+            try:
+                self.number[:, :]
+            except IndexError:
+                pass
+            else:
+                if deltas:
+                    self.delta_nd = [
+                        (
+                            self.number[-1, self.zCol + 4 + i]
+                            - self.number[refIx, self.zCol + 4 + i]
+                        )
+                        / self.number[refIx, self.zCol + 4 + i]
+                        * 100
+                        for i in range(self.nnu)
+                    ]
+                    self.tot_delta_nd = (
+                        (
+                            np.sum(
+                                self.number[
+                                    -1, self.zCol + 4 : self.zCol + 4 + self.nnu
+                                ]
+                            )
+                            - np.sum(
+                                self.number[
+                                    refIx, self.zCol + 4 : self.zCol + 4 + self.nnu
+                                ]
+                            )
+                        )
+                        / np.sum(
+                            self.number[refIx, self.zCol + 4 : self.zCol + 4 + self.nnu]
+                        )
+                        * 100
+                    )
+                    print(
+                        "delta number density:\t"
+                        + "\t".join(
+                            [
+                                "nu%d: %f%%" % (i + 1, self.delta_nd[i])
+                                for i in range(self.nnu)
+                            ]
+                        )
+                    )
+
+    def readFD(self):
+        """Read and store the information from fd.dat"""
+        try:
+            fdy = np.loadtxt("%s/fd.dat" % self.folder)
+        except (IOError, OSError):
+            self.yv = np.nan
+            self.fd = np.nan
+        else:
+            self.yv = fdy[:, 0]
+            self.fd = fdy[:, 1]
+
+    def readIni(self):
+        """Read and store the content of the ini.log file,
+        and check if the reheating temperature is present
+        """
         self.zCol = 1
         self.Trhini = None
         try:
-            with open("%s/ini.log" % folder) as _ini:
+            with open("%s/ini.log" % self.folder) as _ini:
                 self.ini = _ini.read()
         except FileNotFoundError:
             self.ini = ""
@@ -253,114 +460,64 @@ class FortEPiaNORun:
                 if self.Trhini > 0:
                     self.lowReheating = True
                     self.zCol = 2
+
+    def readNeff(self):
+        """Read the Neff.dat file"""
         try:
-            fdy = np.loadtxt("%s/fd.dat" % folder)
-        except (IOError, OSError):
-            self.yv = np.nan
-            self.fd = np.nan
-        else:
-            self.yv = fdy[:, 0]
-            self.fd = fdy[:, 1]
-        try:
-            self.zdat = np.loadtxt("%s/z.dat" % folder)
-        except (IOError, OSError):
-            self.zdat = np.asarray([[np.nan, np.nan, np.nan]])
-        try:
-            self.Neffdat = np.loadtxt("%s/Neff.dat" % folder)
+            self.Neffdat = np.loadtxt("%s/Neff.dat" % self.folder)
         except (IOError, OSError):
             self.Neffdat = np.asarray(
                 [[np.nan, np.nan, np.nan, np.nan]]
                 if self.lowReheating
                 else [[np.nan, np.nan, np.nan]]
             )
-        try:
-            self.endens = np.loadtxt("%s/energyDensity.dat" % folder)
-        except (IOError, OSError):
-            self.endens = np.nan
-        else:
+
+    def readNuDensMatrix(self, full=True):
+        """Read the evolution of the various components
+        of the neutrino density matrix
+
+        Parameters:
+            full (default True): if True, read also all the off-diagonal
+                density matrix elements, otherwise ignore them
+        """
+        self.rho = np.asarray(
+            [[[None, None] for i in range(self.nnu)] for j in range(self.nnu)]
+        )
+        self.rhoM = np.asarray(
+            [[[None, None] for i in range(self.nnu)] for j in range(self.nnu)]
+        )
+        for i in range(self.nnu):
             try:
-                self.endens[:, :]
-            except IndexError:
-                pass
-            else:
-                if deltas:
-                    self.delta_ed = [
-                        (
-                            self.endens[-1, self.zCol + 4 + i]
-                            - self.endens[0, self.zCol + 4 + i]
+                self.rho[i, i, 0] = np.loadtxt(
+                    "%s/nuDens_diag%d.dat" % (self.folder, i + 1)
+                )
+            except (IOError, OSError):
+                self.rho[i, i, 0] = np.nan
+            if full:
+                for j in range(i + 1, self.nnu):
+                    try:
+                        self.rho[i, j, 0] = np.loadtxt(
+                            "%s/nuDens_nd_%d%d_re.dat" % (self.folder, i + 1, j + 1)
                         )
-                        / self.endens[0, self.zCol + 4 + i]
-                        * 100
-                        for i in range(nnu)
-                    ]
-                    self.tot_delta_ed = (
-                        (
-                            np.sum(self.endens[-1, self.zCol + 4 : self.zCol + 4 + nnu])
-                            - np.sum(
-                                self.endens[0, self.zCol + 4 : self.zCol + 4 + nnu]
-                            )
+                    except (IOError, OSError):
+                        self.rho[i, j, 0] = np.nan
+                    try:
+                        self.rho[i, j, 1] = np.loadtxt(
+                            "%s/nuDens_nd_%d%d_im.dat" % (self.folder, i + 1, j + 1)
                         )
-                        / np.sum(self.endens[0, self.zCol + 4 : self.zCol + 4 + nnu])
-                        * 100
-                    )
-                    print(
-                        "delta energy density:\t"
-                        + "\t".join(
-                            [
-                                "nu%d: %f%%"
-                                % (
-                                    i + 1,
-                                    self.delta_ed[i],
-                                )
-                                for i in range(nnu)
-                            ]
-                        )
-                    )
-        try:
-            self.entropy = np.loadtxt("%s/entropy.dat" % folder)
-        except (IOError, OSError):
-            self.entropy = np.nan
-        try:
-            self.number = np.loadtxt("%s/numberDensity.dat" % folder)
-        except (IOError, OSError):
-            self.number = np.nan
-        else:
+                    except (IOError, OSError):
+                        self.rho[i, j, 1] = np.nan
             try:
-                self.number[:, :]
-            except IndexError:
-                pass
-            else:
-                if deltas:
-                    self.delta_nd = [
-                        (
-                            self.number[-1, self.zCol + 4 + i]
-                            - self.number[0, self.zCol + 4 + i]
-                        )
-                        / self.number[0, self.zCol + 4 + i]
-                        * 100
-                        for i in range(nnu)
-                    ]
-                    self.tot_delta_nd = (
-                        (
-                            np.sum(self.number[-1, self.zCol + 4 : self.zCol + 4 + nnu])
-                            - np.sum(
-                                self.number[0, self.zCol + 4 : self.zCol + 4 + nnu]
-                            )
-                        )
-                        / np.sum(self.number[0, self.zCol + 4 : self.zCol + 4 + nnu])
-                        * 100
-                    )
-                    print(
-                        "delta number density:\t"
-                        + "\t".join(
-                            [
-                                "nu%d: %f%%" % (i + 1, self.delta_nd[i])
-                                for i in range(nnu)
-                            ]
-                        )
-                    )
+                self.rhoM[i, i, 0] = np.loadtxt(
+                    "%s/nuDens_mass%d.dat" % (self.folder, i + 1)
+                )
+            except (IOError, OSError):
+                self.rhoM[i, i, 0] = np.nan
+
+    def readResume(self):
+        """Read the resume file and the information that it contains"""
         try:
-            with open("%s/resume.dat" % folder) as _f:
+            with open("%s/resume.dat" % self.folder) as _f:
                 self.resume = _f.read()
         except FileNotFoundError:
             self.resume = ""
@@ -380,7 +537,7 @@ class FortEPiaNORun:
                     re.search("final w[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
                 )
             except (AttributeError, ValueError):
-                if verbose:
+                if self.verbose:
                     print("cannot read w from resume.dat")
                 self.wfin = np.nan
             try:
@@ -389,18 +546,19 @@ class FortEPiaNORun:
                 )
             except (AttributeError, ValueError):
                 self.zfin = np.nan
-            try:
-                self.Trh = float(
-                    re.search("Trh[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
-                )
-            except (AttributeError, ValueError):
-                self.Trh = np.nan
-            else:
-                if not np.isclose(float(self.Trh), float(self.Trhini)):
-                    raise ValueError(
-                        "Trh from ini.log (%e) and from resume.dat (%e) differ."
-                        % (self.Trh, self.Trhini)
+            if self.lowReheating:
+                try:
+                    self.Trh = float(
+                        re.search("Trh[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
                     )
+                except (AttributeError, ValueError):
+                    self.Trh = np.nan
+                else:
+                    if not np.isclose(float(self.Trh), float(self.Trhini)):
+                        raise ValueError(
+                            "Trh from ini.log (%s) and from resume.dat (%s) differ."
+                            % (self.Trh, self.Trhini)
+                        )
             self.deltaNeffi = np.array([np.nan for i in range(self.nnu)])
             if re.search("deltaNeff_([\d]+)[ ]*=[ ]*([-\d.]*)", self.resume):
                 search = re.compile("deltaNeff_([\d]+)[ ]*=[ ]*([-\d.]*)")
@@ -433,47 +591,17 @@ class FortEPiaNORun:
                     except (AttributeError, ValueError):
                         if self.verbose:
                             print("cannot convert old dRho_i to new deltaNeffi")
-        self.rho = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
-        self.rhoM = np.asarray([[[None, None] for i in range(nnu)] for j in range(nnu)])
-        for i in range(self.nnu):
-            try:
-                self.rho[i, i, 0] = np.loadtxt("%s/nuDens_diag%d.dat" % (folder, i + 1))
-            except (IOError, OSError):
-                self.rho[i, i, 0] = np.nan
-            if full:
-                for j in range(i + 1, self.nnu):
-                    try:
-                        self.rho[i, j, 0] = np.loadtxt(
-                            "%s/nuDens_nd_%d%d_re.dat" % (folder, i + 1, j + 1)
-                        )
-                    except (IOError, OSError):
-                        self.rho[i, j, 0] = np.nan
-                    try:
-                        self.rho[i, j, 1] = np.loadtxt(
-                            "%s/nuDens_nd_%d%d_im.dat" % (folder, i + 1, j + 1)
-                        )
-                    except (IOError, OSError):
-                        self.rho[i, j, 1] = np.nan
-            try:
-                self.rhoM[i, i, 0] = np.loadtxt(
-                    "%s/nuDens_mass%d.dat" % (folder, i + 1)
-                )
-            except (IOError, OSError):
-                self.rhoM[i, i, 0] = np.nan
-        self.prepareBBN()
-        self.printTableLine()
-        if plots:
-            self.doAllPlots()
 
-    def checkZdat(self):
-        """Check if zdat has been read from the file or not.
-        If it contains np.nan, assume self.zdat was not read from file
-        """
-        return (
-            hasattr(self, "zdat")
-            and isinstance(self.zdat, np.ndarray)
-            and not np.isnan(self.zdat).all()
-        )
+    def readWZ(self):
+        """Read the z.dat file"""
+        try:
+            self.zdat = np.loadtxt("%s/z.dat" % self.folder)
+        except (IOError, OSError):
+            self.zdat = np.asarray(
+                [[np.nan, np.nan, np.nan, np.nan]]
+                if self.lowReheating
+                else [[np.nan, np.nan, np.nan]]
+            )
 
     def prepareBBN(self):
         """Read BBN files and prepare output for PArthENoPE"""
@@ -565,62 +693,104 @@ class FortEPiaNORun:
                             except IOError:
                                 print("Cannot write the outputs for PArtENoPE!")
 
-    @property
-    def x(self):
-        """return x"""
-        return self.zdat[:, 0] if self.checkZdat() else self.bbn[:, 0]
+    def prepareRhoFinal(self):
+        """Save the normalized diagonal entries of the final neutrino
+        density matrix in mass basis, if not already existing
+        """
+        zid = (11.0 / 4.0) ** (1.0 / 3.0)
 
-    @property
-    def z(self):
-        """return z"""
-        return (
-            self.zdat[:, 2 if self.lowReheating else 1]
-            if self.checkZdat()
-            else self.bbn[:, 1]
-        )
+        def photonDensity(z):
+            """photon energy density as a function of z"""
+            return PISQD15 * z ** 4
 
-    @property
-    def Tgamma(self):
-        """return T_gamma"""
-        return self.z * ELECTRONMASS_MEV / self.x
+        def Neffcontributions(delta, z, w, nnu, ymin=0.01, ymax=20):
+            """neutrino energy density for each of the nnu eigenstates.
+            Compute the integral (between ymin and ymax)
+            of the final neutrino density matrix
+            (diagonal entries) as a function of w,
+            divide by the photon density (function of z)
+            and adjust the normalization constants.
+            The output
+            """
+            return [
+                quad(
+                    lambda y: y ** 3
+                    / (np.exp(y / w) + 1)
+                    * interp1d(delta[:, 0], delta[:, i], fill_value="extrapolate")(y),
+                    ymin,
+                    ymax,
+                )[0]
+                / np.pi ** 2
+                * (zid) ** 4
+                / photonDensity(z)
+                / 0.875
+                for i in range(1, nnu + 1)
+            ]
 
-    @property
-    def t(self):
-        """return t, if available"""
-        return self.zdat[:, 1] if self.lowReheating else np.nan
-
-    @property
-    def rhonu(self):
-        """return rhonu (total neutrino energy density)"""
-        return self.bbn[:, 3] if self.hasBBN else np.nan
-
-    @property
-    def drhonu_dx(self):
-        """return drhonu/dx"""
-        return np.gradient(self.rhonu, self.x) if self.hasBBN else np.nan
-
-    @property
-    def drhonu_dx_savgol(self):
-        """return a filtered version of drhonu/dx"""
-        return (
-            savgol_filter(np.clip(self.drhonu_dx, 1e-10, None), 51, 1)
-            if self.hasBBN
-            else np.nan
-        )
-
-    @property
-    def N_func(self):
-        """return the N function used in PArthENoPE"""
-        return self.x * self.drhonu_dx / self.z ** 4 if self.hasBBN else np.nan
-
-    @property
-    def N_savgol(self):
-        """return a filtered version of the N function used in PArthENoPE"""
-        return (
-            savgol_filter(np.clip(self.N_func, 1e-11, None), 75, 1)
-            if self.hasBBN
-            else np.nan
-        )
+        if not hasattr(self, "wfin") or np.isnan(self.wfin):
+            if self.verbose:
+                print("cannot read final w, I will not renormalize the final rho")
+            return
+        for fm in ["rho_final", "rho_final_mass"]:
+            if os.path.exists("%s/%s.dat" % (self.folder, fm)) and not (
+                os.path.exists("%s/%s_norm.dat" % (self.folder, fm))
+                and os.path.exists("%s/%s_var.dat" % (self.folder, fm))
+            ):
+                data = np.loadtxt("%s/%s.dat" % (self.folder, fm))
+                # Compute the variation of the neutrino density matrix
+                # with respect to the FermiDirac at temperature w.
+                # To obtain the contributions to Neff, integrate:
+                # rhonu_i = 1/pi**2 \int_ymin^ymax dy y**3 var(y) / [exp(y/w)+1]
+                # and normalize:
+                # deltaNeff_i = rhonu_i * zid**4 / photonDensity(z) * 8/7
+                # Here in this function, you can use:
+                # deltaNeff_i = Neffcontributions(var, self.zfin, self.wfin, ...)
+                var = np.column_stack(
+                    (
+                        data[:, 0],
+                        np.array(
+                            [
+                                data[:, i] * (np.exp(data[:, 0] / self.wfin) + 1)
+                                for i in range(1, data.shape[1])
+                            ]
+                        ).T,
+                    )
+                )
+                # Compute the renormalized variation of the neutrino density matrix
+                # with respect to the FermiDirac 1/[exp(y)+1].
+                # To obtain the contributions to Neff, integrate:
+                # rhonu_i = 1/pi**2 \int_ymin^ymax dy y**3 nor(y) / [exp(y)+1]
+                # and normalize:
+                # deltaNeff_i = rhonu_i * zid**4 / photonDensity(zid) * 8/7
+                # Here in this function, you can use:
+                # deltaNeff_i = Neffcontributions(nor, zid, 1., ...)
+                nor = np.column_stack(
+                    (
+                        var[:, 0],
+                        np.array(
+                            [
+                                interp1d(
+                                    var[:, 0], var[:, i], fill_value="extrapolate"
+                                )(var[:, 0] * self.wfin)
+                                * (zid / self.zfin * self.wfin) ** 4
+                                for i in range(1, data.shape[1])
+                            ]
+                        ).T,
+                    )
+                )
+                try:
+                    np.savetxt(
+                        "%s/%s_var.dat" % (self.folder, fm),
+                        var,
+                        fmt="%15.7e",
+                    )
+                    np.savetxt(
+                        "%s/%s_norm.dat" % (self.folder, fm),
+                        nor,
+                        fmt="%15.7e",
+                    )
+                except IOError:
+                    print("Cannot write the converted neutrino density matrices!")
 
     def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False, mass=False):
         """Interpolate any entry of the density matrix at a given y,

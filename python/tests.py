@@ -59,9 +59,14 @@ def setUpModule():
 
 def tearDownModule():
     """Delete test folder"""
-    folder = "output/no/"
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
+    for folder in [
+        "output/no/",
+        "output/nonexistent",
+        "output/nonexistent1",
+        "output/nonexistent2",
+    ]:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
 
 
 class FPTestCase(unittest.TestCase):
@@ -456,11 +461,12 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "delta_ed"))
         self.assertFalse(hasattr(run, "delta_nd"))
         run = fpom.FortEPiaNORun(folder, label="label", deltas=True)
+        rx = 1 if run.lowReheating else 0
         self.assertEqualArray(
             run.delta_ed,
             [
-                (run.endens[-1, run.zCol + 4 + i] - run.endens[0, run.zCol + 4 + i])
-                / run.endens[0, run.zCol + 4 + i]
+                (run.endens[-1, run.zCol + 4 + i] - run.endens[rx, run.zCol + 4 + i])
+                / run.endens[rx, run.zCol + 4 + i]
                 * 100
                 for i in range(run.nnu)
             ],
@@ -470,17 +476,17 @@ class TestFortEPiaNORun(FPTestCase):
             (
                 (
                     np.sum(run.endens[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
-                    - np.sum(run.endens[0, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.endens[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
                 )
-                / np.sum(run.endens[0, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                / np.sum(run.endens[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
                 * 100
             ),
         )
         self.assertEqualArray(
             run.delta_nd,
             [
-                (run.number[-1, run.zCol + 4 + i] - run.number[0, run.zCol + 4 + i])
-                / run.number[0, run.zCol + 4 + i]
+                (run.number[-1, run.zCol + 4 + i] - run.number[rx, run.zCol + 4 + i])
+                / run.number[rx, run.zCol + 4 + i]
                 * 100
                 for i in range(run.nnu)
             ],
@@ -490,9 +496,9 @@ class TestFortEPiaNORun(FPTestCase):
             (
                 (
                     np.sum(run.number[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
-                    - np.sum(run.number[0, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
                 )
-                / np.sum(run.number[0, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                / np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
                 * 100
             ),
         )
@@ -563,11 +569,36 @@ class TestFortEPiaNORun(FPTestCase):
         """test __init__"""
         folder = "output/"
         with patch("fortepianoOutput.FortEPiaNORun.doAllPlots") as _pl, patch(
+            "fortepianoOutput.FortEPiaNORun.readIni"
+        ) as _ri, patch("fortepianoOutput.FortEPiaNORun.readFD") as _rf, patch(
+            "fortepianoOutput.FortEPiaNORun.readWZ"
+        ) as _rw, patch(
+            "fortepianoOutput.FortEPiaNORun.readNeff"
+        ) as _rn, patch(
+            "fortepianoOutput.FortEPiaNORun.readEENDensities"
+        ) as _rd, patch(
+            "fortepianoOutput.FortEPiaNORun.readResume"
+        ) as _rr, patch(
+            "fortepianoOutput.FortEPiaNORun.readNuDensMatrix"
+        ) as _rm, patch(
+            "fortepianoOutput.FortEPiaNORun.prepareBBN"
+        ) as _bbn, patch(
+            "fortepianoOutput.FortEPiaNORun.prepareRhoFinal"
+        ) as _prf, patch(
             "fortepianoOutput.FortEPiaNORun.printTableLine"
         ) as _ptl:
             run = fpom.FortEPiaNORun(folder)
             self.assertEqual(_pl.call_count, 0)
-            _ptl.assert_called_once()
+            _ri.assert_called_once_with()
+            _rf.assert_called_once_with()
+            _rw.assert_called_once_with()
+            _rn.assert_called_once_with()
+            _rd.assert_called_once_with(False)
+            _rr.assert_called_once_with()
+            _rm.assert_called_once_with(True)
+            _bbn.assert_called_once_with()
+            _prf.assert_called_once_with()
+            _ptl.assert_called_once_with()
         self.assertEqual(run.folder, folder)
         self.assertTrue(run.full)
         self.assertEqual(run.label, "")
@@ -575,13 +606,44 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertTrue(run.verbose)
 
         with patch("fortepianoOutput.FortEPiaNORun.doAllPlots") as _pl, patch(
+            "fortepianoOutput.FortEPiaNORun.readIni"
+        ) as _ri, patch("fortepianoOutput.FortEPiaNORun.readFD") as _rf, patch(
+            "fortepianoOutput.FortEPiaNORun.readWZ"
+        ) as _rw, patch(
+            "fortepianoOutput.FortEPiaNORun.readNeff"
+        ) as _rn, patch(
+            "fortepianoOutput.FortEPiaNORun.readEENDensities"
+        ) as _rd, patch(
+            "fortepianoOutput.FortEPiaNORun.readResume"
+        ) as _rr, patch(
+            "fortepianoOutput.FortEPiaNORun.readNuDensMatrix"
+        ) as _rm, patch(
+            "fortepianoOutput.FortEPiaNORun.prepareBBN"
+        ) as _bbn, patch(
+            "fortepianoOutput.FortEPiaNORun.prepareRhoFinal"
+        ) as _prf, patch(
             "fortepianoOutput.FortEPiaNORun.printTableLine"
         ) as _ptl:
             run = fpom.FortEPiaNORun(
-                folder, label="l", full=False, nnu=2, verbose=False, plots=True
+                folder,
+                nnu=2,
+                label="l",
+                deltas=True,
+                full=False,
+                verbose=False,
+                plots=True,
             )
-            _pl.assert_called_once()
-            _ptl.assert_called_once()
+            _pl.assert_called_once_with()
+            _ri.assert_called_once_with()
+            _rf.assert_called_once_with()
+            _rw.assert_called_once_with()
+            _rn.assert_called_once_with()
+            _rd.assert_called_once_with(True)
+            _rr.assert_called_once_with()
+            _rm.assert_called_once_with(False)
+            _bbn.assert_called_once_with()
+            _prf.assert_called_once_with()
+            _ptl.assert_called_once_with()
         self.assertEqual(run.folder, folder)
         self.assertFalse(run.full)
         self.assertEqual(run.label, "l")
@@ -602,140 +664,6 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertTrue(run.checkZdat())
         run.zdat = np.array([[1, 2, 3], [4, 5, 6]])
         self.assertTrue(run.checkZdat())
-
-    def test_prepareBBN_failures(self):
-        """test the error management in the prepareBBN function"""
-        run = fpom.FortEPiaNORun("output/nonexistent")
-        run.yv = np.array([0.1 * i for i in range(10)])
-        self.assertFalse(run.hasBBN)
-        for res in [
-            [True, True, True, False],
-            [True, True, False, True],
-            [True, False, True, True],
-            [False, True, True, True],
-        ]:
-            with patch("os.path.exists", side_effect=res) as _fe:
-                run.prepareBBN()
-                self.assertFalse(run.hasBBN)
-                self.assertFalse(hasattr(run, "parthenope"))
-        rungood = self.explanatory
-        run.zdat = np.array([[1, 2, 3.0]])
-        run.lowReheating = rungood.lowReheating
-        run.yv = np.nan
-        with patch("os.path.exists", return_value=True) as _fe:
-            with patch("numpy.loadtxt", return_value=np.array([0, 1, 2, 3.0])) as _lt:
-                run.prepareBBN()
-                _lt.assert_any_call("%s/BBN.dat" % run.folder)
-                _lt.assert_any_call("%s/y_grid.dat" % run.folder)
-                self.assertEqualArray(run.yv, [0, 1, 2, 3.0])
-                run.yv = np.array([[1, np.nan, 2], [3, 4, 5.0]])
-                _lt.reset_mock()
-                run.prepareBBN()
-                _lt.assert_any_call("%s/y_grid.dat" % run.folder)
-                self.assertEqualArray(run.yv, [0, 1, 2, 3.0])
-        run.yv = np.array([0.1 * i for i in range(10)])
-        with patch("os.path.exists", return_value=True) as _fe:
-            with patch("numpy.loadtxt", return_value=np.array([0, 1, 2, 3.0])) as _lt:
-                run.prepareBBN()
-                self.assertFalse(run.hasBBN)
-                self.assertEqualArray(run.bbn, np.array([0, 1, 2, 3.0]))
-                _lt.assert_called_once_with("%s/BBN.dat" % run.folder)
-            _fe.assert_any_call("%s/BBN.dat" % run.folder)
-            _fe.assert_any_call("%s/nuDens_diag1_BBN.dat" % run.folder)
-            _fe.assert_any_call("%s/rho_tot.dat" % run.folder)
-            _fe.assert_any_call("%s/y_grid.dat" % run.folder)
-            with patch(
-                "numpy.loadtxt",
-                side_effect=[
-                    rungood.bbn,
-                    np.array([0.0, 1]),
-                    rungood.bbn,
-                    np.array([0.0, 1]),
-                ],
-            ) as _lt:
-                with patch(
-                    "fortepianoOutput.FortEPiaNORun.checkZdat", return_value=False
-                ) as _cz:
-                    run.prepareBBN()
-                    self.assertFalse(run.hasBBN)
-                with patch(
-                    "fortepianoOutput.FortEPiaNORun.checkZdat", return_value=True
-                ) as _cz, self.assertRaises(AssertionError):
-                    run.prepareBBN()
-                    self.assertFalse(run.hasBBN)
-            run.zdat = rungood.zdat
-            with patch(
-                "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1])]
-            ) as _lt:
-                run.prepareBBN()
-                self.assertEqual(_lt.call_count, 2)
-                _lt.assert_any_call("%s/BBN.dat" % run.folder)
-                _lt.assert_any_call("%s/rho_tot.dat" % run.folder)
-                if run.lowReheating:
-                    self.assertFalse(run.hasBBN)
-            with patch(
-                "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1, 2.0])]
-            ) as _lt:
-                run.prepareBBN()
-                self.assertFalse(run.hasBBN)
-            with patch(
-                "numpy.loadtxt",
-                side_effect=[rungood.bbn, rungood.summedrhos, np.array([0.0, 1, 2.0])],
-            ) as _lt, patch("numpy.savetxt") as _st:
-                run.prepareBBN()
-                self.assertEqual(_lt.call_count, 3)
-                _lt.assert_any_call("%s/BBN.dat" % run.folder)
-                _lt.assert_any_call("%s/rho_tot.dat" % run.folder)
-                _lt.assert_any_call("%s/nuDens_diag1_BBN.dat" % run.folder)
-                self.assertTrue(run.hasBBN)
-                self.assertEqual(_st.call_count, 0)
-            with patch(
-                "numpy.loadtxt",
-                side_effect=[
-                    rungood.bbn,
-                    rungood.summedrhos,
-                    np.array([[0.0, 1, 2.0], [3.0, 4.0, 5]]),
-                ],
-            ) as _lt, patch("numpy.savetxt") as _st:
-                run.prepareBBN()
-                self.assertTrue(run.hasBBN)
-                self.assertEqual(_st.call_count, 0)
-            with patch(
-                "numpy.loadtxt",
-                side_effect=[rungood.bbn, rungood.summedrhos, rungood.bbn],
-            ) as _lt, patch("numpy.savetxt") as _st:
-                run.prepareBBN()
-                self.assertTrue(run.hasBBN)
-                self.assertEqual(_st.call_count, 0)
-        for fer in [
-            [True, True, True, True, False, True, True],
-            [True, True, True, True, True, False, True],
-            [True, True, True, True, True, True, False],
-        ]:
-            with patch("os.path.exists", side_effect=fer) as _fe:
-                with patch(
-                    "numpy.loadtxt",
-                    side_effect=[rungood.bbn, rungood.summedrhos, rungood.bbn],
-                ) as _lt, patch("numpy.savetxt") as _st:
-                    run.prepareBBN()
-                    self.assertTrue(run.hasBBN)
-                    self.assertEqual(_st.call_count, 3)
-                    for i, n in enumerate(
-                        ["parthenope", "parthenope_yi", "parthenope_rhoee"]
-                    ):
-                        self.assertEqual(
-                            _st.call_args_list[i][0][0], "%s/%s.dat" % (run.folder, n)
-                        )
-                    for i, n in enumerate(
-                        [run.parthenope, run.yv, run.bbn[:, 2:][run.filter99]]
-                    ):
-                        self.assertEqualArray(_st.call_args_list[i][0][1], n)
-                    for i in range(3):
-                        self.assertEqual(_st.call_args_list[i][1]["fmt"], "%15.7e")
-                    self.assertEqual(
-                        _st.call_args_list[0][1]["header"],
-                        "".join(["%16s" % s for s in run.parthenope_cols])[3:],
-                    )
 
     def test_x(self):
         """test the x property"""
@@ -892,6 +820,454 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqualArray(
             run.N_savgol, fpom.savgol_filter(np.clip(run.N_func, 1e-11, None), 75, 1)
         )
+
+    def test_readEENDensities(self):
+        """test readEENDensities"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.folder = "output/nonexistent1"
+        self.assertFalse(hasattr(run, "endens"))
+        self.assertFalse(hasattr(run, "entropy"))
+        self.assertFalse(hasattr(run, "number"))
+        self.assertFalse(hasattr(run, "delta_ed"))
+        self.assertFalse(hasattr(run, "tot_delta_ed"))
+        self.assertFalse(hasattr(run, "delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_nd"))
+        if os.path.exists(run.folder):
+            shutil.rmtree(run.folder)
+        os.mkdir(run.folder)
+        run.readEENDensities()
+        self.assertTrue(np.isnan(run.endens))
+        self.assertTrue(np.isnan(run.entropy))
+        self.assertTrue(np.isnan(run.number))
+        with patch("numpy.loadtxt", return_value=np.array([0, 0])) as _l:
+            run.readEENDensities(deltas=True)
+            _l.assert_any_call("%s/energyDensity.dat" % run.folder)
+            _l.assert_any_call("%s/entropy.dat" % run.folder)
+            _l.assert_any_call("%s/numberDensity.dat" % run.folder)
+        self.assertEqualArray(run.endens, [0, 0])
+        self.assertEqualArray(run.entropy, [0, 0])
+        self.assertEqualArray(run.number, [0, 0])
+        self.assertFalse(hasattr(run, "delta_ed"))
+        self.assertFalse(hasattr(run, "tot_delta_ed"))
+        self.assertFalse(hasattr(run, "delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_nd"))
+        run.folder = "output/"
+        run.readIni()
+        run.readEENDensities()
+        self.assertEqualArray(
+            run.endens, np.loadtxt("%s/energyDensity.dat" % run.folder)
+        )
+        self.assertEqualArray(run.entropy, np.loadtxt("%s/entropy.dat" % run.folder))
+        self.assertEqualArray(
+            run.number, np.loadtxt("%s/numberDensity.dat" % run.folder)
+        )
+        self.assertFalse(hasattr(run, "delta_ed"))
+        self.assertFalse(hasattr(run, "tot_delta_ed"))
+        self.assertFalse(hasattr(run, "delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_nd"))
+        run.readEENDensities(deltas=True)
+        self.assertEqualArray(
+            run.endens, np.loadtxt("%s/energyDensity.dat" % run.folder)
+        )
+        self.assertEqualArray(run.entropy, np.loadtxt("%s/entropy.dat" % run.folder))
+        self.assertEqualArray(
+            run.number, np.loadtxt("%s/numberDensity.dat" % run.folder)
+        )
+        rx = 1 if run.lowReheating else 0
+        self.assertEqualArray(
+            run.delta_ed,
+            [
+                (run.endens[-1, run.zCol + 4 + i] - run.endens[rx, run.zCol + 4 + i])
+                / run.endens[rx, run.zCol + 4 + i]
+                * 100
+                for i in range(run.nnu)
+            ],
+        )
+        self.assertEqual(
+            run.tot_delta_ed,
+            (
+                (
+                    np.sum(run.endens[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.endens[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                )
+                / np.sum(run.endens[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                * 100
+            ),
+        )
+        self.assertEqualArray(
+            run.delta_nd,
+            [
+                (run.number[-1, run.zCol + 4 + i] - run.number[rx, run.zCol + 4 + i])
+                / run.number[rx, run.zCol + 4 + i]
+                * 100
+                for i in range(run.nnu)
+            ],
+        )
+        self.assertEqual(
+            run.tot_delta_nd,
+            (
+                (
+                    np.sum(run.number[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                )
+                / np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                * 100
+            ),
+        )
+
+    def test_readFD(self):
+        """test readFD"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        for e in [IOError, OSError]:
+            with patch("numpy.loadtxt", side_effect=e) as _l:
+                run.readFD()
+                _l.assert_called_once_with("output/nonexistent/fd.dat")
+                self.assertTrue(np.isnan(run.fd))
+                self.assertTrue(np.isnan(run.yv))
+        with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+            run.readFD()
+            _l.assert_called_once_with("output/nonexistent/fd.dat")
+            self.assertEqualArray(run.fd, [2, 4])
+            self.assertEqualArray(run.yv, [1, 3])
+
+    def test_readIni(self):
+        """test readIni"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.folder = "output/nonexistent1"
+        if os.path.exists(run.folder):
+            shutil.rmtree(run.folder)
+        os.mkdir(run.folder)
+        self.assertFalse(hasattr(run, "zCol"))
+        self.assertFalse(hasattr(run, "Trhini"))
+        self.assertFalse(run.lowReheating)
+        run.readIni()
+        self.assertEqual(run.ini, "")
+        self.assertEqual(run.zCol, 1)
+        self.assertEqual(run.Trhini, None)
+        self.assertFalse(run.lowReheating)
+        with open("%s/ini.log" % run.folder, "w") as _i:
+            _i.write("abcd")
+        run.readIni()
+        self.assertEqual(run.ini, "abcd")
+        self.assertEqual(run.zCol, 1)
+        self.assertEqual(run.Trhini, None)
+        self.assertFalse(run.lowReheating)
+        with open("%s/ini.log" % run.folder, "w") as _i:
+            _i.write("abcTrh = -1.2E+01def")
+        run.readIni()
+        self.assertEqual(run.ini, "abcTrh = -1.2E+01def")
+        self.assertEqual(run.zCol, 1)
+        self.assertEqual(run.Trhini, -12.0)
+        self.assertFalse(run.lowReheating)
+        with open("%s/ini.log" % run.folder, "w") as _i:
+            _i.write("abcTrh = 1.2E-1def")
+        run.readIni()
+        self.assertEqual(run.ini, "abcTrh = 1.2E-1def")
+        self.assertEqual(run.zCol, 2)
+        self.assertEqual(run.Trhini, 0.12)
+        self.assertTrue(run.lowReheating)
+
+    def test_readNeff(self):
+        """test readNeff"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        for l in [False, True]:
+            run.lowReheating = l
+            for e in [IOError, OSError]:
+                with patch("numpy.loadtxt", side_effect=e) as _l:
+                    run.readNeff()
+                    _l.assert_called_once_with("output/nonexistent/Neff.dat")
+                    self.assertEqualArray(
+                        run.Neffdat,
+                        [[np.nan, np.nan, np.nan, np.nan]]
+                        if l
+                        else [[np.nan, np.nan, np.nan]],
+                    )
+            with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+                run.readNeff()
+                _l.assert_called_once_with("output/nonexistent/Neff.dat")
+                self.assertEqualArray(run.Neffdat, [[1, 2], [3, 4]])
+
+    def test_readNuDensMatrix(self):
+        """test readNuDensMatrix"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.folder = "output/nonexistent1"
+        if os.path.exists(run.folder):
+            shutil.rmtree(run.folder)
+        os.mkdir(run.folder)
+        raise NotImplementedError
+
+    def test_readResume(self):
+        """test readResume"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.folder = "output/nonexistent2"
+        if os.path.exists(run.folder):
+            shutil.rmtree(run.folder)
+        os.mkdir(run.folder)
+        run.readResume()
+        self.assertEqual(run.resume, "")
+        self.assertFalse(run.hasResume)
+        self.assertFalse(hasattr(run, "Neff"))
+        self.assertFalse(hasattr(run, "zfin"))
+        self.assertFalse(hasattr(run, "wfin"))
+        self.assertFalse(hasattr(run, "Trh"))
+        self.assertFalse(hasattr(run, "deltaNeffi"))
+        t = "Neff=abc"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t)
+        self.assertTrue(run.hasResume)
+        self.assertTrue(np.isnan(run.Neff))
+        self.assertTrue(np.isnan(run.zfin))
+        self.assertTrue(np.isnan(run.wfin))
+        self.assertFalse(hasattr(run, "Trh"))
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = "Neff=3.21\nfinal z =  a2bc"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertTrue(np.isnan(run.zfin))
+        self.assertTrue(np.isnan(run.wfin))
+        self.assertFalse(hasattr(run, "Trh"))
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = "Neff=3.21\nfinal z =  12bc\nfinal w=#"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertTrue(np.isnan(run.wfin))
+        self.assertFalse(hasattr(run, "Trh"))
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        run.lowReheating = False
+        t = "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12\nTrh=1.44"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertFalse(hasattr(run, "Trh"))
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        run.lowReheating = True
+        t = "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12\nTrh="
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertTrue(np.isnan(run.Trh))
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        run.Trhini = "0"
+        t = "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12\nTrh=1.44"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        with self.assertRaises(ValueError):
+            run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertEqual(run.Trh, 1.44)
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        run.Trhini = 1.440000001
+        t = (
+            "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12\nTrh=1.44"
+            + "\ndeltaneff_0 = 1.015\ndeltaNeff_a = 1.014"
+        )
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertEqual(run.Trh, 1.44)
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = (
+            "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12\nTrh=1.44"
+            + "\ndeltaNeff_0 = 1.015\ndeltaNeff_a = 1.014\ndeltaNeff_2 = 1.013"
+        )
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertEqual(run.Trh, 1.44)
+        self.assertEqualArray(run.deltaNeffi, [1.015, 1.013])
+
+    def test_readWZ(self):
+        """test readWZ"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        for l in [False, True]:
+            run.lowReheating = l
+            for e in [IOError, OSError]:
+                with patch("numpy.loadtxt", side_effect=e) as _l:
+                    run.readWZ()
+                    _l.assert_called_once_with("output/nonexistent/z.dat")
+                    self.assertEqualArray(
+                        run.zdat,
+                        [[np.nan, np.nan, np.nan, np.nan]]
+                        if l
+                        else [[np.nan, np.nan, np.nan]],
+                    )
+            with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+                run.readWZ()
+                _l.assert_called_once_with("output/nonexistent/z.dat")
+                self.assertEqualArray(run.zdat, [[1, 2], [3, 4]])
+
+    def test_prepareBBN_failures(self):
+        """test the error management in the prepareBBN function"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.yv = np.array([0.1 * i for i in range(10)])
+        self.assertFalse(run.hasBBN)
+        for res in [
+            [True, True, True, False],
+            [True, True, False, True],
+            [True, False, True, True],
+            [False, True, True, True],
+        ]:
+            with patch("os.path.exists", side_effect=res) as _fe:
+                run.prepareBBN()
+                self.assertFalse(run.hasBBN)
+                self.assertFalse(hasattr(run, "parthenope"))
+        rungood = self.explanatory
+        run.zdat = np.array([[1, 2, 3.0]])
+        run.lowReheating = rungood.lowReheating
+        run.yv = np.nan
+        with patch("os.path.exists", return_value=True) as _fe:
+            with patch("numpy.loadtxt", return_value=np.array([0, 1, 2, 3.0])) as _lt:
+                run.prepareBBN()
+                _lt.assert_any_call("%s/BBN.dat" % run.folder)
+                _lt.assert_any_call("%s/y_grid.dat" % run.folder)
+                self.assertEqualArray(run.yv, [0, 1, 2, 3.0])
+                run.yv = np.array([[1, np.nan, 2], [3, 4, 5.0]])
+                _lt.reset_mock()
+                run.prepareBBN()
+                _lt.assert_any_call("%s/y_grid.dat" % run.folder)
+                self.assertEqualArray(run.yv, [0, 1, 2, 3.0])
+        run.yv = np.array([0.1 * i for i in range(10)])
+        with patch("os.path.exists", return_value=True) as _fe:
+            with patch("numpy.loadtxt", return_value=np.array([0, 1, 2, 3.0])) as _lt:
+                run.prepareBBN()
+                self.assertFalse(run.hasBBN)
+                self.assertEqualArray(run.bbn, np.array([0, 1, 2, 3.0]))
+                _lt.assert_called_once_with("%s/BBN.dat" % run.folder)
+            _fe.assert_any_call("%s/BBN.dat" % run.folder)
+            _fe.assert_any_call("%s/nuDens_diag1_BBN.dat" % run.folder)
+            _fe.assert_any_call("%s/rho_tot.dat" % run.folder)
+            _fe.assert_any_call("%s/y_grid.dat" % run.folder)
+            with patch(
+                "numpy.loadtxt",
+                side_effect=[
+                    rungood.bbn,
+                    np.array([0.0, 1]),
+                    rungood.bbn,
+                    np.array([0.0, 1]),
+                ],
+            ) as _lt:
+                with patch(
+                    "fortepianoOutput.FortEPiaNORun.checkZdat", return_value=False
+                ) as _cz:
+                    run.prepareBBN()
+                    self.assertFalse(run.hasBBN)
+                with patch(
+                    "fortepianoOutput.FortEPiaNORun.checkZdat", return_value=True
+                ) as _cz, self.assertRaises(AssertionError):
+                    run.prepareBBN()
+                    self.assertFalse(run.hasBBN)
+            run.zdat = rungood.zdat
+            with patch(
+                "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1])]
+            ) as _lt:
+                run.prepareBBN()
+                self.assertEqual(_lt.call_count, 2)
+                _lt.assert_any_call("%s/BBN.dat" % run.folder)
+                _lt.assert_any_call("%s/rho_tot.dat" % run.folder)
+                if run.lowReheating:
+                    self.assertFalse(run.hasBBN)
+            with patch(
+                "numpy.loadtxt", side_effect=[rungood.bbn, np.array([0.0, 1, 2.0])]
+            ) as _lt:
+                run.prepareBBN()
+                self.assertFalse(run.hasBBN)
+            with patch(
+                "numpy.loadtxt",
+                side_effect=[rungood.bbn, rungood.summedrhos, np.array([0.0, 1, 2.0])],
+            ) as _lt, patch("numpy.savetxt") as _st:
+                run.prepareBBN()
+                self.assertEqual(_lt.call_count, 3)
+                _lt.assert_any_call("%s/BBN.dat" % run.folder)
+                _lt.assert_any_call("%s/rho_tot.dat" % run.folder)
+                _lt.assert_any_call("%s/nuDens_diag1_BBN.dat" % run.folder)
+                self.assertTrue(run.hasBBN)
+                self.assertEqual(_st.call_count, 0)
+            with patch(
+                "numpy.loadtxt",
+                side_effect=[
+                    rungood.bbn,
+                    rungood.summedrhos,
+                    np.array([[0.0, 1, 2.0], [3.0, 4.0, 5]]),
+                ],
+            ) as _lt, patch("numpy.savetxt") as _st:
+                run.prepareBBN()
+                self.assertTrue(run.hasBBN)
+                self.assertEqual(_st.call_count, 0)
+            with patch(
+                "numpy.loadtxt",
+                side_effect=[rungood.bbn, rungood.summedrhos, rungood.bbn],
+            ) as _lt, patch("numpy.savetxt") as _st:
+                run.prepareBBN()
+                self.assertTrue(run.hasBBN)
+                self.assertEqual(_st.call_count, 0)
+        for fer in [
+            [True, True, True, True, False, True, True],
+            [True, True, True, True, True, False, True],
+            [True, True, True, True, True, True, False],
+        ]:
+            with patch("os.path.exists", side_effect=fer) as _fe:
+                with patch(
+                    "numpy.loadtxt",
+                    side_effect=[rungood.bbn, rungood.summedrhos, rungood.bbn],
+                ) as _lt, patch("numpy.savetxt") as _st:
+                    run.prepareBBN()
+                    self.assertTrue(run.hasBBN)
+                    self.assertEqual(_st.call_count, 3)
+                    for i, n in enumerate(
+                        ["parthenope", "parthenope_yi", "parthenope_rhoee"]
+                    ):
+                        self.assertEqual(
+                            _st.call_args_list[i][0][0], "%s/%s.dat" % (run.folder, n)
+                        )
+                    for i, n in enumerate(
+                        [run.parthenope, run.yv, run.bbn[:, 2:][run.filter99]]
+                    ):
+                        self.assertEqualArray(_st.call_args_list[i][0][1], n)
+                    for i in range(3):
+                        self.assertEqual(_st.call_args_list[i][1]["fmt"], "%15.7e")
+                    self.assertEqual(
+                        _st.call_args_list[0][1]["header"],
+                        "".join(["%16s" % s for s in run.parthenope_cols])[3:],
+                    )
+
+    def test_prepareRhoFinal(self):
+        """test prepareRhoFinal"""
+        raise NotImplementedError
 
     def test_interpolateRhoIJ(self):
         """test interpolateRhoIJ"""
