@@ -989,12 +989,86 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_readNuDensMatrix(self):
         """test readNuDensMatrix"""
-        run = fpom.FortEPiaNORun("output/nonexistent")
-        run.folder = "output/nonexistent1"
-        if os.path.exists(run.folder):
-            shutil.rmtree(run.folder)
-        os.mkdir(run.folder)
-        raise NotImplementedError
+        run = fpom.FortEPiaNORun("output/nonexistent", nnu=4)
+        run.readNuDensMatrix()
+        for i in range(run.nnu):
+            self.assertTrue(np.isnan(run.rho[i, i, 0]))
+            self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            self.assertEqual(run.rho[i, i, 1], None)
+            self.assertEqual(run.rhoM[i, i, 1], None)
+            for j in range(i + 1, run.nnu):
+                self.assertTrue(np.isnan(run.rho[i, j, 0]))
+                self.assertTrue(np.isnan(run.rho[i, j, 1]))
+                self.assertEqual(run.rhoM[i, j, 0], None)
+                self.assertEqual(run.rhoM[i, j, 1], None)
+        run.readNuDensMatrix(full=False)
+        for i in range(run.nnu):
+            self.assertTrue(np.isnan(run.rho[i, i, 0]))
+            self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            self.assertEqual(run.rho[i, i, 1], None)
+            self.assertEqual(run.rhoM[i, i, 1], None)
+            for j in range(i + 1, run.nnu):
+                self.assertEqual(run.rho[i, j, 0], None)
+                self.assertEqual(run.rho[i, j, 1], None)
+                self.assertEqual(run.rhoM[i, j, 0], None)
+                self.assertEqual(run.rhoM[i, j, 1], None)
+        run.folder = "output/"
+        run.readNuDensMatrix(full=False)
+        for i in range(run.nnu):
+            if i < 3:
+                self.assertEqualArray(
+                    run.rho[i, i, 0],
+                    np.loadtxt("%s/nuDens_diag%d.dat" % (run.folder, i + 1)),
+                )
+                self.assertEqualArray(
+                    run.rhoM[i, i, 0],
+                    np.loadtxt("%s/nuDens_mass%d.dat" % (run.folder, i + 1)),
+                )
+            else:
+                self.assertTrue(np.isnan(run.rho[i, i, 0]))
+                self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            self.assertEqual(run.rho[i, i, 1], None)
+            self.assertEqual(run.rhoM[i, i, 1], None)
+            for j in range(i + 1, run.nnu):
+                self.assertEqual(run.rho[i, j, 0], None)
+                self.assertEqual(run.rho[i, j, 1], None)
+                self.assertEqual(run.rhoM[i, j, 0], None)
+                self.assertEqual(run.rhoM[i, j, 1], None)
+        run.readNuDensMatrix(full=True)
+        for i in range(run.nnu):
+            if i < 3:
+                self.assertEqualArray(
+                    run.rho[i, i, 0],
+                    np.loadtxt("%s/nuDens_diag%d.dat" % (run.folder, i + 1)),
+                )
+                self.assertEqualArray(
+                    run.rhoM[i, i, 0],
+                    np.loadtxt("%s/nuDens_mass%d.dat" % (run.folder, i + 1)),
+                )
+            else:
+                self.assertTrue(np.isnan(run.rho[i, i, 0]))
+                self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            self.assertEqual(run.rho[i, i, 1], None)
+            self.assertEqual(run.rhoM[i, i, 1], None)
+            for j in range(i + 1, run.nnu):
+                if i < 3 and j < 3:
+                    self.assertEqualArray(
+                        run.rho[i, j, 0],
+                        np.loadtxt(
+                            "%s/nuDens_nd_%d%d_re.dat" % (run.folder, i + 1, j + 1)
+                        ),
+                    )
+                    self.assertEqualArray(
+                        run.rho[i, j, 1],
+                        np.loadtxt(
+                            "%s/nuDens_nd_%d%d_im.dat" % (run.folder, i + 1, j + 1)
+                        ),
+                    )
+                else:
+                    self.assertTrue(np.isnan(run.rho[i, j, 0]))
+                    self.assertTrue(np.isnan(run.rho[i, j, 1]))
+                self.assertEqual(run.rhoM[i, j, 0], None)
+                self.assertEqual(run.rhoM[i, j, 1], None)
 
     def test_readResume(self):
         """test readResume"""
