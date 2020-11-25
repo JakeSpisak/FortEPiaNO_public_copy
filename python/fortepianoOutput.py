@@ -731,6 +731,10 @@ class FortEPiaNORun:
             if self.verbose:
                 print("cannot read final w, I will not renormalize the final rho")
             return
+        if not hasattr(self, "zfin") or np.isnan(self.zfin):
+            if self.verbose:
+                print("cannot read final z, I will not renormalize the final rho")
+            return
         for fm in ["rho_final", "rho_final_mass"]:
             if os.path.exists("%s/%s.dat" % (self.folder, fm)) and not (
                 os.path.exists("%s/%s_norm.dat" % (self.folder, fm))

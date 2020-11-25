@@ -8,6 +8,7 @@ import matplotlib
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 if sys.version_info[0] < 3:
     import unittest2 as unittest
@@ -1341,7 +1342,81 @@ class TestFortEPiaNORun(FPTestCase):
 
     def test_prepareRhoFinal(self):
         """test prepareRhoFinal"""
-        raise NotImplementedError
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertFalse(hasattr(run, "wfin"))
+        with patch("os.path.exists") as _p:
+            run.prepareRhoFinal()
+            self.assertEqual(_p.call_count, 0)
+        run.wfin = np.nan
+        with patch("os.path.exists") as _p:
+            run.prepareRhoFinal()
+            self.assertEqual(_p.call_count, 0)
+        run.wfin = 1.1
+        self.assertFalse(hasattr(run, "zfin"))
+        with patch("os.path.exists") as _p:
+            run.prepareRhoFinal()
+            self.assertEqual(_p.call_count, 0)
+        run.zfin = np.nan
+        with patch("os.path.exists") as _p:
+            run.prepareRhoFinal()
+            self.assertEqual(_p.call_count, 0)
+        run.zfin = 1.5
+        for pex in [[True, True, True, True, True, True], [False, False]]:
+            with patch("os.path.exists", side_effect=pex) as _p, patch(
+                "numpy.loadtxt"
+            ) as _l:
+                run.prepareRhoFinal()
+                self.assertEqual(_l.call_count, 0)
+        run.wfin = 1.1
+        data = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+        zid = (11.0 / 4.0) ** (1.0 / 3.0)
+        var = np.column_stack(
+            (
+                data[:, 0],
+                np.array(
+                    [
+                        data[:, i] * (np.exp(data[:, 0] / run.wfin) + 1)
+                        for i in range(1, data.shape[1])
+                    ]
+                ).T,
+            )
+        )
+        nor = np.column_stack(
+            (
+                var[:, 0],
+                np.array(
+                    [
+                        interp1d(var[:, 0], var[:, i], fill_value="extrapolate")(
+                            var[:, 0] * run.wfin
+                        )
+                        * (zid / run.zfin * run.wfin) ** 4
+                        for i in range(1, data.shape[1])
+                    ]
+                ).T,
+            )
+        )
+        with patch(
+            "os.path.exists", side_effect=[True, True, False, True, True, False]
+        ) as _p, patch("numpy.loadtxt", return_value=data) as _l, patch(
+            "numpy.savetxt"
+        ) as _s:
+            run.prepareRhoFinal()
+            for i, fm in enumerate(["rho_final", "rho_final_mass"]):
+                _p.assert_any_call("%s/%s.dat" % (run.folder, fm))
+                _p.assert_any_call("%s/%s_norm.dat" % (run.folder, fm))
+                _p.assert_any_call("%s/%s_var.dat" % (run.folder, fm))
+                _l.assert_any_call("%s/%s.dat" % (run.folder, fm))
+                self.assertEqual(
+                    _s.call_args_list[2 * i][0][0], "%s/%s_var.dat" % (run.folder, fm)
+                )
+                self.assertEqualArray(_s.call_args_list[2 * i][0][1], var)
+                self.assertEqual(_s.call_args_list[2 * i][1], {"fmt": "%15.7e"})
+                self.assertEqual(
+                    _s.call_args_list[2 * i + 1][0][0],
+                    "%s/%s_norm.dat" % (run.folder, fm),
+                )
+                self.assertEqualArray(_s.call_args_list[2 * i + 1][0][1], nor)
+                self.assertEqual(_s.call_args_list[2 * i + 1][1], {"fmt": "%15.7e"})
 
     def test_interpolateRhoIJ(self):
         """test interpolateRhoIJ"""
