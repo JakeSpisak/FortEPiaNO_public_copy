@@ -291,6 +291,99 @@ class TestFortepianoOutput(FPTestCase):
         self.assertEqualArray(x, [np.nan])
         self.assertEqualArray(y, [np.nan])
 
+    def test_setParser(self):
+        """test the fortepianoOutput.setParser function"""
+        parser = argparse.ArgumentParser()
+        parser.add_argument = MagicMock()
+        with patch("argparse.ArgumentParser", return_value=parser) as _ap, patch(
+            "argparse.ArgumentParser.add_argument"
+        ) as _aa:
+            self.assertEqual(fpom.setParser(), parser)
+            _ap.assert_called_once_with(prog="fortepianoOutput.py")
+        parser.add_argument.assert_has_calls(
+            [
+                call(
+                    "folder",
+                    help="the name of the output folder that contains"
+                    + " the results of the Fortran code",
+                ),
+                call(
+                    "--nnu",
+                    type=int,
+                    default=3,
+                    help="number of neutrinos to consider"
+                    + " (if more rows/columns of the density matrix exist, "
+                    + "they will be ignored)",
+                ),
+                call(
+                    "--label",
+                    default="",
+                    help="a label to identify the run in the plot legends",
+                ),
+                call(
+                    "--deltas",
+                    action="store_true",
+                    help="if True, print the relative variation of "
+                    + " energy and number density for each neutrino",
+                ),
+                call(
+                    "--full",
+                    action="store_false",
+                    help="if True, read also all the off-diagonal"
+                    + " density matrix elements, otherwise ignore them"
+                    + " (to save time if not needed in the plots, for example)",
+                ),
+                call(
+                    "--plots",
+                    action="store_true",
+                    help="if True, produce a series of plots"
+                    + " after having read all the files",
+                ),
+                call(
+                    "--verbose",
+                    action="store_false",
+                    help="increase the number of messages printed by the code",
+                ),
+            ],
+            any_order=True,
+        )
+
+    def test_parsing(self):
+        """test that there are no errors in the parsing process"""
+        parser = fpom.setParser()
+        with self.assertRaises(SystemExit):
+            args = parser.parse_args(["abc", "def"])
+        args = parser.parse_args(["outdir"])
+        self.assertEqual(args.folder, "outdir")
+        self.assertEqual(args.nnu, 3)
+        self.assertEqual(args.label, "")
+        self.assertEqual(args.deltas, False)
+        self.assertEqual(args.full, True)
+        self.assertEqual(args.plots, False)
+        self.assertEqual(args.verbose, True)
+        for arg, val, lin in [
+            ["nnu", 4, "--nnu=4"],
+            ["label", "'abc d'", "--label='abc d'"],
+            ["deltas", True, "--deltas"],
+            ["full", False, "--full"],
+            ["plots", True, "--plots"],
+            ["verbose", False, "--verbose"],
+        ]:
+            args = parser.parse_args(["outdir", lin])
+            self.assertEqual(args.folder, "outdir")
+            self.assertEqual(args.nnu, val if "nnu" == arg else 3)
+            self.assertEqual(args.label, val if "label" == arg else "")
+            self.assertEqual(args.deltas, val if "deltas" == arg else False)
+            self.assertEqual(args.full, val if "full" == arg else True)
+            self.assertEqual(args.plots, val if "plots" == arg else False)
+            self.assertEqual(args.verbose, val if "verbose" == arg else True)
+        for lin in [
+            "--nnu=4.25",
+            "--nnu=aaa",
+        ]:
+            with self.assertRaises(SystemExit):
+                args = parser.parse_args(["outdir", lin])
+
 
 class TestFortEPiaNORun(FPTestCase):
     """Testing the FortEPiaNORun class"""

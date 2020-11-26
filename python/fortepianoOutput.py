@@ -2,7 +2,9 @@
 
 import os
 import re
+import sys
 import traceback
+import argparse
 
 try:
     import matplotlib
@@ -2032,3 +2034,66 @@ class FortEPiaNORun:
         if show:
             print(res)
         return res[0] / np.pi ** 2
+
+
+def setParser():
+    """Prepare the parser for reading the command line arguments
+
+    Output:
+        the parser
+    """
+    parser = argparse.ArgumentParser(prog="fortepianoOutput.py")
+    parser.add_argument(
+        "folder",
+        help="the name of the output folder that contains"
+        + " the results of the Fortran code",
+    )
+    parser.add_argument(
+        "--nnu",
+        type=int,
+        default=3,
+        help="number of neutrinos to consider"
+        + " (if more rows/columns of the density matrix exist, "
+        + "they will be ignored)",
+    )
+    parser.add_argument(
+        "--label",
+        default="",
+        help="a label to identify the run in the plot legends",
+    )
+    parser.add_argument(
+        "--deltas",
+        action="store_true",
+        help="if True, print the relative variation of "
+        + " energy and number density for each neutrino",
+    )
+    parser.add_argument(
+        "--full",
+        action="store_false",
+        help="if True, read also all the off-diagonal"
+        + " density matrix elements, otherwise ignore them"
+        + " (to save time if not needed in the plots, for example)",
+    )
+    parser.add_argument(
+        "--plots",
+        action="store_true",
+        help="if True, produce a series of plots after having read all the files",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_false",
+        help="increase the number of messages printed by the code",
+    )
+    return parser
+
+
+if __name__ == "__main__":
+    parser = setParser()
+    args = parser.parse_args(sys.argv[1:])
+    FortEPiaNORun(
+        args.folder,
+        **{
+            k: getattr(args, k)
+            for k in ["nnu", "label", "deltas", "full", "plots", "verbose"]
+        }
+    )
