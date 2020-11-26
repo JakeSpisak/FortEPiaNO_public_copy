@@ -1334,11 +1334,25 @@ a limited number of files in the output folder:
 \item \texttt{time.log}: a time log which indicates at what time \fortepiano\ started
 and finished the calculation of each $x$ step.
 %
-\item \texttt{rho\_final.dat} and \texttt{rho\_final\_mass.dat}: the final neutrino energy density,
+\item \texttt{rho\_final.dat} and \texttt{rho\_final\_mass.dat}:
+the diagonal of the final neutrino density matrix,
 in flavor or mass basis, respectively.
 The first column of each file contains the grid of momenta $y_i$,
 while the following ones contain $\varrho_{jj}(y_i)$,
 where $j$ is the column index minus one and $i$ is the row index.
+From these two files, others can be created a posteriori by the included python scripts
+(see Section~\ref{sec:python}),
+storing the final neutrino density matrix content
+using different normalizations.
+The \texttt{rho\_final*\_var.dat} file stores the grid of momenta $y_i$ and
+$\varrho_{jj}(y_i)/f_{\rm FD}(y_i/w_{\rm fin})$, for each flavor/mass eigenstate.
+This is a multiplicative factor with respect to the equilibrium distribution that the neutrinos
+would have if considering instantaneous decoupling.
+The \texttt{rho\_final*\_norm.dat} file, instead, contains
+a normalized $\varrho_{jj}(y'_i)/f_{\rm FD}(y'_i)$, which gives the correct contribution
+from the neutrinos to the effective number of relativistic species
+when computing the photon density using the standard temperature $z/w=(11/4)^{1/3}$.
+These values are prepared to be used in cosmological codes such as CLASS or CAMB.\todo{check}
 %
 \item \texttt{resume.dat}: it reports the final values of the most important quantities:
 the photon and effective neutrino temperatures, $z$ and $w$,
@@ -1358,8 +1372,9 @@ controlled by specific flags in the configuration file:
 \item \texttt{save\_BBN}: store a set of files that contain quantities employed
 in Big Bang Nucleosynthesis calculations.
 Although the files stored by the Fortran code are incomplete,
-the associated python utilities can be used to complete the information,
-for later use of the results with the \texttt{PArthENoPE} code \cite{Pisanti:2007hk,Consiglio:2017pot}.
+the associated python utilities (see Section~\ref{sec:python})
+can be used to complete the information,
+for later use of the results with the \texttt{PArthENoPE} code \cite{Pisanti:2007hk,Consiglio:2017pot,...}.
 In particular, the relevant quantities are
 $z$, $w$, $\rho_\nu$, $d\rho_\nu/dx$,
 $\rho_{\rm rad}$, $\rho_{\rm tot}$
@@ -1432,7 +1447,7 @@ and including corrections to the electron mass in the matter potentials
 \item
 \textbf{Grid settings}:
 the $x$ range is considered between
-\texttt{x\_in = 0.05} and
+\texttt{x\_in = 0.01} and
 \texttt{x\_fin = 35},
 and the quantities saved in \texttt{Nx = 500} bins.
 For the momentum grid, the default configuration considers \texttt{Ny = 30} momentum nodes
@@ -1463,6 +1478,11 @@ all the optional outputs are enabled (%
 \texttt{dlsoda\_atol\_z = 1.d-6},
 \texttt{dlsoda\_atol\_d = 1.d-6},
 \texttt{dlsoda\_atol\_o = 1.d-6}.
+%
+\item \textbf{Low-reheating}:
+considered only when the code is compiled with \texttt{LOW\_REHEATING=1}.
+The only additional parameter is the low-reheating temperature, by default $T_{\rm RH}=25$~MeV,
+which is high enough to mimic a scenario without low-reheating.
 %
 \end{itemize}
 For more available parameters and the description of all of them, see \texttt{ini/explanatory.ini}.
@@ -1506,6 +1526,78 @@ as off-diagonal ones are typically much smaller.
 \item \texttt{TESTSPEED}: compute a speed test with a timing of the first 1000 derivatives.
 %
 \end{itemize}
+
+
+\section{Python scripts}
+\label{sec:python}
+Together with the Fortran code, \fortepiano\ includes some python tools
+that can be used to facilitate the preparation of input files for the Fortran code,
+or to read the outputs of the code and produce plots.
+In order to use them,
+you only have to make sure that
+your command line executes the commands from the main \fortepiano\ directory or
+that the \texttt{python/} folder is inside your \texttt{PYTHONPATH}.
+
+\smallskip
+\paragraph{prepareIni.py}~\\
+This script, as the name suggests, helps to create a \texttt{.ini} file,
+that you can use as an argument for the Fortran executable.
+You can use the script via command line
+(use e.g.~``\texttt{python python/prepareIni.py -h}''
+from the main \fortepiano\ folder, it will show the syntax and all the available options)
+or from a different python script, importing the relevant functions.
+In such case you will have to import and use some of the internal functions, such as:
+\begin{verbatim}
+from prepareIni import setParser, getIniValues, writeIni
+parser = setParser()
+pargs = parser.parse_args(
+    [
+        "myfile.ini",
+        "myOutputFolder/",
+        "3nu",
+        "--default_active=VLC",
+    ]
+)
+values = getIniValues(pargs)
+writeIni(pargs.inifile, values)
+\end{verbatim}
+
+\smallskip
+\paragraph{fortepianoOutput.py}~\\
+This script contains useful functions to read the output files, process them and produce plots.
+Depending on the content of the selected output folder and on the passed options,
+the script will generate additional files in teh same output folder
+(for example, those for running \texttt{PArthENoPE}) and prepare some standard plots.
+As in the previous case, you can use the functions in two ways:
+via command line~%
+\footnote{
+Note that this method limits significantly the possible applications
+because it does not allow to perform further actions
+}
+(see ``\texttt{python python/fortepianoOutput.py -h}'')
+or importing them from other python scripts,
+for example you can plot the energy density evolution from the output in \texttt{myOutputFolder/} using:
+\begin{verbatim}
+import matplotlib.pyplot as plt
+from fortepianoOutput import FortEPiaNORun
+run = FortEPiaNORun("myOutputFolder/")
+try:
+    print("I got: %s" % run.Neff)
+except AttributeError:
+    print("The run failed. Cannot read Neff")
+else:
+    run.plotEnergyDensity()
+    plt.savefig("energyDensity.pdf")
+\end{verbatim}
+
+\smallskip
+\paragraph{tests.py}~\\
+Utility to verify that all the python functions implemented in the other two files work properly.
+Run \texttt{python python/tests.py} to test all the functions and methods independently.
+Some tests will fail if the Fortran code has not been executed
+with the default \texttt{ini/explanatory.ini}.
+
+
 
 
 \acknowledgments
