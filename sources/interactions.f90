@@ -40,9 +40,6 @@ module fpInteractions
 		integer :: ix, iy
 		real(dl) :: nue_nue_nux, nue_nue_nus, nue_numu_nutau, nue_nux_nus
 		real(dl) :: nunu_nue_nux, nunu_nue_nus, nunu_numu_nutau, nunu_nux_nus
-		real(dl) :: xW
-
-		xW = sin2thW
 
 		dampTermMatrixCoeffNue = 0.d0
 		dampTermMatrixCoeffNunu = 0.d0
@@ -91,12 +88,12 @@ module fpInteractions
 			!formulas from YYYW notes
 			nunu_nue_nux = 1.d0
 			nunu_numu_nutau = 1.d0
-			nue_nue_nux = 2.d0*xW**2 + 0.25d0
-			nue_numu_nutau = 2.d0*xW**2 - xW + 0.25d0
+			nue_nue_nux = 2.d0*sin2thW**2 + 0.25d0
+			nue_numu_nutau = 2.d0*sin2thW**2 - sin2thW + 0.25d0
 			nunu_nue_nus = 0.d0!check
 			nunu_nux_nus = 0.d0!check
-			nue_nue_nus = 3.d0*xW**2 + 1.d0*xW + 0.25d0!check
-			nue_nux_nus = 3.d0*xW**2 - 1.d0*xW + 0.25d0!check
+			nue_nue_nus = 3.d0*sin2thW**2 + 1.d0*sin2thW + 0.25d0!check
+			nue_nux_nus = 3.d0*sin2thW**2 - 1.d0*sin2thW + 0.25d0!check
 		end if
 		if (flavorNumber .ge. 2) then
 			if (sterile(2)) then

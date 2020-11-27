@@ -68,8 +68,8 @@ module fpEquations
 			end do
 		end do
 		ldf = ldf*4.d0/3.d0
-		nuDensities%re(:,:) = nuDensities%re(:,:) * ldf * (cos2thW)
-		nuDensities%im(:,:) = nuDensities%im(:,:) * ldf * (cos2thW)
+		nuDensities%re(:,:) = nuDensities%re(:,:) * ldf * (cos2thW_Z)
+		nuDensities%im(:,:) = nuDensities%im(:,:) * ldf * (cos2thW_Z)
 	end subroutine updateMatterDensities
 
 	subroutine densMat_2_vec(vec)
