@@ -44,18 +44,12 @@ module fpInteractions
 		dampTermMatrixCoeffNue = 0.d0
 		dampTermMatrixCoeffNunu = 0.d0
 
+#ifdef NO_NUE_ANNIHILATION
+		if (collint_offdiag_damping) &
+			call criticalError("Nu-e annihilation channel can only be disabled in full integral calculations at the moment")
+#else
 		!numbers from McKellar:1992ja
 		!terms for scattering, annihilation with electrons
-#ifdef NO_NUE_ANNIHILATION
-		!nu_e - nu_X
-		nue_nue_nux = 8.d0
-		!nu_mu - nu_tau
-		nue_numu_nutau = 0.d0
-		!nu_e - nu_s
-		nue_nue_nus = 2.d0*(8.d0*sin2thW**2 + 4.d0*sin2thW + 1.d0)
-		!nu_X - nu_s
-		nue_nux_nus = 2.d0*(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)
-#else
 		!nu_e - nu_X
 		nue_nue_nux = &
 			8.d0 &!e+nu -> e+nu
@@ -85,7 +79,7 @@ module fpInteractions
 		nunu_nux_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
 
 		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
-			!formulas from YYYW notes
+			!formulas from Bennett:2020zkv
 			nunu_nue_nux = 1.d0
 			nunu_numu_nutau = 1.d0
 			nue_nue_nux = 2.d0*sin2thW**2 + 0.25d0
@@ -94,6 +88,8 @@ module fpInteractions
 			nunu_nux_nus = 0.d0!check
 			nue_nue_nus = 3.d0*sin2thW**2 + 1.d0*sin2thW + 0.25d0!check
 			nue_nux_nus = 3.d0*sin2thW**2 - 1.d0*sin2thW + 0.25d0!check
+			if (any(sterile)) &
+				call criticalError("Error: damping terms not yet implemented with sterile neutrinos.")
 		end if
 		if (flavorNumber .ge. 2) then
 			if (sterile(2)) then
@@ -131,8 +127,8 @@ module fpInteractions
 		end do
 
 		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
-			!formulas from YYYW notes
-			write(*,*) "[collint] Example d(y) for damping factors a la YYYW..."
+			!formulas from Bennett:2020zkv
+			write(*,*) "[collint] Example d(y) for damping factors a la Bennett:2020zkv..."
 			write(*,"(3A14)") "y", "f_eq(y)", "d(y)"
 			do ix=1, Ny
 				write(*,"(3E14.6)") y_arr(ix), feq_arr(ix), dy_damping_fit(y_arr(ix)) * y_arr(ix)**3
@@ -1352,7 +1348,7 @@ module fpInteractions
 			!coefficient for damping terms
 			if (collint_damping_type.eq.2) then !dampings from McKellar:1992ja
 				dampfact = z*z*z*z * y1*y1*y1 * dampTermFactor
-			else if (collint_damping_type.eq.1) then !dampings from YYYW
+			else if (collint_damping_type.eq.1) then !dampings from Bennett:2020zkv
 				dampfact = z*z*z*z * y1*y1*y1 * 2.d0 * dy_damping_fit(y1/z)
 			end if
 			!off-diagonal elements:

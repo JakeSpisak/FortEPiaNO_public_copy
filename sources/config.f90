@@ -97,7 +97,7 @@ module fpConfig
 		if (collint_damping_type.eq.0) then
 			write(*,*) "[collint] off-diagonal contributions are zero"
 		else if (collint_damping_type.eq.1) then
-			write(*,*) "[collint] off-diagonal contributions are computed using YYYW expressions"
+			write(*,*) "[collint] off-diagonal contributions are computed using Bennett:2020zkv expressions"
 		else if (collint_damping_type.eq.2) then
 			write(*,*) "[collint] off-diagonal contributions are computed using McKellar:1992ja expressions"
 		else

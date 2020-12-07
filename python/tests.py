@@ -2772,11 +2772,11 @@ class TestPrepareIni(unittest.TestCase):
                 ),
                 call(
                     "--collint_damping_type",
-                    choices=["zero", "yyyw", "McKellar:1992ja"],
-                    default="yyyw",
+                    choices=["zero", "Bennett:2020zkv", "McKellar:1992ja"],
+                    default="Bennett:2020zkv",
                     help="define the scheme for the off-diagonal contribution of collision integrals."
                     + "Use 'zero' to ignore all the off-diagonal components, "
-                    + "'yyyw' to use the expressions from YYYW or "
+                    + "'Bennett:2020zkv' to use the expressions from the paper Bennett:2020zkv or "
                     + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
                 ),
                 call(
@@ -3052,7 +3052,7 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.no_GL, False)
         self.assertEqual(args.collint_diagonal_zero, False)
         self.assertEqual(args.collint_offdiag_nodamp, False)
-        self.assertEqual(args.collint_damping_type, "yyyw")
+        self.assertEqual(args.collint_damping_type, "Bennett:2020zkv")
         self.assertEqual(args.collint_d_no_nue, False)
         self.assertEqual(args.collint_d_no_nunu, False)
         self.assertEqual(args.collint_od_no_nue, False)
@@ -3361,7 +3361,7 @@ class TestPrepareIni(unittest.TestCase):
                 "verbose": "vb",
                 "collint_diagonal_zero": False,
                 "collint_offdiag_nodamp": False,
-                "collint_damping_type": "yyyw",
+                "collint_damping_type": "Bennett:2020zkv",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,

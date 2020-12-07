@@ -97,11 +97,11 @@ def setParser():
     )
     parser.add_argument(
         "--collint_damping_type",
-        choices=["zero", "yyyw", "McKellar:1992ja"],
-        default="yyyw",
+        choices=["zero", "Bennett:2020zkv", "McKellar:1992ja"],
+        default="Bennett:2020zkv",
         help="define the scheme for the off-diagonal contribution of collision integrals."
         + "Use 'zero' to ignore all the off-diagonal components, "
-        + "'yyyw' to use the expressions from YYYW or "
+        + "'Bennett:2020zkv' to use the expressions from the paper Bennett:2020zkv or "
         + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
     )
     for c in ["nue", "nunu"]:
@@ -405,7 +405,7 @@ def getIniValues(args):
         0
         if args.collint_damping_type == "zero"
         else 1
-        if args.collint_damping_type == "yyyw"
+        if args.collint_damping_type == "Bennett:2020zkv"
         else 2
         if args.collint_damping_type == "McKellar:1992ja"
         else 1

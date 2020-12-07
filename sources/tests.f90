@@ -39,7 +39,7 @@ program tests
 	call do_test_collision_terms
 	call do_test_damping_factors
 	call do_test_zin
-	call do_test_damping_yyyw
+	call do_test_damping_bennett
 	call do_test_GL
 	call do_test_matterPotential
 	call do_test_diagonalization
@@ -3013,7 +3013,7 @@ program tests
 		call test_speed_coll_int
 	end subroutine do_timing_tests
 
-	subroutine do_test_damping_yyyw
+	subroutine do_test_damping_bennett
 		real(dl) :: x,w,z,dme2,y1
 		integer :: ix, iy1, iy
 		real(dl) :: y,res1,res2
@@ -3025,7 +3025,7 @@ program tests
 
 		call allocateCmplxMat(cts)
 
-		call printTestBlockName("damping factors a la YYYW")
+		call printTestBlockName("damping factors a la Bennett:2020zkv")
 
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
@@ -3122,10 +3122,10 @@ program tests
 			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
-			write(tmparg,"('damping YYYW d A',2I1)") ix,iy
+			write(tmparg,"('damping Bennett:2020zkv d A',2I1)") ix,iy
 			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
 			do iy=ix+1, 3
-				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
+				write(tmparg,"('damping Bennett:2020zkv od A',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
 					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
@@ -3153,10 +3153,10 @@ program tests
 			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
-			write(tmparg,"('damping YYYW d B',2I1)") ix,ix
+			write(tmparg,"('damping Bennett:2020zkv d B',2I1)") ix,ix
 			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
 			do iy=ix+1, 3
-				write(tmparg,"('damping YYYW od B',2I1)") ix,iy
+				write(tmparg,"('damping Bennett:2020zkv od B',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
 					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
@@ -3177,7 +3177,7 @@ program tests
 
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_test_damping_yyyw
+	end subroutine do_test_damping_bennett
 
 	subroutine do_test_F_nu
 		integer :: i, j
