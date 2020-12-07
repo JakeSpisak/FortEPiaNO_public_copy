@@ -601,7 +601,7 @@ of the contributions from neutrino--electron/positron scattering and
 $e^\pm$ annihilation into neutrinos,
 plus neutrino--neutrino interactions.
 We neglect other reactions, such as $\mu^\pm$ annihilation (which only affects at very early temperatures when everything is in equilibrium).
-We therefore have \cite{deSalas:2016ztq,Bennett:inprep}
+We therefore have \cite{deSalas:2016ztq,Bennett:2020zkv}
 %
 \begin{eqnarray}
 \mathcal{I}[\varrho(y)]
@@ -736,7 +736,7 @@ and therefore the three functions $D_{1, 2, 3}$ can be coded in a more efficient
 not reported here for sake of brevity
 (see e.g.~\cite{Blaschke:2016xxt}).
 
-Finally, the functions that define the phase space factors in the collision terms are \cite{deSalas:2016ztq,Bennett:inprep}:
+Finally, the functions that define the phase space factors in the collision terms are \cite{deSalas:2016ztq,Bennett:2020zkv}:
 \begin{eqnarray}
 F_{\rm sc}^{ab}\left(\varrho^{(1)}, f_e^{(2)}, \varrho^{(3)}, f_e^{(4)}\right)
 &=&
@@ -806,7 +806,7 @@ the momentum distributions of leptons/neutrinos from those of antilepton/antineu
 Since we do not include lepton asymmetry, we just report the expressions without the heavier notation
 required to distinguish the contribution of antiparticles.
 
-Concerning the neutrino--neutrino collision terms \cite{Bennett:inprep},
+Concerning the neutrino--neutrino collision terms \cite{Bennett:2020zkv},
 there are few more points to be discussed.
 We can see from Eqs.~\eqref{eq:F_nunu}--\eqref{eq:F_nubarnu} that the expressions include
 up to four products of the neutrino density matrices at different momentum modes.
@@ -818,7 +818,7 @@ For the fourth occurrence, $\varrho(y_4)$, an interpolation is needed.
 We tested several possibilities, and implemented a scheme that computes
 the linear interpolation of $\varrho_{\alpha\alpha}/f_{\rm FD}$ on the diagonal,
 and the linear interpolation of $\varrho_{\alpha\beta}$ ($\alpha\neq\beta$) for the off-diagonal,
-as it guarantees a better numerical stability (see \cite{Bennett:inprep}).
+as it guarantees a better numerical stability (see \cite{Bennett:2020zkv}).
 Nevertheless, the selection of the momentum grid may have a strong impact on the results obtained using
 neutrino--neutrino collision terms, as we will discuss in section~\ref{ssec:precision}.
 We have also verified that the numerical values of \Neff\ obtained including the integrals in
@@ -830,7 +830,7 @@ so that their combinations are suppressed and give a small contribution to the c
 Ignoring the off-diagonal terms, therefore, gives a very precise result with a slightly smaller computational cost.
 Notice also that the implementation of the neutrino--neutrino collision terms as described here
 allows to compute off-diagonal collision terms
-taking into account the full neutrino density matrix \cite{Bennett:inprep}.
+taking into account the full neutrino density matrix \cite{Bennett:2020zkv}.
 
 
 \subsection*{Damping approximation}
@@ -851,10 +851,10 @@ In case more than one sterile state is considered, the terms $D^u_{s_is_j}$ are 
 For the rest of the terms, two possibilities are implemented in the code.
 
 \paragraph{}
-The first possibility arises from the calculations presented in the Appendix~B of \cite{Bennett:inprep}.
+The first possibility arises from the calculations presented in the Appendix~B of \cite{Bennett:2020zkv}.
 Notice that the appendix proposes also a damping approximation for diagonal collision terms,
 which however is not implemented in \fortepiano.
-According to \cite{Bennett:inprep}, we have a contribution from neutrino--neutrino interactions
+According to \cite{Bennett:2020zkv}, we have a contribution from neutrino--neutrino interactions
 that is flavour-blind (as expected, since in equilibrium there are the same number of neutrinos
 and antineutrinos of each flavour), and one from neutrino--electron collisions.
 We can write the damping terms in the following forms:
@@ -912,7 +912,7 @@ For relativistic Fermi--Dirac distributions, the function ${\cal D}^u(y,z)$ eval
 \label{eq:dy}
 \end{equation}
 where $d(s)$ is a number around 100 which can be obtained as a double momentum integral,
-see Eq.~(B.9) in \cite{Bennett:inprep}.
+see Eq.~(B.9) in \cite{Bennett:2020zkv}.
 For computational ease,
 $d(s)$ can be fitted in the interval $s \in [10^{-4},10^3]$ to better than 0.25\% accuracy by the curve
 \begin{equation}
@@ -931,7 +931,7 @@ d_\infty (1- e^{-0.01 s})
 where $d_0 = 129.875$ and $d_\infty = 100.999$ are the asymptotic values of the function as $s \to 0$ and
 $s \to \infty$ respectively, and the fitting coefficients are
 $a_0 = 90.7332$, $a_1 = -48.4473$, $a_2 =20.1219$,
-$b_1 = -0.529157$, and $b_2 = 0.20649$ \cite{Bennett:inprep}.
+$b_1 = -0.529157$, and $b_2 = 0.20649$ \cite{Bennett:2020zkv}.
 
 
 
@@ -1005,7 +1005,7 @@ with the result that the photon temperature grows by a factor
 $(57/43)^{1/3}\simeq 1.098$.
 }
 for $x_{\rm in}=0.05$ (suitable for the three-neutrino case, see \cite{deSalas:2016ztq}).
-We verified \cite{Bennett:inprep} that the results on \Neff\ are not significantly affected by the choice of $x_{\rm in}$,
+We verified \cite{Bennett:2020zkv} that the results on \Neff\ are not significantly affected by the choice of $x_{\rm in}$,
 given that the initial temperature is sufficiently higher than the neutrino decoupling temperature.
 Variations in the range $0.001\leq x_{\rm in}\leq 0.05$ generate differences in \Neff\ smaller
 than $\sim2\times 10^{-5}$.
@@ -1158,7 +1158,7 @@ We have tested our code with the results available in the literature and
 verified the robustness of our findings against changes in the settings used in the calculations.
 In particular, we refer to the high-precision results in the three-neutrino case of \cite{deSalas:2016ztq},
 from which we have adopted most of the equations.
-Most of the results summarized here are discussed more in details in \cite{Gariazzo:2019gyi,Bennett:inprep}.
+Most of the results summarized here are discussed more in details in \cite{Gariazzo:2019gyi,Bennett:2020zkv}.
 
 Concerning the value of \Neff\ that we obtain using only active neutrinos,
 if we ignore neutrino--neutrino collision terms,
@@ -1206,7 +1206,7 @@ the instability which is observed in the GL case almost disappears.
 For $N_y>60$, the final \Neff\ values are stable at the $10^{-4}$ level.
 Such number emerges from tests on the conservation of number and energy density of neutrinos
 within the code.
-Following the studies performed in \cite{Bennett:inprep}, therefore,
+Following the studies performed in \cite{Bennett:2020zkv}, therefore,
 we recommend to consider a linear spacing of the nodes when neutrino--neutrino terms
 are included.
 
@@ -1244,7 +1244,7 @@ and are never really required for our purposes.
 
 More details on the precision of numerical calculations and the dependence of \Neff\ on physical parameters
 (including Fermi constant, Weinberg angle mass and neutrino mixing parameters)
-are discussed in \cite{Bennett:inprep}, considering the three-neutrino case only.
+are discussed in \cite{Bennett:2020zkv}, considering the three-neutrino case only.
 In order to study the accuracy of the numerical calculations as functions of the physical parameters,
 the tolerance for \dlsoda\ has been set to $10^{-7}$.
 Considering variations for the physical parameters in the allowed $3\sigma$ range
@@ -1273,7 +1273,7 @@ One can use the figure as a guideline to decide the most efficient combination
 of $y_{\rm max}$ (provided it is at least 20,
 otherwise one can miss significant contributions to the neutrino energy density)
 and $N_y$ to achieve a required level of precision.
-More details on the precision of the code are discussed in \cite{Gariazzo:2019gyi,Bennett:inprep}.
+More details on the precision of the code are discussed in \cite{Gariazzo:2019gyi,Bennett:2020zkv}.
 
 \begin{figure}[t]
 \begin{center}
@@ -1291,7 +1291,7 @@ with respect to variations in the number of $y$-nodes and their range.
 {\it Left}: Variations in $N_y$ and~$y_{\rm min}$.
 {\it Right}: Variations in $N_y$ and~$y_{\rm max}$.
 The default setting of $y_{\rm min}=0.01$, $y_{\rm max}=20$, and $N_y = 100$ is marked by a red dot on each plot.
-From \cite{Bennett:inprep}.
+From \cite{Bennett:2020zkv}.
 \label{fig:Ny_yrange}
 }
 \end{figure}
@@ -1299,10 +1299,10 @@ From \cite{Bennett:inprep}.
 As a summary, a reasonable estimate of the theoretical and numerical uncertainty on the recommended value
 obtained considering three active neutrinos,
 $\Neff=3.0433$,
-is of order $2\times10^{-4}$ \cite{Bennett:inprep}.
+is of order $2\times10^{-4}$ \cite{Bennett:2020zkv}.
 
 
-\section{Defaults parameters}
+\section{Default parameters}
 \label{ssec:default}
 The numerical constants in the code (defined in \texttt{sources/const.f90})
 are mostly taken from the Particle Data Group~\cite{Tanabashi:2018oca,Zyla:2020zbs}.
