@@ -3886,6 +3886,8 @@ class TestFortEPiaNORun(FPTestCase):
         ) as _plNf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
         ) as _plRdy, patch(
+            "fortepianoOutput.FortEPiaNORun.plotdRhoDiagY"
+        ) as _plDRdy, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoFin"
         ) as _plRf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoOffDiagY"
@@ -3898,9 +3900,14 @@ class TestFortEPiaNORun(FPTestCase):
             _plW.assert_called_once_with(lc="k", ls=":", lab="w")
             _plNf.assert_called_once_with(lc="k", axes=False)
             self.assertEqual(_plRdy.call_count, 6)
+            self.assertEqual(_plDRdy.call_count, 6)
             for i in range(run.nnu):
                 _plRdy.assert_any_call(i, 5.0, fpom.styles[i], lc=fpom.colors[i])
                 _plRdy.assert_any_call(
+                    i, 5.0, fpom.styles[i], lc=fpom.colors[i], mass=True
+                )
+                _plDRdy.assert_any_call(i, 5.0, fpom.styles[i], lc=fpom.colors[i])
+                _plDRdy.assert_any_call(
                     i, 5.0, fpom.styles[i], lc=fpom.colors[i], mass=True
                 )
             self.assertEqual(_plRf.call_count, 6)
@@ -3922,17 +3929,17 @@ class TestFortEPiaNORun(FPTestCase):
                     ),
                     call(
                         "%s/rho_diag.pdf" % run.folder,
-                        xlab="$x$",
-                        ylab=r"$\rho_{\alpha\alpha}$",
-                        xscale="log",
                         yscale="log",
                     ),
                     call(
+                        "%s/drho_diag.pdf" % run.folder,
+                    ),
+                    call(
                         "%s/rho_mass_diag.pdf" % run.folder,
-                        xlab="$x$",
-                        ylab=r"$\rho_{\alpha\alpha}$",
-                        xscale="log",
                         yscale="log",
+                    ),
+                    call(
+                        "%s/drho_mass_diag.pdf" % run.folder,
                     ),
                     call(
                         "%s/rhofin_diag.pdf" % run.folder, xscale="linear", yscale="log"
@@ -3957,6 +3964,8 @@ class TestFortEPiaNORun(FPTestCase):
         ) as _plNf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
         ) as _plRdy, patch(
+            "fortepianoOutput.FortEPiaNORun.plotdRhoDiagY"
+        ) as _plDRdy, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoFin"
         ) as _plRf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoOffDiagY"
@@ -3969,9 +3978,14 @@ class TestFortEPiaNORun(FPTestCase):
             _plW.assert_called_once_with(lc="abc", ls=":", lab="w")
             _plNf.assert_called_once_with(lc="abc", axes=False)
             self.assertEqual(_plRdy.call_count, 6)
+            self.assertEqual(_plDRdy.call_count, 6)
             for i in range(run.nnu):
                 _plRdy.assert_any_call(i, 2.5, fpom.styles[i], lc=fpom.colors[i])
                 _plRdy.assert_any_call(
+                    i, 2.5, fpom.styles[i], lc=fpom.colors[i], mass=True
+                )
+                _plDRdy.assert_any_call(i, 2.5, fpom.styles[i], lc=fpom.colors[i])
+                _plDRdy.assert_any_call(
                     i, 2.5, fpom.styles[i], lc=fpom.colors[i], mass=True
                 )
             self.assertEqual(_plRf.call_count, 6)
@@ -3993,17 +4007,17 @@ class TestFortEPiaNORun(FPTestCase):
                     ),
                     call(
                         "%s/rho_diag.pdf" % run.folder,
-                        xlab="$x$",
-                        ylab=r"$\rho_{\alpha\alpha}$",
-                        xscale="log",
                         yscale="log",
                     ),
                     call(
+                        "%s/drho_diag.pdf" % run.folder,
+                    ),
+                    call(
                         "%s/rho_mass_diag.pdf" % run.folder,
-                        xlab="$x$",
-                        ylab=r"$\rho_{\alpha\alpha}$",
-                        xscale="log",
                         yscale="log",
+                    ),
+                    call(
+                        "%s/drho_mass_diag.pdf" % run.folder,
                     ),
                     call(
                         "%s/rhofin_diag.pdf" % run.folder, xscale="linear", yscale="log"

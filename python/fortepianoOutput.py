@@ -1968,20 +1968,24 @@ class FortEPiaNORun:
             self.plotRhoDiagY(i, yref, styles[i], lc=colors[i])
         finalizePlot(
             "%s/rho_diag.pdf" % self.folder,
-            xlab="$x$",
-            ylab=r"$\rho_{\alpha\alpha}$",
-            xscale="log",
             yscale="log",
+        )
+        for i in range(self.nnu):
+            self.plotdRhoDiagY(i, yref, styles[i], lc=colors[i])
+        finalizePlot(
+            "%s/drho_diag.pdf" % self.folder,
         )
 
         for i in range(self.nnu):
             self.plotRhoDiagY(i, yref, styles[i], lc=colors[i], mass=True)
         finalizePlot(
             "%s/rho_mass_diag.pdf" % self.folder,
-            xlab="$x$",
-            ylab=r"$\rho_{\alpha\alpha}$",
-            xscale="log",
             yscale="log",
+        )
+        for i in range(self.nnu):
+            self.plotdRhoDiagY(i, yref, styles[i], lc=colors[i], mass=True)
+        finalizePlot(
+            "%s/drho_mass_diag.pdf" % self.folder,
         )
 
         for i in range(self.nnu):
