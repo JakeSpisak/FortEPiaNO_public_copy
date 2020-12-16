@@ -500,6 +500,8 @@ module utilities
 			end if
 			deallocate(tyv, twv)
 		end do
+		write(tmpstr, "('Cannot find Ny=',I3,' Gauss-Laguerre nodes below y_max=',E11.4)") nreal, ycut
+		call criticalError(trim(tmpstr))
 	end subroutine get_GLq_vectors
 
 	!Gauss-Laguerre quadrature: very effective for exponentially-suppressed functions
