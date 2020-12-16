@@ -607,12 +607,27 @@ module utilities
 					/ (ndmv(iy+1)%y-ndmv(iy)%y) &
 				) * fdc
 			do j=i+1, nf
+#ifdef RHO_OFFDIAG_INTERP_DIV_FD
+				newmat%re(i,j) = ( &
+					ndmv(iy)%re(i,j)/fd0 &
+					+ (y-ndmv(iy)%y) &
+						* (ndmv(iy+1)%re(i,j)/fd1 - ndmv(iy)%re(i,j)/fd0) &
+						/ (ndmv(iy+1)%y-ndmv(iy)%y) &
+				) * fdc
+				newmat%im(i,j) = ( &
+					ndmv(iy)%im(i,j) &
+					+ (y-ndmv(iy)%y) &
+						* (ndmv(iy+1)%im(i,j)/fd1 - ndmv(iy)%im(i,j)/fd0) &
+						/ (ndmv(iy+1)%y-ndmv(iy)%y) &
+				) * fdc
+#else
 				newmat%re(i,j) = &
 					ndmv(iy)%re(i,j) &
 					+ (y-ndmv(iy)%y) * (ndmv(iy+1)%re(i,j)-ndmv(iy)%re(i,j))/(ndmv(iy+1)%y-ndmv(iy)%y)
 				newmat%im(i,j) = &
 					ndmv(iy)%im(i,j) &
 					+ (y-ndmv(iy)%y) * (ndmv(iy+1)%im(i,j)-ndmv(iy)%im(i,j))/(ndmv(iy+1)%y-ndmv(iy)%y)
+#endif
 				newmat%re(j,i) = newmat%re(i,j)
 				newmat%im(j,i) = -newmat%im(i,j)
 			end do
