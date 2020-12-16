@@ -11,6 +11,8 @@ NO_INTERPOLATION ?=
 NO_MUONS ?=
 # set NO_NUE_ANNIHILATION=1 to disable contribution to collision integrals from nunu<->e+e- annihilation processes
 NO_NUE_ANNIHILATION ?=
+NUE_SC_JAC ?=
+RHO_OFFDIAG_INTERP_DIV_FD ?=
 # define TESTSPEED=1 to compute the time required for the first 1000 derivatives
 TESTSPEED ?=
 
