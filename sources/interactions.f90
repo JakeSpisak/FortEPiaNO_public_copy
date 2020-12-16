@@ -1055,29 +1055,29 @@ module fpInteractions
 	end function PI2_ne_f
 
 	!integrands of collision terms
-	pure function coll_nue_ann_int(iy2, y4, obj, F_ab)
+	pure function coll_nue_ann_int(iy2, y3, obj, F_ab)
 		!annihilation
 		use fpInterfaces1
 		procedure (F_annihilation) :: F_ab
 		integer, intent(in) :: iy2
-		real(dl), intent(in) :: y4
+		real(dl), intent(in) :: y3
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_ann_int
 		real(dl), dimension(2) :: pi2_vec
-		real(dl) :: y2, y3, f3, f4, E3, E4, dme2, t1, t2
+		real(dl) :: y2, y4, f3, f4, E3, E4, dme2, t1, t2
 
 		coll_nue_ann_int = 0.d0
 
 		dme2 = obj%dme2
 		y2 = y_arr(iy2)
-		E4 = Ebare_i_dme(obj%x, y4, dme2)
-		E3 = obj%y1 + y2 - E4
-		t1 = E3*E3
+		E3 = Ebare_i_dme(obj%x, y3, dme2)
+		E4 = obj%y1 + y2 - E3
+		t1 = E4*E4
 		t2 = obj%x*obj%x + dme2
 		if (t1<t2) then
-			y3 = -1.d0
+			y4 = -1.d0
 		else
-			y3 = sqrt(t1 - t2)
+			y4 = sqrt(t1 - t2)
 		endif
 		if (.not.(y3.lt.0.d0 &
 				.or. obj%y1.gt.y3+y2+y4 &
@@ -1089,7 +1089,9 @@ module fpInteractions
 			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
 			coll_nue_ann_int = coll_nue_ann_int + &
 				y3/E3 * &
+#ifndef NUE_SC_JAC
 				y4/E4 * &
+#endif
 				( &
 					pi2_vec(1) * F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2) &
 					+ pi2_vec(2) * F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2) &
