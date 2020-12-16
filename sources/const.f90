@@ -29,22 +29,27 @@ module constants
 
 	real(dl), parameter :: zero = 0.0d0
 
-	!most constants are from the PDG 2018, with 2019 update, as of 19/11/19
-	!M. Tanabashi et al. (Particle Data Group), Phys.Rev.D, 98, 030001 (2018).
+	!most constants are from the PDG 2020
+#ifdef DO_TESTS
+    !if doing tests, use the same values adopted for the numerical tests outside fortran
 	real(dl), parameter :: m_e = 0.5109989461*Mev2eV!eV
-	real(dl), parameter :: m_e_cub = m_e**3
 	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
+	real(dl), parameter :: sin2thW_Z = 0.23129
+	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
+	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
+#else
+    !numbers used in the real calculation
+	real(dl), parameter :: m_e = 0.51099895*Mev2eV!eV
+	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
+	real(dl), parameter :: sin2thW_Z = 0.23121
+	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
+	real(dl), parameter :: planck_mass = 1.220890e19*Gev2eV
+#endif
+	real(dl), parameter :: m_e_cub = m_e**3
 	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
 	real(dl), parameter :: x_muon_cut = 0.5d0!do not compute mu densities above this value, to avoid float overflow
 	real(dl), parameter :: G_F = 1.1663787d-5/(Gev2eV*Gev2eV)
 	real(dl), parameter :: G_Fsq = G_F * G_F
-#ifndef DO_TESTS
-	real(dl), parameter :: sin2thW_Z = 0.23122
-	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
-#else
-	real(dl), parameter :: sin2thW_Z = 0.23129
-	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
-#endif
 	real(dl), parameter :: cos2thW_Z = 1.d0-sin2thW_Z
 #ifdef GLR_ZERO_MOMENTUM
 	!from 10.1016/j.ppnp.2013.03.004
@@ -62,7 +67,6 @@ module constants
 	real(dl), parameter :: electron_charge = sqrt(4*PI*alpha_fine)
 	real(dl), parameter :: electron_charge_sq = electron_charge ** 2
 	real(dl), parameter :: electron_charge_cub = electron_charge ** 3
-	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 
 	integer,  parameter :: maxFlavorNumber = 6
 	integer,  parameter :: i_flavorNumber = 3
@@ -81,7 +85,7 @@ module constants
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
 
 	character(len=5), parameter :: dblfmt = "E17.9"
-	character(len=10), parameter :: multidblfmt = "(*(E17.9))"
+	character(len=10), parameter :: multidblfmt = "(*("//dblfmt//"))"
 end module constants
 
 module variables
