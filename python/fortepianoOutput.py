@@ -363,19 +363,20 @@ class FortEPiaNORun:
                         )
                         * 100
                     )
-                    print(
-                        "delta energy density:\t"
-                        + "\t".join(
-                            [
-                                "nu%d: %f%%"
-                                % (
-                                    i + 1,
-                                    self.delta_ed[i],
-                                )
-                                for i in range(self.nnu)
-                            ]
+                    if self.verbose:
+                        print(
+                            "delta energy density:\t"
+                            + "\t".join(
+                                [
+                                    "nu%d: %f%%"
+                                    % (
+                                        i + 1,
+                                        self.delta_ed[i],
+                                    )
+                                    for i in range(self.nnu)
+                                ]
+                            )
                         )
-                    )
         try:
             self.entropy = np.loadtxt("%s/entropy.dat" % self.folder)
         except (IOError, OSError):
@@ -418,15 +419,16 @@ class FortEPiaNORun:
                         )
                         * 100
                     )
-                    print(
-                        "delta number density:\t"
-                        + "\t".join(
-                            [
-                                "nu%d: %f%%" % (i + 1, self.delta_nd[i])
-                                for i in range(self.nnu)
-                            ]
+                    if self.verbose:
+                        print(
+                            "delta number density:\t"
+                            + "\t".join(
+                                [
+                                    "nu%d: %f%%" % (i + 1, self.delta_nd[i])
+                                    for i in range(self.nnu)
+                                ]
+                            )
                         )
-                    )
 
     def readFD(self):
         """Read and store the information from fd.dat"""
