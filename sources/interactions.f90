@@ -1134,7 +1134,9 @@ module fpInteractions
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
 			coll_nue_sc_int = coll_nue_sc_int + &
 				y2/E2 * &
+#ifndef NUE_SC_JAC
 				y4/E4 * &
+#endif
 				( &
 					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
 						F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy3),f2,f4, 1, 1, obj%ix1,obj%ix2) &
