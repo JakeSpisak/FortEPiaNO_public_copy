@@ -31,14 +31,18 @@ module constants
 
 	!most constants are from the PDG 2020
 #ifdef DO_TESTS
-    !if doing tests, use the same values adopted for the numerical tests outside fortran
+#define SINSQTHW 0.23129
+	!if doing tests, use the same values adopted for the numerical tests outside fortran
 	real(dl), parameter :: m_e = 0.5109989461*Mev2eV!eV
 	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
-	real(dl), parameter :: sin2thW_Z = 0.23129
+	real(dl), parameter :: sin2thW_Z = SINSQTHW
 	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
 	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 #else
-    !numbers used in the real calculation
+#ifndef SINSQTHW
+#define SINSQTHW 0.23121
+#endif
+	!numbers used in the real calculation
 	real(dl), parameter :: m_e = 0.51099895*Mev2eV!eV
 	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
 	real(dl), parameter :: sin2thW_Z = 0.23121
@@ -58,7 +62,7 @@ module constants
 	real(dl), parameter :: gLmt = -0.273d0
 	real(dl), parameter :: gRemt = 0.233d0
 #else
-	real(dl), parameter :: sin2thW = sin2thW_Z
+	real(dl), parameter :: sin2thW = SINSQTHW
 	real(dl), parameter :: gLe = sin2thW + 0.5d0
 	real(dl), parameter :: gLmt = sin2thW - 0.5d0
 	real(dl), parameter :: gRemt = sin2thW

@@ -13,6 +13,7 @@ NO_MUONS ?=
 NO_NUE_ANNIHILATION ?=
 NUE_JAC ?=
 RHO_OFFDIAG_INTERP_DIV_FD ?=
+SINSQTHW ?= 
 # define TESTSPEED=1 to compute the time required for the first 1000 derivatives
 TESTSPEED ?=
 
@@ -64,6 +65,9 @@ ifeq ($(NUE_JAC), 1)
 endif
 ifeq ($(RHO_OFFDIAG_INTERP_DIV_FD), 1)
 	F90FLAGS += -DRHO_OFFDIAG_INTERP_DIV_FD=1
+endif
+ifneq ($(SINSQTHW),)
+	F90FLAGS += -DSINSQTHW=$(SINSQTHW)
 endif
 ifeq ($(TESTSPEED), 1)
 	F90FLAGS += -DTESTSPEED=1
