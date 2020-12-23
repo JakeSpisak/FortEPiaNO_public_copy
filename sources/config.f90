@@ -339,6 +339,8 @@ module fpConfig
 		y_cen = read_ini_real('y_cen', 1.0d0)
 
 		if (use_gauss_laguerre) then
+			write(tmpstr,"('[config] Configuring Gauss-Laguerre with Ny=',I3,' and y_max=',"//dblfmt//")") Ny, y_max
+			call addToLog(trim(tmpstr))
 			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .true., 3, y_max)
 		else
 			allocate(y_arr(Ny))

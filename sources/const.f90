@@ -1,8 +1,9 @@
 module Precision
 implicit none
 
-integer, parameter :: dl = KIND(1.d0)
 integer, parameter :: sp = KIND(1.0)
+integer, parameter :: dl = KIND(1.d0)
+integer, parameter :: qp = 16
 end module Precision
 
 module constants

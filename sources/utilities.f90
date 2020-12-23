@@ -416,15 +416,16 @@ module utilities
 		integer, intent(in) :: n
 		real(dl), intent(in) :: alf
 		real(dl), intent(out), dimension(:), allocatable :: w, x
-		integer, parameter :: MAXIT=10
-		real(dl), parameter :: eps=1.d-9
+		integer, parameter :: MAXIT=20
+		real(qp), parameter :: eps=1.d-15
 		! Increase EPS if you don't have this precision.
 		!Given alf , the parameter α of the Laguerre polynomials, this routine returns arrays x(1:n)
 		!and w(1:n) containing the abscissas and weights of the n-point Gauss-Laguerre quadrature
 		!formula. The smallest abscissa is returned in x(1), the largest in x(n) .
 		integer :: i,its,j
-		real(dl) :: ai, nd
-		real(dl) :: p1,p2,p3,pp,z,z1
+		real(dl) :: nd
+		real(qp) :: ai
+		real(qp) :: p1,p2,p3,pp,z,z1
 		nd = n
 		allocate(x(n), w(n))
 		do i=1,n	! Loop over the desired roots.
@@ -451,7 +452,7 @@ module utilities
 				z=z1-p1/pp ! Newton's formula.
 				if(abs(z-z1).le.EPS)goto 1
 			enddo
-			pause "too many iterations in gaulag"
+			call criticalError("too many iterations in gaulag")
 1			x(i)=z ! Store the root and the weight.
 			w(i)=-exp(gammln(alf+n)-gammln(nd))/(pp*n*p2)
 		enddo
@@ -467,7 +468,7 @@ module utilities
 		integer :: ix, iy, effective_Ny
 		character(len=300) :: tmpstr
 
-		do ix=1, 350
+		do ix=1, 1500
 			effective_Ny = 0
 			call gaulag(tyv, twv, ix, 1.d0*alpha)
 			do iy=1, ix
@@ -478,7 +479,7 @@ module utilities
 			end do
 			if (nreal .le. effective_Ny) then
 				if (verb) then
-					write(tmpstr, "('[config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I3,' roots')") ix, effective_Ny
+					write(tmpstr, "('[config] use Gauss-Laguerre, n=',I4,' and selecting the first ',I3,' roots')") ix, effective_Ny
 					call addToLog(trim(tmpstr))
 				end if
 				if (.not. allocated(yv)) &
@@ -500,7 +501,7 @@ module utilities
 			end if
 			deallocate(tyv, twv)
 		end do
-		write(tmpstr, "('Cannot find Ny=',I3,' Gauss-Laguerre nodes below y_max=',E11.4)") nreal, ycut
+		write(tmpstr, "('Cannot find Ny=',I3,' Gauss-Laguerre nodes below y_max=',E11.4,'. Reached N=',I4)") nreal, ycut, ix-1
 		call criticalError(trim(tmpstr))
 	end subroutine get_GLq_vectors
 
