@@ -465,12 +465,36 @@ module utilities
 		logical, intent(in) :: verb
 		real(dl), dimension(:), allocatable :: tyv, twv
 		real(dl), intent(in) :: ycut
+		logical :: exists
+		integer, parameter :: uid = 8324
 		integer :: ix, iy, effective_Ny
 		character(len=300) :: tmpstr
 
 		do ix=1, 1500
 			effective_Ny = 0
-			call gaulag(tyv, twv, ix, 1.d0*alpha)
+			write(tmpstr, "('GL_nodes/N',I4.4,'_alpha',I2.2,'.dat')") ix, alpha
+			inquire(file=trim(tmpstr), exist=exists)
+			if (exists) then
+				!read previously saved file instead of computing nodes in real time
+				if (allocated(tyv)) &
+					deallocate(tyv)
+				if (allocated(twv)) &
+					deallocate(twv)
+				allocate(tyv(ix), twv(ix))
+				open(file=trim(tmpstr), unit=uid, form="unformatted")
+				do iy=1, ix
+					read(uid) tyv(iy), twv(iy)
+				end do
+				close(uid)
+			else
+				call gaulag(tyv, twv, ix, 1.d0*alpha)
+				!write nodes to file for later use
+				open(file=trim(tmpstr), unit=uid, status="unknown", form="unformatted")
+				do iy=1, ix
+					write(uid) tyv(iy), twv(iy)
+				end do
+				close(uid)
+			endif
 			do iy=1, ix
 				if (tyv(iy).gt.ycut)then
 					effective_Ny = iy-1
