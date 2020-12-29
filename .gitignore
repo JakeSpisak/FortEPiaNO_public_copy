@@ -18,3 +18,4 @@ gmon.out
 *callgrind*
 grids/
 .tox*/
+GL_nodes/
