@@ -1065,20 +1065,20 @@ We therefore use a truncated list of nodes $y_i$ over which to compute the evolu
 selecting only the $N_y\leq N$ nodes for which $y_i<y_{\rm max}$.
 In this way we can increase the number of points at small $y$ and the resolution on the thermalisation processes
 without having to compute a large number of points at high momentum.
-The number of points we can use is limited by the accuracy of the algorithm that computes the $w_i$.
-For the \texttt{gaulag} routine \cite{NR}, our setup allows to reach $N_y\sim50$ when $N\sim350$,
-when $y_i<y_{\rm max}=20$.
-This number of momentum nodes
+The position and weight of the momentum nodes is obtained
+using the \texttt{gaulag} routine \cite{NR}.
+Having $N_y\sim50$ and $y_i<y_{\rm max}=20$,
 if neutrino--neutrino collision terms are ignored,
-is already large enough to reach a precision
-much better than one per mille on \Neff,
+is enough to reach a precision much better than one per mille on \Neff,
 which is the same we could obtain with a linear spacing of the points
 and $N_y=100$ \cite{deSalas:2016ztq}.
 Since the evaluation of the collision integrals scales as $N_y^2$
 and the number of derivatives in Eq.~\eqref{eq:drho_dx_nxn} scales with $N_y$,
 this ensures a significant gain.
-Unfortunately, since the method used to compute the GL nodes does not allow to increase $N_y$ arbitrarily,
-the GL method has limitations when the neutrino--neutrino collision terms are considered.
+Unfortunately, the current implementation of the Gauss--Laguerre method suffers a small non-conservation
+of the neutrino number density,
+that makes the results less precise than when using a linear spacing
+of the nodes.
 We further comment on these points in the next sections.
 
 
@@ -1177,7 +1177,7 @@ We verified that once the tolerance for \dlsoda\ is smaller than $10^{-5}$,
 the results are already stable at a level much better than per mille
 (actually closer to the 0.1 per mille)
 with respect to the most precise case considered here
-(GL integration, $N_y=50$, tolerance $10^{-6}$).
+(Gauss--Laguerre integration, $N_y=50$, tolerance $10^{-6}$).
 Using a tolerance of $10^{-4}$ gives a value of \Neff\ which is stable
 at the level of few per mille, and still better than 1\%.
 
@@ -1190,20 +1190,9 @@ the numerical uncertainties grow significantly:
 when a coarse grid is considered, the interpolation is much less precise
 and the final results are much more instable.
 As expected, however, the instability decreases when the number of momentum nodes is increased.
-It is worth noticing that a GL grid tends to give a slightly higher estimation of \Neff\
-than a grid with linearly spaced momentum nodes, with a difference of $\sim0.001$
-between the GL case with $N_y=50$ and a linear spacing with $N_y=100$,
-when requiring all the nodes to satisfy $y_i<y_{\rm max}=20$%
-\footnote{
-Since our GL method does not allow to increase arbitrarily the number of nodes
-when imposing the upper limit on their value,
-we cannot have a more precise estimate of the effect of the GL momentum grid,
-nor to determine at which $N_y$ the two different momentum grid schemes
-converge to the same value of \Neff\ when requiring a higher precision.
-}.
-When considering a linear spacing of the $y_i$ nodes, however,
-the instability which is observed in the GL case almost disappears.
-For $N_y>60$, the final \Neff\ values are stable at the $10^{-4}$ level.
+When considering a linear spacing of the $y_i$ nodes,
+the instability is even smaller than when using the Gauss--Laguerre method.
+For $N_y>60$, the final \Neff\ values are stable at the $\ll10^{-4}$ level.
 Such number emerges from tests on the conservation of number and energy density of neutrinos
 within the code.
 Following the studies performed in \cite{Bennett:2020zkv}, therefore,
@@ -1343,10 +1332,9 @@ the $x$ range is considered between
 \texttt{x\_fin = 35},
 and the quantities saved in \texttt{Nx = 500} bins.
 For the momentum grid, the default configuration considers \texttt{Ny = 30} momentum nodes
-spaced according to the Gauss--Laguerre method (\texttt{use\_gauss\_laguerre = T}),
-as neutrino--neutrino collision terms are disabled.
+spaced according to the Gauss--Laguerre method (\texttt{use\_gauss\_laguerre = T}).
 Remember that a correct run with neutrino--neutrino collisions is better performed
-using a much denser momentum grid, that will require to disable the Gauss--Laguerre nodes selection.
+using a much denser momentum grid.
 %
 \item
 \textbf{Output settings}:
