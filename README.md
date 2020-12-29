@@ -6,12 +6,20 @@ FortEPiaNO is a Fortran code to compute the evolution of neutrino oscillations i
 The code is written to flexible, it can work with two to six neutrinos (active or sterile).  
 At the moment, no lepton asymmetries nor non-standard interactions are implemented.
 
-If you use this code for scientific publications, please cite the paper:  
+If you use this code for scientific publications, please cite the papers:  
 **Thermalisation of sterile neutrinos in the early Universe in the 3+1 scheme with full mixing matrix**  
 _S. Gariazzo, P.F. de Salas, S. Pastor_  
 JCAP 07 (2019) 014.  
 [arxiv:1905.11290](https://arxiv.org/abs/1905.11290),  
 see also on [INSPIRE](https://inspirehep.net/record/1736955).  
+
+and
+
+**Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED**  
+_J.J. Bennett and others_
+[arxiv:2012.02726](https://arxiv.org/abs/2012.02726),  
+see also on [INSPIRE](https://inspirehep.net/record/1835091).  
+
 ```
 @article{Gariazzo:2019gyi,
       author         = "Gariazzo, S. and de Salas, P. F. and Pastor, S.",
@@ -26,6 +34,15 @@ see also on [INSPIRE](https://inspirehep.net/record/1736955).
       archivePrefix  = "arXiv",
       primaryClass   = "astro-ph.CO",
       SLACcitation   = "%%CITATION = ARXIV:1905.11290;%%"
+}
+@Article{Bennett:2020zkv,
+        author = "Bennett, Jack J. and others",
+         title = "{Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED}",
+          year = "2020",
+ archiveprefix = "arXiv",
+  primaryclass = "hep-ph",
+        eprint = "2012.02726",
+  reportnumber = "CPPC-2020-10",
 }
 ```
 
