@@ -497,9 +497,15 @@ module utilities
 					read(uid) tyv(iy), twv(iy)
 				end do
 				close(uid)
-				if (exists_checks .and. abs(tyv(1)-cn1(ix))/cn1(ix) .gt. 1e-5) then
-					write(tmpstr, "('[GL nodes] node 1 not matching at N=',I4,'! value=',E14.7,' expected=',E14.6)") ix, tyv(1), cn1(ix)
-					call criticalError(trim(tmpstr))
+				if (exists_checks) then
+					if(abs(tyv(1)-cn1(ix))/cn1(ix) .gt. 1e-5) then
+						write(tmpstr, "('[GL nodes] node 1 not matching at N=',I4,'! value=',E14.7,' expected=',E14.6)") ix, tyv(1), cn1(ix)
+						call criticalError(trim(tmpstr))
+					end if
+					if(abs(tyv(ix)-cnn(ix))/cnn(ix) .gt. 1e-5) then
+						write(tmpstr, "('[GL nodes] node ',I4,' not matching at N=',I4,'! value=',E14.7,' expected=',E14.6)") ix, ix, tyv(ix), cnn(ix)
+						call criticalError(trim(tmpstr))
+					end if
 				end if
 			else
 				call gaulag(tyv, twv, ix, 1.d0*alpha)
