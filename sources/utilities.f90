@@ -118,8 +118,9 @@ module utilities
 	use fpInterpolate
 	use fpInterfaces1
 
-    integer, parameter :: GI = DL
-    integer, parameter :: sp_acc = DL
+	integer, parameter :: GI = DL
+	integer, parameter :: sp_acc = DL
+	integer, parameter :: maxNgaulag = 1500
 
 	contains
 
@@ -463,14 +464,24 @@ module utilities
 		real(dl), dimension(:), allocatable, intent(out) :: yv, wv, wv2
 		integer, intent(in) :: nreal, alpha
 		logical, intent(in) :: verb
-		real(dl), dimension(:), allocatable :: tyv, twv
+		real(dl), dimension(:), allocatable :: tyv, twv, cn1, cnn, cw1, cwn
 		real(dl), intent(in) :: ycut
-		logical :: exists
-		integer, parameter :: uid = 8324
-		integer :: ix, iy, effective_Ny
+		logical :: exists, exists_checks
+		integer, parameter :: uid = 8324, uod = 8325
+		integer :: ix, iy, effective_Ny, cix
 		character(len=300) :: tmpstr
 
-		do ix=1, 1500
+		allocate(cn1(maxNgaulag), cnn(maxNgaulag), cw1(maxNgaulag), cwn(maxNgaulag))
+		write(tmpstr, "('GL_nodes/expected_gl_nodes_alpha',I2.2,'.dat')") alpha
+		inquire(file=trim(tmpstr), exist=exists)
+		if (exists_checks) then
+			open(file=trim(tmpstr), unit=uod, form="unformatted")
+			do ix=1, maxNgaulag
+				read(uod) cix, cn1(ix), cw1(ix), cnn(ix), cwn(ix)
+			end do
+			close(uod)
+		end if
+		do ix=1, maxNgaulag
 			effective_Ny = 0
 			write(tmpstr, "('GL_nodes/N',I4.4,'_alpha',I2.2,'.dat')") ix, alpha
 			inquire(file=trim(tmpstr), exist=exists)
@@ -486,6 +497,10 @@ module utilities
 					read(uid) tyv(iy), twv(iy)
 				end do
 				close(uid)
+				if (exists_checks .and. abs(tyv(1)-cn1(ix))/cn1(ix) .gt. 1e-5) then
+					write(tmpstr, "('[GL nodes] node 1 not matching at N=',I4,'! value=',E14.7,' expected=',E14.6)") ix, tyv(1), cn1(ix)
+					call criticalError(trim(tmpstr))
+				end if
 			else
 				call gaulag(tyv, twv, ix, 1.d0*alpha)
 				!write nodes to file for later use

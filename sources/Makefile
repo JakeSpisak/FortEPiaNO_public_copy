@@ -121,10 +121,20 @@ $(BUILD_DIR)/fortepiano.o: $(OBJ_FILES)
 $(BUILD_DIR)/stuff.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o \
 	$(BUILD_DIR)/equations.o $(BUILD_DIR)/linear_interpolation_module.o
+$(BUILD_DIR)/utilities.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o
 $(BUILD_DIR)/test_utils.o: $(BUILD_DIR)/const.o
 $(BUILD_DIR)/tests.o: $(OBJ_TESTS)
 
+PREP_NODES_OBJ = $(BUILD_DIR)/utilities.o $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o
+$(BUILD_DIR)/prepare_gl_nodes.o: $(PREP_NODES_OBJ)
+
 all: fortepiano tests
+
+readnodes:
+	$(F90) -o ../bin/read_gl_nodes read_gl_nodes.f90
+
+preparenodes: $(BUILD_DIR)/prepare_gl_nodes.o
+	$(F90) -o ../bin/prepare_gl_nodes $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_gl_nodes.o $(FFLAGS) $(TESTFLAGS)
 
 tests: TESTFLAGS = -DDO_TESTS=1
 
