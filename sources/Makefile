@@ -11,7 +11,6 @@ NO_INTERPOLATION ?=
 NO_MUONS ?=
 # set NO_NUE_ANNIHILATION=1 to disable contribution to collision integrals from nunu<->e+e- annihilation processes
 NO_NUE_ANNIHILATION ?=
-NUE_JAC ?=
 RHO_OFFDIAG_INTERP_DIV_FD ?=
 SINSQTHW ?= 
 # define TESTSPEED=1 to compute the time required for the first 1000 derivatives
@@ -59,9 +58,6 @@ ifeq ($(NO_MUONS), 1)
 endif
 ifeq ($(NO_NUE_ANNIHILATION), 1)
 	F90FLAGS += -DNO_NUE_ANNIHILATION=1
-endif
-ifeq ($(NUE_JAC), 1)
-	F90FLAGS += -DNUE_JAC=1
 endif
 ifeq ($(RHO_OFFDIAG_INTERP_DIV_FD), 1)
 	F90FLAGS += -DRHO_OFFDIAG_INTERP_DIV_FD=1

@@ -1079,7 +1079,7 @@ module fpInteractions
 		else
 			y4 = sqrt(t1 - t2)
 		endif
-		if (.not.(y3.lt.0.d0 &
+		if (.not.(y4.lt.0.d0 &
 				.or. obj%y1.gt.y3+y2+y4 &
 				.or. y2.gt.obj%y1+y3+y4 &
 				.or. y3.gt.obj%y1+y2+y4 &
@@ -1089,9 +1089,6 @@ module fpInteractions
 			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
 			coll_nue_ann_int = coll_nue_ann_int + &
 				y3/E3 * &
-#ifndef NUE_JAC
-				y4/E4 * &
-#endif
 				( &
 					pi2_vec(1) * F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2) &
 					+ pi2_vec(2) * F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2) &
@@ -1136,9 +1133,6 @@ module fpInteractions
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
 			coll_nue_sc_int = coll_nue_sc_int + &
 				y2/E2 * &
-#ifndef NUE_JAC
-				y4/E4 * &
-#endif
 				( &
 					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
 						F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy3),f2,f4, 1, 1, obj%ix1,obj%ix2) &
