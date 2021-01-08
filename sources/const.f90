@@ -31,15 +31,6 @@ module constants
 	real(dl), parameter :: zero = 0.0d0
 
 	!most constants are from the PDG 2020
-#ifdef DO_TESTS
-#define SINSQTHW 0.23129
-	!if doing tests, use the same values adopted for the numerical tests outside fortran
-	real(dl), parameter :: m_e = 0.5109989461*Mev2eV!eV
-	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
-	real(dl), parameter :: sin2thW_Z = SINSQTHW
-	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
-	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
-#else
 #ifndef SINSQTHW
 #define SINSQTHW 0.23121
 #endif
@@ -49,7 +40,6 @@ module constants
 	real(dl), parameter :: sin2thW_Z = 0.23121
 	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
 	real(dl), parameter :: planck_mass = 1.220890e19*Gev2eV
-#endif
 	real(dl), parameter :: m_e_cub = m_e**3
 	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
 	real(dl), parameter :: x_muon_cut = 0.5d0!do not compute mu densities above this value, to avoid float overflow
@@ -68,19 +58,19 @@ module constants
 	real(dl), parameter :: gLmt = sin2thW - 0.5d0
 	real(dl), parameter :: gRemt = sin2thW
 #endif
-	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
+	real(dl), parameter :: alpha_fine = 1.d0/137.035999084d0
 	real(dl), parameter :: electron_charge = sqrt(4*PI*alpha_fine)
 	real(dl), parameter :: electron_charge_sq = electron_charge ** 2
 	real(dl), parameter :: electron_charge_cub = electron_charge ** 3
 
 	integer,  parameter :: maxFlavorNumber = 6
 	integer,  parameter :: i_flavorNumber = 3
-	!from PDG 2018: M. Tanabashi et al. (Particle Data Group), Phys.Rev.D, 98, 030001 (2018).
-	real(dl), parameter :: i_theta12 = 0.297
-	real(dl), parameter :: i_theta13 = 0.0215
-	real(dl), parameter :: i_theta23 = 0.425
-	real(dl), parameter :: i_dm21 = 7.37e-05
-	real(dl), parameter :: i_dm31 = 0.00256
+	!from PDG 2020
+	real(dl), parameter :: i_theta12 = 0.307
+	real(dl), parameter :: i_theta13 = 0.0218
+	real(dl), parameter :: i_theta23 = 0.545
+	real(dl), parameter :: i_dm21 = 7.53e-05
+	real(dl), parameter :: i_dm31 = 0.002453+i_dm21
 
 	real(dl), parameter :: leptDensFactor = -2*SQRT2*G_F*m_e**6/(m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub

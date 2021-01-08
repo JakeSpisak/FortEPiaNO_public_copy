@@ -10,6 +10,8 @@ program tests
 	use ftqed
 	implicit none
 
+	integer, parameter :: fu = 89237
+
 	call openLogFile
 	write(*,*) ""
 	write(*,*) ""
@@ -112,7 +114,7 @@ program tests
 		if (flavorNumber .gt. 2) then
 			mixingAngles(1,3) = 0.1485d0
 			mixingAngles(2,3) = 0.7954d0
-			massSplittings(3) = 0.0025153d0
+			massSplittings(3) = 0.0025283d0
 		end if
 		z_in=1.0000575
 		collint_d_no_nue = .false.
@@ -158,24 +160,24 @@ program tests
 		allocate(tarr(N))
 		tarr = linspace(0.0d0, 11.d0, N)
 		do ix=1, N
-			write(tmparg, '("tarr lin ",I2)') ix
+			write(tmparg, "('tarr lin ',I2)") ix
 			call assert_double(tmparg, tarr(ix), (ix-1)*1.d0, 1d-7)
 		end do
 		tarr = logspace(-5d0, 6.d0, N)
 		do ix=1, N
-			write(tmparg, '("tarr log ",I2)') ix
+			write(tmparg, "('tarr log ',I2)") ix
 			call assert_double_rel(tmparg, tarr(ix), 10.d0**(ix-6), 1d-7)
 		end do
 		tarr = geomspace(1.d-5, 1.d6, N)
 		do ix=1, N
-			write(tmparg, '("tarr geom ",I2)') ix
+			write(tmparg, "('tarr geom ',I2)") ix
 			call assert_double_rel(tmparg, tarr(ix), 10.d0**(ix-6), 1d-7)
 		end do
 		tarr = loglinspace(0.01d0, 1.d0, 10.d0, N, 3)
 		call assert_double_rel("tarr linlog 1", tarr(1), 0.01d0, 1d-7)
 		call assert_double_rel("tarr linlog 2", tarr(2), 0.1d0, 1d-7)
 		do ix=3, N
-			write(tmparg, '("tarr linlog ",I2)') ix
+			write(tmparg, "('tarr linlog ',I2)") ix
 			call assert_double_rel(tmparg, tarr(ix), (ix-2)*1.d0, 1d-7)
 		end do
 
@@ -302,9 +304,11 @@ program tests
 
 		call printTestBlockName("Neutrino and lepton matrices")
 
-		m(1,:) = (/0.825082, 0.54529713, 0.1479548/)
-		m(2,:) = (/-0.47410446, 0.525726198, 0.7062839/)
-		m(3,:) = (/0.30735086, -0.6528882, 0.69229506/)
+		open(unit=fu, file="test_outputs/mixmat.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('mixing matrix ',2I1)") i,j
@@ -334,9 +338,11 @@ program tests
 		end do
 		deallocate(ide)
 
-		m(1,:) = (/0.00007745186685918483, 0.00028443083990052604, 0.00023082995114815183/)
-		m(2,:) = (/0.00028443083990052604, 0.001275536536721503, 0.0012040271446586716/)
-		m(3,:) = (/0.00023082995114815185, 0.0012040271446586716, 0.001237611596419312/)
+		open(unit=fu, file="test_outputs/massmat.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('mass matrix ',2I1)") i,j
@@ -353,9 +359,11 @@ program tests
 		end do
 		!A
 		call updateMatterDensities(0.076d0, 1.32d0)
-		m(1,:) = (/-0.00268138/1.22, 0., 0./)
-		m(2,:) = (/0.,-2.08438e-6/1.22,0./)
-		m(3,:) = (/0.,0.,0./)
+		open(unit=fu, file="test_outputs/leptmatA.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
 		er = (/5d-5,1d-3,0.d0/)
 		do i=1,3
 			do j=1,3
@@ -374,22 +382,28 @@ program tests
 		end do
 		call updateMatterDensities(0.0176d0, 1.d0)
 		write(*,*)""
-		m(1,:) = (/-4.69515d0, 0.d0, 0.d0/)
-		m(2,:) = (/0.,-1.44764,0./)
-		m(3,:) = (/0.,0.,0./)
-		nr(1,:) = (/-1.80466,-1.80466,-1.80466/)
-		nr(2,:) = (/-1.80466,-1.80466,-1.80466/)
-		nr(3,:) = (/-1.80466,-1.80466,-1.80466/)
-		ni(1,:) = (/0.,-1.80466e-2,-1.80466e-2/)
-		ni(2,:) = (/1.80466e-2,0.,-1.80466e-2/)
-		ni(3,:) = (/1.80466e-2,1.80466e-2,0./)
-		er = (/5d-5,8d-5,0.d0/)
+		open(unit=fu, file="test_outputs/leptmatB.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nudmB_re.dat", status="old")
+		do i=1, 3
+			read (fu, *) nr(i,:)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nudmB_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) ni(i,:)
+		end do
+		close(fu)
+		er = (/5d-5,1d-4,0.d0/)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix B ',2I1)") i,j
 				call assert_double_rel_safe(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-16, er(i))
 				write(tmparg,"('nu density matrix re B ',2I1)") i,j
-				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 5d-7)
+				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 2d-6)
 				write(tmparg,"('nu density matrix im B ',2I1)") i,j
 				call assert_double(trim(tmparg), nuDensities%im(i,j), ni(i,j), 1d-7)
 			end do
@@ -400,23 +414,29 @@ program tests
 			nuDensMatVecFD(iy)%im = 0.4d0*exp(-y_arr(iy))
 		end do
 		call updateMatterDensities(2.d1, 1.2d0)
-		m(1,:) = (/-1.39063d-23/0.22d0, 0.d0, 0.d0/)
-		m(2,:) = (/0.,0.,0./)
-		m(3,:) = (/0.,0.,0./)
-		nr(1,:) = (/1.d0, 1.d0, 1.d0/)
-		nr(2,:) = (/1.,1.,1./)
-		nr(3,:) = (/1.,1.,1./)
-		ni(1,:) = (/0.d0, 1.d0, 1.d0/)
-		ni(2,:) = (/-1.,0.,1./)
-		ni(3,:) = (/-1.,-1.,0./)
+		open(unit=fu, file="test_outputs/leptmatC.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nudmC_re.dat", status="old")
+		do i=1, 3
+			read (fu, *) nr(i,:)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nudmC_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) ni(i,:)
+		end do
+		close(fu)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix C ',2I1)") i,j
 				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 5d-26)
 				write(tmparg,"('nu density matrix re C ',2I1)") i,j
-				call assert_double(trim(tmparg), nuDensities%re(i,j), -0.01d0*8d-19*nr(i,j), 1d-20)
+				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 1d-21)
 				write(tmparg,"('nu density matrix im C ',2I1)") i,j
-				call assert_double(trim(tmparg), nuDensities%im(i,j), -0.4d0*8d-19*nr(i,j), 8d-19)
+				call assert_double(trim(tmparg), nuDensities%im(i,j), ni(i,j), 1d-19)
 			end do
 		end do
 		call printTotalTests
@@ -1005,6 +1025,7 @@ program tests
 	subroutine do_f_ann_sc_re_tests_eq
 		integer :: ix, iy
 		real(dl) :: fdA, fdB, f1, f2, f3
+		real(dl), dimension(3,3) :: m
 		type(cmplxMatNN) :: nA, nB
 		real(dl), dimension(3) :: tmparr
 		character(len=300) :: tmparg
@@ -1026,63 +1047,79 @@ program tests
 			nB%re(ix,ix) = fdB
 		end do
 		!F_ab_ann_re(0.d0, 1.d0, n1,n2, y3, y4, 2,2, ix, iy) !L=1, R=2 !ix, iy in 1...3
-		!FRReq[0.1, 0.2, 0.3, 0.4]={{-0.00259399, 0., 0.}, {0., -0.00259399, 0.}, {0., 0., -0.00259399}}
-		tmparr = (/-0.00259399, -0.00259399, -0.00259399/)
+		!FRReq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FRR_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_ann eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_ann eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_ann eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLLeq[0.1, 0.2, 0.3, 0.4]={{-0.0259319, 0., 0.}, {0., -0.00350124, 0.}, {0., 0., -0.00350124}}
-		tmparr = (/-0.0259319, -0.00350124, -0.00350124/)
+		!FLLeq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FLL_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_ann eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_ann eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_ann eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FRLeq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
-		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
+		!FRLeq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FRL_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_ann eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_ann eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_ann eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLReq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
-		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
+		!FLReq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FLR_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_ann eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_ann eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_ann eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
@@ -1091,63 +1128,79 @@ program tests
 		do ix=1, flavorNumber
 			nA%re(ix,ix) = fdA
 		end do
-		!FRReq[0.4, 0.2, 0.3, 0.1]={{0.00129054, 0., 0.}, {0., 0.00129054, 0.}, {0., 0., 0.00129054}}
-		tmparr = (/0.00129054, 0.00129054, 0.00129054/)
+		!FRReq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FRR_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_ann eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_ann eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_ann eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLLeq[0.4, 0.2, 0.3, 0.1]={{0.0129014, 0., 0.}, {0., 0.00174191, 0.}, {0., 0., 0.00174191}}
-		tmparr = (/0.0129014, 0.00174191, 0.00174191/)
+		!FLLeq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FLL_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_ann eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_ann eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_ann eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FRLeq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
-		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
+		!FRLeq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FRL_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_ann eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_ann eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_ann eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLReq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
-		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
+		!FLReq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FLR_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_ann eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_ann eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_ann eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
@@ -1163,63 +1216,79 @@ program tests
 			nA%re(ix,ix) = fdA
 			nB%re(ix,ix) = fdB
 		end do
-		!FRReq[0.1, 0.2, 0.3, 0.4]={{-0.00259399, 0., 0.}, {0., -0.00259399, 0.}, {0., 0., -0.00259399}}
-		tmparr = (/-0.00259399, -0.00259399, -0.00259399/)
+		!FRReq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FRR_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLLeq[0.1, 0.2, 0.3, 0.4]={{-0.0259319, 0., 0.}, {0., -0.00350124, 0.}, {0., 0., -0.00350124}}
-		tmparr = (/-0.0259319, -0.00350124, -0.00350124/)
+		!FLLeq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FLL_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FRLeq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
-		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
+		!FRLeq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FRL_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLReq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
-		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
+		!FLReq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FLR_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
@@ -1228,63 +1297,79 @@ program tests
 		do ix=1, flavorNumber
 			nA%re(ix,ix) = fdA
 		end do
-		!FRReq[0.4, 0.2, 0.3, 0.1]={{0.00129054, 0., 0.}, {0., 0.00129054, 0.}, {0., 0., 0.00129054}}
-		tmparr = (/0.00129054, 0.00129054, 0.00129054/)
+		!FRReq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FRR_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLLeq[0.4, 0.2, 0.3, 0.1]={{0.0129014, 0., 0.}, {0., 0.00174191, 0.}, {0., 0., 0.00174191}}
-		tmparr = (/0.0129014, 0.00174191, 0.00174191/)
+		!FLLeq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FLL_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FRLeq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
-		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
+		!FRLeq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FRL_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLReq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
-		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
+		!FLReq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FLR_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
