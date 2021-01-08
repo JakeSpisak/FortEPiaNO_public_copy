@@ -10,7 +10,8 @@ program tests
 	use ftqed
 	implicit none
 
-	integer, parameter :: fu = 89237
+	integer, parameter :: fu = 89237, fv = 89238
+	character(len=1), dimension(2), parameter :: chLR=(/'L','R'/)
 
 	call openLogFile
 	write(*,*) ""
@@ -1027,7 +1028,6 @@ program tests
 		real(dl) :: fdA, fdB, f1, f2, f3
 		real(dl), dimension(3,3) :: m
 		type(cmplxMatNN) :: nA, nB
-		real(dl), dimension(3) :: tmparr
 		character(len=300) :: tmparg
 
 		f1 = fermiDirac(0.3d0)
@@ -1397,6 +1397,7 @@ program tests
 		nA%im = 0.d0
 		nB%re = 0.d0
 		nB%im = 0.d0
+		!imaginary parts and off-diagonal are zero
 		do a=1, 2
 			do b=1, 2
 				do ix=1, flavorNumber
@@ -1414,25 +1415,19 @@ program tests
 				end do
 			end do
 		end do
-!		LL
-		tmparrA = (/0.1685832, 0.0227616, 0.0227616/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann11 test 1 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix,ix), tmparrA(ix), 1d-7)
-		end do
-!		RR
-		tmparrA = (/0.0168635, 0.0168635, 0.0168635/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann22 test 1 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix,ix), tmparrA(ix), 1d-7)
-		end do
-!		LR and RL
-		tmparrA = (/0.0533189, -0.0195919, -0.0195919/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann21 test 1 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix,ix), tmparrA(ix), 1d-7)
-			write(tmparg,"('F_ann12 test 1 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix,ix), tmparrA(ix), 1d-7)
+		!diagonal
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_er1_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+				end do
+				close(fu)
+				do ix=1, flavorNumber
+					write(tmparg,"('F_ann test 1 "//chLR(a)//chLR(b)//" empty rho ',2I1)") ix,ix
+					call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, a,b, ix,ix), tmpmatA(ix,ix), 1d-7)
+				end do
+			end do
 		end do
 
 		do a=1, 2
@@ -1452,25 +1447,18 @@ program tests
 				end do
 			end do
 		end do
-!		LL
-		tmparrA = (/0.046175, 0.00623441, 0.00623441/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann11 test 2 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,1, ix,ix), tmparrA(ix), 1d-7)
-		end do
-!		RR
-		tmparrA = (/0.00461893, 0.00461893, 0.00461893/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann22 test 2 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 2,2, ix,ix), tmparrA(ix), 1d-7)
-		end do
-!		LR and RL
-		tmparrA = (/0.0146041, -0.00536622, -0.00536622/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann21 test 2 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 2,1, ix,ix), tmparrA(ix), 1d-7)
-			write(tmparg,"('F_ann12 test 2 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,2, ix,ix), tmparrA(ix), 1d-7)
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_er2_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+				end do
+				close(fu)
+				do ix=1, flavorNumber
+						write(tmparg,"('F_ann test 2 "//chLR(a)//chLR(b)//" empty rho ',2I1)") ix,ix
+						call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,ix), tmpmatA(ix,ix), 1d-7)
+				end do
+			end do
 		end do
 
 		call printTestBlockName("F_sc functions, empty rho")
@@ -1512,286 +1500,206 @@ program tests
 		end do
 
 		call printTestBlockName("F_ann functions, full rho")
-		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
-		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
-		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
-		nA%re(3,:) = (/-0.03d0, 0.d0, 0.96d0/)
-		nA%im(1,:) = (/0.d0, 0.0001d0, -0.004d0/)
-		nA%im(2,:) = (/-0.0001d0, 0.d0, 0.001d0/)
-		nA%im(3,:) = (/0.004d0, -0.001d0, 0.d0/)
-		!rhoB = {{1.23, 0.1 - 0.08 I, 0.008 + 0.007 I}, {0.1 - 0.08 I, 1.7, -0.02}, {0.008 + 0.007 I, -0.02, 0.77}};
-		nB%re(1,:) = (/1.23d0, 0.1d0, 0.008d0/)
-		nB%re(2,:) = (/0.1d0, 1.7d0, -0.02d0/)
-		nB%re(3,:) = (/0.008d0, -0.02d0, 0.77d0/)
-		nB%im(1,:) = (/0.d0, -0.08d0, 0.007d0/)
-		nB%im(2,:) = (/0.08d0, 0.d0, 0.d0/)
-		nB%im(3,:) = (/-0.007d0, 0.d0, 0.d0/)
-		!RR
-		tmpmatA(1,:) = (/-0.0419512, -0.00402987, 0.000838691/)
-		tmpmatA(2,:) = (/-0.00402987, -0.0565448, 0.000740187/)
-		tmpmatA(3,:) = (/0.000838691, 0.000740187, -0.0275819/)
-		tmpmatB(1,:) = (/0., 0.00279858, -0.000103477/)
-		tmpmatB(2,:) = (/-0.00279858, 0., -0.0000142409/)
-		tmpmatB(3,:) = (/0.000103477, 0.0000142409, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
+		!rhoA
+		open(unit=fu, file="test_outputs/Fann_fr12_rhoA_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr12_rhoA_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nA%re(ix,:)
+			read (fv, *) nA%im(ix,:)
 		end do
-		!LL
-		tmpmatA(1,:) = (/-0.4191489, 0.0101562, 0.00807072/)
-		tmpmatA(2,:) = (/0.0101562, -0.0762081, 0.000864564/)
-		tmpmatA(3,:) = (/0.00807072, 0.000864564, -0.0372565/)
-		tmpmatB(1,:) = (/0., -0.0103262, 0.00186556/)
-		tmpmatB(2,:) = (/0.0103262, 0., -0.000160603/)
-		tmpmatB(3,:) = (/-0.00186556, 0.000160603, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann11 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
+		close(fu)
+		close(fv)
+		!rhoB
+		open(unit=fu, file="test_outputs/Fann_fr12_rhoB_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr12_rhoB_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nB%re(ix,:)
+			read (fv, *) nB%im(ix,:)
 		end do
-		!LR
-		tmpmatA(1,:) = (/-0.1326407, -0.00381177, 0.00112954/)
-		tmpmatA(2,:) = (/-0.00381177, 0.0656931, -0.00085994/)
-		tmpmatA(3,:) = (/0.00112954, -0.00085994, 0.0320443/)
-		tmpmatB(1,:) = (/0., +0.00273011, -0.0000740348/)
-		tmpmatB(2,:) = (/-0.00273011, 0., +0.0000165449/)
-		tmpmatB(3,:) = (/+0.0000740348, -0.0000165449, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann12 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!RL
-		tmpmatA(1,:) = (/-0.132567, -0.00399017, 0.00115456/)
-		tmpmatA(2,:) = (/-0.00399017, 0.0655955, -0.000744167/)
-		tmpmatA(3,:) = (/0.00115456, -0.000744167, 0.0320682/)
-		tmpmatB(1,:) = (/0., +0.00287272, -0.0000508025/)
-		tmpmatB(2,:) = (/-0.00287272, 0., +0.000138238/)
-		tmpmatB(3,:) = (/+0.0000508025, -0.000138238, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann21 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+		close(fu)
+		close(fv)
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr1_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr1_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_ann test 1 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 		!second series
-		!RR
-		tmpmatA(1,:) = (/-0.0689959, -0.00652399, 0.00140441/)
-		tmpmatA(2,:) = (/-0.00652399, -0.0914345, 0.00121473/)
-		tmpmatA(3,:) = (/0.00140441, 0.00121473, -0.0459115/)
-		tmpmatB(1,:) = (/0., +0.00441142, -0.000161176/)
-		tmpmatB(2,:) = (/-0.00441142, +0., +2.68659e-6/)
-		tmpmatB(3,:) = (/+0.000161176, -2.68659e-6, +0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann22 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LL
-		tmpmatA(1,:) = (/-0.689097, -0.0282022, -0.00945936/)
-		tmpmatA(2,:) = (/-0.0282022, -0.1230982, 0.00126491/)
-		tmpmatA(3,:) = (/-0.00945936, 0.00126491, -0.0620467/)
-		tmpmatB(1,:) = (/+0., +0.0255293, -0.00317523/)
-		tmpmatB(2,:) = (/-0.0255293, +0., -0.000390201/)
-		tmpmatB(3,:) = (/+0.00317523, +0.000390201, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann11 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LR
-		tmpmatA(1,:) = (/-0.2181504, -0.0071315, 0.000594222/)
-		tmpmatA(2,:) = (/-0.0071315, 0.1062276, -0.00141126/)
-		tmpmatA(3,:) = (/0.000594222, -0.00141126, 0.0533395/)
-		tmpmatB(1,:) = (/0., +0.00460214, -0.00024319/)
-		tmpmatB(2,:) = (/-0.00460214, 0., -3.12125e-6/)
-		tmpmatB(3,:) = (/+0.00024319, +3.12125e-6, +0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann12 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!RL
-		tmpmatA(1,:) = (/-0.2179453, -0.00641341, 0.00228429/)
-		tmpmatA(2,:) = (/-0.00641341, 0.1059558, -0.00108876/)
-		tmpmatA(3,:) = (/0.00228429, -0.00108876, 0.0534062/)
-		tmpmatB(1,:) = (/0., +0.00461794, -0.000014447/)
-		tmpmatB(2,:) = (/-0.00461794, 0., +0.000335862/)
-		tmpmatB(3,:) = (/+0.000014447, -0.000335862, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann21 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr2_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr2_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+                    write(tmparg,"('F_ann test 2 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+                    call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+                    call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 
 		call printTestBlockName("F_sc functions, full rho")
-		!RR
-		tmpmatA(1,:) = (/0.0093345,0.00309005,0.000821132/)
-		tmpmatA(2,:) = (/0.00309005,0.0248957,-0.000671452/)
-		tmpmatA(3,:) = (/0.000821132,-0.000671452,-0.00692823/)
-		tmpmatB(1,:) = (/0.,-0.00257023,+0.000305504/)
-		tmpmatB(2,:) = (/+0.00257023,0.,-0.0000359033/)
-		tmpmatB(3,:) = (/-0.000305504,+0.0000359033,0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc22 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LL
-		tmpmatA(1,:) = (/0.0931435,-0.0126826,0.00174399/)
-		tmpmatA(2,:) = (/-0.0126826,0.0335189,-0.000806577/)
-		tmpmatA(3,:) = (/0.00174399,-0.000806577,-0.00933077/)
-		tmpmatB(1,:) = (/+0.,+0.00943206,-0.000486463/)
-		tmpmatB(2,:) = (/-0.00943206,+0.,+0.0000563555/)
-		tmpmatB(3,:) = (/+0.000486463,-0.0000563555,0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc11 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LR
-		tmpmatA(1,:) = (/0.0295137,0.00292836,0.000605503/)
-		tmpmatA(2,:) = (/0.00292836,-0.0289235,0.000780085/)
-		tmpmatA(3,:) = (/0.000605503,0.000780085,0.00804914/)
-		tmpmatB(1,:) = (/0.,-0.00251947,+0.000283677/)
-		tmpmatB(2,:) = (/+0.00251947,0.,+0.0000417121/)
-		tmpmatB(3,:) = (/-0.000283677,-0.0000417121,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc12 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!RL
-		tmpmatA(1,:) = (/0.0294591,0.00306062,0.000586954/)
-		tmpmatA(2,:) = (/0.00306062,-0.0288512,0.000694255/)
-		tmpmatA(3,:) = (/0.000586954,0.000694255,0.00803138/)
-		tmpmatB(1,:) = (/+0.,-0.0026252,+0.000266453/)
-		tmpmatB(2,:) = (/+0.0026252,0.,-0.0000485076/)
-		tmpmatB(3,:) = (/-0.000266453,+0.0000485076,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc21 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr1_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr1_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 1 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 		!second series
-		!RR
-		tmpmatA(1,:) = (/-0.00570605,-0.000732471,-0.00101446/)
-		tmpmatA(2,:) = (/-0.000732471,-0.0129257,0.000196912/)
-		tmpmatA(3,:) = (/-0.00101446,0.000196912,0.00109681/)
-		tmpmatB(1,:) = (/0.,+0.000956151,-0.000198153/)
-		tmpmatB(2,:) = (/-0.000956151,+0.,+6.56285e-6/)
-		tmpmatB(3,:) = (/+0.000198153,-6.56285e-6,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc22 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LL
-		tmpmatA(1,:) = (/-0.057286,-0.00823654,0.00289993/)
-		tmpmatA(2,:) = (/-0.00823654,-0.0175649,0.00040623/)
-		tmpmatA(3,:) = (/0.00289993,0.00040623,0.00150947/)
-		tmpmatB(1,:) = (/+0.,+0.00522933,+6.31568e-6/)
-		tmpmatB(2,:) = (/-0.00522933,+0.,+0.000156488/)
-		tmpmatB(3,:) = (/-6.31568e-6,-0.000156488,0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc11 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LR
-		tmpmatA(1,:) = (/-0.0180413,-0.000504739,-0.000710753/)
-		tmpmatA(2,:) = (/-0.000504739,0.0150169,-0.00022877/)
-		tmpmatA(3,:) = (/-0.000710753,-0.00022877,-0.00127426/)
-		tmpmatB(1,:) = (/0.,+0.000884656,-0.00016741/)
-		tmpmatB(2,:) = (/-0.000884656,0.,-7.62464e-6/)
-		tmpmatB(3,:) = (/+0.00016741,+7.62464e-6,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc12 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!RL
-		tmpmatA(1,:) = (/-0.0181182,-0.000773921,-0.00134429/)
-		tmpmatA(2,:) = (/-0.000773921,0.0151188,-0.000349659/)
-		tmpmatA(3,:) = (/-0.00134429,-0.000349659,-0.00129926/)
-		tmpmatB(1,:) = (/+2.7336e-21,+0.000878732,-0.000253156/)
-		tmpmatB(2,:) = (/-0.000878732,-1.09344e-20,-0.000134696/)
-		tmpmatB(3,:) = (/+0.000253156,+0.000134696,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc21 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr2_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr2_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 2 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 
 		call printTestBlockName("F_ann functions, final tests")
-		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
-		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
-		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
-		nA%re(3,:) = (/-0.03d0, 0.d0, 0.96d0/)
-		nA%im(1,:) = (/0.d0, 0.0001d0, -0.004d0/)
-		nA%im(2,:) = (/-0.0001d0, 0.d0, 0.001d0/)
-		nA%im(3,:) = (/0.004d0, -0.001d0, 0.d0/)
-		!rhoB = rhoA;
-		nB = nA
-		!RR
-		tmpmatA(1,:) = (/-0.023346, -0.000578945, 0.00164337/)
-		tmpmatA(2,:) = (/-0.000578945, -0.0212209, 7.06991e-6/)
-		tmpmatA(3,:) = (/0.00164337, 7.06991e-6, -0.0266302/)
-		tmpmatB(1,:) = (/0., -5.90586e-6, 0.00021888/)
-		tmpmatB(2,:) = (/5.90586e-6, 0., -0.0000530457/)
-		tmpmatB(3,:) = (/-0.00021888, 0.0000530457, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
-				call assert_double_rel(trim(tmparg)//"re", F_ab_ann_re(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatA(ix,iy), 1d-5)
-				call assert_double_rel_safe(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7, 1d-5)
+		!rhoA
+		open(unit=fu, file="test_outputs/Fann_fr34_rhoA_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr34_rhoA_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nA%re(ix,:)
+			read (fv, *) nA%im(ix,:)
+		end do
+		close(fu)
+		close(fv)
+		!rhoB
+		open(unit=fu, file="test_outputs/Fann_fr34_rhoB_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr34_rhoB_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nB%re(ix,:)
+			read (fv, *) nB%im(ix,:)
+		end do
+		close(fu)
+		close(fv)
+		!annihilation
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr3_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr3_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_ann test 3 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
-		!LL
-		tmpmatA(1,:) = (/0.0580013, -0.00422802, 0.0113064/)
-		tmpmatA(2,:) = (/-0.00422802, 0.0104606, -0.0000779103/)
-		tmpmatA(3,:) = (/0.0113064, -0.0000779103, 0.00354312/)
-		tmpmatB(1,:) = (/0., -0.0000361964, 0.00150834/)
-		tmpmatB(2,:) = (/0.0000361964, 0., -0.0000807178/)
-		tmpmatB(3,:) = (/-0.00150834, 0.0000807178, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
-				call assert_double_rel(trim(tmparg)//"re", F_ab_sc_re(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy), tmpmatA(ix,iy), 1d-5)
-				r2 = F_ab_sc_im(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy)
-				call assert_double_rel_safe(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7, 1d-5)
+		!second series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr4_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr4_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+                    write(tmparg,"('F_ann test 4 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+                    call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+                    call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
+			end do
+		end do
+		!scattering
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr3_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr3_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 3 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
+			end do
+		end do
+		!second series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr4_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr4_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 4 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 		call deallocateCmplxMat(nA)
