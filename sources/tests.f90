@@ -85,8 +85,6 @@ program tests
 		x_arr = logspace(logx_in, logx_fin, Nx)
 		y_min = 0.01d0
 		y_max = 20.0d0
-		y_cen = 0.01d0
-		Nylog = 1
 		use_gauss_laguerre = .false.
 		y_arr = linspace(y_min, y_max, Ny)
 		call finish_y_arrays

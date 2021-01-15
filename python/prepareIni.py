@@ -215,19 +215,7 @@ def setParser():
     parser.add_argument(
         "--Ny", type=int, default=30, help="number of total points in y"
     )
-    parser.add_argument(
-        "--Nylog",
-        type=int,
-        default=5,
-        help="number of log-spaced points between y_in and y_cen",
-    )
     parser.add_argument("--y_min", type=float, default=0.01, help="minimum value of y")
-    parser.add_argument(
-        "--y_cen",
-        type=float,
-        default=1,
-        help="value of y where to switch between log- and linear spacing",
-    )
     parser.add_argument("--y_max", type=float, default=20, help="maximum value of y")
     parser.add_argument(
         "--dlsoda_atol",
@@ -384,9 +372,7 @@ def getIniValues(args):
         "x_in",
         "x_fin",
         "Ny",
-        "Nylog",
         "y_min",
-        "y_cen",
         "y_max",
     ]:
         values[p] = getattr(args, p)
@@ -498,9 +484,7 @@ x_fin = {x_fin:}
 
 use_gauss_laguerre = {use_GL:}
 Ny = {Ny:}
-Nylog = {Nylog:}
 y_min = {y_min:}
-y_cen = {y_cen:}
 y_max = {y_max:}
 
 outputFolder = {folder:}

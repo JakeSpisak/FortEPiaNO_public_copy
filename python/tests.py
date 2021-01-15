@@ -2916,19 +2916,7 @@ class TestPrepareIni(unittest.TestCase):
                 call("--x_in", type=float, default=0.001, help="initial value of x"),
                 call("--x_fin", type=float, default=35, help="final value of x"),
                 call("--Ny", type=int, default=30, help="number of total points in y"),
-                call(
-                    "--Nylog",
-                    type=int,
-                    default=5,
-                    help="number of log-spaced points between y_in and y_cen",
-                ),
                 call("--y_min", type=float, default=0.01, help="minimum value of y"),
-                call(
-                    "--y_cen",
-                    type=float,
-                    default=1,
-                    help="value of y where to switch between log- and linear spacing",
-                ),
                 call("--y_max", type=float, default=20, help="maximum value of y"),
                 call(
                     "--dlsoda_atol",
@@ -3040,9 +3028,7 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.x_in, 0.001)
         self.assertEqual(args.x_fin, 35)
         self.assertEqual(args.Ny, 30)
-        self.assertEqual(args.Nylog, 5)
         self.assertEqual(args.y_min, 0.01)
-        self.assertEqual(args.y_cen, 1)
         self.assertEqual(args.y_max, 20)
         self.assertEqual(args.dlsoda_rtol, 1.0e-6)
         self.assertEqual(args.dlsoda_atol, 1.0e-6)
@@ -3089,9 +3075,7 @@ class TestPrepareIni(unittest.TestCase):
             ["--x_in=0.1"],
             ["--x_fin=40.5"],
             ["--Ny=30"],
-            ["--Nylog=5"],
             ["--y_min=0.02"],
-            ["--y_cen=2.2"],
             ["--y_max=30.6"],
             ["--dlsoda_rtol=1.3e-5"],
             ["--dlsoda_atol=1.3e-4"],
@@ -3126,9 +3110,7 @@ class TestPrepareIni(unittest.TestCase):
             ["--x_in=abc"],
             ["--x_fin=abc"],
             ["--Ny=abc"],
-            ["--Nylog=abc"],
             ["--y_min=abc"],
-            ["--y_cen=abc"],
             ["--y_max=abc"],
             ["--dlsoda_rtol=abc"],
             ["--dlsoda_atol=abc"],
@@ -3366,9 +3348,7 @@ class TestPrepareIni(unittest.TestCase):
                 "x_in": 0.001,
                 "x_fin": 35,
                 "Ny": 24,
-                "Nylog": 4,
                 "y_min": 0.01,
-                "y_cen": 1,
                 "y_max": 20,
                 "dlsoda_atol_z": 1e-6,
                 "dlsoda_atol_d": 1e-6,
@@ -3412,9 +3392,7 @@ class TestPrepareIni(unittest.TestCase):
                 "x_in": 0.001,
                 "x_fin": 35,
                 "Ny": 24,
-                "Nylog": 4,
                 "y_min": 0.01,
-                "y_cen": 1,
                 "y_max": 20,
                 "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-6
                 + "dlsoda_atol_d = %s\n" % 1e-6
@@ -3444,9 +3422,7 @@ class TestPrepareIni(unittest.TestCase):
                 "x_in": 0.001,
                 "x_fin": 35,
                 "Ny": 24,
-                "Nylog": 4,
                 "y_min": 0.01,
-                "y_cen": 1,
                 "y_max": 20,
                 "dlsoda_atol": 1e-5,
                 "dlsoda_atol_z": 1e-6,
@@ -3487,9 +3463,7 @@ class TestPrepareIni(unittest.TestCase):
                 "x_in": 0.001,
                 "x_fin": 35,
                 "Ny": 24,
-                "Nylog": 4,
                 "y_min": 0.01,
-                "y_cen": 1,
                 "y_max": 20,
                 "collint_d_no_nue": "F",
                 "collint_d_no_nunu": "F",
@@ -3591,9 +3565,7 @@ class TestPrepareIni(unittest.TestCase):
             "x_in": 0.001,
             "x_fin": 35,
             "Ny": 24,
-            "Nylog": 4,
             "y_min": 0.01,
-            "y_cen": 1,
             "y_max": 20,
             "ftqed_temperature_corr": "F",
             "ftqed_ord3": "T",
@@ -3644,9 +3616,7 @@ class TestPrepareIni(unittest.TestCase):
             "x_fin = 35",
             "use_gauss_laguerre = T",
             "Ny = 24",
-            "Nylog = 4",
             "y_min = 0.01",
-            "y_cen = 1",
             "y_max = 20",
             "outputFolder = abcd/",
             "checkpoint = T",

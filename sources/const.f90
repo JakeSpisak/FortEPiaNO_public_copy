@@ -145,8 +145,8 @@ module variables
 	integer :: verbose = 1
 	real(dl) :: Nprintderivs = 100.d0
 	logical :: use_gauss_laguerre
-	integer :: Nx, Ny, Nylog
-	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
+	integer :: Nx, Ny
+	real(dl) :: x_in, x_fin, y_min, y_max, z_in, logx_in, logx_fin
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
 	real(dl), dimension(:), allocatable :: feq_arr
 	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr, w_gl_arr2

@@ -321,7 +321,6 @@ module fpConfig
 		use_gauss_laguerre = read_ini_logical('use_gauss_laguerre', .true.)
 		Ny = read_ini_int('Ny',30)
 
-		Nylog = read_ini_int('Nylog',7)
 		allocate(x_arr(Nx))
 
 		x_in    = read_ini_real('x_in', 0.01d0)
@@ -336,7 +335,6 @@ module fpConfig
 
 		y_min = read_ini_real('y_min', 0.01d0)
 		y_max = read_ini_real('y_max', 20.0d0)
-		y_cen = read_ini_real('y_cen', 1.0d0)
 
 		if (use_gauss_laguerre) then
 			write(tmpstr,"('[config] Configuring Gauss-Laguerre with Ny=',I3,' and y_max=',"//dblfmt//")") Ny, y_max
@@ -344,12 +342,8 @@ module fpConfig
 			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .true., 3, y_max)
 		else
 			allocate(y_arr(Ny))
-			if (Nylog .lt. 2) then
-				y_arr = linspace(y_min, y_max, Ny)
-			else
-				y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
-			end if
-			write(tmpstr,"('[config] Using Ny=',I3,' and Nylog=',I3)") Ny, Nylog
+			y_arr = linspace(y_min, y_max, Ny)
+			write(tmpstr,"('[config] Using Ny=',I3)") Ny
 			call addToLog(trim(tmpstr))
 		end if
 
