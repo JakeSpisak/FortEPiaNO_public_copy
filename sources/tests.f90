@@ -2082,30 +2082,34 @@ program tests
 		collArgs%dme2 = dme2
 
 		!fake function
-		tmpmatA(1,:) = (/348548, 348548, 348548/)
-		tmpmatA(2,:) = (/348548, 348548, 348548/)
-		tmpmatA(3,:) = (/348548, 348548, 348548/)
-		tmpmatB(1,:) = (/0., 348548., 348548./)
-		tmpmatB(2,:) = (/-348548., 0., 348548./)
-		tmpmatB(3,:) = (/-348548., -348548., 0./)
-		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		open(unit=fu, file="test_outputs/collterms_fake_x22_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collterms_fake_x22_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
+		tmparrA(:) = (/1d-4,1d-4,1d-4/)
+		tmparrS(:) = (/1d-4,1d-4,1d-4/)
 		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms f ',2I1)") i,j
+				write(tmparg,"('collision_terms fake x22 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
 				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
-		tmpmatA(1,:) = (/348548, 0, 0/)
-		tmpmatA(2,:) = (/0, 348548, 0/)
-		tmpmatA(3,:) = (/0, 0, 348548/)
-		tmpmatB(1,:) = (/0., 0., 0./)
-		tmpmatB(2,:) = (/0., 0., 0./)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/collterms_fake_x22_zerooffdiag_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collterms_fake_x22_zerooffdiag_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		collint_damping_type = 0
 		collint_offdiag_damping = .true.
 		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
@@ -2113,17 +2117,19 @@ program tests
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms zod ',2I1)") i,j
+				write(tmparg,"('collision_terms fake x22 zero off diagonal ',2I1)") i,j
 				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
 				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
-		tmpmatA(1,:) = (/0, 348548, 348548/)
-		tmpmatA(2,:) = (/348548, 0, 348548/)
-		tmpmatA(3,:) = (/348548, 348548, 0/)
-		tmpmatB(1,:) = (/0., 348548., 348548./)
-		tmpmatB(2,:) = (/-348548., 0., 348548./)
-		tmpmatB(3,:) = (/-348548., -348548., 0./)
+		open(unit=fu, file="test_outputs/collterms_fake_x22_zerodiag_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collterms_fake_x22_zerodiag_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		collint_damping_type = 2
 		collint_diagonal_zero = .true.
 		collint_offdiag_damping = .false.
@@ -2163,7 +2169,52 @@ program tests
 			end do
 		end do
 
-		!real params
+		collArgs%ix1=1
+		collArgs%ix2=1
+		open(unit=fu, file="test_outputs/collterms_real_diag_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collterms_real_diag_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
+		tmparrA(:) = (/1d-5,1d-5,1d-5/)
+		tmparrS(:) = (/1d-5,1d-5,1d-5/)
+		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms real diag ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
+			end do
+		end do
+
+!		x=0.75d0
+!		iy1 = 7 !1.22151515151515
+!!		z=1.06d0
+!		dme2=0.1d0
+!!		iy1 = 67 !13.3366666666667
+!		z = 1.186d0
+!		collArgs%ix1 = 1
+!		collArgs%ix1 = 1
+!		collArgs%x = x
+!		collArgs%z = z
+!		collArgs%iy = iy1
+!		collArgs%y1 = y_arr(iy1)
+!		collArgs%y2 = 0.d0
+!		collArgs%y3 = 0.d0
+!		collArgs%y4 = 0.d0
+!		collArgs%dme2 = dme2
+!		do iy=1, Ny
+!			nuDensMatVecFD(iy)%re(:,:) = 0.d0
+!			nuDensMatVecFD(iy)%im(:,:) = 0.d0
+!			do i=1, flavorNumber
+!				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
+!			end do
+!		end do
 !		do iy=1, Ny
 !			y = y_arr(iy)
 !			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 0.d0, 0.d0/)
@@ -2174,29 +2225,28 @@ program tests
 !!			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
 !			nuDensMatVecFD(iy)%im(:,:) = 0.d0
 !		end do
-
-		collArgs%ix1=1
-		collArgs%ix2=1
-!		print *,collArgs
-		tmpmatA(1,:) = (/-149.474, 0., 0./)
-		tmpmatA(2,:) = (/0., -38.1733, 0./)
-		tmpmatA(3,:) = (/0., 0., -38.1733/)
-		tmpmatB(1,:) = (/0., 0., 0./)
-		tmpmatB(2,:) = (/0., 0., 0./)
-		tmpmatB(3,:) = (/0., 0., 0./)
-		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
-		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
-		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
-!		write(*,multidblfmt)cts
-		do i=1, flavorNumber
-			do j=1, flavorNumber
-				write(tmparg,"('collision_terms r ',2I1)") i,j
-				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
-				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
-			end do
-		end do
+!		collArgs%ix1=1
+!		collArgs%ix2=1
+!		open(unit=fu, file="test_outputs/collterms_real_full_re.dat", status="old")
+!		open(unit=fv, file="test_outputs/collterms_real_full_im.dat", status="old")
+!		do i=1, 3
+!			read (fu, *) tmpmatA(i,:)
+!			read (fv, *) tmpmatB(i,:)
+!		end do
+!		close(fu)
+!		close(fv)
+!		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
+!		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
+!		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
+!		cts%re(:,:) = cts%re(:,:) * overallFactor
+!		cts%im(:,:) = cts%im(:,:) * overallFactor
+!		do i=1, flavorNumber
+!			do j=1, flavorNumber
+!				write(tmparg,"('collision_terms real diag ',2I1)") i,j
+!				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+!				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
+!			end do
+!		end do
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_collision_terms
@@ -2223,33 +2273,43 @@ program tests
 		iy = 12 !2.231111111111111
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
-			nuDensMatVecFD(i)%re(1, :) = (/fd, 0.01d0, 0.04d0/)
-			nuDensMatVecFD(i)%re(2, :) = (/0.01d0, fd, -0.3d0/)
-			nuDensMatVecFD(i)%re(3, :) = (/0.04d0, -0.3d0, fd/)
-			nuDensMatVecFD(i)%im(1, :) = (/0.0, -0.02, -0.1/)
-			nuDensMatVecFD(i)%im(2, :) = (/0.02, 0.0, 0.1/)
-			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
+		open(unit=fu, file="test_outputs/drhodx_rho_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_rho_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuDensMatVecFD(i)%re(j,:)
+			read (fv, *) nuDensMatVecFD(i)%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			nuDensMatVecFD(i)%re(j,j) = nuDensMatVecFD(i)%re(j,j)*fd
+		end do
 		end do
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/605.275d0/fd, 15562.7d0, 73448.4d0/)
-		res%re(2,:) = (/15562.7d0, -2652.61d0/fd, -548.751d0/)
-		res%re(3,:) = (/73448.4d0, -548.751d0, 2047.34d0/fd/)
-		res%im(1,:) = (/0., 8504.49, 30182.6/)
-		res%im(2,:) = (/-8504.49, 0., -698.419/)
-		res%im(3,:) = (/-30182.6, 698.419, 0./)
+		open(unit=fu, file="test_outputs/drhodx_A_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_A_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) res%re(j,:)
+			read (fv, *) res%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			res%re(j,j) = res%re(j,j)/fd
+		end do
 		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('drho/dx a ',2I1)") i,j
+				write(tmparg,"('drho/dx A ',2I1)") i,j
 				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-3)
 				else
 					call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				end if
 				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-2)
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-3)
 				else
 					call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 2d-4)
 				end if
@@ -2257,23 +2317,28 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/1393.85d0/fd, 16351.2d0, 74237.d0/)
-		res%re(2,:) = (/16351.2d0, -1864.03d0/fd, 239.828d0/)
-		res%re(3,:) = (/74237.d0, 239.828d0, 2835.92d0/fd/)
-		res%im(1,:) = (/0., 9293.06, 30971.2/)
-		res%im(2,:) = (/-9293.06, 0., 90.1601/)
-		res%im(3,:) = (/-30971.2, -90.1601, 0./)
+		open(unit=fu, file="test_outputs/drhodx_B_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_B_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) res%re(j,:)
+			read (fv, *) res%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			res%re(j,j) = res%re(j,j)/fd
+		end do
 		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue1, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('drho/dx b ',2I1)") i,j
+				write(tmparg,"('drho/dx B ',2I1)") i,j
 				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 3d-3)
+					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 2d-3)
 				else
 					call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				end if
 				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-2)
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1.5d-2)
 				else
 					call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 				end if
@@ -2288,41 +2353,56 @@ program tests
 		iy = 34 !6.67333333333333
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
-			nuDensMatVecFD(i)%re(1, :) = (/fd, 0.01d0, 0.04d0/)
-			nuDensMatVecFD(i)%re(2, :) = (/0.01d0, fd, -0.3d0/)
-			nuDensMatVecFD(i)%re(3, :) = (/0.04d0, -0.3d0, fd/)
-			nuDensMatVecFD(i)%im(1, :) = (/0.0, -0.02, -0.1/)
-			nuDensMatVecFD(i)%im(2, :) = (/0.02, 0.0, 0.1/)
-			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
+		open(unit=fu, file="test_outputs/drhodx_rho_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_rho_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuDensMatVecFD(i)%re(j,:)
+			read (fv, *) nuDensMatVecFD(i)%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			nuDensMatVecFD(i)%re(j,j) = nuDensMatVecFD(i)%re(j,j)*fd
+		end do
 		end do
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/164474.d0/fd, 346654.d0, 481731.d0/)
-		res%re(2,:) = (/346654.d0, -720804.d0/fd, -83653.3d0/)
-		res%re(3,:) = (/481731.d0, -83653.3d0, 556331.d0/fd/)
-		res%im(1,:) = (/0., 369833., 410950./)
-		res%im(2,:) = (/-369833., 0., 6598.44/)
-		res%im(3,:) = (/-410950., -6598.44, 0./)
+		open(unit=fu, file="test_outputs/drhodx_C_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_C_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) res%re(j,:)
+			read (fv, *) res%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			res%re(j,j) = res%re(j,j)/fd
+		end do
 		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('drho/dx c ',2I1)") i,j
+				write(tmparg,"('drho/dx C ',2I1)") i,j
 				call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 			end do
 		end do
 
-		res%re(1,:) = (/164624.d0/fd, 346804.d0, 481881.d0/)
-		res%re(2,:) = (/346804.d0, -720654.d0/fd, -83503.3d0/)
-		res%re(3,:) = (/481881.d0, -83503.3d0, 556481.d0/fd/)
-		res%im(1,:) = (/0., 369983., 411100./)
-		res%im(2,:) = (/-369983., 0., 6748.46/)
-		res%im(3,:) = (/-411100., -6748.46, 0./)
+		open(unit=fu, file="test_outputs/drhodx_D_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_D_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) res%re(j,:)
+			read (fv, *) res%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			res%re(j,j) = res%re(j,j)/fd
+		end do
 		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollintnuey, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('drho/dx d ',2I1)") i,j
+				write(tmparg,"('drho/dx D ',2I1)") i,j
 				call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 			end do
