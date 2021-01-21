@@ -1820,7 +1820,7 @@ program tests
 		open(unit=fu, file="test_outputs/coll_sc_A.dat", status="old")
 		read (fu, *) tmparrS(1:3)
 		close(fu)
-		tmperr3 = (/1d-3, 1d-3, 1d-3/)
+		tmperr3 = (/2d-3, 2d-3, 2d-3/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
@@ -1833,7 +1833,7 @@ program tests
 		open(unit=fu, file="test_outputs/coll_ann_A.dat", status="old")
 		read (fu, *) tmparrA(1:3)
 		close(fu)
-		tmperr3 = (/1d-3, 1d-3, 1d-3/)
+		tmperr3 = (/2d-3, 2d-3, 2d-3/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
@@ -1930,30 +1930,38 @@ program tests
 			nuDensMatVecFD(iy)%re = 0.d0
 			nuDensMatVecFD(iy)%im = 0.d0
 		end do
-		nuDensMatVecFD(iy1)%re(1, :) = (/1.d0*fermiDirac(y_arr(iy1)), 0.1d0, 0.01d0/)
-		nuDensMatVecFD(iy1)%re(2, :) = (/0.1d0, 1.05d0*fermiDirac(y_arr(iy1)), 0.03d0/)
-		nuDensMatVecFD(iy1)%re(3, :) = (/0.01d0, 0.03d0, 1.1d0*fermiDirac(y_arr(iy1))/)
-		nuDensMatVecFD(iy1)%im(1, :) = (/0.d0, -0.1d0, 0.03d0/)
-		nuDensMatVecFD(iy1)%im(2, :) = (/0.1d0, 0.d0, -0.02d0/)
-		nuDensMatVecFD(iy1)%im(3, :) = (/-0.03d0, 0.02d0, 0.d0/)
-		nuDensMatVecFD(oi)%re(1, :) = (/1.1d0*fermiDirac(y_arr(oi)), 0.d0, 0.12d0/)
-		nuDensMatVecFD(oi)%re(2, :) = (/0.d0, 1.4d0*fermiDirac(y_arr(oi)), 0.04d0/)
-		nuDensMatVecFD(oi)%re(3, :) = (/0.12d0, 0.04d0, 1.7d0*fermiDirac(y_arr(oi))/)
-		nuDensMatVecFD(oi)%im(1, :) = (/0.d0, -0.05d0, 0.d0/)
-		nuDensMatVecFD(oi)%im(2, :) = (/0.05d0, 0.0d0, 0.01d0/)
-		nuDensMatVecFD(oi)%im(3, :) = (/0.d0, -0.01d0, 0.d0/)
+		open(unit=fu, file="test_outputs/collint_imoff_rhoiy1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_imoff_rhoiy1_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) nuDensMatVecFD(iy1)%re(i,:)
+            nuDensMatVecFD(iy1)%re(i, i) = nuDensMatVecFD(iy1)%re(i, i)*fermiDirac(y_arr(iy1))
+			read (fv, *) nuDensMatVecFD(iy1)%im(i,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/collint_imoff_rhooi_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_imoff_rhooi_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) nuDensMatVecFD(oi)%re(i,:)
+            nuDensMatVecFD(oi)%re(i, i) = nuDensMatVecFD(oi)%re(i, i)*fermiDirac(y_arr(oi))
+			read (fv, *) nuDensMatVecFD(oi)%im(i,:)
+		end do
+		close(fu)
+		close(fv)
 
-		tmpmatA(1,:) = (/0.0347964, -0.371928, -1.7873/)
-		tmpmatA(2,:) = (/-0.371928, 0.103022, 0.539575/)
-		tmpmatA(3,:) = (/-1.7873, 0.539575, 0.0851156/)
-		tmpmatB(1,:) = (/0., 1.12312, -0.110645/)
-		tmpmatB(2,:) = (/-1.12312, 0., 0.260258/)
-		tmpmatB(3,:) = (/0.110645, -0.260258, 0./)
+		open(unit=fu, file="test_outputs/collint_sc_imoff_integrand_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_sc_imoff_integrand_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmparrA(:) = (/1d-5, 1d-5, 1d-5/)
 		tmparrS(:) = (/1d-5, 1d-5, 1d-5/)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('coll sc integrand full ',2I1)") i,j
+				write(tmparg,"('collint sc imoff integrand ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
 				res1 = coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
@@ -1967,17 +1975,19 @@ program tests
 			end do
 		end do
 
-		tmpmatA(1,:) = (/0.374939, -0.146968, 1.06745/)
-		tmpmatA(2,:) = (/-0.146968, 0.16068, -0.0485291/)
-		tmpmatA(3,:) = (/1.06745, -0.0485291, -0.028232/)
-		tmpmatB(1,:) = (/0., -0.230122, -0.0597533/)
-		tmpmatB(2,:) = (/0.230122, 0., 0.204294/)
-		tmpmatB(3,:) = (/0.0597533, -0.204294, 0./)
+		open(unit=fu, file="test_outputs/collint_ann_imoff_integrand_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_ann_imoff_integrand_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmparrA(:) = (/1d-5, 1d-5, 1d-5/)
 		tmparrS(:) = (/1d-5, 1d-5, 1d-5/)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('coll ann integrand full ',2I1)") i,j
+				write(tmparg,"('collint ann imoff integrand ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
 				res1 = coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
@@ -1990,7 +2000,6 @@ program tests
 				end if
 			end do
 		end do
-		call criticalError("stop")
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_coll_int
