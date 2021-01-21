@@ -1549,9 +1549,9 @@ program tests
 				close(fv)
 				do ix=1, flavorNumber
 					do iy=1, flavorNumber
-                    write(tmparg,"('F_ann test 2 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
-                    call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
-                    call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					write(tmparg,"('F_ann test 2 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+					call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
 					end do
 				end do
 			end do
@@ -1652,9 +1652,9 @@ program tests
 				close(fv)
 				do ix=1, flavorNumber
 					do iy=1, flavorNumber
-                    write(tmparg,"('F_ann test 4 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
-                    call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
-                    call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					write(tmparg,"('F_ann test 4 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+					call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
 					end do
 				end do
 			end do
@@ -1934,7 +1934,7 @@ program tests
 		open(unit=fv, file="test_outputs/collint_imoff_rhoiy1_im.dat", status="old")
 		do i=1, 3
 			read (fu, *) nuDensMatVecFD(iy1)%re(i,:)
-            nuDensMatVecFD(iy1)%re(i, i) = nuDensMatVecFD(iy1)%re(i, i)*fermiDirac(y_arr(iy1))
+			nuDensMatVecFD(iy1)%re(i, i) = nuDensMatVecFD(iy1)%re(i, i)*fermiDirac(y_arr(iy1))
 			read (fv, *) nuDensMatVecFD(iy1)%im(i,:)
 		end do
 		close(fu)
@@ -1943,7 +1943,7 @@ program tests
 		open(unit=fv, file="test_outputs/collint_imoff_rhooi_im.dat", status="old")
 		do i=1, 3
 			read (fu, *) nuDensMatVecFD(oi)%re(i,:)
-            nuDensMatVecFD(oi)%re(i, i) = nuDensMatVecFD(oi)%re(i, i)*fermiDirac(y_arr(oi))
+			nuDensMatVecFD(oi)%re(i, i) = nuDensMatVecFD(oi)%re(i, i)*fermiDirac(y_arr(oi))
 			read (fv, *) nuDensMatVecFD(oi)%im(i,:)
 		end do
 		close(fu)
@@ -2179,7 +2179,7 @@ program tests
 		end do
 		close(fu)
 		close(fv)
-		tmparrA(:) = (/1d-5,1d-5,1d-5/)
+		tmparrA(:) = (/2d-4,5d-4,5d-4/)
 		tmparrS(:) = (/1d-5,1d-5,1d-5/)
 		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor

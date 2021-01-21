@@ -20,7 +20,7 @@ tests: directories
 	cd ./sources && make tests BUILD_DIR=../$(BUILD_DIR)
 
 directories:
-	mkdir -p bin/ log/ $(BUILD_DIR) GL_nodes/
+	mkdir -p bin/ log/ $(BUILD_DIR) GL_nodes/ interpolations/
 
 clean: 
 	rm -rf build*/
