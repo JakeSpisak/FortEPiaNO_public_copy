@@ -19,3 +19,4 @@ gmon.out
 grids/
 .tox*/
 GL_nodes/
+interpolations/

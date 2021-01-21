@@ -73,6 +73,7 @@ endif
 
 OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
 	$(BUILD_DIR)/iniFile.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/matrix_utils.o \
+	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/ftqed.o \
 	$(BUILD_DIR)/interactions.o $(BUILD_DIR)/cosmology.o $(BUILD_DIR)/equations.o \
 	$(BUILD_DIR)/heigensystem.o \
@@ -98,6 +99,7 @@ $(BUILD_DIR)/iniFile.o: $(BUILD_DIR)/const.o
 $(BUILD_DIR)/matrix_utils.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o
 $(BUILD_DIR)/heigensystem.o: $(BUILD_DIR)/const.o
 $(BUILD_DIR)/ftqed.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/utilities.o \
+	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/config.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/interactions.o \
 	$(BUILD_DIR)/iniFile.o $(BUILD_DIR)/matrix_utils.o $(BUILD_DIR)/errors.o \
@@ -108,10 +110,12 @@ $(BUILD_DIR)/interactions.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/cosmology.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/utilities.o $(BUILD_DIR)/bspline_module.o \
+	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/ftqed.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 $(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o \
+	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/heigensystem.o \
 	$(BUILD_DIR)/ftqed.o \
 	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/linear_interpolation_module.o
