@@ -80,6 +80,9 @@ For example (add the option to the `make` command):
 * `FULL_F_NU=1` allows to use the full matrix product in the F_nu phase space functions that compute nunu scattering and pair annihilation. If not used, only diagonal elements of the neutrino density matrix will be used.
 * `NO_MUONS=1` disables the contribution of muons to the energy budget of the universe.
 * `NO_NUE_ANNIHILATION=1` disables the contribution from neutrino to electron annihilation processes to collision integrals.
+* `RHO_OFFDIAG_INTERP_DIV_FD=1` enables to interpolate all the entries of the neutrino density matrix after dividing by a Fermi-Dirac distribution (by default, this is done only for diagonal entries).
+* `SINSQTHW=x` to set a custom value equal to `x` for the weak mixing angle (for example SINSQTHW=0.23).
+
 
 **WARNING**: the test suite will not work if the flag `NO_MUONS=1` is activated, or even if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
 

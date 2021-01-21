@@ -7,6 +7,7 @@
 \usepackage[normalem]{ulem}
 \usepackage{hyperref}
 \usepackage{subcaption}
+\usepackage{siunitx}
 % \usepackage{showkeys}
 
 \newcommand{\red}[1]{{\color{red} #1}}
@@ -16,6 +17,7 @@
 \newcommand{\dmsq}[1]{\ensuremath{\Delta m^2_{#1}}}
 \newcommand{\uasq}[1]{\ensuremath{|U_{#1 4}|^2}}
 \newcommand{\e}[1]{\ensuremath{\times10^{#1}}}
+\newcommand{\nua}[1]{\ensuremath{\rlap{\kern-2.5pt\ensuremath{\overset{\scriptscriptstyle(-)}{\phantom{\nu}}}}{\ensuremath{{\nu}_{#1}}}}}
 
 \newcommand{\fortepiano}{\texttt{FortEPiaNO}}
 \newcommand{\dlsoda}{\texttt{DLSODA}}
@@ -597,8 +599,10 @@ but considering only relativistic electrons, i.e.\ fixing $r_e=0$ in the equatio
 \section{Collision integrals}
 \label{sec:collint}
 The full collision terms are defined by the sum
-of the contributions from neutrino--electron/positron scattering and
-$e^\pm$ annihilation into neutrinos,
+of the contributions from neutrino--electron/positron scattering
+($\nua{} e\leftrightarrow \nua{} e$)
+and
+$e^\pm$ annihilation into neutrinos ($\nu\bar\nu\leftrightarrow e^+e^-$),
 plus neutrino--neutrino interactions.
 We neglect other reactions, such as $\mu^\pm$ annihilation (which only affects at very early temperatures when everything is in equilibrium).
 We therefore have \cite{deSalas:2016ztq,Bennett:2020zkv}
@@ -819,15 +823,16 @@ We tested several possibilities, and implemented a scheme that computes
 the linear interpolation of $\varrho_{\alpha\alpha}/f_{\rm FD}$ on the diagonal,
 and the linear interpolation of $\varrho_{\alpha\beta}$ ($\alpha\neq\beta$) for the off-diagonal,
 as it guarantees a better numerical stability (see \cite{Bennett:2020zkv}).
-Nevertheless, the selection of the momentum grid may have a strong impact on the results obtained using
-neutrino--neutrino collision terms, as we will discuss in section~\ref{ssec:precision}.
+We verified that interpolating also off-diagonal entries
+over $\varrho_{\alpha\alpha}/f_{\rm FD}$ has almost no effect on the final result.
 We have also verified that the numerical values of \Neff\ obtained including the integrals in
 Eqs.~\eqref{eq:I_nunu}--\eqref{eq:I_nubarnu}
 does not vary significantly if we consider only the diagonal components of $\varrho$,
-or we instead consider the full matrix.
+or we instead consider the full matrix instead.
+The maximum variation we found is of the order \num{2e-4}, in case oscillations are active.
 The reason is that the off-diagonal terms are typically much smaller than the diagonal ones,
 so that their combinations are suppressed and give a small contribution to the collision terms.
-Ignoring the off-diagonal terms, therefore, gives a very precise result with a slightly smaller computational cost.
+Ignoring the off-diagonal terms, therefore, gives a rather precise result with a slightly smaller computational cost.
 Notice also that the implementation of the neutrino--neutrino collision terms as described here
 allows to compute off-diagonal collision terms
 taking into account the full neutrino density matrix \cite{Bennett:2020zkv}.
@@ -1075,11 +1080,7 @@ and $N_y=100$ \cite{deSalas:2016ztq}.
 Since the evaluation of the collision integrals scales as $N_y^2$
 and the number of derivatives in Eq.~\eqref{eq:drho_dx_nxn} scales with $N_y$,
 this ensures a significant gain.
-Unfortunately, the current implementation of the Gauss--Laguerre method suffers a small non-conservation
-of the neutrino number density,
-that makes the results less precise than when using a linear spacing
-of the nodes.
-We further comment on these points in the next sections.
+As carefully analysed in \cite{Bennett:2020zkv}, the Gauss--Laguerre method allows to obtain the same precision than a linear spacing of the momentum nodes with a smaller $N_y$, and it is therefore recommended.
 
 
 \section{Numerical calculation of 1D and 2D integrals}
@@ -1176,28 +1177,24 @@ used for \dlsoda.
 We verified that once the tolerance for \dlsoda\ is smaller than $10^{-5}$,
 the results are already stable at a level much better than per mille
 (actually closer to the 0.1 per mille)
-with respect to the most precise case considered here
-(Gauss--Laguerre integration, $N_y=50$, tolerance $10^{-6}$).
+with respect to the most precise case considered.
 Using a tolerance of $10^{-4}$ gives a value of \Neff\ which is stable
 at the level of few per mille, and still better than 1\%.
 
 A full calculation of \Neff, in any case, must be performed taking into account also the neutrino--neutrino collision terms.
 Including them raises \Neff\ by less than 0.001, in the three-neutrinos case,
-depending on the values of the oscillation parameters and the considered momentum grid.
+depending on the values of the oscillation parameters and the considered momentum grid,
+see \cite{Bennett:2020zkv}.
 Mostly because of the interpolation required to compute $\varrho(y_4)$
 in Eqs.~\eqref{eq:F_nunu}--\eqref{eq:F_nubarnu},
 the numerical uncertainties grow significantly:
 when a coarse grid is considered, the interpolation is much less precise
 and the final results are much more instable.
 As expected, however, the instability decreases when the number of momentum nodes is increased.
-When considering a linear spacing of the $y_i$ nodes,
-the instability is even smaller than when using the Gauss--Laguerre method.
-For $N_y>60$, the final \Neff\ values are stable at the $\ll10^{-4}$ level.
-Such number emerges from tests on the conservation of number and energy density of neutrinos
-within the code.
-Following the studies performed in \cite{Bennett:2020zkv}, therefore,
-we recommend to consider a linear spacing of the nodes when neutrino--neutrino terms
-are included.
+For $N_y>60$, the final \Neff\ values are stable at the $\lesssim10^{-4}$ level.
+Such number emerges from comparing the results obtained when the grid sampling method or the number of nodes changes.
+Following the studies performed in \cite{Bennett:2020zkv}, we recommend to use a Gauss--Laguerre spacing.
+The number of nodes one should consider depends on the required precision level.
 
 Considering the implementation of the off-diagonal collision terms,
 we find that the \Neff\ output does not change significantly if we use the full integrals or the damping terms,
@@ -1206,7 +1203,8 @@ The damping formulas are sufficiently good to obtain a very precise result and a
 a lot of computation time.
 Another good approximation is to consider a diagonal neutrino density matrix $\varrho$
 when computing the neutrino--neutrino collision terms:
-the contribution of its off-diagonal entries is strongly suppressed and barely alters the result.
+the contribution of its off-diagonal entries is strongly suppressed and barely alters the result
+(maximum \num{2e-4} when neutrino oscillations are present).
 
 If we repeat the same exercise in the 3+1 scheme,
 using $\dmsq{41}=1.29$~eV$^2$,
@@ -1258,6 +1256,8 @@ when $N_y=100$ and $20\leq y_{\rm max}\leq 40$.
 The choice of $y_{\rm min}$, instead, is much less problematic,
 assuming that $y_{\rm min}$ cannot exceed 0.1,
 which is the maximum value at which one does not miss significant contributions to the calculations.
+When the Gauss--Laguerre method is used instead, the variations are smaller when $y_{\rm max}$ is varied together with $N_y$.
+As the minimum value of $y$ depends exclusively on $N_y$, there is no plot showing the effect of varying $y_{\rm min}$ and $N_y$ independently from one another.
 One can use the figure as a guideline to decide the most efficient combination
 of $y_{\rm max}$ (provided it is at least 20,
 otherwise one can miss significant contributions to the neutrino energy density)
@@ -1269,25 +1269,28 @@ More details on the precision of the code are discussed in \cite{Gariazzo:2019gy
 \begin{subfigure}{.49\textwidth}
 \centering
 \includegraphics[width=\linewidth]{figures/NC_Ny_ymin.pdf}
-\end{subfigure}
+\end{subfigure}\\
 \begin{subfigure}{.49\textwidth}
 \centering
 \includegraphics[width=\linewidth]{figures/NC_Ny_ymax.pdf}
 \end{subfigure}
+\begin{subfigure}{.49\textwidth}
+\centering
+\includegraphics[width=\linewidth]{figures/GL_Ny_ymax.pdf}
+\end{subfigure}
 \end{center}
-\caption{Change in $\Neff^{\rm SM}$ from a full calculation using the Newton--Cotes quadrature method and including the full neutrino--neutrino collision integral,
-with respect to variations in the number of $y$-nodes and their range.
-{\it Left}: Variations in $N_y$ and~$y_{\rm min}$.
-{\it Right}: Variations in $N_y$ and~$y_{\rm max}$.
-The default setting of $y_{\rm min}=0.01$, $y_{\rm max}=20$, and $N_y = 100$ is marked by a red dot on each plot.
+\caption{Change in $\Neff^{\rm SM}$ from a full calculation including the full neutrino--neutrino collision integral, with respect to variations in the number of $y$-nodes and their range.
+{\it Top}: Variations in $N_y$ and~$y_{\rm min}$, using the Newton--Cotes quadrature method.
+{\it Bottom left}: Variations in $N_y$ and~$y_{\rm max}$ using the Newton--Cotes quadrature method.
+{\it Bottom right}: Variations in $N_y$ and~$y_{\rm max}$ using the Gauss-Laguerre quadrature method.
+The default setting used in Table~\ref{tab:Results_nunudiag} of $y_{\rm min}=0.01$ (Newton--Cotes only), $y_{\rm max}=30$, and $N_y = 80$ is marked by a red dot on each plot.
 From \cite{Bennett:2020zkv}.
-\label{fig:Ny_yrange}
-}
+\label{fig:Ny_yrange}}
 \end{figure}
 
 As a summary, a reasonable estimate of the theoretical and numerical uncertainty on the recommended value
 obtained considering three active neutrinos,
-$\Neff=3.0433$,
+$\Neff=3.0440$,
 is of order $2\times10^{-4}$ \cite{Bennett:2020zkv}.
 
 
@@ -1300,11 +1303,11 @@ The default configuration of the code (\texttt{ini/explanatory.ini}) is the foll
 \item
 \textbf{Neutrino parameters}: three active neutrinos (\texttt{flavorNumber = 3}), with mixing parameters:
 \texttt{givesinsq = T} (the following parameters \texttt{thetaij} provide the value of $\sin^2\theta_{ij}$),
-\texttt{theta12 = 0.297},
-\texttt{theta13 = 0.0215},
-\texttt{theta23 = 0.425},
-\texttt{dm21 = 7.37e-05} (eV$^2$),
-\texttt{dm31 = 0.00256} (eV$^2$).
+\texttt{theta12 = 0.307},
+\texttt{theta13 = 0.0218},
+\texttt{theta23 = 0.545},
+\texttt{dm21 = 7.53e-05} (eV$^2$),
+\texttt{dm31 = 2.5283e-3} (eV$^2$).
 %
 \item
 \textbf{Collision integrals}: non-zero (\texttt{collint\_diagonal\_zero = F}) diagonal terms
@@ -1333,8 +1336,7 @@ the $x$ range is considered between
 and the quantities saved in \texttt{Nx = 500} bins.
 For the momentum grid, the default configuration considers \texttt{Ny = 30} momentum nodes
 spaced according to the Gauss--Laguerre method (\texttt{use\_gauss\_laguerre = T}).
-Remember that a correct run with neutrino--neutrino collisions is better performed
-using a much denser momentum grid.
+Remember that a correct result with neutrino--neutrino collisions is obtained only using a denser momentum grid.
 %
 \item
 \textbf{Output settings}:
@@ -1385,6 +1387,8 @@ as off-diagonal ones are typically much smaller.
 (enabled by default to save time). Incompatible with the use of logarithmic FTQED corrections.
 \item \texttt{NO\_MUONS}: disable muon contributions to total energy density and matter potentials.
 \item \texttt{NO\_NUE\_ANNIHILATION}: disable contribution from $\nu\bar\nu\leftrightarrow e^+e^-$ processes to collision integrals.
+\item \texttt{RHO\_OFFDIAG\_INTERP\_DIV\_FD}: interpolate all the entries of the neutrino density matrix after dividing by a Fermi-Dirac distribution (by default, this is done only for diagonal entries).
+\item \texttt{SINSQTHW=x}: use to set a custom value (equal to $x$) for the weak mixing angle: for example, to use $\sin^2\theta_{\rm W}$ in the code, compile with \texttt{SINSQTHW=0.23}.
 \item \texttt{TESTSPEED}: compute a speed test with a timing of the first 1000 derivatives.
 \end{itemize}
 
@@ -1394,6 +1398,7 @@ as off-diagonal ones are typically much smaller.
 We thank J.J.~Bennett and G.~Buldgen for helping spotting
 some issue in the treatment of finite temperature corrections
 and for support in implementing the higher order correction terms,
+J.~Froustey, C.~Pitrou and M.C.~Volpe for carefully checking our equations and results,
 and M.~Escudero~Abenza for useful comments and suggestions.
 
 This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Sk{\l}odowska Curie grant agreements No
