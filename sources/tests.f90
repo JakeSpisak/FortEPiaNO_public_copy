@@ -2273,17 +2273,17 @@ program tests
 		iy = 12 !2.231111111111111
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
-		open(unit=fu, file="test_outputs/drhodx_rho_re.dat", status="old")
-		open(unit=fv, file="test_outputs/drhodx_rho_im.dat", status="old")
-		do j=1, 3
-			read (fu, *) nuDensMatVecFD(i)%re(j,:)
-			read (fv, *) nuDensMatVecFD(i)%im(j,:)
-		end do
-		close(fu)
-		close(fv)
-		do j=1,3
-			nuDensMatVecFD(i)%re(j,j) = nuDensMatVecFD(i)%re(j,j)*fd
-		end do
+			open(unit=fu, file="test_outputs/drhodx_rho_re.dat", status="old")
+			open(unit=fv, file="test_outputs/drhodx_rho_im.dat", status="old")
+			do j=1, 3
+				read (fu, *) nuDensMatVecFD(i)%re(j,:)
+				read (fv, *) nuDensMatVecFD(i)%im(j,:)
+			end do
+			close(fu)
+			close(fv)
+			do j=1,3
+				nuDensMatVecFD(i)%re(j,j) = nuDensMatVecFD(i)%re(j,j)*fd
+			end do
 		end do
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
@@ -2353,17 +2353,17 @@ program tests
 		iy = 34 !6.67333333333333
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
-		open(unit=fu, file="test_outputs/drhodx_rho_re.dat", status="old")
-		open(unit=fv, file="test_outputs/drhodx_rho_im.dat", status="old")
-		do j=1, 3
-			read (fu, *) nuDensMatVecFD(i)%re(j,:)
-			read (fv, *) nuDensMatVecFD(i)%im(j,:)
-		end do
-		close(fu)
-		close(fv)
-		do j=1,3
-			nuDensMatVecFD(i)%re(j,j) = nuDensMatVecFD(i)%re(j,j)*fd
-		end do
+			open(unit=fu, file="test_outputs/drhodx_rho_re.dat", status="old")
+			open(unit=fv, file="test_outputs/drhodx_rho_im.dat", status="old")
+			do j=1, 3
+				read (fu, *) nuDensMatVecFD(i)%re(j,:)
+				read (fv, *) nuDensMatVecFD(i)%im(j,:)
+			end do
+			close(fu)
+			close(fv)
+			do j=1,3
+				nuDensMatVecFD(i)%re(j,j) = nuDensMatVecFD(i)%re(j,j)*fd
+			end do
 		end do
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
@@ -2417,7 +2417,7 @@ program tests
 	subroutine do_test_damping_factors
 		real(dl) :: x,z,dme2
 		integer :: i, j, ix, iy1, iy
-		real(dl) :: y,res1,res2
+		real(dl) :: y,res1,res2, fd
 		type(coll_args) :: collArgs
 		real(dl), dimension(3) :: tmparrS, tmparrA
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
@@ -2434,7 +2434,7 @@ program tests
 		iy1 = 7 !1.22151515151515
 		z = 1.186d0
 		dme2 = 0.1d0
-		call printTestBlockName("Damping terms")
+		call printTestBlockName("Damping terms - McKellar")
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
@@ -2444,24 +2444,31 @@ program tests
 		collArgs%y4 = 0.d0
 		collArgs%dme2 = dme2
 		do iy=1, Ny
-			y = y_arr(iy)
-			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 10.d0, 33.d0/)
-			nuDensMatVecFD(iy)%re(2,:) = (/10.d0, 1.d0*fermiDirac(y), 45.d0/)
-			nuDensMatVecFD(iy)%re(3,:) = (/33.d0, 45.d0, 1.d0*fermiDirac(y)/)
-			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0/)
-			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0/)
-			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
+			fd = fermiDirac(y_arr(iy))
+			open(unit=fu, file="test_outputs/damping_testrho3_re.dat", status="old")
+			open(unit=fv, file="test_outputs/damping_testrho3_im.dat", status="old")
+			do j=1, 3
+				read (fu, *) nuDensMatVecFD(iy)%re(j,:)
+				read (fv, *) nuDensMatVecFD(iy)%im(j,:)
+			end do
+			close(fu)
+			close(fv)
+			do j=1,3
+				nuDensMatVecFD(iy)%re(j,j) = nuDensMatVecFD(iy)%re(j,j)*fd
+			end do
 		end do
 
 		!2+1
 		sterile(3) = .true.
 		call setDampingFactors
-		tmpmatA(1,:) = (/0., -0.928646, -6.56674/)
-		tmpmatA(2,:) = (/0., 0., -7.45108/)
-		tmpmatA(3,:) = (/0., 0., 0./)
-		tmpmatB(1,:) = (/0., 0.0000928646, -0.000596976/)
-		tmpmatB(2,:) = (/0., 0., 0.000331159/)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/damping_2+1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_2+1_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2480,12 +2487,14 @@ program tests
 !		!3+0
 		sterile(3) = .false.
 		call setDampingFactors
-		tmpmatA(1,:) = (/0., -0.928646, -3.06453/)
-		tmpmatA(2,:) = (/0., 0., -1.76139/)
-		tmpmatA(3,:) = (/0., 0., 0./)
-		tmpmatB(1,:) = (/0., 0.0000928646, -0.000278594/)
-		tmpmatB(2,:) = (/0., 0., 0.0000782838/)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/damping_3+0_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_3+0_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2508,12 +2517,14 @@ program tests
 		!1+1
 		sterile(2) = .true.
 		call setDampingFactors
-		tmpmatA(1,:) = (/0., -1.98992, 0./)
-		tmpmatA(2,:) = (/0., 0., 0./)
-		tmpmatA(3,:) = (/0., 0., 0./)
-		tmpmatB(1,:) = (/0., 0.000198992, 0./)
-		tmpmatB(2,:) = (/0., 0., 0./)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/damping_1+1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_1+1_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2532,12 +2543,14 @@ program tests
 		!2+0
 		sterile(2) = .false.
 		call setDampingFactors
-		tmpmatA(1,:) = (/0., -0.928646, 0./)
-		tmpmatA(2,:) = (/0., 0., 0./)
-		tmpmatA(3,:) = (/0., 0., 0./)
-		tmpmatB(1,:) = (/0., 0.0000928646, 0./)
-		tmpmatB(2,:) = (/0., 0., 0./)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/damping_2+0_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_2+0_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2563,26 +2576,31 @@ program tests
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
 		end do
 		do iy=1, Ny
-			y = y_arr(iy)
-			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 10.d0, 33.d0, 12.d0/)
-			nuDensMatVecFD(iy)%re(2,:) = (/10.d0, 1.d0*fermiDirac(y), 45.d0, 8.d0/)
-			nuDensMatVecFD(iy)%re(3,:) = (/33.d0, 45.d0, 1.d0*fermiDirac(y), 23.d0/)
-			nuDensMatVecFD(iy)%re(4,:) = (/12.d0, 8.d0, 23.d0, 1.d0*fermiDirac(y)/)
-			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0, 0.1d0/)
-			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0, -0.2d0/)
-			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0, 0.5d0/)
-			nuDensMatVecFD(iy)%im(4,:) = (/-0.1d0, 0.2d0, -0.5d0, 0.d0/)
+			fd = fermiDirac(y_arr(iy))
+			open(unit=fu, file="test_outputs/damping_testrho4_re.dat", status="old")
+			open(unit=fv, file="test_outputs/damping_testrho4_im.dat", status="old")
+			do j=1, 4
+				read (fu, *) nuDensMatVecFD(iy)%re(j,:)
+				read (fv, *) nuDensMatVecFD(iy)%im(j,:)
+			end do
+			close(fu)
+			close(fv)
+			do j=1, 4
+				nuDensMatVecFD(iy)%re(j,j) = nuDensMatVecFD(iy)%re(j,j)*fd
+			end do
 		end do
 		!3+1
 		sterile = .false.
 		sterile(4) = .true.
 		call setDampingFactors
-		tmpmatA(1,:) = (/-0.928646, -3.06453, -2.38791/)
-		tmpmatA(2,:) = (/0., -1.76139, -1.32464/)
-		tmpmatA(3,:) = (/0., 0., -3.80833/)
-		tmpmatB(1,:) = (/0.0000928646, -0.000278594, -0.0198992/)
-		tmpmatB(2,:) = (/0., 0.0000782838, 0.0331159/)
-		tmpmatB(3,:) = (/0., 0., -0.0827898/)
+		open(unit=fu, file="test_outputs/damping_3+1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_3+1_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
