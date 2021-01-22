@@ -492,39 +492,43 @@ module ftqed
 		end if
 		call dmeNLCorr%initialize(interp_xvec, interp_zvec, dmg_vec, iflag)!linear
 
-		call random_seed()
-		if (timing_tests) then
-			call tic(timer1)
-			write (*,*) "[interactions] now doing some timing..."
-			call tic(timer1)
-			do ix=1, 1000000
-				call random_number(x)
-				call random_number(z)
-				x=(x_fin-x_in)*x + x_in
-				z=0.4d0*z + z_in
-				t1 = dme2_nolog(x,z)
-			end do
-			call toc(timer1, "<interpolated>")
+		if (tests_interpolations) then
+			call random_seed()
+			if (timing_tests) then
+				call tic(timer1)
+				write (*,*) "[interactions] now doing some timing..."
+				call tic(timer1)
+				do ix=1, 1000000
+					call random_number(x)
+					call random_number(z)
+					x=(x_fin-x_in)*x + x_in
+					z=0.4d0*z + z_in
+					t1 = dme2_nolog(x,z)
+				end do
+				call toc(timer1, "<interpolated>")
 
-			call tic(timer1)
-			do ix=1, 1000000
-				call random_number(x)
-				call random_number(z)
-				x=(x_fin-x_in)*x + x_in
-				z=0.4d0*z + z_in
-				t1 = dme2_electronFull(x,0.d0,z)
-			end do
-			call toc(timer1, "<full>")
-		end if
-		ftqed_log_term = initial
-		call random_number(x)
-		call random_number(z)
-		x=(x_fin-x_in)*x + x_in
-		z=0.4d0*z + z_in
-		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x, 0.01d0, z
-		t1 = dme2_electronFull(x, 0.01d0, z)
-		t2 = dme2_electron(x, 0.01d0, z)
-		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
+				call tic(timer1)
+				do ix=1, 1000000
+					call random_number(x)
+					call random_number(z)
+					x=(x_fin-x_in)*x + x_in
+					z=0.4d0*z + z_in
+					t1 = dme2_electronFull(x,0.d0,z)
+				end do
+				call toc(timer1, "<full>")
+			end if
+			ftqed_log_term = initial
+			call random_number(x)
+			call random_number(z)
+			x=(x_fin-x_in)*x + x_in
+			z=0.4d0*z + z_in
+			write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x, 0.01d0, z
+			t1 = dme2_electronFull(x, 0.01d0, z)
+			t2 = dme2_electron(x, 0.01d0, z)
+			write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
+		else
+			ftqed_log_term = initial
+		endif
 
 		deallocate(dmg_vec)
 		deallocate(dme_vec)

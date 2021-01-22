@@ -71,17 +71,27 @@ ifeq ($(TESTSPEED), 1)
 	F90FLAGS += -DTESTSPEED=1
 endif
 
-OBJ_FILES=$(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/config.o \
-	$(BUILD_DIR)/iniFile.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/matrix_utils.o \
+OBJ_FILES=$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/config.o \
+	$(BUILD_DIR)/iniFile.o \
+	$(BUILD_DIR)/utilities.o \
+	$(BUILD_DIR)/matrix_utils.o \
 	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/ftqed.o \
-	$(BUILD_DIR)/interactions.o $(BUILD_DIR)/cosmology.o $(BUILD_DIR)/equations.o \
+	$(BUILD_DIR)/interactions.o \
+	$(BUILD_DIR)/cosmology.o \
+	$(BUILD_DIR)/equations.o \
 	$(BUILD_DIR)/heigensystem.o \
-	$(BUILD_DIR)/odepack.o $(BUILD_DIR)/odepack-sub1.o $(BUILD_DIR)/odepack-sub2.o \
-	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/bspline_oo_module.o $(BUILD_DIR)/bspline_sub_module.o \
+	$(BUILD_DIR)/odepack.o \
+	$(BUILD_DIR)/odepack-sub1.o \
+	$(BUILD_DIR)/odepack-sub2.o \
+	$(BUILD_DIR)/bspline_module.o \
+	$(BUILD_DIR)/bspline_oo_module.o \
+	$(BUILD_DIR)/bspline_sub_module.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
 
-OBJ_TESTS=$(OBJ_FILES) $(BUILD_DIR)/stuff.o $(BUILD_DIR)/test_utils.o
+OBJ_TESTS=$(OBJ_FILES) $(BUILD_DIR)/stuff.o
 
 ifeq ($(BUILD_DIR),../build_debug)
 FFLAGS=$(DEBUGFLAGS)
@@ -91,44 +101,84 @@ endif
 
 default: fortepiano
 
-$(BUILD_DIR)/bspline_module.o: $(BUILD_DIR)/bspline_oo_module.o \
+$(BUILD_DIR)/bspline_module.o: \
+	$(BUILD_DIR)/bspline_oo_module.o \
 	$(BUILD_DIR)/bspline_sub_module.o
-$(BUILD_DIR)/bspline_oo_module.o: $(BUILD_DIR)/bspline_sub_module.o
-$(BUILD_DIR)/odepack.o: $(BUILD_DIR)/odepack-sub1.o $(BUILD_DIR)/odepack-sub2.o
-$(BUILD_DIR)/iniFile.o: $(BUILD_DIR)/const.o
-$(BUILD_DIR)/matrix_utils.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o
-$(BUILD_DIR)/heigensystem.o: $(BUILD_DIR)/const.o
-$(BUILD_DIR)/ftqed.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o $(BUILD_DIR)/utilities.o \
+$(BUILD_DIR)/bspline_oo_module.o: \
+	$(BUILD_DIR)/bspline_sub_module.o
+$(BUILD_DIR)/odepack.o: \
+	$(BUILD_DIR)/odepack-sub1.o \
+	$(BUILD_DIR)/odepack-sub2.o
+$(BUILD_DIR)/iniFile.o: \
+	$(BUILD_DIR)/const.o
+$(BUILD_DIR)/matrix_utils.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o
+$(BUILD_DIR)/heigensystem.o: \
+	$(BUILD_DIR)/const.o
+$(BUILD_DIR)/ftqed.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/utilities.o \
 	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
-$(BUILD_DIR)/config.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/interactions.o \
-	$(BUILD_DIR)/iniFile.o $(BUILD_DIR)/matrix_utils.o $(BUILD_DIR)/errors.o \
+$(BUILD_DIR)/config.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/interactions.o \
+	$(BUILD_DIR)/iniFile.o \
+	$(BUILD_DIR)/matrix_utils.o \
+	$(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/equations.o
-$(BUILD_DIR)/interactions.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
-	$(BUILD_DIR)/matrix_utils.o $(BUILD_DIR)/utilities.o $(BUILD_DIR)/bspline_module.o \
+$(BUILD_DIR)/interactions.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/matrix_utils.o \
+	$(BUILD_DIR)/utilities.o \
+	$(BUILD_DIR)/bspline_module.o \
 	$(BUILD_DIR)/ftqed.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
-$(BUILD_DIR)/cosmology.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
-	$(BUILD_DIR)/utilities.o $(BUILD_DIR)/bspline_module.o \
+$(BUILD_DIR)/cosmology.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/utilities.o \
+	$(BUILD_DIR)/bspline_module.o \
 	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/ftqed.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
-$(BUILD_DIR)/equations.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
-	$(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o \
+$(BUILD_DIR)/equations.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/cosmology.o \
+	$(BUILD_DIR)/interactions.o \
+	$(BUILD_DIR)/utilities.o \
 	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/heigensystem.o \
 	$(BUILD_DIR)/ftqed.o \
-	$(BUILD_DIR)/bspline_module.o $(BUILD_DIR)/linear_interpolation_module.o
+	$(BUILD_DIR)/bspline_module.o \
+	$(BUILD_DIR)/linear_interpolation_module.o
+$(BUILD_DIR)/stuff.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/cosmology.o \
+	$(BUILD_DIR)/interactions.o \
+	$(BUILD_DIR)/utilities.o \
+	$(BUILD_DIR)/equations.o \
+	$(BUILD_DIR)/linear_interpolation_module.o
+$(BUILD_DIR)/utilities.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o
+$(BUILD_DIR)/test_utils.o: \
+	$(BUILD_DIR)/const.o
 $(BUILD_DIR)/fortepiano.o: $(OBJ_FILES)
-$(BUILD_DIR)/stuff.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o \
-	$(BUILD_DIR)/cosmology.o $(BUILD_DIR)/interactions.o $(BUILD_DIR)/utilities.o \
-	$(BUILD_DIR)/equations.o $(BUILD_DIR)/linear_interpolation_module.o
-$(BUILD_DIR)/utilities.o: $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o
-$(BUILD_DIR)/test_utils.o: $(BUILD_DIR)/const.o
 $(BUILD_DIR)/tests.o: $(OBJ_TESTS)
 
-PREP_NODES_OBJ = $(BUILD_DIR)/utilities.o $(BUILD_DIR)/const.o $(BUILD_DIR)/errors.o
+PREP_NODES_OBJ = \
+	$(BUILD_DIR)/utilities.o \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o
 $(BUILD_DIR)/prepare_gl_nodes.o: $(PREP_NODES_OBJ)
+
+$(BUILD_DIR)/prepare_interpolations.o: $(OBJ_FILES)
 
 all: fortepiano tests
 
@@ -137,6 +187,9 @@ readnodes:
 
 preparenodes: $(BUILD_DIR)/prepare_gl_nodes.o
 	$(F90) -o ../bin/prepare_gl_nodes $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_gl_nodes.o $(FFLAGS) $(TESTFLAGS)
+
+prepareinterp: $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_interpolations.o
+	$(F90) -o ../bin/prepare_interpolations $(OBJ_FILES) $(BUILD_DIR)/prepare_interpolations.o $(FFLAGS) $(TESTFLAGS)
 
 tests: TESTFLAGS = -DDO_TESTS=1
 

@@ -5,6 +5,7 @@ all: fortepiano tests
 fortepiano: BUILD_DIR ?= build
 readnodes: BUILD_DIR ?= build
 preparenodes: BUILD_DIR ?= build
+prepareinterp: BUILD_DIR ?= build
 tests: BUILD_DIR ?= buildtest
 
 fortepiano: directories
@@ -15,6 +16,9 @@ readnodes: directories
 
 preparenodes: directories
 	cd ./sources && make preparenodes BUILD_DIR=../$(BUILD_DIR)
+
+prepareinterp: directories
+	cd ./sources && make prepareinterp BUILD_DIR=../$(BUILD_DIR)
 
 tests: directories
 	cd ./sources && make tests BUILD_DIR=../$(BUILD_DIR)

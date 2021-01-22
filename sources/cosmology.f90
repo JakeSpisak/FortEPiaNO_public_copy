@@ -243,6 +243,7 @@ module fpCosmology
 		write(tmpstr, "('interpolations/cosmo_',A,'_',L,'.dat')") fermionName, thmass
 		inquire(file=trim(tmpstr), exist=exists)
 		if (exists) then
+			call addToLog("[cosmo] read values from file: "//trim(tmpstr))
 			open(file=trim(tmpstr), unit=uid, form="unformatted")
 			do ix=1, interp_nx
 				do iz=1, interp_nz
@@ -327,18 +328,20 @@ module fpCosmology
 		call cls%enDensNoThMassInterp%initialize(interp_xvec, interp_zvec, ednt_vec, iflag)!linear
 		call cls%pressInterp%initialize(interp_xvec, interp_zvec, p_vec, iflag)!linear
 
-		call random_seed()
-		call random_number(x)
-		call random_number(z)
-		x=(x_fin-x_in)*x + x_in
-		z=0.4d0*z + z_in
-		write(*,"(' [cosmo] test energyDensity/pressure interpolation in x,z=',*(E12.5))") x, z
-		t1 = cls%energyDensityFull(x, z, thmass)
-		t2 = cls%energyDensity(x, z, thmass)
-		write(*,"(' [cosmo] comparing energy density (true vs interp): ',*(E17.10))") t1, t2
-		t1 = cls%pressureFull(x, z, thmass)
-		t2 = cls%pressure(x, z, thmass)
-		write(*,"(' [cosmo] comparing pressure (true vs interp): ',*(E17.10))") t1, t2
+		if (tests_interpolations) then
+			call random_seed()
+			call random_number(x)
+			call random_number(z)
+			x=(x_fin-x_in)*x + x_in
+			z=0.4d0*z + z_in
+			write(*,"(' [cosmo] test energyDensity/pressure interpolation in x,z=',*(E12.5))") x, z
+			t1 = cls%energyDensityFull(x, z, thmass)
+			t2 = cls%energyDensity(x, z, thmass)
+			write(*,"(' [cosmo] comparing energy density (true vs interp): ',*(E17.10))") t1, t2
+			t1 = cls%pressureFull(x, z, thmass)
+			t2 = cls%pressure(x, z, thmass)
+			write(*,"(' [cosmo] comparing pressure (true vs interp): ',*(E17.10))") t1, t2
+		endif
 #endif
 		call addToLog("[cosmo] ...done!")
 	end subroutine nonRelativistic_initialize

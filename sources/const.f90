@@ -174,6 +174,7 @@ module variables
 	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 1800
 	integer :: interp_nx, interp_nz, interp_nxz
 	integer, parameter :: interp_ny = 100
+	logical :: tests_interpolations = .true.
 	real(dl), parameter :: interp_logy_min = -2.
 	real(dl), parameter :: interp_logy_max = 1.5
 	real(dl), parameter :: interp_zmin0 = 0.9d0, interp_zmax0 = 1.5d0
