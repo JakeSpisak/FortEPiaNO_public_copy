@@ -1394,6 +1394,26 @@ as off-diagonal ones are typically much smaller.
 
 
 
+\section{Additional scripts}
+\label{ssec:scripts}
+Together with the main code, the fortran sources include few useful scripts that allow to generate some auxiliary files.
+Such files (they store the position and weight of Gauss-Laguerre momentum nodes, and values to be interpolated for electron mass corrections, cosmological quantities, FTQED corrections) would be generated in any case during the execution of the main program, but you can prepare them earlier, once and for all.
+
+The scripts are:
+\begin{itemize}
+\item \texttt{bin/prepare\_gl\_nodes}:
+it produces a file with the position and weights of all $N$ nodes for each valid degree $N$ of Laguerre polynomials that can be used in the code.
+In the default configuration, this will generate two sets of 1500 files.
+Compile with \texttt{make preparenodes}.
+\item \texttt{bin/prepare\_interpolations}: using few different available options,
+it generates files with all the points that are used to compute interpolated quantities in the code.
+These include cosmological and FTQED integrals such as the electron mass corrections or energy density.
+Compile with \texttt{make prepareinterp} (with precompiler options, eventually).
+\item \texttt{bin/read\_gl\_nodes}: read first and last nodes from the previously created list, and store them in a file, used for internal checks if available. Compile with \texttt{make readnodes}.
+\end{itemize}
+
+
+
 \acknowledgments
 We thank J.J.~Bennett and G.~Buldgen for helping spotting
 some issue in the treatment of finite temperature corrections

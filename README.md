@@ -165,5 +165,16 @@ Auxiliary files, which in principle you should not need to edit:
 * `utilities.f90`: utilities for integration, interpolation, checkpointing, log file manipulation, time measurements.
 
 
+### 3.1.Additional scripts
+Together with the main code, the fortran sources include few useful scripts that allow to generate some auxiliary files.  
+Such files (they store the position and weight of Gauss-Laguerre momentum nodes, and values to be interpolated for electron mass corrections, cosmological quantities, FTQED corrections) would be generated in any case during the execution of the main program, but you can prepare them earlier, once and for all.
+
+The scripts are:
+
+* `bin/prepare_gl_nodes`: it produces a file with the position and weights of all `N` nodes for each valid degree `N` of Laguerre polynomials that can be used in the code. In the default configuration, this will generate two sets of 1500 files. Compile with `make preparenodes`.
+* `bin/prepare_interpolations`: using few different available options, it generates files with all the points that are used to compute interpolated quantities in the code. These include cosmological and FTQED integrals such as the electron mass corrections or energy density. Compile with `make prepareinterp` (with precompiler options, eventually).
+* `bin/read_gl_nodes`: read first and last nodes from the previously created list, and store them in a file, used for internal checks if available. Compile with `make readnodes`.
+
+
 ## 4.Acknowledgments
 This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Skłodowska-Curie grant agreement No 796941.
