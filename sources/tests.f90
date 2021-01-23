@@ -10,7 +10,7 @@ program tests
 	use ftqed
 	implicit none
 
-	integer, parameter :: fu = 89237, fv = 89238
+	integer, parameter :: fu = 89237, fv = 89238, fw = 89239
 	character(len=1), dimension(2), parameter :: chLR=(/'L','R'/)
 
 	call openLogFile
@@ -2895,18 +2895,24 @@ program tests
 		call printTestBlockName("matter potential, including neutrinos")
 
 		!A
-		nuMassesMat(1,:) = (/1.,2.,3./)
-		nuMassesMat(2,:) = (/3.,2.,1./)
-		nuMassesMat(3,:) = (/1.1,2.2,3./)
-		leptonDensities(1,:) = (/200., 1., 0./)
-		leptonDensities(2,:) = (/1., 500., 0./)
-		leptonDensities(3,:) = (/0.,0.,0./)
-		nuDensities%re = 0.01d0
+		open(unit=fu, file="test_outputs/matterpot_nmm.dat", status="old")
+		open(unit=fv, file="test_outputs/matterpot_ldm.dat", status="old")
+		open(unit=fw, file="test_outputs/matterpot_ndm1.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuMassesMat(j,:)
+			read (fv, *) leptonDensities(j,:)
+            read (fw, *) nuDensities%re(j,:)
+		end do
+		close(fu)
+		close(fv)
+		close(fw)
 		nuDensities%im = 0.d0
 		Heff = H_eff(0.04d0)
-		r1(1,:) = (/20.5004,25.0404,37.5004/)
-		r1(2,:) = (/37.5404,45.0004,12.5004/)
-		r1(3,:) = (/13.7504,27.5004,37.5004/)
+		open(unit=fu, file="test_outputs/matterpot_t1.dat", status="old")
+		do j=1, 3
+			read (fu, *) r1(j,:)
+		end do
+		close(fu)
 		r2 = 0.d0
 		do i=1, flavorNumber
 			do j=i, flavorNumber
@@ -2924,6 +2930,14 @@ program tests
 			end do
 		end do
 		!B
+		open(unit=fu, file="test_outputs/matterpot_ndm2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/matterpot_ndm2_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) r1(j,:)
+			read (fv, *) r1(j,:)
+		end do
+		close(fu)
+		close(fv)
 		nuDensities%re(1,:) = (/0.1,0.7,0.5/)
 		nuDensities%re(2,:) = (/0.7,0.8,0.2/)
 		nuDensities%re(3,:) = (/0.5,0.2,1.1/)
@@ -2931,12 +2945,14 @@ program tests
 		nuDensities%im(2,:) = (/-3.,0.,1.5/)
 		nuDensities%im(3,:) = (/-2.,-1.5,0./)
 		Heff = H_eff(0.7d0)
-		r1(1,:) = (/140.78428,2.6185714,2.4928571/)
-		r1(2,:) = (/3.33285714,351.98857,0.85428571/)
-		r1(3,:) = (/1.1357142,1.7114285,2.91285714/)
-		r2(1,:) = (/0.,2.1,1.4/)
-		r2(2,:) = (/-2.1,0.,1.05/)
-		r2(3,:) = (/-1.4,-1.05,0./)
+		open(unit=fu, file="test_outputs/matterpot_t2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/matterpot_t2_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) r1(j,:)
+			read (fv, *) r2(j,:)
+		end do
+		close(fu)
+		close(fv)
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff B ',2I1)") i,j
