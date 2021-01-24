@@ -3238,71 +3238,84 @@ program tests
 		call printTestBlockName("phase space functions for nunu")
 
 #ifdef FULL_F_NU
-		m1%re(1,:) = (/1.1d0, 0.2d0, 0.3d0/)
-		m1%re(2,:) = (/0.2d0, 1.3d0, 0.d0/)
-		m1%re(3,:) = (/0.3d0, 0.d0, 2.d0/)
-		m1%im(1,:) = (/0.d0, 0.d0, -0.3d0/)
-		m1%im(2,:) = (/0.d0, 0.d0, -0.4d0/)
-		m1%im(3,:) = (/0.3d0, 0.4d0, 0.d0/)
-
-		m2%re(1,:) = (/2.1d0, 0.1d0, 0.1d0/)
-		m2%re(2,:) = (/0.1d0, 2.3d0, 0.d0/)
-		m2%re(3,:) = (/0.1d0, 0.d0, 2.d0/)
-		m2%im(1,:) = (/0.d0, 0.1d0, -0.2d0/)
-		m2%im(2,:) = (/-0.1d0, 0.d0, -0.15d0/)
-		m2%im(3,:) = (/0.2d0, 0.15d0, 0.d0/)
-
-		m3%re(1,:) = (/1.3d0, -0.2d0, 0.d0/)
-		m3%re(2,:) = (/-0.2d0, 1.4d0, 0.d0/)
-		m3%re(3,:) = (/0.d0, 0.d0, 1.5d0/)
-		m3%im(1,:) = (/0.d0, 0.01d0, 0.11d0/)
-		m3%im(2,:) = (/-0.01d0, 0.d0, -0.11d0/)
-		m3%im(3,:) = (/-0.11d0, 0.11d0, 0.d0/)
-
-		m4%re(1,:) = (/1.9d0, 0.01d0, 0.d0/)
-		m4%re(2,:) = (/0.01d0, 1.7d0, 0.13d0/)
-		m4%re(3,:) = (/0.d0, 0.13d0, 1.8d0/)
-		m4%im(1,:) = (/0.d0, 0.d0, 0.1d0/)
-		m4%im(2,:) = (/0.d0, 0.d0, 0.13d0/)
-		m4%im(3,:) = (/-0.1d0, -0.13d0, 0.d0/)
-
-		Fsr(1,:) = (/-2.07923d0, 6.34496d0, 5.41588d0/)
-		Fsr(2,:) = (/6.34496d0, 0.37778d0, -0.17484d0/)
-		Fsr(3,:) = (/5.41588d0, -0.17484d0, 10.6444d0/)
-		Fsi(1,:) = (/0.d0, 0.068105d0, -6.89441d0/)
-		Fsi(2,:) = (/-0.068105d0, 0.d0, -6.13617d0/)
-		Fsi(3,:) = (/6.89441d0, 6.13617d0, 0.d0/)
-
-		Fpr(1,:) = (/-3.71726d0, 11.7786d0, 11.3093d0/)
-		Fpr(2,:) = (/11.7786d0, 2.2042d0, -0.12906d0/)
-		Fpr(3,:) = (/11.3093d0, -0.12906d0, 23.0392d0/)
-		Fpi(1,:) = (/0.d0, 0.79126d0, -13.9696d0/)
-		Fpi(2,:) = (/-0.79126d0, 0.d0, -15.1604d0/)
-		Fpi(3,:) = (/13.9696d0, 15.1604d0, 0.d0/)
+		open(unit=fu, file="test_outputs/Fnunu_m1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m1_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m1%re(j,:)
+			read (fv, *) m1%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m2_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m2%re(j,:)
+			read (fv, *) m2%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m3_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m3_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m3%re(j,:)
+			read (fv, *) m3%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m4_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m4_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m4%re(j,:)
+			read (fv, *) m4%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_sc_full_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_sc_full_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fsr(j,:)
+			read (fv, *) Fsi(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_pa_full_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_pa_full_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fpr(j,:)
+			read (fv, *) Fpi(j,:)
+		end do
+		close(fu)
+		close(fv)
 #else
-		m1%re(1,:) = (/1.1d0, 0.d0, 0.d0/)
-		m1%re(2,:) = (/0.d0, 2.2d0, 0.d0/)
-		m1%re(3,:) = (/0.d0, 0.d0, 1.5d0/)
+		open(unit=fu, file="test_outputs/Fnunu_d1.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_d2.dat", status="old")
+		do j=1, 3
+			read (fu, *) m1%re(j,:)
+			read (fv, *) m2%re(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_d3.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_d4.dat", status="old")
+		do j=1, 3
+			read (fu, *) m3%re(j,:)
+			read (fv, *) m4%re(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_sc_diag.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_pa_diag.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fsr(j,:)
+			read (fv, *) Fpr(j,:)
+		end do
+		close(fu)
+		close(fv)
 		m1%im = 0.d0
-		m2%re(1,:) = (/1.3d0, 0.d0, 0.d0/)
-		m2%re(2,:) = (/0.d0, 1.4d0, 0.d0/)
-		m2%re(3,:) = (/0.d0, 0.d0, 1.1d0/)
 		m2%im = 0.d0
-		m3%re(1,:) = (/2.1d0, 0.d0, 0.d0/)
-		m3%re(2,:) = (/0.d0, 1.7d0, 0.d0/)
-		m3%re(3,:) = (/0.d0, 0.d0, 1.2d0/)
 		m3%im = 0.d0
-		m4%re(1,:) = (/1.6d0, 0.d0, 0.d0/)
-		m4%re(2,:) = (/0.d0, 1.9d0, 0.d0/)
-		m4%re(3,:) = (/0.d0, 0.d0, 1.0d0/)
 		m4%im = 0.d0
-		Fsr(1,:) = (/-6.06d0, 0.d0, 0.d0/)
-		Fsr(2,:) = (/0.d0, -1.596d0, 0.d0/)
-		Fsr(3,:) = (/0.d0, 0.d0, 0.504d0/)
 		Fsi=0.d0
-		Fpr(1,:) = (/-10.968d0, 0.d0, 0.d0/)
-		Fpr(2,:) = (/0.d0, -2.844d0, 0.d0/)
-		Fpr(3,:) = (/0.d0, 0.d0, -2.854d0/)
 		Fpi=0.d0
 #endif
 		do i=1, 3
