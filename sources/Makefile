@@ -71,6 +71,24 @@ ifeq ($(TESTSPEED), 1)
 	F90FLAGS += -DTESTSPEED=1
 endif
 
+# used in prepare_interpolations:
+INTERPFLAGS=
+ifneq ($(XIN),)
+	INTERPFLAGS += -DXIN=$(XIN)
+endif
+ifneq ($(XFIN),)
+	INTERPFLAGS += -DXFIN=$(XFIN)
+endif
+ifneq ($(YMIN),)
+	INTERPFLAGS += -DYMIN=$(YMIN)
+endif
+ifneq ($(YMAX),)
+	INTERPFLAGS += -DYMAX=$(YMAX)
+endif
+ifneq ($(STARTX),)
+	INTERPFLAGS += -DSTARTX=$(STARTX)
+endif
+
 OBJ_FILES=$(BUILD_DIR)/const.o \
 	$(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/config.o \
@@ -189,7 +207,7 @@ preparenodes: $(BUILD_DIR)/prepare_gl_nodes.o
 	$(F90) -o ../bin/prepare_gl_nodes $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_gl_nodes.o $(FFLAGS) $(TESTFLAGS)
 
 prepareinterp: $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_interpolations.o
-	$(F90) -o ../bin/prepare_interpolations $(OBJ_FILES) $(BUILD_DIR)/prepare_interpolations.o $(FFLAGS) $(TESTFLAGS)
+	$(F90) -o ../bin/prepare_interpolations $(OBJ_FILES) $(BUILD_DIR)/prepare_interpolations.o $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS)
 
 tests: TESTFLAGS = -DDO_TESTS=1
 
@@ -200,7 +218,7 @@ tests: Makefile $(OBJ_TESTS) $(BUILD_DIR)/tests.o
 	$(F90) -o ../bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS) $(TESTFLAGS)
 
 $(BUILD_DIR)/%.o: %.f90 Makefile
-	$(F90) $(FFLAGS) $(TESTFLAGS) -c $*.f90 -o $(BUILD_DIR)/$*.o
+	$(F90) $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS) -c $*.f90 -o $(BUILD_DIR)/$*.o
 
 $(BUILD_DIR)/%.o: %.f Makefile
-	$(F90) $(FFLAGS) $(TESTFLAGS) $(stdFlag) -c $*.f -o $(BUILD_DIR)/$*.o
+	$(F90) $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS) $(stdFlag) -c $*.f -o $(BUILD_DIR)/$*.o

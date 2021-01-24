@@ -1283,7 +1283,8 @@ More details on the precision of the code are discussed in \cite{Gariazzo:2019gy
 {\it Top}: Variations in $N_y$ and~$y_{\rm min}$, using the Newton--Cotes quadrature method.
 {\it Bottom left}: Variations in $N_y$ and~$y_{\rm max}$ using the Newton--Cotes quadrature method.
 {\it Bottom right}: Variations in $N_y$ and~$y_{\rm max}$ using the Gauss-Laguerre quadrature method.
-The default setting used in Table~\ref{tab:Results_nunudiag} of $y_{\rm min}=0.01$ (Newton--Cotes only), $y_{\rm max}=30$, and $N_y = 80$ is marked by a red dot on each plot.
+The red dots represent the reference point with
+$y_{\rm min}=0.01$ (Newton--Cotes only), $y_{\rm max}=30$, and $N_y = 80$.
 From \cite{Bennett:2020zkv}.
 \label{fig:Ny_yrange}}
 \end{figure}
@@ -1408,7 +1409,9 @@ Compile with \texttt{make preparenodes}.
 \item \texttt{bin/prepare\_interpolations}: using few different available options,
 it generates files with all the points that are used to compute interpolated quantities in the code.
 These include cosmological and FTQED integrals such as the electron mass corrections or energy density.
-Compile with \texttt{make prepareinterp} (with precompiler options, eventually).
+Compile with \texttt{make prepareinterp} (with precompiler options, eventually.
+You can use the same ones of the main code, even if some will have no effect,
+plus additional ones to define the ranges over which you want to interpolate: \texttt{XIN}, \texttt{XFIN}, \texttt{YMIN}, \texttt{YMAX}, \texttt{STARTX}).
 \item \texttt{bin/read\_gl\_nodes}: read first and last nodes from the previously created list, and store them in a file, used for internal checks if available. Compile with \texttt{make readnodes}.
 \end{itemize}
 

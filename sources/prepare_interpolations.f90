@@ -18,13 +18,28 @@ program prepare_interpolations
 	toler_jkyg = 1.d-7
 	maxiter = 100
 	tot_factor_active_nu = 3.0
-	x_in    = 0.001d0
-	x_fin   = 35.d0
+#ifndef XIN
+#define XIN 0.001d0
+#endif
+#ifndef XFIN
+#define XFIN 35.0d0
+#endif
+#ifndef YMIN
+#define YMIN 0.01d0
+#endif
+#ifndef YMAX
+#define YMAX 20.d0
+#endif
+#ifndef STARTX
+#define STARTX 0.001d0
+#endif
+	x_in    = XIN
+	x_fin   = XFIN
 	logx_in  = log10(x_in)
 	logx_fin = log10(x_fin)
-	y_min = 0.01d0
-	y_max = 20.0d0
-	startx = (/0.001d0, very_early_x/)
+	y_min = YMIN
+	y_max = YMAX
+	startx = (/STARTX, very_early_x/)
 	allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
 	interp_xvec = logspace(logx_in, logx_fin, interp_nx)
 	interp_yvec = logspace(log10(y_min), log10(y_max), interp_ny)

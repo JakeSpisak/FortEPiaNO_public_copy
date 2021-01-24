@@ -172,7 +172,7 @@ Such files (they store the position and weight of Gauss-Laguerre momentum nodes,
 The scripts are:
 
 * `bin/prepare_gl_nodes`: it produces a file with the position and weights of all `N` nodes for each valid degree `N` of Laguerre polynomials that can be used in the code. In the default configuration, this will generate two sets of 1500 files. Compile with `make preparenodes`.
-* `bin/prepare_interpolations`: using few different available options, it generates files with all the points that are used to compute interpolated quantities in the code. These include cosmological and FTQED integrals such as the electron mass corrections or energy density. Compile with `make prepareinterp` (with precompiler options, eventually).
+* `bin/prepare_interpolations`: using few different available options, it generates files with all the points that are used to compute interpolated quantities in the code. These include cosmological and FTQED integrals such as the electron mass corrections or energy density. Compile with `make prepareinterp` (with precompiler options, eventually, including the values of XIN, XFIN, YMIN, YMAX, STARTX).
 * `bin/read_gl_nodes`: read first and last nodes from the previously created list, and store them in a file, used for internal checks if available. Compile with `make readnodes`.
 
 
