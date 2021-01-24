@@ -43,7 +43,7 @@ program tests
 	call do_test_damping_factors
 	call do_test_zin
 	call do_test_damping_bennett
-	call do_test_GL
+!	call do_test_GL
 	call do_test_matterPotential
 	call do_test_diagonalization
 
@@ -2984,50 +2984,60 @@ program tests
 
 		call printTestBlockName("diagonalization")
 
-		nuMassesMat(1,:) = (/2.,0.2,0.02/)
-		nuMassesMat(2,:) = (/0.2,2.,0.02/)
-		nuMassesMat(3,:) = (/0.02,0.02,5./)
-		leptonDensities(1,:) = (/0.5, 0., 0./)
-		leptonDensities(2,:) = (/0., 0.9, 0./)
-		leptonDensities(3,:) = (/0.,0.,0./)
-		nuDensities%re(1,:) = (/0.027,-0.348,-0.01248/)
-		nuDensities%re(2,:) = (/-0.348,0.01,-0.01648/)
-		nuDensities%re(3,:) = (/-0.01248,-0.01648,0.06/)
-		nuDensities%im(1,:) = (/0.,0.008047,0.8047/)
-		nuDensities%im(2,:) = (/-0.008047,0.,0.13535/)
-		nuDensities%im(3,:) = (/-0.8047,-0.13535,0./)
+		open(unit=fu, file="test_outputs/diagonalization_nmm.dat", status="old")
+		open(unit=fv, file="test_outputs/diagonalization_ldm.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuMassesMat(j,:)
+			read (fv, *) leptonDensities(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/diagonalization_ndm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/diagonalization_ndm_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuDensities%re(j,:)
+			read (fv, *) nuDensities%im(j,:)
+		end do
+		close(fu)
+		close(fv)
 		y_arr(1) = 1.
 
 		tmpvec = 0.d0
 		cmp2(:,:) = cmplx(0.d0, 0.d0)
 		cmp1 = H_eff_cmplx(y_arr(1))
 		call HEigensystem(flavorNumber, cmp1, flavorNumber, tmpvec, cmp2, flavorNumber, 0)
-		rv = (/1.,2.,3.,0.,0.,0./)
+		open(unit=fu, file="test_outputs/diagonalization_eigenvalues.dat", status="old")
+		read (fu, *) rv(:)
+		close(fu)
 		do i=1, maxFlavorNumber
 			write(tmparg,"('HEigensystem ',I1)") i
-			call assert_double_rel_safe(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7, 2d-3)
+			call assert_double_rel_safe(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7, 1d-6)
 		end do
 
 		do iy=1, Ny
-			nuDensMatVecFD(iy)%re(1,:) = (/0.4d0,0.5d0,0.2d0/)
-			nuDensMatVecFD(iy)%re(2,:) = (/3.d0,-1.d0,0.6d0/)
-			nuDensMatVecFD(iy)%re(3,:) = (/1.1d0,4.3d0,0.9d0/)
-			nuDensMatVecFD(iy)%im(1,:) = (/0.d0,0.1d0,0.2d0/)
-			nuDensMatVecFD(iy)%im(2,:) = (/-0.1d0,0.d0,0.3d0/)
-			nuDensMatVecFD(iy)%im(3,:) = (/-0.2d0,-0.3d0,0.d0/)
+            open(unit=fu, file="test_outputs/diagonalization_nm_re.dat", status="old")
+            open(unit=fv, file="test_outputs/diagonalization_nm_im.dat", status="old")
+            do j=1, 3
+                read (fu, *) nuDensMatVecFD(iy)%re(j,:)
+                read (fv, *) nuDensMatVecFD(iy)%im(j,:)
+            end do
+            close(fu)
+            close(fv)
 		end do
 
 		m = rho_diag_mass(1)
-		r1(1,:) = (/0.420762,0.,0./)
-		r1(2,:) = (/0.,-0.877571,0./)
-		r1(3,:) = (/0.,0.,0.75681/)
-		r2(1,:) = (/0.,0.,0./)
-		r2(2,:) = (/0.,0.,0./)
-		r2(3,:) = (/0.,0.,0./)
+		open(unit=fu, file="test_outputs/diagonalization_rho_mass_basis_re.dat", status="old")
+		open(unit=fv, file="test_outputs/diagonalization_rho_mass_basis_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) r1(j,:)
+			read (fv, *) r2(j,:)
+		end do
+		close(fu)
+		close(fv)
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('rho mass basis ',2I1)") i,j
-				call assert_double_rel_safe(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7, 2d-3)
+				call assert_double_rel_safe(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7, 1d-5)
 				call assert_double(trim(tmparg)//"im", m%im(i,j), r2(i,j), 1d-7)
 			end do
 		end do
