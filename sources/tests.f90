@@ -3059,11 +3059,12 @@ program tests
 
 	subroutine do_test_damping_bennett
 		real(dl) :: x,w,z,dme2,y1
-		integer :: ix, iy1, iy
+		integer :: ix, iy1, iy, j
 		real(dl) :: y,res1,res2
 		type(coll_args) :: collArgs
 		real(dl), dimension(3) :: tmparrS, tmparrA
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
+		real(dl), dimension(12) :: errv
 		character(len=300) :: tmparg
 		type(cmplxMatNN) :: cts
 
@@ -3074,33 +3075,33 @@ program tests
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		call finish_y_arrays
-		call assert_double_rel("dy_damping_pi 3.        ", dy_damping_pi(3.d0        ),  94.545d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.001     ", dy_damping_pi(0.001d0     ), 129.894d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.00359381", dy_damping_pi(0.00359381d0), 129.933d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.0129155 ", dy_damping_pi(0.0129155d0 ), 129.397d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.0464159 ", dy_damping_pi(0.0464159d0 ), 128.161d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.16681   ", dy_damping_pi(0.16681d0   ), 124.039d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.599484  ", dy_damping_pi(0.599484d0  ), 112.398d0, 1d-2)
-		call assert_double_rel("dy_damping_pi 2.15443   ", dy_damping_pi(2.15443d0   ),  95.919d0, 1d-2)
-		call assert_double_rel("dy_damping_pi 7.74264   ", dy_damping_pi(7.74264d0   ),  97.543d0, 1d-2)
-		call assert_double_rel("dy_damping_pi 20.0000   ", dy_damping_pi(20.0000d0   ),  99.787d0, 7d-2)
+		errv=(/2d-2,2d-2,2d-2,2d-2,2d-2,2d-2,1d-2,1d-2,1d-2,7d-2,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/damping_bennett_sv.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_bennett_dy.dat", status="old")
+		do j=1, 10
+			read (fu, *) res1
+			read (fv, *) res2
+			write(tmparg, "('dy_damping_pi ',E10.3)") res1
+			call assert_double_rel(trim(tmparg), dy_damping_pi(res1), res2, errv(j))
+		end do
+		close(fu)
+		close(fv)
 
 		Ny=100
 		deallocate(y_arr)
 		allocate(y_arr(Ny))
 		y_arr = linspace(y_min, y_max, Ny)
-		call assert_double_rel("dy_damping_fit 3.        ", dy_damping_fit(3.d0        ),  94.545d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.001     ", dy_damping_fit(0.001d0     ), 129.894d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.00359381", dy_damping_fit(0.00359381d0), 129.933d0, 2d-3)
-		call assert_double_rel("dy_damping_fit 0.0129155 ", dy_damping_fit(0.0129155d0 ), 129.397d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.0464159 ", dy_damping_fit(0.0464159d0 ), 128.161d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.16681   ", dy_damping_fit(0.16681d0   ), 124.039d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.599484  ", dy_damping_fit(0.599484d0  ), 112.398d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 2.15443   ", dy_damping_fit(2.15443d0   ),  95.919d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 7.74264   ", dy_damping_fit(7.74264d0   ),  97.543d0, 3d-3)
-		call assert_double_rel("dy_damping_fit 20.0000   ", dy_damping_fit(20.0000d0   ),  99.787d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 27.8256   ", dy_damping_fit(27.8256d0   ), 100.130d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 100.      ", dy_damping_fit(100.d0      ), 100.772d0, 2d-3)
+		errv=(/1d-3,1d-3,2d-3,1d-3,1d-3,1d-3,1d-3,1d-3,3d-3,1d-3,1d-3,2d-3/)
+		open(unit=fu, file="test_outputs/damping_bennett_sv.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_bennett_dy.dat", status="old")
+		do j=1, 12
+			read (fu, *) res1
+			read (fv, *) res2
+			write(tmparg, "('dy_damping_fit ',E10.3)") res1
+			call assert_double_rel(trim(tmparg), dy_damping_fit(res1), res2, errv(j))
+		end do
+		close(fu)
+		close(fv)
 
 		call assert_double_rel("kappa A", -15.4485396d0, kappa_damp(12.d0, 0.44d0, 0.33d0), 1d-7)
 		call assert_double_rel("kappa B", -0.12818209d0, kappa_damp(1.d0, 0.14d0, 0.01d0), 1d-7)
@@ -3112,18 +3113,17 @@ program tests
 		call assert_double_rel("nunu_damp_integrand E", -0.080526245965d0, nunu_damp_integrand(10.d0, 30.d0, 5.d0), 1d-7)
 		call assert_double_rel("nunu_damp_integrand F", 328.64337311d0,    nunu_damp_integrand(10.d0, 3.d0, 1.d0), 1d-7)
 
-		call assert_double_rel("dy_damping 3.        ", dy_damping(3.d0        ),  94.545d0, 2d-2)
-		call assert_double_rel("dy_damping 0.001     ", dy_damping(0.001d0     ), 129.894d0, 2d-2)
-		call assert_double_rel("dy_damping 0.00359381", dy_damping(0.00359381d0), 129.933d0, 2d-2)
-		call assert_double_rel("dy_damping 0.0129155 ", dy_damping(0.0129155d0 ), 129.397d0, 2d-2)
-		call assert_double_rel("dy_damping 0.0464159 ", dy_damping(0.0464159d0 ), 128.161d0, 2d-2)
-		call assert_double_rel("dy_damping 0.16681   ", dy_damping(0.16681d0   ), 124.039d0, 2d-2)
-		call assert_double_rel("dy_damping 0.599484  ", dy_damping(0.599484d0  ), 112.398d0, 1d-2)
-		call assert_double_rel("dy_damping 2.15443   ", dy_damping(2.15443d0   ),  95.919d0, 1d-2)
-		call assert_double_rel("dy_damping 7.74264   ", dy_damping(7.74264d0   ),  97.543d0, 1d-2)
-		call assert_double_rel("dy_damping 20.0000   ", dy_damping(20.0000d0   ),  99.787d0, 3d-2)
-		call assert_double_rel("dy_damping 27.8256   ", dy_damping(27.8256d0   ), 100.130d0, 2d-2)
-		call assert_double_rel("dy_damping 100.      ", dy_damping(100.d0      ), 100.772d0, 2d-2)
+		errv=(/2d-2,2d-2,2d-2,2d-2,2d-2,2d-2,1d-2,1d-2,1d-2,3d-2,2d-2,2d-2/)
+		open(unit=fu, file="test_outputs/damping_bennett_sv.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_bennett_dy.dat", status="old")
+		do j=1, 12
+			read (fu, *) res1
+			read (fv, *) res2
+			write(tmparg, "('dy_damping ',E10.3)") res1
+			call assert_double_rel(trim(tmparg), dy_damping(res1), res2, errv(j))
+		end do
+		close(fu)
+		close(fv)
 
 		collint_damping_type = 1
 		collint_diagonal_zero = .false.
