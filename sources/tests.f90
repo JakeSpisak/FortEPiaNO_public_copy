@@ -79,7 +79,7 @@ program tests
 		interp_zmax = interp_zmax0
 		allocate(x_arr(Nx), y_arr(Ny))
 		x_in    = 0.001d0
-		x_fin   = 40.d0
+		x_fin   = 35.d0
 		logx_in  = log10(x_in)
 		logx_fin = log10(x_fin)
 		x_arr = logspace(logx_in, logx_fin, Nx)
@@ -134,7 +134,8 @@ program tests
 		interp_xvec = logspace(logx_in, logx_fin, interp_nx)
 		interp_yvec = logspace(log10(y_min), log10(y_max), interp_ny)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
+		low_xoz = x_in/interp_zmax
+		interp_xozvec = logspace(log10(low_xoz), logx_fin, interp_nxz)
 	end subroutine do_test_initialization
 
 	subroutine do_basic_tests
@@ -431,7 +432,7 @@ program tests
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix C ',2I1)") i,j
-				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 5d-26)
+				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-25)
 				write(tmparg,"('nu density matrix re C ',2I1)") i,j
 				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 1d-21)
 				write(tmparg,"('nu density matrix im C ',2I1)") i,j

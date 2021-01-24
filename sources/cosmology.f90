@@ -240,7 +240,7 @@ module fpCosmology
 		allocate(edwt_vec(interp_nx, interp_nz))
 		allocate(p_vec(interp_nx, interp_nz))
 		thmass = isElectron .and. ftqed_e_mth_leptondens
-		write(tmpstr, "('interpolations/cosmo_',A,'_',L,'.dat')") fermionName, thmass
+		write(tmpstr, "(A,'cosmo_',A,'_',L,'_',L,'_',L,'.dat')") trim(get_interpolation_folder()), fermionName, thmass, ftqed_temperature_corr, ftqed_log_term
 		inquire(file=trim(tmpstr), exist=exists)
 		if (exists) then
 			call addToLog("[cosmo] read values from file: "//trim(tmpstr))

@@ -203,8 +203,8 @@ module ftqed
 
 		if (ftqed_temperature_corr) then
 			o = x/z
-			k2=k_funcFull(o, 2)
-			j2=j_funcFull(o, 2)
+			k2=K_funcFull(o, 2)
+			j2=J_funcFull(o, 2)
 			k2p=KprimeFull(o, 2)
 			j2p=JprimeFull(o, 2)
 			ga = (k2p/6.d0 - k2*k2p + j2p/6.d0 + j2p*k2 + j2*k2p)
@@ -384,7 +384,7 @@ module ftqed
 
 		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
 		allocate(dme_vec(interp_nx, interp_ny, interp_nz))
-		write(tmpstr, "('interpolations/dme2_log_',L,'_',L,'.dat')") ftqed_temperature_corr, ftqed_log_term
+		write(tmpstr, "(A,'dme2_log_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_log_term
 		inquire(file=trim(tmpstr), exist=exists)
 		if (exists) then
 			call addToLog("[interactions] read values from existing file: "//trim(tmpstr))
@@ -444,7 +444,7 @@ module ftqed
 		initial = ftqed_log_term
 		ftqed_log_term = .false.
 		allocate(dmg_vec(interp_nx, interp_nz))
-		write(tmpstr, "('interpolations/dme2_nolog_',L,'.dat')") ftqed_temperature_corr
+		write(tmpstr, "(A,'dme2_nolog_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr
 		inquire(file=trim(tmpstr), exist=exists)
 		if (exists) then
 			call addToLog("[interactions] read values from existing file: "//trim(tmpstr))

@@ -185,8 +185,18 @@ module variables
 	real(dl), dimension(:), allocatable :: interp_yvec
 	real(dl), dimension(:), allocatable :: interp_zvec
 	real(dl), dimension(:), allocatable :: interp_xozvec
+	real(dl) :: low_xoz
 
 	contains
+
+	function get_interpolation_folder()
+		character (len=300) :: get_interpolation_folder
+		write(get_interpolation_folder, &
+			"('interpolations/xi',SP 1P E9.2,'_xf',1P E8.2E1,'_yl',1P E8.2E1,'_yu',1P E8.2E1,'_zl',1P E8.2E1,'_zu',1P E8.2E1,'_xz',1P E8.2E1,'/')" &
+		) &
+			x_in, x_fin, y_min, y_max, interp_zmin, interp_zmax, low_xoz
+		call system("mkdir -p "//trim(get_interpolation_folder))
+	end function
 
 	pure subroutine allocateCmplxMat(m)
 		type(cmplxMatNN), intent(inout) :: m

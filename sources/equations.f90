@@ -126,7 +126,7 @@ module fpEquations
 	end subroutine vec_2_densMat
 
 #ifndef NO_INTERPOLATION
-	subroutine do_ABweq(ix, elContr0, num, den, numw, denw)
+	pure subroutine do_ABweq(ix, elContr0, num, den, numw, denw)
 		integer, intent(in) :: ix
 		real(dl), dimension(2), intent(in) :: elContr0
 		real(dl), intent(out) :: num, den, numw, denw
@@ -177,9 +177,9 @@ module fpEquations
 			call criticalError("log term FTQED corrections not supported when interpolating")
 		end if
 #ifdef NO_MUONS
-		write(tmpstr, "('interpolations/ftqed_nm_',L,'_',L,'.dat')") ftqed_temperature_corr, ftqed_ord3
+		write(tmpstr, "(A,'ftqed_nm_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_ord3
 #else
-		write(tmpstr, "('interpolations/ftqed_',L,'_',L,'.dat')") ftqed_temperature_corr, ftqed_ord3
+		write(tmpstr, "(A,'ftqed_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_ord3
 #endif
 		inquire(file=trim(tmpstr), exist=exists)
 		if (exists) then

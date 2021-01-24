@@ -382,7 +382,8 @@ module fpConfig
 		interp_xvec = logspace(interp_logx_in, logx_fin, interp_nx)
 		interp_yvec = logspace(interp_logy_min, interp_logy_max, interp_ny)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-		interp_xozvec = logspace(log10(very_early_x/interp_zmax), logx_fin, interp_nxz)
+		low_xoz = very_early_x/interp_zmax
+		interp_xozvec = logspace(log10(low_xoz), logx_fin, interp_nxz)
 
 		flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 		if (has_offdiagonal()) then
