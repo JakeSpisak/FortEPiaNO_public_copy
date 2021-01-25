@@ -3511,10 +3511,13 @@ program tests
 		iy1=10
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,1) = 397.484d0
-		ndr(2,2) = 400.475d0
-		ndr(3,3) = 390.577d0
-		er = 1d-2
+		open(unit=fu, file="test_outputs/collint_nunu_integral_GL_A.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
+		ndi = 0.d0
+		er = 1d-3
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
@@ -3529,10 +3532,13 @@ program tests
 		iy1=5
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,1) = 33.3417d0
-		ndr(2,2) = 36.3735d0
-		ndr(3,3) = 30.3581d0
-		er = 4d-3
+		open(unit=fu, file="test_outputs/collint_nunu_integral_GL_B.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
+		ndi = 0.d0
+		er = 1.1d-3
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
@@ -3579,12 +3585,12 @@ program tests
 		end do
 		close(fu)
 		close(fv)
-		er(1,:) = (/1d-3,5d-3,1d-3/)
-		er(2,:) = (/5d-3,2d-3,2d-3/)
-		er(3,:) = (/1d-3,2d-3,2d-3/)
-		ei(1,:) = (/1d-3,4d-3,1d-3/)
-		ei(2,:) = (/4d-3,1d-3,5d-2/)
-		ei(3,:) = (/1d-3,5d-2,1d-3/)
+		er(1,:) = (/1d-3,1d-3,1d-3/)
+		er(2,:) = (/1d-3,1d-3,1d-3/)
+		er(3,:) = (/1d-3,1d-3,1d-3/)
+		ei(1,:) = (/1d-3,1d-3,1d-3/)
+		ei(2,:) = (/1d-3,1d-3,1d-3/)
+		ei(3,:) = (/1d-3,1d-3,1d-3/)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
@@ -3596,17 +3602,18 @@ program tests
 		end do
 
 		!full integral
-		!A
 		iy1=10
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,:) = (/2.23945e6, -219146., 117805./)
-		ndr(2,:) = (/-219146., 2.36926e6, 6.06044e6/)
-		ndr(3,:) = (/117805., 6.06044e6, 2.8301e6/)
-		ndi(1,:) = (/0.,- 813455., -6.02848e6/)
-		ndi(2,:) = (/813455.,0.,-266218./)
-		ndi(3,:) = (/6.02848e6,266218.,0./)
-		er(1,:) = (/1.2d-1, 1.0d-1, 1.0d-1/)
+		open(unit=fu, file="test_outputs/collint_nunu_integral_GL_C_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_nunu_integral_GL_C_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) ndr(i,:)
+			read (fv, *) ndi(i,:)
+		end do
+		close(fu)
+		close(fv)
+		er(1,:) = (/1.1d-1, 1.0d-1, 1.0d-1/)
 		er(2,:) = (/1.0d-1, 1.1d-1, 1.2d-1/)
 		er(3,:) = (/1.0d-1, 1.2d-1, 1.1d-1/)
 		ei(1,:) = (/1.0d-1, 1.1d-1, 1.2d-1/)
@@ -3669,13 +3676,14 @@ program tests
 		iy1=20
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr = 0.d0
+		open(unit=fu, file="test_outputs/collint_nunu_integral_NC_A.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
 		ndi = 0.d0
-		ndr(1,1) = -365.198d0
-		ndr(2,2) = -820.405d0
-		ndr(3,3) = 55.3159d0
 		er = 1d-3
-		er(3,3) = 2d-2
+		er(3,3) = 1.4d-2
 		ei = 1d-3
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -3691,9 +3699,12 @@ program tests
 		iy1=4
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,1) = 193.541d0
-		ndr(2,2) = 204.772d0
-		ndr(3,3) = 181.685d0
+		open(unit=fu, file="test_outputs/collint_nunu_integral_NC_B.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
+		ndi = 0.d0
 		er = 1d-3
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -3731,12 +3742,14 @@ program tests
 		iy1=7
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,:) = (/5.05623e6, -468304., 241699./)
-		ndr(2,:) = (/-468304., 5.36981e6, 1.29749e7/)
-		ndr(3,:) = (/241699., 1.29749e7, 6.2691e6/)
-		ndi(1,:) = (/0., -1.73808e6, -1.29012e7/)
-		ndi(2,:) = (/1.73808e6, 0., -591614./)
-		ndi(3,:) = (/1.29012e7, 591614., 0./)
+		open(unit=fu, file="test_outputs/collint_nunu_integral_NC_C_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_nunu_integral_NC_C_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) ndr(i,:)
+			read (fv, *) ndi(i,:)
+		end do
+		close(fu)
+		close(fv)
 		er = 1d-3
 		ei = 1d-3
 		do i=1, flavorNumber
@@ -3751,6 +3764,7 @@ program tests
 #endif
 
 		!now test that get_collision_terms does what expected
+		write(*,*)""
 		call allocateCmplxMat(cts)
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
@@ -3833,7 +3847,6 @@ program tests
 			collArgs%y1 = y_arr(collArgs%iy)
 			res1=integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_da, F_nu_pa_da)/collArgs%y1**3/8.d0
 			res2=dy_damping_fit(collArgs%y1)
-			!print*,"s",collargs%y1,res1,res2
 			write(tmparg,"('dy-sim GL',I1)") j
 			call assert_double_rel_safe(trim(tmparg), res1, res2, 1d-7, 1d-2)
 		end do
