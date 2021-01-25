@@ -51,9 +51,10 @@ program tests
 	write(*,*) ""
 	write(*,"(a)") "all tests were successfull!"
 
-	write(*,*) ""
-	write(*,"(a)") "now doing some timing tests..."
-	call do_timing_tests()
+!	write(*,*) ""
+!	write(*,"(a)") "now doing some timing tests..."
+!	call do_timing_tests()
+
 	call closeLogFile
 
 	contains
@@ -3339,30 +3340,35 @@ program tests
 		type(cmplxMatNN) :: nm
 		type(cmplxMatNN), dimension(:), allocatable :: vdm
 		character(len=300) :: tmparg
+		character(len=1), dimension(3) :: fn
 
 		call printTestBlockName("interpolation of nudens")
 		allocate(vdm(3))
+		open(unit=fu, file="test_outputs/interp_nunu_y.dat", status="old")
+		read (fu, *) vdm(1)%y, vdm(2)%y, vdm(3)%y
+		close(fu)
+		fn=(/"A","B","C"/)
 		do i=1, 3
 			allocate(vdm(i)%re(2,2), vdm(i)%im(2,2))
-			vdm(i)%y = i
+			open(unit=fu, file="test_outputs/interp_nunu_"//fn(i)//"m_re.dat", status="old")
+			open(unit=fv, file="test_outputs/interp_nunu_"//fn(i)//"m_im.dat", status="old")
+			do j=1, 2
+				read (fu, *) vdm(i)%re(j,:)
+				read (fv, *) vdm(i)%im(j,:)
+				vdm(i)%re(j,j) = vdm(i)%re(j,j)*fermiDirac(vdm(i)%y)
+			end do
+			close(fu)
+			close(fv)
 		end do
-		vdm(3)%y = 10.
-		vdm(1)%re(1,:) = (/1.1*fermiDirac(1.d0),0.3d0/)
-		vdm(1)%re(2,:) = (/0.12d0,2.*fermiDirac(1.d0)/)
-		vdm(2)%re(1,:) = (/1.3*fermiDirac(2.d0),-0.2d0/)
-		vdm(2)%re(2,:) = (/0.16d0,1.2*fermiDirac(2.d0)/)
-		vdm(3)%re(1,:) = (/1.9*fermiDirac(10.d0),0.d0/)
-		vdm(3)%re(2,:) = (/0.d0,1.1*fermiDirac(10.d0)/)
-		ndr(1,:) = (/1.2*fermiDirac(1.5d0),0.05d0/)
-		ndr(2,:) = (/0.05d0,1.6*fermiDirac(1.5d0)/)
-		vdm(1)%im(1,:) = (/10.,2./)
-		vdm(1)%im(2,:) = (/-0.4,0./)
-		vdm(2)%im(1,:) = (/0.,0.2/)
-		vdm(2)%im(2,:) = (/0.4,0./)
-		vdm(3)%im(1,:) = (/0.,0.1/)
-		vdm(3)%im(2,:) = (/0.2,1.1/)
-		ndi(1,:) = (/0.,1.1/)
-		ndi(2,:) = (/-1.1,0./)
+		open(unit=fu, file="test_outputs/interp_nunu_t1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/interp_nunu_t1_im.dat", status="old")
+		do j=1, 2
+			read (fu, *) ndr(j,:)
+			read (fv, *) ndi(j,:)
+			ndr(j,j) = ndr(j,j)*fermiDirac(1.5d0)
+		end do
+		close(fu)
+		close(fv)
 		nm = get_interpolated_nudens(vdm, 1.5d0, 2, 3)
 		call assert_double("ndr A y", nm%y, 1.5d0, 1d-7)
 		do i=1,2
@@ -3374,10 +3380,15 @@ program tests
 		end do
 		call deallocateCmplxMat(nm)
 
-		ndr(1,:) = (/1.75*fermiDirac(8.d0),-0.05d0/)
-		ndr(2,:) = (/-0.05d0,1.125*fermiDirac(8.d0)/)
-		ndi(1,:) = (/0.,0.125/)
-		ndi(2,:) = (/-0.125,0./)
+		open(unit=fu, file="test_outputs/interp_nunu_t2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/interp_nunu_t2_im.dat", status="old")
+		do j=1, 2
+			read (fu, *) ndr(j,:)
+			read (fv, *) ndi(j,:)
+			ndr(j,j) = ndr(j,j)*fermiDirac(8.d0)
+		end do
+		close(fu)
+		close(fv)
 		nm = get_interpolated_nudens(vdm, 8.d0, 2, 3)
 		call assert_double("ndr B y", nm%y, 8.d0, 1d-7)
 		do i=1,2
@@ -3389,10 +3400,8 @@ program tests
 		end do
 		call deallocateCmplxMat(nm)
 
-		ndr(1,:) = (/0.,0./)
-		ndr(2,:) = (/0.,0./)
-		ndi(1,:) = (/0.,0./)
-		ndi(2,:) = (/0.,0./)
+		ndr=0.d0
+		ndi=0.d0
 		nm = get_interpolated_nudens(vdm, 0.1d0, 2, 3)
 		call assert_double("ndr C y", nm%y, 0.1d0, 1d-7)
 		do i=1,2
@@ -3404,10 +3413,8 @@ program tests
 		end do
 		call deallocateCmplxMat(nm)
 
-		ndr(1,:) = (/0.,0./)
-		ndr(2,:) = (/0.,0./)
-		ndi(1,:) = (/0.,0./)
-		ndi(2,:) = (/0.,0./)
+		ndr=0.d0
+		ndi=0.d0
 		nm = get_interpolated_nudens(vdm, 20.d0, 2, 3)
 		call assert_double("ndr D y", nm%y, 20.d0, 1d-7)
 		do i=1,2
@@ -3459,10 +3466,11 @@ program tests
 		iy3=5
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr = 0.d0
-		ndr(1,1) = 0.0000980353d0
-		ndr(2,2) = 0.000103827d0
-		ndr(3,3) = 0.0000919177d0
+		open(unit=fu, file="test_outputs/collint_nunu_int_A.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
 		ndi = 0.d0
 		er = 2d-3
 		ei = 1d-3
@@ -3482,9 +3490,12 @@ program tests
 		iy3=7
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,1) = 0.0132253d0
-		ndr(2,2) = 0.0136399d0
-		ndr(3,3) = 0.0127086d0
+		open(unit=fu, file="test_outputs/collint_nunu_int_B.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
+		ndi = 0.d0
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
@@ -3560,12 +3571,14 @@ program tests
 			nuDensMatVecFD(j)%im(3, 2) = - nuDensMatVecFD(j)%im(2, 3)
 		end do
 
-		ndr(1,:) = (/0.000143589, -0.0000141319, 8.50652e-6/)
-		ndr(2,:) = (/-0.0000141319,0.000059132,-0.0000158772/)
-		ndr(3,:) = (/8.50652e-6,-0.0000158772,0.0000680116/)
-		ndi(1,:) = (/0.,3.68626e-7, -0.0000304404/)
-		ndi(2,:) = (/-3.68626e-7,0.,3.3967e-6/)
-		ndi(3,:) = (/0.0000304404,-3.3967e-6,0./)
+		open(unit=fu, file="test_outputs/collint_nunu_int_C_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_nunu_int_C_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+			read (fv, *) ndi(j,:)
+		end do
+		close(fu)
+		close(fv)
 		er(1,:) = (/1d-3,5d-3,1d-3/)
 		er(2,:) = (/5d-3,2d-3,2d-3/)
 		er(3,:) = (/1d-3,2d-3,2d-3/)
