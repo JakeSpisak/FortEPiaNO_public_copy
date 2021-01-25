@@ -661,7 +661,7 @@ module utilities
 						/ (ndmv(iy+1)%y-ndmv(iy)%y) &
 				) * fdc
 				newmat%im(i,j) = ( &
-					ndmv(iy)%im(i,j) &
+					ndmv(iy)%im(i,j)/fd0 &
 					+ (y-ndmv(iy)%y) &
 						* (ndmv(iy+1)%im(i,j)/fd1 - ndmv(iy)%im(i,j)/fd0) &
 						/ (ndmv(iy+1)%y-ndmv(iy)%y) &

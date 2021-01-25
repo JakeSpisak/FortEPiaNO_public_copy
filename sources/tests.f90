@@ -3360,8 +3360,13 @@ program tests
 			close(fu)
 			close(fv)
 		end do
+#ifdef RHO_OFFDIAG_INTERP_DIV_FD
+		open(unit=fu, file="test_outputs/interp_nunu_t1_fd_re.dat", status="old")
+		open(unit=fv, file="test_outputs/interp_nunu_t1_fd_im.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/interp_nunu_t1_re.dat", status="old")
 		open(unit=fv, file="test_outputs/interp_nunu_t1_im.dat", status="old")
+#endif
 		do j=1, 2
 			read (fu, *) ndr(j,:)
 			read (fv, *) ndi(j,:)
@@ -3380,8 +3385,13 @@ program tests
 		end do
 		call deallocateCmplxMat(nm)
 
+#ifdef RHO_OFFDIAG_INTERP_DIV_FD
+		open(unit=fu, file="test_outputs/interp_nunu_t2_fd_re.dat", status="old")
+		open(unit=fv, file="test_outputs/interp_nunu_t2_fd_im.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/interp_nunu_t2_re.dat", status="old")
 		open(unit=fv, file="test_outputs/interp_nunu_t2_im.dat", status="old")
+#endif
 		do j=1, 2
 			read (fu, *) ndr(j,:)
 			read (fv, *) ndi(j,:)
