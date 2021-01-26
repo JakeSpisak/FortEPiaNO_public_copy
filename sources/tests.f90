@@ -920,57 +920,28 @@ program tests
 	end subroutine do_test_dme2
 
 	subroutine do_test_Di
+		real(dl) :: y1, y2, y3, y4, d1, d2, d3
+		integer :: ix
+		character(len=100) :: tmpstr
+
 		call printTestBlockName("D_i functions")
-		call assert_double("D1 test 1", D1_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
-		call assert_double("D1 test 2", D1_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
-		call assert_double("D1 test 3", D1_full(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
-		call assert_double("D1 test 4", D1_full(10.03d0,5.4d0,8.8d0,6.63d0), 21.6d0, 1d-4)
-		call assert_double("D1 test 5", D1_full(10.d0,2.d0,5.3d0,6.7d0), 8.d0, 1d-7)
-		call assert_double("D1 test 6", D1_full(2.d0,10.d0,6.7d0,5.3d0), 8.d0, 1d-7)
-		call assert_double("D2 test 1", D2_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
-		call assert_double("D2 test 2", D2_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
-		call assert_double("D2 test 3", D2_full(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
-		call assert_double("D2 test 4", D2_full(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
-		call assert_double_rel("D2 test 5", D2_full(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
-		call assert_double_rel("D2 test 6", D2_full(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
-		call assert_double("D3 test 1", D3_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
-		call assert_double("D3 test 2", D3_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
-		call assert_double("D3 test 3", D3_full(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
-		call assert_double_rel("D3 test 4", D3_full(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
-		call assert_double_rel("D3 test 5", D3_full(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
-		call assert_double_rel("D3 test 6", D3_full(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
 
-		call assert_double("D2c test 1", D2_cases(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
-		call assert_double("D2c test 2", D2_cases(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
-		call assert_double("D2c test 3", D2_cases(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
-		call assert_double("D2c test 4", D2_cases(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
-		call assert_double_rel("D2c test 5", D2_cases(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
-		call assert_double_rel("D2c test 6", D2_cases(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
-		call assert_double("D3c test 1", D3_cases(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
-		call assert_double("D3c test 2", D3_cases(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
-		call assert_double("D3c test 3", D3_cases(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
-		call assert_double_rel("D3c test 4", D3_cases(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
-		call assert_double_rel("D3c test 5", D3_cases(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
-		call assert_double_rel("D3c test 6", D3_cases(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
+		do ix=1,6
+			write(tmpstr, "('test_outputs/Di_',I1,'.dat')") ix
+			open(unit=fu, file=trim(tmpstr), status="old")
+			read (fu, *) y1, y2, y3, y4, d1, d2, d3
+			close(fu)
+			write(tmpstr, "(I1)") ix
+			call assert_double_rel("D1  test "//trim(tmpstr), D1_full(y1, y2, y3, y4),  d1, 1d-7)
+			call assert_double_rel("D1p test "//trim(tmpstr), D1_bis(y1, y2, y3, y4),   d1, 1d-7)
+			call assert_double_rel("D2  test "//trim(tmpstr), D2_full(y1, y2, y3, y4),  d2, 1d-7)
+			call assert_double_rel("D2c test "//trim(tmpstr), D2_cases(y1, y2, y3, y4), d2, 1d-7)
+			call assert_double_rel("D2p test "//trim(tmpstr), D2_bis(y1, y2, y3, y4),   d2, 1d-7)
+			call assert_double_rel("D3  test "//trim(tmpstr), D3_full(y1, y2, y3, y4),  d3, 1d-7)
+			call assert_double_rel("D3c test "//trim(tmpstr), D3_cases(y1, y2, y3, y4), d3, 1d-7)
+			call assert_double_rel("D3p test "//trim(tmpstr), D3_bis(y1, y2, y3, y4),   d3, 1d-7)
+		end do
 
-		call assert_double("D1p test 1", D1_bis(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
-		call assert_double("D1p test 2", D1_bis(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
-		call assert_double("D1p test 3", D1_bis(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
-		call assert_double("D1p test 4", D1_bis(10.03d0,5.4d0,8.8d0,6.63d0), 21.6d0, 1d-4)
-		call assert_double("D1p test 5", D1_bis(10.d0,2.d0,5.3d0,6.7d0), 8.d0, 1d-7)
-		call assert_double("D1p test 6", D1_bis(2.d0,10.d0,6.7d0,5.3d0), 8.d0, 1d-7)
-		call assert_double("D2p test 1", D2_bis(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
-		call assert_double("D2p test 2", D2_bis(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
-		call assert_double("D2p test 3", D2_bis(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
-		call assert_double("D2p test 4", D2_bis(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
-		call assert_double_rel("D2p test 5", D2_bis(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
-		call assert_double_rel("D2p test 6", D2_bis(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
-		call assert_double("D3p test 1", D3_bis(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
-		call assert_double("D3p test 2", D3_bis(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
-		call assert_double("D3p test 3", D3_bis(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
-		call assert_double_rel("D3p test 4", D3_bis(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
-		call assert_double_rel("D3p test 5", D3_bis(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
-		call assert_double_rel("D3p test 6", D3_bis(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_Di
