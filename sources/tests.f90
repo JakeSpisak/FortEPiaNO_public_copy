@@ -948,42 +948,44 @@ program tests
 
 	subroutine do_test_Pi_ij
 		real(dl), dimension(2) :: temp_v2
+		real(dl) :: y1,y2,y3,y4,x,dm,r1,r2
+		integer :: ix
+		character(len=100) :: tmpstr
+
 		call printTestBlockName("Pi(yi,yj) functions")
-		call assert_double("Pi_1_12 test 1", PI1_12_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.00933333d0, 1d-7)
-		call assert_double("Pi_1_12 test 2", PI1_12_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.0893333d0, 1d-7)
-		call assert_double_rel("Pi_1_12 test 3", PI1_12_full(10.d0, 2.d0, 5.3d0, 6.7d0), 170.66667d0, 1d-7)
-		call assert_double_rel("Pi_1_12 test 4", PI1_12_full(2.d0, 10.d0, 6.7d0, 5.3d0), 170.66667d0, 1d-7)
 
-		call assert_double_rel("Pi_1_13 test 1", PI1_13_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.010666667d0, 1d-7)
-		call assert_double_rel("Pi_1_13 test 2", PI1_13_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.010666667d0, 1d-7)
-		call assert_double_rel("Pi_1_13 test 3", PI1_13_full(10.d0, 2.d0, 5.3d0, 6.7d0), 96.53333d0, 1d-7)
-		call assert_double_rel("Pi_1_13 test 4", PI1_13_full(2.d0, 10.d0, 6.7d0, 5.3d0), 96.53333d0, 1d-7)
+		do ix=1,4
+			write(tmpstr, "('test_outputs/Pi1_',I1,'.dat')") ix
+			open(unit=fu, file=trim(tmpstr), status="old")
+			read (fu, *) y1, y2, y3, y4, r1, r2
+			close(fu)
+			write(tmpstr, "(I1)") ix
+			call assert_double_rel("Pi_1_12 test "//trim(tmpstr), PI1_12_full(y1,y2,y3,y4), r1, 1d-7)
+			call assert_double_rel("Pi_1_13 test "//trim(tmpstr), PI1_13_full(y1,y2,y3,y4), r2, 1d-7)
+		end do
 
-		temp_v2 = PI2_nn_f(0.1d0, 0.2d0, 0.3d0, 0.4d0, 0.3d0, 0.4d0)
-		call assert_double("Pi_2_14 test 1", temp_v2(1), 0.00267733d0, 1d-7)
-		call assert_double("Pi_2_13 test 1", temp_v2(2), 0.000810667d0, 1d-7)
-		temp_v2 = PI2_nn_f(0.4d0, 0.3d0, 0.2d0, 0.1d0, 0.2d0, 0.1d0)
-		call assert_double("Pi_2_14 test 2", temp_v2(1), 0.00267733d0, 1d-7)
-		call assert_double("Pi_2_13 test 2", temp_v2(2), 0.000810667d0, 1d-7)
-		temp_v2 = PI2_nn_f(10.d0, 2.d0, 5.3d0, 6.7d0, 5.3d0, 6.7d0)
-		call assert_double_rel("Pi_2_14 test 3", temp_v2(1), 1978.88d0, 1d-7)
-		call assert_double_rel("Pi_2_13 test 3", temp_v2(2), 3293.01333d0, 1d-7)
-		temp_v2 = PI2_nn_f(2.d0, 10.d0, 6.7d0, 5.3d0, 6.7d0, 5.3d0)
-		call assert_double_rel("Pi_2_14 test 4", temp_v2(1), 1978.88d0, 1d-7)
-		call assert_double_rel("Pi_2_13 test 4", temp_v2(2), 3293.01333d0, 1d-7)
+		do ix=1,4
+			write(tmpstr, "('test_outputs/Pi2nn_',I1,'.dat')") ix
+			open(unit=fu, file=trim(tmpstr), status="old")
+			read (fu, *) y1, y2, y3, y4, x, dm, r1, r2
+			close(fu)
+			write(tmpstr, "(I1)") ix
+			temp_v2 = PI2_nn_f(y1,y2,y3,y4,Ebare_i_dme(x, y3, dm),Ebare_i_dme(x, y4, dm))
+			call assert_double_rel("Pi_2_14a test "//trim(tmpstr), temp_v2(1), r1, 1d-7)
+			call assert_double_rel("Pi_2_13  test "//trim(tmpstr), temp_v2(2), r2, 1d-7)
+		end do
 
-		temp_v2 = PI2_ne_f(0.1d0, 0.2d0, 0.3d0, 0.4d0, 0.2d0, 0.4d0)
-		call assert_double("Pi_2_14 test 1", temp_v2(1), 0.00267733d0, 1d-7)
-		call assert_double("Pi_2_12 test 1", temp_v2(2), 0.00427733d0, 1d-7)
-		temp_v2 = PI2_ne_f(0.4d0, 0.3d0, 0.2d0, 0.1d0, 0.3d0, 0.1d0)
-		call assert_double("Pi_2_14 test 2", temp_v2(1), 0.00267733d0, 1d-7)
-		call assert_double("Pi_2_12 test 2", temp_v2(2), 0.00427733d0, 1d-7)
-		temp_v2 = PI2_ne_f(10.d0, 2.d0, 5.3d0, 6.7d0, 2.d0, 6.7d0)
-		call assert_double("Pi_2_14 test 3", temp_v2(1), 1978.88d0, 1d-7)
-		call assert_double("Pi_2_12 test 3", temp_v2(2), 9420.8d0, 1d-7)
-		temp_v2 = PI2_ne_f(2.d0, 10.d0, 6.7d0, 5.3d0, 10.d0, 5.3d0)
-		call assert_double("Pi_2_14 test 4", temp_v2(1), 1978.88d0, 1d-7)
-		call assert_double("Pi_2_12 test 4", temp_v2(2), 9420.8d0, 1d-7)
+		do ix=1,4
+			write(tmpstr, "('test_outputs/Pi2ne_',I1,'.dat')") ix
+			open(unit=fu, file=trim(tmpstr), status="old")
+			read (fu, *) y1, y2, y3, y4, x, dm, r1, r2
+			close(fu)
+			write(tmpstr, "(I1)") ix
+			temp_v2 = PI2_ne_f(y1,y2,y3,y4,Ebare_i_dme(x, y2, dm),Ebare_i_dme(x, y4, dm))
+			call assert_double_rel("Pi_2_14s test "//trim(tmpstr), temp_v2(1), r1, 1d-7)
+			call assert_double_rel("Pi_2_12  test "//trim(tmpstr), temp_v2(2), r2, 1d-7)
+		end do
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_Pi_ij
