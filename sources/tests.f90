@@ -710,142 +710,136 @@ program tests
 
 	subroutine do_test_JKG
 		real(dl), dimension(2) :: res
-		integer :: ix
+		real(dl), dimension(4) :: v1, v2, zs
+		real(dl) :: x, z, r1, r2
+		integer :: ix, iy
+		character(len=300) :: tmparg
 
 		call printTestBlockName("JKG")
-		call assert_double_rel("J0 test 1", J_funcFull(1.d-3, 0), 0.050660581d0, 1d-7)
-		call assert_double_rel("J0 test 2", J_funcFull(.01d0, 0), 0.050659512d0, 1d-7)
-		call assert_double_rel("J0 test 3", J_funcFull(1.0d0, 0), 0.041253398d0, 1d-7)
-		call assert_double_rel("J0 test 4", J_funcFull(5.0d0, 0), 0.0020302829d0, 1d-7)
 
-		call assert_double_rel("J2 test 1", J_funcFull(1.d-3, 2), 0.166666641d0, 1d-7)
-		call assert_double_rel("J2 test 2", J_funcFull(.01d0, 2), 0.16666413d0, 1d-7)
-		call assert_double_rel("J2 test 3", J_funcFull(1.0d0, 2), 0.143797172d0, 1d-7)
-		call assert_double_rel("J2 test 4", J_funcFull(5.0d0, 2), 0.0133935079d0, 1d-7)
+		do iy=0,4,2
+			write(tmparg,"('test_outputs/jkg_j',I1,'.dat')") iy
+			open(unit=fu, file=trim(tmparg), status="old")
+			do ix=1,4
+				read (fu, *) x,r1
+				write(tmparg,"('J',I1,' test ',I1)") iy,ix
+				call assert_double(trim(tmparg), J_funcFull(x, iy), r1, 1d-7)
+			end do
+			close(fu)
+		end do
+		do iy=0,4,2
+			write(tmparg,"('test_outputs/jkg_jp',I1,'.dat')") iy
+			open(unit=fu, file=trim(tmparg), status="old")
+			do ix=1,4
+				read (fu, *) x,r1
+				write(tmparg,"('Jp',I1,' test ',I1)") iy,ix
+				call assert_double(trim(tmparg), JprimeFull(x, iy), r1, 1d-7)
+			end do
+			close(fu)
+		end do
+		do iy=0,2,2
+			write(tmparg,"('test_outputs/jkg_k',I1,'.dat')") iy
+			open(unit=fu, file=trim(tmparg), status="old")
+			do ix=1,4
+				read (fu, *) x,r1
+				write(tmparg,"('K',I1,' test ',I1)") iy,ix
+				call assert_double(trim(tmparg), K_funcFull(x, iy), r1, 1d-7)
+			end do
+			close(fu)
+		end do
+		do iy=0,2,2
+			write(tmparg,"('test_outputs/jkg_kp',I1,'.dat')") iy
+			open(unit=fu, file=trim(tmparg), status="old")
+			do ix=1,4
+				read (fu, *) x,r1
+				write(tmparg,"('Kp',I1,' test ',I1)") iy,ix
+				call assert_double(trim(tmparg), KprimeFull(x, iy), r1, 1d-7)
+			end do
+			close(fu)
+		end do
 
-		call assert_double_rel("J4 test 1", J_funcFull(1.d-3, 4), 2.30290744d0, 1d-7)
-		call assert_double_rel("J4 test 2", J_funcFull(.01d0, 4), 2.30288269d0, 1d-7)
-		call assert_double_rel("J4 test 3", J_funcFull(1.0d0, 4), 2.070646778d0, 1d-7)
-		call assert_double_rel("J4 test 4", J_funcFull(5.0d0, 4), 0.3145333371d0, 1d-7)
+		open(unit=fu, file="test_outputs/jkg_elcontr.dat", status="old")
+		do ix=1,3
+			read (fu, *) x,r1,r2
+			res = electrons%dzodx_terms(x)
+			write(tmparg,"(I1)") ix
+			call assert_double("elContr test "//trim(tmparg)//"a", res(1), r1, 1d-7)
+			call assert_double("elContr test "//trim(tmparg)//"b", res(2), r2, 1d-7)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/jkg_mucontr.dat", status="old")
+		do ix=1,2
+			read (fu, *) x,r1,r2
+			res = muons%dzodx_terms(x)
+			write(tmparg,"(I1)") ix
+			call assert_double_rel_safe("elContr test "//trim(tmparg)//"a", res(1), r1, 1d-15,1d-7)
+			call assert_double_rel_safe("elContr test "//trim(tmparg)//"b", res(2), r2, 1d-15,1d-7)
+		end do
+		close(fu)
 
-		call assert_double_rel("J0' test 1", JprimeFull(1.d-3, 0), -0.0000215955097d0, 1d-7)
-		call assert_double_rel("J0' test 2", JprimeFull(.01d0, 0), -0.00021594889d0, 1d-7)
-		call assert_double_rel("J0' test 3", JprimeFull(1.0d0, 0), -0.016349106d0, 1d-7)
-		call assert_double_rel("J0' test 4", JprimeFull(5.0d0, 0), -0.0018343454d0, 1d-7)
-
-		call assert_double_rel("J2' test 1", JprimeFull(1.d-3, 2), -0.000050660581d0, 1d-7)
-		call assert_double_rel("J2' test 2", JprimeFull(.01d0, 2), -0.000506595121d0, 1d-7)
-		call assert_double_rel("J2' test 3", JprimeFull(1.0d0, 2), -0.0412533987d0, 1d-7)
-		call assert_double_rel("J2' test 4", JprimeFull(5.0d0, 2), -0.0101514145d0, 1d-7)
-
-		call assert_double_rel("J4' test 1", JprimeFull(1.d-3, 4), -0.0005d0, 3d-7)
-		call assert_double_rel("J4' test 2", JprimeFull(.01d0, 4), -0.004999924d0, 1d-7)
-		call assert_double_rel("J4' test 3", JprimeFull(1.0d0, 4), -0.43139151d0, 1d-7)
-		call assert_double_rel("J4' test 4", JprimeFull(5.0d0, 4), -0.200902618d0, 1d-7)
-
-		call assert_double_rel("K0 test 1", K_funcFull(1.d-3, 0), 0.378701582d0, 1d-7)
-		call assert_double_rel("K0 test 2", K_funcFull(.01d0, 0), 0.262051793d0, 1d-7)
-		call assert_double_rel("K0 test 3", K_funcFull(1.0d0, 0), 0.033787933d0, 1d-7)
-		call assert_double_rel("K0 test 4", K_funcFull(5.0d0, 0), 0.00037219484d0, 1d-7)
-
-		call assert_double_rel("K2 test 1", K_funcFull(1.d-3, 2), 0.0833331313d0, 1d-7)
-		call assert_double_rel("K2 test 2", K_funcFull(.01d0, 2), 0.083318964d0, 1d-7)
-		call assert_double_rel("K2 test 3", K_funcFull(1.0d0, 2), 0.055004619d0, 1d-7)
-		call assert_double_rel("K2 test 4", K_funcFull(5.0d0, 2), 0.0020443184d0, 1d-7)
-
-		call assert_double_rel("K0' test 1", KprimeFull(1.d-3, 0), -50.6605810d0, 1d-7)
-		call assert_double_rel("K0' test 2", KprimeFull(.01d0, 0), -5.065951206d0, 1d-7)
-		call assert_double_rel("K0' test 3", KprimeFull(1.0d0, 0), -0.0412533987d0, 1d-7)
-		call assert_double_rel("K0' test 4", KprimeFull(5.0d0, 0), -0.0004060565805d0, 1d-7)
-
-		call assert_double_rel("K2' test 1", KprimeFull(1.d-3, 2), -0.0003787015d0, 3d-7)
-		call assert_double_rel("K2' test 2", KprimeFull(.01d0, 2), -0.0026205179d0, 1d-7)
-		call assert_double_rel("K2' test 3", KprimeFull(1.0d0, 2), -0.0337879339d0, 1d-7)
-		call assert_double_rel("K2' test 4", KprimeFull(5.0d0, 2), -0.00186097423d0, 1d-7)
-
-		res = electrons%dzodx_terms(0.01d0)
-		call assert_double_rel("elContr test 1a", res(1), 0.0016666413d0, 1d-7)
-		call assert_double_rel("elContr test 1b", res(2), 2.3028993d0, 1d-7)
-		res = electrons%dzodx_terms(1d0)
-		call assert_double_rel("elContr test 2a", res(1), 0.143797172d0, 1d-7)
-		call assert_double_rel("elContr test 2b", res(2), 2.214444d0, 1d-7)
-		res = electrons%dzodx_terms(5d0)
-		call assert_double_rel("elContr test 3a", res(1), 0.066967539d0, 1d-7)
-		call assert_double_rel("elContr test 3b", res(2), 0.64937103d0, 1d-7)
-		res = muons%dzodx_terms(0.01d0)
-		call assert_double_rel("muContr test 1a", res(1), 39.8383018d0, 1d-7)
-		call assert_double_rel("muContr test 1b", res(2), 1.89902183d0, 1d-7)
-		res = muons%dzodx_terms(1d0)
-		call assert_double("muContr test 2a", res(1), 0d0, 1d-7)
-		call assert_double("muContr test 2b", res(2), 0d0, 1d-7)
-
-		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o2 test 1", res(1), -9.26305205d-6, 1d-7)
-		call assert_double("G2 o2 test 1", res(2), -0.0095522067d0, 1d-8)
-		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o2 test 2", res(1), -0.0000658825d0, 1d-7)
-		call assert_double("G2 o2 test 2", res(2), -0.0095518d0, 1d-8)
-		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o2 test 3", res(1), -0.00115846d0, 1d-5)
-		call assert_double_rel("G2 o2 test 3", res(2), -0.00806502d0, 1d-5)
-		res = G12_funcFull(0.5d0, 0.1d0)
-		call assert_double_rel("G1 o2 test 4", res(1), -0.000108111d0, 1d-5)
-		call assert_double_rel("G2 o2 test 4", res(2), -0.000945107d0, 1d-5)
+		zs = (/1., 10., 1.5, 0.1/)
+		open(unit=fu, file="test_outputs/jkg_g12_o2.dat", status="old")
+		do ix=1,4
+			read (fu, *) x,r1,r2
+			res = G12_funcFull(x*zs(ix), zs(ix))
+			write(tmparg,"(I1)") ix
+			call assert_double("G1 o2 test "//trim(tmparg), res(1), r1, 1d-7)
+			call assert_double("G2 o2 test "//trim(tmparg), res(2), r2, 1d-7)
+		end do
+		close(fu)
 
 		ftqed_log_term = .true.
-		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o2l test 1", res(1), -9.50063d-6, 5d-8)
-		call assert_double_rel("G2 o2l test 1", res(2), -0.00955221d0, 1d-6)
-		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o2l test 2", res(1), -0.0000682571d0, 4d-9)
-		call assert_double_rel("G2 o2l test 2", res(2), -0.00955178d0, 1d-5)
-		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o2l test 3", res(1), -0.00121073d0, 2d-4)
-		call assert_double_rel("G2 o2l test 3", res(2), -0.00794302d0, 5d-5)
-		res = G12_funcFull(0.5d0, 0.9d0)
-		call assert_double_rel("G1 o2l test 4", res(1), -0.00111783d0, 4d-5)
-		call assert_double_rel("G2 o2l test 4", res(2), -0.00894517d0, 2d-5)
+		v1 = (/3d-4, 2d-5, 2d-4, 4d-5/)
+		v2 = (/1d-6, 1d-5, 5d-5, 2d-5/)
+		open(unit=fu, file="test_outputs/jkg_g12_o2l.dat", status="old")
+		do ix=1,4
+			read (fu, *) x,z,r1,r2
+			res = G12_funcFull(x, z)
+			write(tmparg,"(I1)") ix
+			call assert_double_rel("G1 o2l test "//trim(tmparg), res(1), r1, v1(ix))
+			call assert_double_rel("G2 o2l test "//trim(tmparg), res(2), r2, v2(ix))
+		end do
+		close(fu)
 		ftqed_log_term = .false.
 
 		ftqed_ord3 = .true.
-		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o23 test 1", res(1), -9.19836d-6, 5d-8)
-		call assert_double_rel("G2 o23 test 1", res(2), -0.0087016543d0, 1d-6)
-		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o23 test 2", res(1), -0.0000652361d0, 3d-9)
-		call assert_double_rel("G2 o23 test 2", res(2), -0.00870124655d0, 1d-5)
-		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o23 test 3", res(1), -0.00109638d0, 1d-5)
-		call assert_double_rel("G2 o23 test 3", res(2), -0.00724797d0, 1d-5)
-		res = G12_funcFull(0.5d0, 0.1d0)
-		call assert_double_rel("G1 o23 test 4", res(1), -0.0000926686d0, 1d-5)
-		call assert_double_rel("G2 o23 test 4", res(2), -0.00082098d0, 1d-5)
+		v1 = (/1d-4, 1d-5, 1d-5, 1d-5/)
+		v2 = (/1d-6, 1d-5, 1d-5, 1d-5/)
+		open(unit=fu, file="test_outputs/jkg_g12_o23.dat", status="old")
+		do ix=1,4
+			read (fu, *) x,z,r1,r2
+			res = G12_funcFull(x,z)
+			write(tmparg,"(I1)") ix
+			call assert_double("G1 o23 test "//trim(tmparg), res(1), r1, v1(ix))
+			call assert_double("G2 o23 test "//trim(tmparg), res(2), r2, v2(ix))
+		end do
+		close(fu)
 
 		ftqed_log_term = .true.
-		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o23l test 1", res(1), -9.43595d-6, 5d-8)
-		call assert_double_rel("G2 o23l test 1", res(2), -0.0087016543d0, 1d-6)
-		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o23l test 2", res(1), -0.0000676107d0, 4d-9)
-		call assert_double_rel("G2 o23l test 2", res(2), -0.00870123d0, 1d-5)
-		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o23l test 3", res(1), -0.00114865d0, 2d-4)
-		call assert_double_rel("G2 o23l test 3", res(2), -0.00712597d0, 6d-5)
-		res = G12_funcFull(0.5d0, 0.9d0)
-		call assert_double_rel("G1 o23l test 4", res(1), -0.00108209d0, 4d-5)
-		call assert_double_rel("G2 o23l test 4", res(2), -0.00810463d0, 2d-5)
+		v1 = (/1d-4, 1d-5, 1d-5, 1d-5/)
+		v2 = (/1d-6, 1d-5, 1d-5, 1d-5/)
+		open(unit=fu, file="test_outputs/jkg_g12_o23l.dat", status="old")
+		do ix=1,4
+			read (fu, *) x,z,r1,r2
+			res = G12_funcFull(x, z)
+			write(tmparg,"(I1)") ix
+			call assert_double("G1 o23l test "//trim(tmparg), res(1), r1, v1(ix))
+			call assert_double("G2 o23l test "//trim(tmparg), res(2), r2, v2(ix))
+		end do
+		close(fu)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
-		res = dzodxcoef_interp_func(0.01d0)
-		call assert_double("A test 1", res(1), 7.23268d0, 1d-5)
-		call assert_double("B test 1", res(2), 0.00919711d0, 1d-4)
-		res = dzodxcoef_interp_func(1.d0)
-		call assert_double_rel("A test 2", res(1), 0.0404956d0, 1d-5)
-		call assert_double_rel("B test 2", res(2), 0.0143827d0, 1d-5)
-		res = dzodxcoef_interp_func(5d0)
-		call assert_double_rel("A test 3", res(1), 0.034036d0, 1d-5)
-		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
+		open(unit=fu, file="test_outputs/jkg_ab.dat", status="old")
+		do ix=1,3
+			read (fu, *) x,r1,r2
+			res = dzodxcoef_interp_func(x)
+			write(tmparg,"(I1)") ix
+			call assert_double("A test "//trim(tmparg), res(1), r1, 1d-5)
+			call assert_double("B test "//trim(tmparg), res(2), r2, 1d-5)
+		end do
+		close(fu)
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_JKG
@@ -2686,7 +2680,7 @@ program tests
 			end if
 			write(tmparg, "('test GL quadrature 2D on Fermi-Dirac, nx=',I2)") nx
 			call assert_double_rel(trim(tmparg), inta, 1.4829783d0, tol)
-!			print *,nx, inta, intb
+			print *,nx, inta, intb
 			deallocate(fx2a, fx2b, xa, wa, wa2, ya, dx)
 		end do
 
