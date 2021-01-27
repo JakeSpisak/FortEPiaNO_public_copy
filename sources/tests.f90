@@ -2847,7 +2847,7 @@ program tests
 		do i=1, n
 			read (fu, *) z, r, rn
 			write(tmpstr, "(I1)") i
-			call assert_double_rel("nuDensGL test "//trim(tmpstr), nuDensityEq(z), r, ve1(i))
+			call assert_double_rel("nuDensGL test "//trim(tmpstr), nuDensity(z,int(ve2(i))), ve2(i)*r, ve1(i))
 		end do
 		close(fu)
 		open(unit=fu, file="test_outputs/nuDensEq.dat", status="old")
