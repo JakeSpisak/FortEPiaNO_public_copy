@@ -479,7 +479,7 @@ program tests
 			call assert_double_rel("elDens test "//trim(tmpstr), electrons%energyDensity(x, z, .false.), r, ve2(i))
 		end do
 		close(fu)
-        ve2=(/1d-4, 1d-4, 1d-4, 1d-4, 1.1d-3, 2.d-3, 3.5d-3, 3d-3/)
+		ve2=(/1d-4, 1d-4, 1d-4, 1d-4, 1.1d-3, 2.d-3, 3.5d-3, 3d-3/)
 		open(unit=fu, file="test_outputs/elPress.dat", status="old")
 		do i=1, n
 			read (fu, *) x, z, r
@@ -488,7 +488,7 @@ program tests
 			call assert_double_rel("elPress test "//trim(tmpstr), electrons%pressure(x, z, .false.), r, ve2(i))
 		end do
 		close(fu)
-        ve2=(/1d-4, 1d-4, 1d-4, 1d-4, 1d-3, 1.5d-3, 3.5d-3, 3d-3/)
+		ve2=(/1d-4, 1d-4, 1d-4, 1d-4, 1d-3, 1.5d-3, 3.5d-3, 3d-3/)
 		open(unit=fu, file="test_outputs/elEntropy.dat", status="old")
 		do i=1, n
 			read (fu, *) x, z, r
@@ -2664,16 +2664,22 @@ program tests
 	subroutine do_test_GL
 		real(dl), dimension(:), allocatable :: xa, wa, wa2, fx1, dx, ya
 		real(dl), dimension(:,:), allocatable :: fx2a, fx2b
-		real(dl) :: inta, intb, tol
+		real(dl) :: inta, intb, tol, r
 		integer :: nix, nx, ix, iy, i, n, m
 		character(len=300) :: tmparg
 		real(dl), dimension(9,3) :: tmparrA, tmparrB, tmperrA, tmperrB
 		type(coll_args) :: collArgs
 		real(dl), dimension(:), allocatable :: ydot
+		real(dl) :: x, z, rn
+		real(dl), dimension(9) :: ve1, ve2
+		character(len=100) :: tmpstr
 
 		call printTestBlockName("Gauss-Laguerre quadrature")
 
 		use_gauss_laguerre = .true.
+		open(unit=fu, file="test_outputs/gl_test_func.dat", status="old")
+		read (fu, *) r
+		close(fu)
 		do nx=50, 10, -1
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
 			call finish_y_arrays
@@ -2710,7 +2716,7 @@ program tests
 				tol=3d-2
 			end if
 			write(tmparg, "('test GL quadrature 2D on Fermi-Dirac, nx=',I2)") nx
-			call assert_double_rel(trim(tmparg), inta, 1.4829783d0, tol)
+			call assert_double_rel(trim(tmparg), inta, r, tol)
 			print *,nx, inta, intb
 			deallocate(fx2a, fx2b, xa, wa, wa2, ya, dx)
 		end do
@@ -2828,44 +2834,35 @@ program tests
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		call finish_y_arrays
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 1", nuDensityGL(1, 1), 0.575727d0, 1d-4)
-		call assert_double_rel("nuNumDensGL test 1", nuNumberDensityGL(1, 1), 0.182690742d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 2", nuDensityGL(1, 1), 0.5d0*1.54346d0, 1d-4)
-		call assert_double_rel("nuNumDensGL test 2", nuNumberDensityGL(1, 1), 0.22759009d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 3", nuDensityGL(1, 1), 0.5d0*3.49577d0, 2d-4)
-		call assert_double_rel("nuNumDensGL test 3", nuNumberDensityGL(1, 1), 0.420183d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 4", nuDensityGL(2, 2), 0.5d0*2.d0*4.05629d0, 5d-4)
-		call assert_double_rel("nuNumDensGL test 4", nuNumberDensityGL(2, 2), 2.d0*0.469762d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 5", nuDensityGL(3, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
-		call assert_double_rel("nuNumDensGL test 5", nuNumberDensityGL(3, 3), 3.d0*0.18434d0, 1d-4)
 
-		call assert_double_rel("nuDensEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDensEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
+		n=5
+		ve2=(/1.,1.,1.,2.,3.,0.,0.,0.,0./)
+		ve1=(/1d-4,1d-4,2d-4,5d-4,1d-4,0.d0,0.d0,0.d0,0.d0/)
+		do ix=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy))
+			end do
+		end do
+		open(unit=fu, file="test_outputs/nuDens.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r, rn
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("nuDensGL test "//trim(tmpstr), nuDensityEq(z), r, ve1(i))
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nuDensEq.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r, rn
+			do ix=1, flavorNumber
+				do iy=1, Ny
+					nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy) / z)
+				end do
+			end do
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("nuDensGL test "//trim(tmpstr), nuDensityGL(int(ve2(i)), int(ve2(i))), ve2(i)*r, ve1(i))
+			call assert_double_rel("nuNumDensGL test "//trim(tmpstr), nuNumberDensityGL(int(ve2(i)), int(ve2(i))), ve2(i)*rn, ve1(i))
+		end do
+		close(fu)
 
 		n=ntot
 		allocate(ydot(n))
@@ -2928,7 +2925,7 @@ program tests
 		do j=1, 3
 			read (fu, *) nuMassesMat(j,:)
 			read (fv, *) leptonDensities(j,:)
-            read (fw, *) nuDensities%re(j,:)
+			read (fw, *) nuDensities%re(j,:)
 		end do
 		close(fu)
 		close(fv)
@@ -3035,14 +3032,14 @@ program tests
 		end do
 
 		do iy=1, Ny
-            open(unit=fu, file="test_outputs/diagonalization_nm_re.dat", status="old")
-            open(unit=fv, file="test_outputs/diagonalization_nm_im.dat", status="old")
-            do j=1, 3
-                read (fu, *) nuDensMatVecFD(iy)%re(j,:)
-                read (fv, *) nuDensMatVecFD(iy)%im(j,:)
-            end do
-            close(fu)
-            close(fv)
+		open(unit=fu, file="test_outputs/diagonalization_nm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/diagonalization_nm_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuDensMatVecFD(iy)%re(j,:)
+			read (fv, *) nuDensMatVecFD(iy)%im(j,:)
+		end do
+		close(fu)
+		close(fv)
 		end do
 
 		m = rho_diag_mass(1)
