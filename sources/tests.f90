@@ -612,8 +612,8 @@ program tests
 
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
-		n=4
-		ve1=(/1d-6,1d-6,1d-6,1d-6,0.d0,0.d0,0.d0,0.d0/)
+		n=5
+		ve1=(/1d-6,1d-6,1d-6,1d-6,1.d6,0.d0,0.d0,0.d0/)
 		open(unit=fu, file="test_outputs/ftqed_dR2.dat", status="old")
 		do i=1, n
 			read (fu, *) x, z, r
@@ -631,7 +631,7 @@ program tests
 		close(fu)
 		ftqed_log_term = .true.
 		ftqed_ord3 = .false.
-		ve1=(/1d-6,1d-5,4d-5,2d-5,0.d0,0.d0,0.d0,0.d0/)
+		ve1=(/3d-5,1d-6,1d-5,4d-5,3d-5,0.d0,0.d0,0.d0/)
 		open(unit=fu, file="test_outputs/ftqed_dRo2l.dat", status="old")
 		do i=1, n
 			read (fu, *) x, z, r
@@ -640,7 +640,6 @@ program tests
 		end do
 		close(fu)
 		ftqed_ord3 = .true.
-		ve1=(/1d-6,1d-5,4d-5,3d-5,0.d0,0.d0,0.d0,0.d0/)
 		open(unit=fu, file="test_outputs/ftqed_dRo23l.dat", status="old")
 		do i=1, n
 			read (fu, *) x, z, r
@@ -650,7 +649,7 @@ program tests
 		close(fu)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
-		ve1=(/1d-6,1d-6,1d-6,1d-6,0.d0,0.d0,0.d0,0.d0/)
+		ve1=(/1d-6,1d-6,1d-6,1d-6,1d-6,0.d0,0.d0,0.d0/)
 		open(unit=fu, file="test_outputs/ftqed_dP2.dat", status="old")
 		do i=1, n
 			read (fu, *) x, z, r
@@ -668,7 +667,7 @@ program tests
 		close(fu)
 		ftqed_log_term = .true.
 		ftqed_ord3 = .false.
-		ve1=(/1d-6,4d-6,4d-5,2d-5,0.d0,0.d0,0.d0,0.d0/)
+		ve1=(/2d-5,1d-6,4d-6,4d-5,2d-5,0.d0,0.d0,0.d0/)
 		open(unit=fu, file="test_outputs/ftqed_dPo2l.dat", status="old")
 		do i=1, n
 			read (fu, *) x, z, r
@@ -748,7 +747,14 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double("radDens test ftqed", totalRadiationDensity(0.7d0, 1.04d0), 3.79748d0-0.00430398d0, 1d-3)
+
+		open(unit=fu, file="test_outputs/ftqed_dR2.dat", status="old")
+		read (fu, *) x, z, rn
+		close(fu)
+		open(unit=fu, file="test_outputs/radDens.dat", status="old")
+		read (fu, *) x, z, r
+		close(fu)
+		call assert_double("radDens test ftqed", totalRadiationDensity(x, z), r+rn, 1d-5)
 
 		call printTotalTests
 		call resetTestCounter
