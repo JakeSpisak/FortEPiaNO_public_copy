@@ -612,48 +612,78 @@ program tests
 
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
-		call assert_double_rel("dRhoft o2 test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00477572d0, 1d-5)
-		call assert_double_rel("dRhoft o2 test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00948058d0, 1d-5)
-		call assert_double_rel("dRhoft o2 test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0113699d0, 1d-5)
-		call assert_double_rel("dRhoft o2 test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.00031403d0, 1d-5)
+		n=4
+		ve1=(/1d-6,1d-6,1d-6,1d-6,0.d0,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dR2.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dRhoft o2 test "//trim(tmpstr), deltaRhoTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_ord3 = .true.
-		call assert_double_rel("dRhoft o23 test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00435043d0, 1d-5)
-		call assert_double_rel("dRhoft o23 test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00860629d0, 1d-5)
-		call assert_double_rel("dRhoft o23 test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0102149d0, 1d-5)
-		call assert_double_rel("dRhoft o23 test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.00028862d0, 1d-5)
+		open(unit=fu, file="test_outputs/ftqed_dRo23.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dRhoft o23 test "//trim(tmpstr), deltaRhoTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_log_term = .true.
 		ftqed_ord3 = .false.
-		call assert_double_rel("dRhoft o2l test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00477571d0, 1d-5)
-		call assert_double_rel("dRhoft o2l test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00945221d0, 1d-5)
-		call assert_double_rel("dRhoft o2l test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0111961d0, 4d-5)
-		call assert_double_rel("dRhoft o2l test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.000312169d0, 3d-5)
+		ve1=(/1d-6,1d-5,4d-5,2d-5,0.d0,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dRo2l.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dRhoft o2l test "//trim(tmpstr), deltaRhoTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_ord3 = .true.
-		call assert_double_rel("dRhoft o23l test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00435043d0, 1d-5)
-		call assert_double_rel("dRhoft o23l test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00857792d0, 1d-5)
-		call assert_double_rel("dRhoft o23l test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0100411d0, 5d-5)
-		call assert_double_rel("dRhoft o23l test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.000286758d0, 3d-5)
+		ve1=(/1d-6,1d-5,4d-5,3d-5,0.d0,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dRo23l.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dRhoft o23l test "//trim(tmpstr), deltaRhoTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
-		call assert_double_rel("dPft o2 test 1", deltaPTot_em(0.01d0, 1.d0), -0.00159171d0, 1d-5)
-		call assert_double_rel("dPft o2 test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00301419d0, 1d-5)
-		call assert_double_rel("dPft o2 test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00325021d0, 1d-5)
-		call assert_double_rel("dPft o2 test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000340556d0, 1d-5)
+		ve1=(/1d-6,1d-6,1d-6,1d-6,0.d0,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dP2.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dPft o2 test "//trim(tmpstr), deltaPTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_ord3 = .true.
-		call assert_double_rel("dPft o23 test 1", deltaPTot_em(0.01d0, 1.d0), -0.00144995d0, 1d-5)
-		call assert_double_rel("dPft o23 test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00272757d0, 1d-5)
-		call assert_double_rel("dPft o23 test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00289651d0, 1d-5)
-		call assert_double_rel("dPft o23 test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000317678d0, 1d-5)
+		open(unit=fu, file="test_outputs/ftqed_dPo23.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dPft o23 test "//trim(tmpstr), deltaPTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_log_term = .true.
 		ftqed_ord3 = .false.
-		call assert_double_rel("dPft o2l test 1", deltaPTot_em(0.01d0, 1.d0), -0.00159169d0, 1d-5)
-		call assert_double_rel("dPft o2l test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00299430d0, 1d-5)
-		call assert_double_rel("dPft o2l test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00317157d0, 4d-5)
-		call assert_double_rel("dPft o2l test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000339254d0, 2d-5)
+		ve1=(/1d-6,4d-6,4d-5,2d-5,0.d0,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dPo2l.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dPft o2l test "//trim(tmpstr), deltaPTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_ord3 = .true.
-		call assert_double_rel("dPft o23l test 1", deltaPTot_em(0.01d0, 1.d0), -0.00144994d0, 1d-5)
-		call assert_double_rel("dPft o23l test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00270768d0, 1d-5)
-		call assert_double_rel("dPft o23l test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00281788d0, 4d-5)
-		call assert_double_rel("dPft o23l test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000316376d0, 2d-5)
+		open(unit=fu, file="test_outputs/ftqed_dPo23l.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dPft o23l test "//trim(tmpstr), deltaPTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
