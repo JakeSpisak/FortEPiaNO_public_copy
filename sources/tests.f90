@@ -901,6 +901,10 @@ program tests
 		integer :: n
 		real(dl), dimension(:), allocatable :: ydot
 		integer :: m
+		real(dl) :: x, z, r, rn
+		integer :: ix
+		character(len=300) :: tmparg
+		real(dl), dimension(3) :: v1
 
 		n=ntot
 		allocate(ydot(n))
@@ -911,22 +915,31 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 		call printTestBlockName("dz/dx functions")
-		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1", ydot(n), 7.11765d0, 8d-3)
-		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 2", ydot(n), -0.0946571d0, 7d-6)
-		call dz_o_dx_old(6.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 6d-6)
 
-		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1a", ydot(n), 7.11765d0, 5d-5)
-		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), 7.11765d0, 5d-5)
-		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0946571d0, 3d-6)
-		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.132132d0, 3d-6)
-		call dz_o_dx(6.d0, 1.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.15262978d0, 2d-6)
-		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.10135096d0, 2d-6)
+		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
+		v1=(/8d-3,7d-6,6d-6/)
+		do ix=1,3
+			read (fu, *) x,z,r
+			write(tmparg,"(I1)") ix
+			call dz_o_dx_old(x, z, ydot, n)
+			call assert_double_rel("dz_o_dx old test "//trim(tmparg), ydot(n), r, v1(ix))
+		end do
+		close(fu)
+
+		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
+		open(unit=fv, file="test_outputs/dzodx_n.dat", status="old")
+		v1=(/5d-5,6d-6,6d-6/)
+		do ix=1,3
+			read (fu, *) x,z,r
+			read (fv, *) x,z,rn
+			write(tmparg,"(I1)") ix
+			call dz_o_dx(x, 1.2d0, z, ydot, n)
+			call assert_double_rel("dz_o_dx test "//trim(tmparg), ydot(n), r, v1(ix))
+			call assert_double_rel("dw_o_dx test "//trim(tmparg), ydot(n-1), rn, v1(ix))
+		end do
+		close(fu)
+		close(fv)
+
 		deallocate(ydot)
 		call printTotalTests
 		call resetTestCounter
@@ -2916,15 +2929,19 @@ program tests
 		do ix=1, Ny
 			feq_arr(ix) = fermiDirac(y_arr(ix))
 		end do
-		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double("dz_o_dx test 1a", ydot(n), 7.15311d0, 5d-5)
-		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), 7.15311d0, 5d-5)
-		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0529951d0, 3d-6)
-		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.0914903549d0, 3d-6)
-		call dz_o_dx(6.d0, 1.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.0950884d0, 2d-6)
-		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.0701083754d0, 2d-6)
+		open(unit=fu, file="test_outputs/dzodx_g_A.dat", status="old")
+		open(unit=fv, file="test_outputs/dzodx_n_A.dat", status="old")
+		ve1=(/5d-5,6d-6,6d-6,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0/)
+		do ix=1,3
+			read (fu, *) x,z,r
+			read (fv, *) x,z,rn
+			write(tmparg,"(I1)") ix
+			call dz_o_dx(x, 1.2d0, z, ydot, n)
+			call assert_double_rel("dz_o_dx GL test "//trim(tmparg), ydot(n), r, ve1(ix))
+			call assert_double_rel("dw_o_dx GL test "//trim(tmparg), ydot(n-1), rn, ve1(ix))
+		end do
+		close(fu)
+		close(fv)
 		deallocate(ydot)
 		call printTotalTests
 		call resetTestCounter
