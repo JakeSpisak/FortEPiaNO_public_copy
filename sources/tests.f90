@@ -1873,7 +1873,6 @@ program tests
 		!second series of sc and ann tests
 		iy1 = 67
 		z = 1.3d0
-		collArgs%y1 = y_arr(iy1)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
@@ -2057,6 +2056,24 @@ program tests
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
 		fakecollintnuey=1.d4*b**2
+	end function
+	pure real(dl) function fakecollintnuefuncA(a, b, o, F_ab_ann, F_ab_sc)
+		use variables
+		integer, intent(in) :: a
+		real(dl), intent(in) :: b
+		type(coll_args), intent(in) :: o
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
+		fakecollintnuefuncA=o%z*o%z/o%x/o%x*nuDensMatVecFD(a)%re(o%ix1, o%ix1)*fermiDirac(b)/o%y1/o%y1*0.3*(y_arr(a)+b)
+	end function
+	pure real(dl) function fakecollintnuefuncB(a, b, o, F_ab_ann, F_ab_sc)
+		use variables
+		integer, intent(in) :: a
+		real(dl), intent(in) :: b
+		type(coll_args), intent(in) :: o
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
+		fakecollintnuefuncB=o%z*o%z/o%x/o%x*nuDensMatVecFD(a)%re(o%ix1, o%ix1)*fermiDirac(b)/o%y1/o%y1*0.3*(sqrt(y_arr(a))+sqrt(b))
 	end function
 	pure real(dl) function fakecollintnunu1(a, b, o, F_nu_sc, F_nu_pa)
 		use variables
@@ -2667,7 +2684,8 @@ program tests
 		real(dl) :: inta, intb, tol, r
 		integer :: nix, nx, ix, iy, i, n, m
 		character(len=300) :: tmparg
-		real(dl), dimension(9,3) :: tmparrA, tmparrB, tmperrA, tmperrB
+		integer, parameter :: nn=17
+		real(dl), dimension(nn,3) :: tmparrA, tmparrB, tmperrA, tmperrB
 		type(coll_args) :: collArgs
 		real(dl), dimension(:), allocatable :: ydot
 		real(dl) :: x, z, rn
@@ -2680,7 +2698,7 @@ program tests
 		open(unit=fu, file="test_outputs/gl_test_func.dat", status="old")
 		read (fu, *) r
 		close(fu)
-		do nx=50, 10, -1
+		do nx=90, 10, -1
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
 			call finish_y_arrays
 
@@ -2690,23 +2708,27 @@ program tests
 			end do
 			inta = integral_GL_1d(wa, fx1)
 			write(tmparg, "('test GL quadrature on Fermi-Dirac, nx=',I2)") nx
-			call assert_double_rel(trim(tmparg), inta, PISQ*PISQD15*7.d0/8.0, 1d-5)
+			call assert_double_rel(trim(tmparg), inta, PISQ*PISQD15*7.d0/8.0, 3d-6)
 			deallocate(fx1)
 
 			allocate(fx2a(nx, nx), fx2b(nx, nx), ya(nx), dx(nx))
-			ya = loglinspace(0.01d0, 0.01d0, 20.d0, nx, 1)
+			ya = linspace(0.01d0, 20.d0, nx)
 			do ix=1, nx-1
 				dx(ix) = ya(ix+1) - ya(ix)
 			end do
 			do ix=1,nx
 				do iy=1,nx
 					fx2a(ix, iy) = fermiDirac(xa(ix))*fermiDirac(xa(iy))/(xa(ix)**2 * xa(iy))
-					fx2b(ix, iy) = fermiDirac(ya(ix))*fermiDirac(ya(iy))*(ya(ix) * ya(iy)**2)
+!					fx2b(ix, iy) = fermiDirac(ya(ix))*fermiDirac(ya(iy))*(ya(ix) * ya(iy)**2)
 				end do
 			end do
 			inta = integral_GL_2d(nx, wa, wa, fx2a)
-			intb = integral_NC_2d(nx, nx, dx, dx, fx2b)
-			if (nx.gt.22) then
+!			intb = integral_NC_2d(nx, nx, dx, dx, fx2b)
+			if (nx.gt.77) then
+				tol=1d-5
+			elseif (nx.gt.42) then
+				tol=1d-4
+			elseif (nx.gt.22) then
 				tol=1d-3
 			elseif (nx.gt.16) then
 				tol=3d-3
@@ -2717,114 +2739,126 @@ program tests
 			end if
 			write(tmparg, "('test GL quadrature 2D on Fermi-Dirac, nx=',I2)") nx
 			call assert_double_rel(trim(tmparg), inta, r, tol)
-			print *,nx, inta, intb
+!			print *,nx, inta, intb
 			deallocate(fx2a, fx2b, xa, wa, wa2, ya, dx)
 		end do
 
 		call printTestBlockName("GL quadrature of collision integrals")
 		collArgs%x = 0.05d0
 		collArgs%z = 1.06d0
-		collArgs%iy = 5
 		collArgs%y2 = 0.d0
 		collArgs%y3 = 0.d0
 		collArgs%y4 = 0.d0
 		collArgs%dme2 = 0.1d0
 		tmparrA(:,:) = 0.d0
 		tmparrB(:,:) = 0.d0
-		do nix=1, 9
+		print*,"writing list of nix, Ny, y_arr(iy) with iy=int(Ny/3)"
+		do nix=1, nn
 			nx = nix*5+5
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
 			call finish_y_arrays
-			collArgs%y1 = xa(collArgs%iy)
-			y_arr = loglinspace(y_min, collArgs%y1, y_max, Ny, 10)
-			do ix=1, Ny-1
-				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
-			end do
-
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re = 0.d0
-				nuDensMatVecFD(iy)%im = 0.d0
-			end do
-			do ix=1, flavorNumber
-				do iy=1, Ny
-					nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy))
-				end do
-				nuDensMatVecFD(collArgs%iy)%re(ix, ix) = 1.d0
-			end do
-
-			do ix=1, flavorNumber
-				collArgs%ix1 = ix
-				collArgs%ix2 = ix
-				tmparrA(nix,ix) = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			end do
-
-			do ix=1, flavorNumber
-				collArgs%ix1 = ix
-				collArgs%ix2 = ix
-				tmparrB(nix,ix) = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			end do
+			collArgs%iy = int(nx/3)
+			print*,nix,nx, xa(collArgs%iy)
 		end do
 
+		tmperrA=1d-5
+		tmperrB=1d-5
 		!Ny=20
-		tmperrA(3,:) = (/0.3, 0.3, 0.2/)
-		tmperrB(3,:) = (/0.3d0, 0.15d0, 0.1d0/)
+		tmperrA(3,:) = (/0.07,0.07,0.07/)
+		tmperrB(3,:) = (/0.07,0.07,0.07/)
 		!Ny=25
-		tmperrA(4,:) = (/0.15, 0.11, 0.06/)
-		tmperrB(4,:) = (/0.08d0, 0.06d0, 0.06d0/)
+		tmperrA(4,:) = (/0.05,0.05,0.05/)
+		tmperrB(4,:) = (/0.05,0.05,0.05/)
 		!Ny=30
-		tmperrA(5,:) = (/0.1, 0.06, 0.01/)
-		tmperrB(5,:) = (/0.04d0, 0.04d0, 0.04d0/)
+		tmperrA(5,:) = (/0.03,0.03,0.03/)
+		tmperrB(5,:) = (/0.03,0.03,0.03/)
 		!Ny=35
-		tmperrA(6,:) = (/0.07, 0.03, 0.03/)
-		tmperrB(6,:) = (/0.03d0, 0.03d0, 0.03d0/)
+		tmperrA(6,:) = (/0.02,0.02,0.02/)
+		tmperrB(6,:) = (/0.02,0.02,0.02/)
 		!Ny=40
-		tmperrA(7,:) = (/0.06, 0.03, 0.03/)
-		tmperrB(7,:) = (/0.005d0, 0.01d0, 0.01d0/)
+		tmperrA(7,:) = (/0.012,0.012,0.012/)
+		tmperrB(7,:) = (/0.012,0.012,0.012/)
 		!Ny=45
-		tmperrA(8,:) = (/0.05, 0.025, 0.025/)
-		tmperrB(8,:) = (/0.025, 0.03, 0.03/)
+		tmperrA(8,:) = (/0.007,0.007,0.007/)
+		tmperrB(8,:) = (/0.007,0.007,0.007/)
 		!Ny=50
-		tmperrA(9,:) = (/0.05, 0.02, 0.025/)
-		tmperrB(9,:) = (/0.021, 0.03, 0.03/)
-		do nix=3, 9
+		tmperrA(9,:) = (/0.005,0.005,0.005/)
+		tmperrB(9,:) = (/0.005,0.005,0.005/)
+		!Ny=55
+		tmperrA(10,:) = (/0.0025,0.0025,0.0025/)
+		tmperrB(10,:) = (/0.0025,0.0025,0.0025/)
+		!Ny=60
+		tmperrA(11,:) = (/5e-4,5e-4,5e-4/)
+		tmperrB(11,:) = (/5e-4,5e-4,5e-4/)
+		!Ny=65
+		tmperrA(12,:) = (/8d-4,8d-4,8d-4/)
+		tmperrB(12,:) = (/8d-4,8d-4,8d-4/)
+		!Ny=70
+		tmperrA(13,:) = (/2d-3,2d-3,2d-3/)
+		tmperrB(13,:) = (/2d-3,2d-3,2d-3/)
+		!Ny=75
+		tmperrA(14,:) = (/3d-3,3d-3,3d-3/)
+		tmperrB(14,:) = (/3d-3,3d-3,3d-3/)
+		!Ny=80
+		tmperrA(15,:) = (/4d-3,4d-3,4d-3/)
+		tmperrB(15,:) = (/4d-3,4d-3,4d-3/)
+		!Ny=85
+		tmperrA(16,:) = (/4d-3,4d-3,4d-3/)
+		tmperrB(16,:) = (/4d-3,4d-3,4d-3/)
+		!Ny=90
+		tmperrA(17,:) = (/5d-3,5d-3,5d-3/)
+		tmperrB(17,:) = (/5d-3,5d-3,5d-3/)
+		open(unit=fu, file="test_outputs/GL_sc_int.dat", status="old")
+		open(unit=fv, file="test_outputs/GL_ann_int.dat", status="old")
+		do nix=1, nn
+			read (fu, *) Ny, r, tmparrA(nix,:)
+			if (Ny .ne. nix*5+5) &
+				call criticalError("Ny does not match. The file 'GL_sc_int.dat' cannot be read")
+			read (fv, *) Ny, r, tmparrB(nix,:)
+			if (Ny .ne. nix*5+5) &
+				call criticalError("Ny does not match. The file 'GL_ann_int.dat' cannot be read")
+		end do
+		close(fu)
+		close(fv)
+		do nix=nn,3,-1
 			Ny=nix*5+5
 			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 			call finish_y_arrays
-			do ix=1, Ny-1
-				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
-			end do
+!			do ix=1, Ny-1
+!				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
+!			end do
+			collArgs%iy = int(Ny/3)
 			collArgs%y1 = y_arr(collArgs%iy)
-!			print*,Ny,y_arr(collArgs%iy)
+			write(*,*)Ny,y_arr(collArgs%iy)
 
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re = 0.d0
 				nuDensMatVecFD(iy)%im = 0.d0
+!				nuDensMatVecFD(iy)%y = y_arr(iy)
 			end do
 			do ix=1, flavorNumber
 				do iy=1, Ny
 					nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy))
 				end do
-				nuDensMatVecFD(collArgs%iy)%re(ix, ix) = 1.d0
+!				nuDensMatVecFD(collArgs%iy)%re(ix, ix) = 1.d0
 			end do
 
-			write(*,*) ""
+!			write(*,*) ""
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_collint_nue_GL(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-!				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrA(nix,ix), (inta-tmparrA(nix,ix))/inta, (intb-tmparrA(nix,ix))/intb
+				inta = integrate_collint_nue_GL(fakecollintnuefuncB, collArgs, F_ab_ann_re, F_ab_sc_re)
+!				print*, integrate_collint_nue_GL(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 				write(tmparg,"('test coll sc GL, N=',I2,' - ',2I1)") Ny, ix, ix
 				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30, tmperrA(nix,ix))
 			end do
 
-			write(*,*) ""
+!			write(*,*) ""
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_collint_nue_GL(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-!				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrB(nix,ix), (inta-tmparrB(nix,ix))/inta, (intb-tmparrB(nix,ix))/intb
+				inta = integrate_collint_nue_GL(fakecollintnuefuncA, collArgs, F_ab_ann_re, F_ab_sc_re)
+!				print*, integrate_collint_nue_GL(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 				write(tmparg,"('test coll ann GL, N=',I2,' - ',2I1)") Ny, ix, ix
 				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30, tmperrB(nix,ix))
 			end do
