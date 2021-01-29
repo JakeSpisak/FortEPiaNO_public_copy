@@ -118,8 +118,9 @@ module utilities
 	use fpInterpolate
 	use fpInterfaces1
 
-    integer, parameter :: GI = DL
-    integer, parameter :: sp_acc = DL
+	integer, parameter :: GI = DL
+	integer, parameter :: sp_acc = DL
+	integer, parameter :: maxNgaulag = 1500
 
 	contains
 
@@ -416,15 +417,16 @@ module utilities
 		integer, intent(in) :: n
 		real(dl), intent(in) :: alf
 		real(dl), intent(out), dimension(:), allocatable :: w, x
-		integer, parameter :: MAXIT=10
-		real(dl), parameter :: eps=1.d-9
+		integer, parameter :: MAXIT=20
+		real(qp), parameter :: eps=1.d-15
 		! Increase EPS if you don't have this precision.
 		!Given alf , the parameter α of the Laguerre polynomials, this routine returns arrays x(1:n)
 		!and w(1:n) containing the abscissas and weights of the n-point Gauss-Laguerre quadrature
 		!formula. The smallest abscissa is returned in x(1), the largest in x(n) .
 		integer :: i,its,j
-		real(dl) :: ai, nd
-		real(dl) :: p1,p2,p3,pp,z,z1
+		real(dl) :: nd
+		real(qp) :: ai
+		real(qp) :: p1,p2,p3,pp,z,z1
 		nd = n
 		allocate(x(n), w(n))
 		do i=1,n	! Loop over the desired roots.
@@ -451,7 +453,7 @@ module utilities
 				z=z1-p1/pp ! Newton's formula.
 				if(abs(z-z1).le.EPS)goto 1
 			enddo
-			pause "too many iterations in gaulag"
+			call criticalError("too many iterations in gaulag")
 1			x(i)=z ! Store the root and the weight.
 			w(i)=-exp(gammln(alf+n)-gammln(nd))/(pp*n*p2)
 		enddo
@@ -462,14 +464,58 @@ module utilities
 		real(dl), dimension(:), allocatable, intent(out) :: yv, wv, wv2
 		integer, intent(in) :: nreal, alpha
 		logical, intent(in) :: verb
-		real(dl), dimension(:), allocatable :: tyv, twv
+		real(dl), dimension(:), allocatable :: tyv, twv, cn1, cnn, cw1, cwn
 		real(dl), intent(in) :: ycut
-		integer :: ix, iy, effective_Ny
+		logical :: exists, exists_checks
+		integer, parameter :: uid = 8324, uod = 8325
+		integer :: ix, iy, effective_Ny, cix
 		character(len=300) :: tmpstr
 
-		do ix=1, 350
+		allocate(cn1(maxNgaulag), cnn(maxNgaulag), cw1(maxNgaulag), cwn(maxNgaulag))
+		write(tmpstr, "('GL_nodes/expected_gl_nodes_alpha',I2.2,'.dat')") alpha
+		inquire(file=trim(tmpstr), exist=exists)
+		if (exists_checks) then
+			open(file=trim(tmpstr), unit=uod, form="unformatted")
+			do ix=1, maxNgaulag
+				read(uod) cix, cn1(ix), cw1(ix), cnn(ix), cwn(ix)
+			end do
+			close(uod)
+		end if
+		do ix=1, maxNgaulag
 			effective_Ny = 0
-			call gaulag(tyv, twv, ix, 1.d0*alpha)
+			write(tmpstr, "('GL_nodes/N',I4.4,'_alpha',I2.2,'.dat')") ix, alpha
+			inquire(file=trim(tmpstr), exist=exists)
+			if (exists) then
+				!read previously saved file instead of computing nodes in real time
+				if (allocated(tyv)) &
+					deallocate(tyv)
+				if (allocated(twv)) &
+					deallocate(twv)
+				allocate(tyv(ix), twv(ix))
+				open(file=trim(tmpstr), unit=uid, form="unformatted")
+				do iy=1, ix
+					read(uid) tyv(iy), twv(iy)
+				end do
+				close(uid)
+				if (exists_checks) then
+					if(abs(tyv(1)-cn1(ix))/cn1(ix) .gt. 1e-5) then
+						write(tmpstr, "('[GL nodes] node 1 not matching at N=',I4,'! value=',E14.7,' expected=',E14.6)") ix, tyv(1), cn1(ix)
+						call criticalError(trim(tmpstr))
+					end if
+					if(abs(tyv(ix)-cnn(ix))/cnn(ix) .gt. 1e-5) then
+						write(tmpstr, "('[GL nodes] node ',I4,' not matching at N=',I4,'! value=',E14.7,' expected=',E14.6)") ix, ix, tyv(ix), cnn(ix)
+						call criticalError(trim(tmpstr))
+					end if
+				end if
+			else
+				call gaulag(tyv, twv, ix, 1.d0*alpha)
+				!write nodes to file for later use
+				open(file=trim(tmpstr), unit=uid, status="unknown", form="unformatted")
+				do iy=1, ix
+					write(uid) tyv(iy), twv(iy)
+				end do
+				close(uid)
+			endif
 			do iy=1, ix
 				if (tyv(iy).gt.ycut)then
 					effective_Ny = iy-1
@@ -478,7 +524,7 @@ module utilities
 			end do
 			if (nreal .le. effective_Ny) then
 				if (verb) then
-					write(tmpstr, "('[config] use Gauss-Laguerre, n=',I3,' and selecting the first ',I3,' roots')") ix, effective_Ny
+					write(tmpstr, "('[config] use Gauss-Laguerre, n=',I4,' and selecting the first ',I3,' roots')") ix, effective_Ny
 					call addToLog(trim(tmpstr))
 				end if
 				if (.not. allocated(yv)) &
@@ -500,6 +546,8 @@ module utilities
 			end if
 			deallocate(tyv, twv)
 		end do
+		write(tmpstr, "('Cannot find Ny=',I3,' Gauss-Laguerre nodes below y_max=',E11.4,'. Reached N=',I4)") nreal, ycut, ix-1
+		call criticalError(trim(tmpstr))
 	end subroutine get_GLq_vectors
 
 	!Gauss-Laguerre quadrature: very effective for exponentially-suppressed functions
@@ -605,12 +653,27 @@ module utilities
 					/ (ndmv(iy+1)%y-ndmv(iy)%y) &
 				) * fdc
 			do j=i+1, nf
+#ifdef RHO_OFFDIAG_INTERP_DIV_FD
+				newmat%re(i,j) = ( &
+					ndmv(iy)%re(i,j)/fd0 &
+					+ (y-ndmv(iy)%y) &
+						* (ndmv(iy+1)%re(i,j)/fd1 - ndmv(iy)%re(i,j)/fd0) &
+						/ (ndmv(iy+1)%y-ndmv(iy)%y) &
+				) * fdc
+				newmat%im(i,j) = ( &
+					ndmv(iy)%im(i,j)/fd0 &
+					+ (y-ndmv(iy)%y) &
+						* (ndmv(iy+1)%im(i,j)/fd1 - ndmv(iy)%im(i,j)/fd0) &
+						/ (ndmv(iy+1)%y-ndmv(iy)%y) &
+				) * fdc
+#else
 				newmat%re(i,j) = &
 					ndmv(iy)%re(i,j) &
 					+ (y-ndmv(iy)%y) * (ndmv(iy+1)%re(i,j)-ndmv(iy)%re(i,j))/(ndmv(iy+1)%y-ndmv(iy)%y)
 				newmat%im(i,j) = &
 					ndmv(iy)%im(i,j) &
 					+ (y-ndmv(iy)%y) * (ndmv(iy+1)%im(i,j)-ndmv(iy)%im(i,j))/(ndmv(iy+1)%y-ndmv(iy)%y)
+#endif
 				newmat%re(j,i) = newmat%re(i,j)
 				newmat%im(j,i) = -newmat%im(i,j)
 			end do

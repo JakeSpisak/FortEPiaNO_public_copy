@@ -97,7 +97,7 @@ module fpConfig
 		if (collint_damping_type.eq.0) then
 			write(*,*) "[collint] off-diagonal contributions are zero"
 		else if (collint_damping_type.eq.1) then
-			write(*,*) "[collint] off-diagonal contributions are computed using YYYW expressions"
+			write(*,*) "[collint] off-diagonal contributions are computed using Bennett:2020zkv expressions"
 		else if (collint_damping_type.eq.2) then
 			write(*,*) "[collint] off-diagonal contributions are computed using McKellar:1992ja expressions"
 		else
@@ -357,7 +357,6 @@ module fpConfig
 		use_gauss_laguerre = read_ini_logical('use_gauss_laguerre', .true.)
 		Ny = read_ini_int('Ny',30)
 
-		Nylog = read_ini_int('Nylog',7)
 		allocate(x_arr(Nx))
 
 		x_in    = read_ini_real('x_in', 0.01d0)
@@ -385,18 +384,15 @@ module fpConfig
 
 		y_min = read_ini_real('y_min', 0.01d0)
 		y_max = read_ini_real('y_max', 20.0d0)
-		y_cen = read_ini_real('y_cen', 1.0d0)
 
 		if (use_gauss_laguerre) then
+			write(tmpstr,"('[config] Configuring Gauss-Laguerre with Ny=',I3,' and y_max=',"//dblfmt//")") Ny, y_max
+			call addToLog(trim(tmpstr))
 			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .true., 3, y_max)
 		else
 			allocate(y_arr(Ny))
-			if (Nylog .lt. 2) then
-				y_arr = linspace(y_min, y_max, Ny)
-			else
-				y_arr = loglinspace(y_min, y_cen, y_max, Ny, Nylog)
-			end if
-			write(tmpstr,"('[config] Using Ny=',I3,' and Nylog=',I3)") Ny, Nylog
+			y_arr = linspace(y_min, y_max, Ny)
+			write(tmpstr,"('[config] Using Ny=',I3)") Ny
 			call addToLog(trim(tmpstr))
 		end if
 
@@ -436,7 +432,8 @@ module fpConfig
 		interp_xvec = logspace(interp_logx_in, logx_fin, interp_nx)
 		interp_yvec = logspace(interp_logy_min, interp_logy_max, interp_ny)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-		interp_xozvec = logspace(log10(very_early_x/interp_zmax), logx_fin, interp_nxz)
+		low_xoz = very_early_x/interp_zmax
+		interp_xozvec = logspace(log10(low_xoz), logx_fin, interp_nxz)
 
 		flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
 		if (has_offdiagonal()) then

@@ -12,6 +12,7 @@ module fpEquations
 	use ftqed
 	use fpCosmology
 	use fpInterfaces1
+	use sgTestUtils
 	implicit none
 
 #ifndef NO_INTERPOLATION
@@ -68,8 +69,8 @@ module fpEquations
 			end do
 		end do
 		ldf = ldf*4.d0/3.d0
-		nuDensities%re(:,:) = nuDensities%re(:,:) * ldf * (cos2thW)
-		nuDensities%im(:,:) = nuDensities%im(:,:) * ldf * (cos2thW)
+		nuDensities%re(:,:) = nuDensities%re(:,:) * ldf * (cos2thW_Z)
+		nuDensities%im(:,:) = nuDensities%im(:,:) * ldf * (cos2thW_Z)
 	end subroutine updateMatterDensities
 
 	subroutine densMat_2_vec(vec)
@@ -135,13 +136,46 @@ module fpEquations
 #endif
 
 #ifndef NO_INTERPOLATION
+	pure subroutine do_ABweq(ix, elContr0, num, den, numw, denw)
+		integer, intent(in) :: ix
+		real(dl), dimension(2), intent(in) :: elContr0
+		real(dl), intent(out) :: num, den, numw, denw
+		real(dl), dimension(2) :: g12, fContr
+		real(dl) :: xoz
+		integer :: j
+
+		xoz = interp_xozvec(ix)
+		g12 = G12_funcFull(xoz, 1.d0)
+		num = g12(1)
+		den = PISQ/7.5d0 + g12(2)
+		do j=1, fermions_number
+			fContr = fermions(j)%dzodx_terms(xoz)
+			num = num + fContr(1)
+			den = den + fContr(2)
+		end do
+		numw = g12(1) + elContr0(1)
+		denw = PISQ/7.5d0 + g12(2) + elContr0(2)
+#ifdef NO_MUONS
+		do j=1, fermions_number
+#else
+		do j=2, fermions_number
+#endif
+			fContr = fermions(j)%dzodx_terms(xoz)
+			numw = numw + fContr(1)
+			denw = denw + fContr(2)
+		end do
+	end subroutine do_ABweq
+
 	subroutine init_interp_jkyg12
-		real(dl) :: num, den, xoz, numw, denw
+		real(dl) :: num, den, numw, denw
 		real(dl), dimension(:), allocatable :: A, B
 		real(dl), dimension(:), allocatable :: Aw, Bw
 		real(dl), dimension(:), allocatable :: eq
-		real(dl), dimension(2) :: g12, fContr, elContr0
-		integer :: ix, j, nx, iflag
+		real(dl), dimension(2) :: elContr0
+		integer :: ix, nx, iflag
+		character(len=300) :: tmpstr
+		integer, parameter :: uid = 8324
+		logical :: exists
 
 		call addToLog("[equations] Initializing interpolation for coefficients in dz/dx and dw/dx...")
 		nx=interp_nxz
@@ -152,35 +186,53 @@ module fpEquations
 		if (ftqed_log_term) then
 			call criticalError("log term FTQED corrections not supported when interpolating")
 		end if
-		!$omp parallel do default(private) shared(A, B, Aw, Bw, eq, nx, interp_xozvec, fermions, elContr0, tot_factor_active_nu) schedule(dynamic)
-		do ix=1, nx
-			xoz = interp_xozvec(ix)
-			g12 = G12_funcFull(xoz, 1.d0)
-			num = g12(1)
-			den = PISQ/7.5d0 + g12(2)
-			do j=1, fermions_number
-				fContr = fermions(j)%dzodx_terms(xoz)
-				num = num + fContr(1)
-				den = den + fContr(2)
-			end do
-			numw = g12(1) + elContr0(1)
-			denw = PISQ/7.5d0 + g12(2) + elContr0(2)
 #ifdef NO_MUONS
-			do j=1, fermions_number
+		write(tmpstr, "(A,'ftqed_nm_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_ord3
 #else
-			do j=2, fermions_number
+		write(tmpstr, "(A,'ftqed_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_ord3
 #endif
-				fContr = fermions(j)%dzodx_terms(xoz)
-				numw = numw + fContr(1)
-				denw = denw + fContr(2)
+		inquire(file=trim(tmpstr), exist=exists)
+		if (exists) then
+			call addToLog("[equations] read values from existing file: "//trim(tmpstr))
+			open(file=trim(tmpstr), unit=uid, form="unformatted")
+			do ix=1, nx
+				read(uid) A(ix), B(ix), Aw(ix), Bw(ix), eq(ix)
 			end do
-			A(ix) = num / den
-			B(ix) = 1./(2.d0*PISQ*den)
-			Aw(ix) = numw / denw
-			Bw(ix) = 1./(2.d0*PISQ*denw)
-			eq(ix) = num / (den + PISQ/7.5d0*0.875d0*tot_factor_active_nu)
-		end do
-		!$omp end parallel do
+			close(uid)
+			call addToLog("[equations] check if few saved values are correct: ")
+			ix=123
+			call do_ABweq(ix, elContr0, num, den, numw, denw)
+			call assert_double_rel_safe("check dz/dx coefficient A 1", A(ix), num / den, 1d-7, 1d-6)
+			call assert_double_rel_safe("check dz/dx coefficient B 1", B(ix), 1./(2.d0*PISQ*den), 1d-7, 1d-6)
+			call assert_double_rel_safe("check dz/dx coefficient Aw 1", Aw(ix), numw / denw, 1d-7, 1d-6)
+			call assert_double_rel_safe("check dz/dx coefficient Bw 1", Bw(ix), 1./(2.d0*PISQ*denw), 1d-7, 1d-6)
+			call assert_double_rel_safe("check dz/dx coefficient eq 1", eq(ix), num / (den + PISQ/7.5d0*0.875d0*tot_factor_active_nu), 1d-7, 1d-6)
+			ix=1422
+			call do_ABweq(ix, elContr0, num, den, numw, denw)
+			call assert_double_rel_safe("check dz/dx coefficient A 2", A(ix), num / den, 1d-7, 1d-6)
+			call assert_double_rel_safe("check dz/dx coefficient B 2", B(ix), 1./(2.d0*PISQ*den), 1d-7, 1d-6)
+			call assert_double_rel_safe("check dz/dx coefficient Aw 2", Aw(ix), numw / denw, 1d-7, 1d-6)
+			call assert_double_rel_safe("check dz/dx coefficient Bw 2", Bw(ix), 1./(2.d0*PISQ*denw), 1d-7, 1d-6)
+			call assert_double_rel_safe("check dz/dx coefficient eq 2", eq(ix), num / (den + PISQ/7.5d0*0.875d0*tot_factor_active_nu), 1d-7, 1d-6)
+			call addToLog("everything works!")
+		else
+			!$omp parallel do default(private) shared(A, B, Aw, Bw, eq, nx, interp_xozvec, fermions, elContr0, tot_factor_active_nu) schedule(dynamic)
+			do ix=1, nx
+				call do_ABweq(ix, elContr0, num, den, numw, denw)
+				A(ix) = num / den
+				B(ix) = 1./(2.d0*PISQ*den)
+				Aw(ix) = numw / denw
+				Bw(ix) = 1./(2.d0*PISQ*denw)
+				eq(ix) = num / (den + PISQ/7.5d0*0.875d0*tot_factor_active_nu)
+			end do
+			!$omp end parallel do
+			open(file=trim(tmpstr), unit=uid, status="unknown", form="unformatted")
+			do ix=1, nx
+				write(uid) A(ix), B(ix), Aw(ix), Bw(ix), eq(ix)
+			end do
+			close(uid)
+			call addToLog("[equations] values saved to file: "//trim(tmpstr))
+		end if
 		call dzodx_A_interp%initialize(interp_xozvec, A, 4, iflag)
 		call dzodx_B_interp%initialize(interp_xozvec, B, 4, iflag)
 		call dwodx_A_interp%initialize(interp_xozvec, Aw, 4, iflag)

@@ -4,6 +4,7 @@ module ftqed
 	use utilities
 	use fpErrors
 	use linear_interpolation_module
+	use sgTestUtils
 	implicit none
 
 	real(dl), parameter :: upper = 1.d2
@@ -202,8 +203,8 @@ module ftqed
 
 		if (ftqed_temperature_corr) then
 			o = x/z
-			k2=k_funcFull(o, 2)
-			j2=j_funcFull(o, 2)
+			k2=K_funcFull(o, 2)
+			j2=J_funcFull(o, 2)
 			k2p=KprimeFull(o, 2)
 			j2p=JprimeFull(o, 2)
 			ga = (k2p/6.d0 - k2*k2p + j2p/6.d0 + j2p*k2 + j2*k2p)
@@ -377,66 +378,157 @@ module ftqed
 		real(dl) :: x, z, t1, t2
 		real(8) :: timer1
 		logical :: initial
+		logical :: exists
+		integer, parameter :: uid = 8324
+		character(len=300) :: tmpstr
 
 		call addToLog("[interactions] Initializing interpolation for electron mass corrections...")
 		allocate(dme_vec(interp_nx, interp_ny, interp_nz))
-		!$omp parallel do default(shared) private(ix, iy, iz) schedule(dynamic)
-		do ix=1, interp_nx
-			do iy=1, interp_ny
-				do iz=1, interp_nz
-					dme_vec(ix,iy,iz) = dme2_electronFull(interp_xvec(ix),interp_yvec(iy),interp_zvec(iz))
+		write(tmpstr, "(A,'dme2_log_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_log_term
+		inquire(file=trim(tmpstr), exist=exists)
+		if (exists) then
+			call addToLog("[interactions] read values from existing file: "//trim(tmpstr))
+			open(file=trim(tmpstr), unit=uid, form="unformatted")
+			do ix=1, interp_nx
+				do iy=1, interp_ny
+					do iz=1, interp_nz
+						read(uid) dme_vec(ix,iy,iz)
+					end do
 				end do
 			end do
-		end do
-		!$omp end parallel do
+			close(uid)
+			call addToLog("[interactions] check if few saved values are correct: ")
+			ix=123
+			iy=44
+			iz=89
+			call assert_double_rel_safe( &
+				"check saved dme2 interpolation A", &
+				dme_vec(ix,iy,iz), &
+				dme2_electronFull(interp_xvec(ix),interp_yvec(iy),interp_zvec(iz)), &
+				1d-7, 1d-6 &
+			)
+			ix=611
+			iy=84
+			iz=189
+			call assert_double_rel_safe( &
+				"check saved dme2 interpolation B", &
+				dme_vec(ix,iy,iz), &
+				dme2_electronFull(interp_xvec(ix),interp_yvec(iy),interp_zvec(iz)), &
+				1d-7, 1d-6 &
+			)
+			call addToLog("everything works!")
+		else
+			!$omp parallel do default(shared) private(ix, iy, iz) schedule(dynamic)
+			do ix=1, interp_nx
+				do iy=1, interp_ny
+					do iz=1, interp_nz
+						dme_vec(ix,iy,iz) = dme2_electronFull(interp_xvec(ix),interp_yvec(iy),interp_zvec(iz))
+					end do
+				end do
+			end do
+			!$omp end parallel do
+			open(file=trim(tmpstr), unit=uid, status="unknown", form="unformatted")
+			do ix=1, interp_nx
+				do iy=1, interp_ny
+					do iz=1, interp_nz
+						write(uid) dme_vec(ix,iy,iz)
+					end do
+				end do
+			end do
+			close(uid)
+			call addToLog("[interactions] values saved to file: "//trim(tmpstr))
+		end if
 		call dmeCorr%initialize(interp_xvec, interp_yvec, interp_zvec, dme_vec, iflag)!linear
 
 		!store dme2 without log term for use in collision terms
 		initial = ftqed_log_term
 		ftqed_log_term = .false.
 		allocate(dmg_vec(interp_nx, interp_nz))
-		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
-		do ix=1, interp_nx
-			do iz=1, interp_nz
-				dmg_vec(ix,iz) = dme2_electronFull(interp_xvec(ix), 0.d0, interp_zvec(iz))
+		write(tmpstr, "(A,'dme2_nolog_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr
+		inquire(file=trim(tmpstr), exist=exists)
+		if (exists) then
+			call addToLog("[interactions] read values from existing file: "//trim(tmpstr))
+			open(file=trim(tmpstr), unit=uid, form="unformatted")
+			do ix=1, interp_nx
+				do iz=1, interp_nz
+					read(uid) dmg_vec(ix,iz)
+				end do
 			end do
-		end do
-		!$omp end parallel do
+			close(uid)
+			call addToLog("[interactions] check if few saved values are correct: ")
+			ix=123
+			iz=89
+			call assert_double_rel_safe( &
+				"check saved dme2 interpolation A", &
+				dmg_vec(ix,iz), &
+				dme2_electronFull(interp_xvec(ix), 0.d0, interp_zvec(iz)), &
+				1d-7, 1d-6 &
+			)
+			ix=611
+			iz=189
+			call assert_double_rel_safe( &
+				"check saved dme2 interpolation B", &
+				dmg_vec(ix,iz), &
+				dme2_electronFull(interp_xvec(ix), 0.d0, interp_zvec(iz)), &
+				1d-7, 1d-6 &
+			)
+			call addToLog("everything works!")
+		else
+			!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
+			do ix=1, interp_nx
+				do iz=1, interp_nz
+					dmg_vec(ix,iz) = dme2_electronFull(interp_xvec(ix), 0.d0, interp_zvec(iz))
+				end do
+			end do
+			!$omp end parallel do
+			open(file=trim(tmpstr), unit=uid, status="unknown", form="unformatted")
+			do ix=1, interp_nx
+				do iz=1, interp_nz
+					write(uid) dmg_vec(ix,iz)
+				end do
+			end do
+			close(uid)
+			call addToLog("[interactions] values saved to file: "//trim(tmpstr))
+		end if
 		call dmeNLCorr%initialize(interp_xvec, interp_zvec, dmg_vec, iflag)!linear
 
-		call random_seed()
-		if (timing_tests) then
-			call tic(timer1)
-			write (*,*) "[interactions] now doing some timing..."
-			call tic(timer1)
-			do ix=1, 1000000
-				call random_number(x)
-				call random_number(z)
-				x=(x_fin-x_in)*x + x_in
-				z=0.4d0*z + z_in
-				t1 = dme2_nolog(x,z)
-			end do
-			call toc(timer1, "<interpolated>")
+		if (tests_interpolations) then
+			call random_seed()
+			if (timing_tests) then
+				call tic(timer1)
+				write (*,*) "[interactions] now doing some timing..."
+				call tic(timer1)
+				do ix=1, 1000000
+					call random_number(x)
+					call random_number(z)
+					x=(x_fin-x_in)*x + x_in
+					z=0.4d0*z + z_in
+					t1 = dme2_nolog(x,z)
+				end do
+				call toc(timer1, "<interpolated>")
 
-			call tic(timer1)
-			do ix=1, 1000000
-				call random_number(x)
-				call random_number(z)
-				x=(x_fin-x_in)*x + x_in
-				z=0.4d0*z + z_in
-				t1 = dme2_electronFull(x,0.d0,z)
-			end do
-			call toc(timer1, "<full>")
-		end if
-		ftqed_log_term = initial
-		call random_number(x)
-		call random_number(z)
-		x=(x_fin-x_in)*x + x_in
-		z=0.4d0*z + z_in
-		write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x, 0.01d0, z
-		t1 = dme2_electronFull(x, 0.01d0, z)
-		t2 = dme2_electron(x, 0.01d0, z)
-		write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
+				call tic(timer1)
+				do ix=1, 1000000
+					call random_number(x)
+					call random_number(z)
+					x=(x_fin-x_in)*x + x_in
+					z=0.4d0*z + z_in
+					t1 = dme2_electronFull(x,0.d0,z)
+				end do
+				call toc(timer1, "<full>")
+			end if
+			ftqed_log_term = initial
+			call random_number(x)
+			call random_number(z)
+			x=(x_fin-x_in)*x + x_in
+			z=0.4d0*z + z_in
+			write(*,"(' [interactions] test dme2_electronInterp in ',*(E12.5))") x, 0.01d0, z
+			t1 = dme2_electronFull(x, 0.01d0, z)
+			t2 = dme2_electron(x, 0.01d0, z)
+			write(*,"(' [interactions] comparison (true vs interp): ',*(E17.10))") t1,t2
+		else
+			ftqed_log_term = initial
+		endif
 
 		deallocate(dmg_vec)
 		deallocate(dme_vec)

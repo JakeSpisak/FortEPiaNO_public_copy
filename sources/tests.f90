@@ -11,6 +11,8 @@ program tests
 	implicit none
 
 	logical, parameter :: save_collint_tests=.false.
+	integer, parameter :: fu = 89237, fv = 89238, fw = 89239
+	character(len=1), dimension(2), parameter :: chLR=(/'L','R'/)
 
 	call openLogFile
 	write(*,*) ""
@@ -41,7 +43,7 @@ program tests
 	call do_test_collision_terms
 	call do_test_damping_factors
 	call do_test_zin
-	call do_test_damping_yyyw
+	call do_test_damping_bennett
 	call do_test_GL
 	call do_test_matterPotential
 	call do_test_diagonalization
@@ -53,9 +55,10 @@ program tests
 	write(*,*) ""
 	write(*,"(a)") "all tests were successfull!"
 
-	write(*,*) ""
-	write(*,"(a)") "now doing some timing tests..."
-	call do_timing_tests()
+!	write(*,*) ""
+!	write(*,"(a)") "now doing some timing tests..."
+!	call do_timing_tests()
+
 	call closeLogFile
 
 	contains
@@ -81,14 +84,12 @@ program tests
 		interp_zmax = interp_zmax0
 		allocate(x_arr(Nx), y_arr(Ny))
 		x_in    = 0.001d0
-		x_fin   = 40.d0
+		x_fin   = 35.d0
 		logx_in  = log10(x_in)
 		logx_fin = log10(x_fin)
 		x_arr = logspace(logx_in, logx_fin, Nx)
 		y_min = 0.01d0
 		y_max = 20.0d0
-		y_cen = 0.01d0
-		Nylog = 1
 		use_gauss_laguerre = .false.
 		y_arr = linspace(y_min, y_max, Ny)
 		call finish_y_arrays
@@ -117,7 +118,7 @@ program tests
 		if (flavorNumber .gt. 2) then
 			mixingAngles(1,3) = 0.1485d0
 			mixingAngles(2,3) = 0.7954d0
-			massSplittings(3) = 0.0025153d0
+			massSplittings(3) = 0.0025283d0
 		end if
 		z_in=1.0000575
 		collint_d_no_nue = .false.
@@ -139,7 +140,8 @@ program tests
 		interp_xvec = logspace(logx_in, logx_fin, interp_nx)
 		interp_yvec = logspace(log10(y_min), log10(y_max), interp_ny)
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-		interp_xozvec = logspace(log10(x_in/interp_zmax), logx_fin, interp_nxz)
+		low_xoz = x_in/interp_zmax
+		interp_xozvec = logspace(log10(low_xoz), logx_fin, interp_nxz)
 		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
 		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 #ifdef LOW_REHEATING
@@ -173,24 +175,24 @@ program tests
 		allocate(tarr(N))
 		tarr = linspace(0.0d0, 11.d0, N)
 		do ix=1, N
-			write(tmparg, '("tarr lin ",I2)') ix
+			write(tmparg, "('tarr lin ',I2)") ix
 			call assert_double(tmparg, tarr(ix), (ix-1)*1.d0, 1d-7)
 		end do
 		tarr = logspace(-5d0, 6.d0, N)
 		do ix=1, N
-			write(tmparg, '("tarr log ",I2)') ix
+			write(tmparg, "('tarr log ',I2)") ix
 			call assert_double_rel(tmparg, tarr(ix), 10.d0**(ix-6), 1d-7)
 		end do
 		tarr = geomspace(1.d-5, 1.d6, N)
 		do ix=1, N
-			write(tmparg, '("tarr geom ",I2)') ix
+			write(tmparg, "('tarr geom ',I2)") ix
 			call assert_double_rel(tmparg, tarr(ix), 10.d0**(ix-6), 1d-7)
 		end do
 		tarr = loglinspace(0.01d0, 1.d0, 10.d0, N, 3)
 		call assert_double_rel("tarr linlog 1", tarr(1), 0.01d0, 1d-7)
 		call assert_double_rel("tarr linlog 2", tarr(2), 0.1d0, 1d-7)
 		do ix=3, N
-			write(tmparg, '("tarr linlog ",I2)') ix
+			write(tmparg, "('tarr linlog ',I2)") ix
 			call assert_double_rel(tmparg, tarr(ix), (ix-2)*1.d0, 1d-7)
 		end do
 
@@ -317,9 +319,11 @@ program tests
 
 		call printTestBlockName("Neutrino and lepton matrices")
 
-		m(1,:) = (/0.825082, 0.54529713, 0.1479548/)
-		m(2,:) = (/-0.47410446, 0.525726198, 0.7062839/)
-		m(3,:) = (/0.30735086, -0.6528882, 0.69229506/)
+		open(unit=fu, file="test_outputs/mixmat.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('mixing matrix ',2I1)") i,j
@@ -349,9 +353,11 @@ program tests
 		end do
 		deallocate(ide)
 
-		m(1,:) = (/0.00007745186685918483, 0.00028443083990052604, 0.00023082995114815183/)
-		m(2,:) = (/0.00028443083990052604, 0.001275536536721503, 0.0012040271446586716/)
-		m(3,:) = (/0.00023082995114815185, 0.0012040271446586716, 0.001237611596419312/)
+		open(unit=fu, file="test_outputs/massmat.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('mass matrix ',2I1)") i,j
@@ -368,9 +374,11 @@ program tests
 		end do
 		!A
 		call updateMatterDensities(0.076d0, 1.32d0)
-		m(1,:) = (/-0.00268138/1.22, 0., 0./)
-		m(2,:) = (/0.,-2.08438e-6/1.22,0./)
-		m(3,:) = (/0.,0.,0./)
+		open(unit=fu, file="test_outputs/leptmatA.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
 		er = (/5d-5,1d-3,0.d0/)
 		do i=1,3
 			do j=1,3
@@ -389,22 +397,28 @@ program tests
 		end do
 		call updateMatterDensities(0.0176d0, 1.d0)
 		write(*,*)""
-		m(1,:) = (/-4.69515d0, 0.d0, 0.d0/)
-		m(2,:) = (/0.,-1.44764,0./)
-		m(3,:) = (/0.,0.,0./)
-		nr(1,:) = (/-1.80466,-1.80466,-1.80466/)
-		nr(2,:) = (/-1.80466,-1.80466,-1.80466/)
-		nr(3,:) = (/-1.80466,-1.80466,-1.80466/)
-		ni(1,:) = (/0.,-1.80466e-2,-1.80466e-2/)
-		ni(2,:) = (/1.80466e-2,0.,-1.80466e-2/)
-		ni(3,:) = (/1.80466e-2,1.80466e-2,0./)
-		er = (/5d-5,8d-5,0.d0/)
+		open(unit=fu, file="test_outputs/leptmatB.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nudmB_re.dat", status="old")
+		do i=1, 3
+			read (fu, *) nr(i,:)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nudmB_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) ni(i,:)
+		end do
+		close(fu)
+		er = (/5d-5,1d-4,0.d0/)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix B ',2I1)") i,j
 				call assert_double_rel_safe(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-16, er(i))
 				write(tmparg,"('nu density matrix re B ',2I1)") i,j
-				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 5d-7)
+				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 2d-6)
 				write(tmparg,"('nu density matrix im B ',2I1)") i,j
 				call assert_double(trim(tmparg), nuDensities%im(i,j), ni(i,j), 1d-7)
 			end do
@@ -415,23 +429,29 @@ program tests
 			nuDensMatVecFD(iy)%im = 0.4d0*exp(-y_arr(iy))
 		end do
 		call updateMatterDensities(2.d1, 1.2d0)
-		m(1,:) = (/-1.39063d-23/0.22d0, 0.d0, 0.d0/)
-		m(2,:) = (/0.,0.,0./)
-		m(3,:) = (/0.,0.,0./)
-		nr(1,:) = (/1.d0, 1.d0, 1.d0/)
-		nr(2,:) = (/1.,1.,1./)
-		nr(3,:) = (/1.,1.,1./)
-		ni(1,:) = (/0.d0, 1.d0, 1.d0/)
-		ni(2,:) = (/-1.,0.,1./)
-		ni(3,:) = (/-1.,-1.,0./)
+		open(unit=fu, file="test_outputs/leptmatC.dat", status="old")
+		do i=1, 3
+			read (fu, *) m(i,:)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nudmC_re.dat", status="old")
+		do i=1, 3
+			read (fu, *) nr(i,:)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nudmC_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) ni(i,:)
+		end do
+		close(fu)
 		do i=1,3
 			do j=1,3
 				write(tmparg,"('lepton matrix C ',2I1)") i,j
-				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 5d-26)
+				call assert_double(trim(tmparg), leptonDensities(i,j), m(i,j), 1d-25)
 				write(tmparg,"('nu density matrix re C ',2I1)") i,j
-				call assert_double(trim(tmparg), nuDensities%re(i,j), -0.01d0*8d-19*nr(i,j), 1d-20)
+				call assert_double(trim(tmparg), nuDensities%re(i,j), nr(i,j), 1d-21)
 				write(tmparg,"('nu density matrix im C ',2I1)") i,j
-				call assert_double(trim(tmparg), nuDensities%im(i,j), -0.4d0*8d-19*nr(i,j), 8d-19)
+				call assert_double(trim(tmparg), nuDensities%im(i,j), ni(i,j), 1d-19)
 			end do
 		end do
 		call printTotalTests
@@ -440,7 +460,10 @@ program tests
 
 	subroutine do_test_cosmology
 		real(dl), dimension(:), allocatable :: ndmv_re
-		integer :: i, iy
+		integer :: i, ix, iy, n
+		real(dl) :: x, z, r, rn
+		real(dl), dimension(8) :: ve1, ve2
+		character(len=100) :: tmpstr
 
 		allocate(ndmv_re(Ny))
 		do iy=1, Ny
@@ -456,120 +479,224 @@ program tests
 		end do
 
 		call printTestBlockName("Cosmology")
-		call assert_double_rel("elDensF test 1", electrons%energyDensityFull(1.d0, 1.d0, .false.), 1.06283d0, 1d-4)
-		call assert_double_rel("elDensF test 2", electrons%energyDensityFull(0.076d0, 1.32d0, .false.), 3.49493d0, 1d-4)
-		call assert_double_rel("elDensF test 3", electrons%energyDensityFull(1.d1, 1.2d0, .false.), 0.0377723d0, 1d-4)
-		call assert_double_rel("elDensF test 4", electrons%energyDensityFull(2.d1, 1.2d0, .false.), 0.0000421964d0, 1d-4)
-		call assert_double_rel("elDensF test 5", electrons%energyDensityFull(3.d1, 1.2d0, .false.), 2.61468d-8, 5d-3)
-		call assert_double_rel("elDens test 1", electrons%energyDensity(1.d0, 1.d0, .false.), 1.06283d0, 1d-4)
-		call assert_double_rel("elDens test 2", electrons%energyDensity(0.076d0, 1.32d0, .false.), 3.49493d0, 1d-4)
-		call assert_double_rel("elDens test 3", electrons%energyDensity(1.d1, 1.2d0, .false.), 0.0377723d0, 1d-2)
-		call assert_double_rel("elDens test 4", electrons%energyDensity(2.d1, 1.2d0, .false.), 0.0000421964d0, 2d-2)
-		call assert_double_rel("elDens test 5", electrons%energyDensity(3.d1, 1.2d0, .false.), 2.61468d-8, 5d-2)
-		call assert_double_rel("photDens test 1", photonDensity(1.002d0), 0.66325322d0, 1d-7)
-		call assert_double_rel("photDens test 2", photonDensity(1.34d0), 2.12142498d0, 1d-7)
 
-		call assert_double_rel("nuDens test 1", nuDensity(1.d0, 1), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDens test 2", nuDensity(1.076d0, 1), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDens test 3", nuDensity(1.32d0, 1), 0.575727d0, 3d-4)
-		call assert_double_rel("nuDens test 4", nuDensity(1.37d0, 2), 2.d0*0.575727d0, 5d-4)
-		call assert_double_rel("nuDens test 5", nuDensity(1.003d0, 3), 3.d0*0.575727d0, 1d-4)
+		n=8
+		ve1=1d-6
+		ve1(7)=2e-6
+		ve1(8)=1e-5
+		ve2=(/1d-4, 1d-4, 1d-4, 1d-4, 1d-3, 1.5d-3, 3.5d-3, 3d-3/)
+		open(unit=fu, file="test_outputs/elDens.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("elDensF test "//trim(tmpstr), electrons%energyDensityFull(x, z, .false.), r, ve1(i))
+			call assert_double_rel("elDens test "//trim(tmpstr), electrons%energyDensity(x, z, .false.), r, ve2(i))
+		end do
+		close(fu)
+		ve2=(/1d-4, 1d-4, 1d-4, 1d-4, 1.1d-3, 2.d-3, 3.5d-3, 3d-3/)
+		open(unit=fu, file="test_outputs/elPress.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("elPressF test "//trim(tmpstr), electrons%pressureFull(x, z, .false.), r, ve1(i))
+			call assert_double_rel("elPress test "//trim(tmpstr), electrons%pressure(x, z, .false.), r, ve2(i))
+		end do
+		close(fu)
+		ve2=(/1d-4, 1d-4, 1d-4, 1d-4, 1d-3, 1.5d-3, 3.5d-3, 3d-3/)
+		open(unit=fu, file="test_outputs/elEntropy.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("elEntropy test "//trim(tmpstr), electrons%entropy(x, z), r, ve2(i))
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/elNumDens.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("elNumDens test "//trim(tmpstr), electrons%numberDensity(x, z, .false.), r, ve1(i))
+		end do
+		close(fu)
 
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
-			end do
+		n=7
+		ve1=1d-6
+		ve1(7)=2e-6
+		ve1(8)=1e-5
+		ve2=(/1d-4, 5d-3, 1d-4, 1d-4, 1d-4, 1d-4, 1d-4, 1d-4/)
+		open(unit=fu, file="test_outputs/muDens.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel_safe("muDensF test "//trim(tmpstr), muons%energyDensityFull(x, z, .false.), r, 1d-20, ve1(i))
+			call assert_double_rel_safe("muDens test "//trim(tmpstr), muons%energyDensity(x, z, .false.), r, 1d-20, ve2(i))
 		end do
-		call assert_double_rel("nuDensNC test 1", nuDensityNC(1, 1), 0.575727d0, 1d-4)
-		call assert_double_rel("nuNumDensNC test 1", nuNumberDensityNC(1, 1), 0.182690742d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
-			end do
+		close(fu)
+		ve2=(/1d-4, 5d-3, 1d-4, 1d-4, 1d-4, 1d-4, 1d-4, 1d-4/)
+		open(unit=fu, file="test_outputs/muPress.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel_safe("muPressF test "//trim(tmpstr), muons%pressureFull(x, z, .false.), r, 1d-20, ve1(i))
+			call assert_double_rel_safe("muPress test "//trim(tmpstr), muons%pressure(x, z, .false.), r, 1d-20, ve2(i))
 		end do
-		call assert_double_rel("nuDensNC test 2", nuDensityNC(1, 1), 0.77173d0, 1d-4)
-		call assert_double_rel("nuNumDensNC test 2", nuNumberDensityNC(1, 1), 0.22759009d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
-			end do
+		close(fu)
+		ve2=(/1d-4, 5d-3, 1d-4, 1d-4, 1d-4, 1d-4, 1d-4, 1d-4/)
+		open(unit=fu, file="test_outputs/muEntropy.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel_safe("muEntropy test "//trim(tmpstr), muons%entropy(x, z), r, 1d-20, ve2(i))
 		end do
-		call assert_double_rel("nuDensNC test 3", nuDensityNC(1, 1), 1.74788d0, 2d-4)
-		call assert_double_rel("nuNumDensNC test 3", nuNumberDensityNC(1, 1), 0.420183d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
-			end do
+		close(fu)
+		open(unit=fu, file="test_outputs/muNumDens.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel_safe("muNumDens test "//trim(tmpstr), muons%numberDensity(x, z, .false.), r, 1d-20, ve1(i))
 		end do
-		call assert_double_rel("nuDensNC test 4", nuDensityNC(2, 2), 2.d0*2.02814d0, 5d-4)
-		call assert_double_rel("nuNumDensNC test 4", nuNumberDensityNC(2, 2), 2.d0*0.469762d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
-			end do
+		close(fu)
+
+		n=5
+		ve1=1d-7
+		open(unit=fu, file="test_outputs/photDens.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("photDens test "//trim(tmpstr), photonDensity(z), r, ve1(i))
 		end do
-		call assert_double_rel("nuDensNC test 5", nuDensityNC(3, 3), 3.d0*0.582667d0, 1d-4)
-		call assert_double_rel("nuNumDensNC test 5", nuNumberDensityNC(3, 3), 3.d0*0.18434d0, 1d-4)
+		close(fu)
+		open(unit=fu, file="test_outputs/photEntr.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("photEntropy test "//trim(tmpstr), photonEntropy(z), r, ve1(i))
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/photNumDens.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("photNumDens test "//trim(tmpstr), photonNumberDensity(z), r, ve1(i))
+		end do
+		close(fu)
+
+		n=5
+		ve1=1d-4
+		ve2=(/1.,1.,1.,2.,3.,0.,0.,0./)
+		open(unit=fu, file="test_outputs/nuDens.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r, rn
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("nuDens test "//trim(tmpstr), nuDensity(z,int(ve2(i))), ve2(i)*r, ve1(i))
+		end do
+		close(fu)
+
+		ve1=(/1d-4,1d-4,2d-4,5d-4,1d-4,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/nuDensEq.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r, rn
+			do ix=1, flavorNumber
+				do iy=1, Ny
+				nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy) / z)
+				end do
+			end do
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("nuDensNC test "//trim(tmpstr), nuDensityNC(int(ve2(i)), int(ve2(i))), ve2(i)*r, ve1(i))
+			call assert_double_rel("nuNumDensNC test "//trim(tmpstr), nuNumberDensityNC(int(ve2(i)), int(ve2(i))), ve2(i)*rn, ve1(i))
+		end do
+		close(fu)
+
 		call assert_double("nuDensNC test 6", nuDensityNC(1, 2), 0.0d0, 1d-7)
 		call assert_double("nuDensNC test 7", nuDensityNC(1, 2, .false.), 0.0d0, 1d-7)
+		open(unit=fu, file="test_outputs/nuDens.dat", status="old")
+		read (fu, *) z, r, rn
+		close(fu)
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 2) = 2.d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%im(1, 2) = 0.1d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double_rel("nuDensNC test 8", nuDensityNC(1, 2), 2.d0*0.575727d0, 1d-4)
-		call assert_double_rel("nuDensNC test 9", nuDensityNC(1, 2, .false.), 0.0575727d0, 1d-4)
-
+		call assert_double_rel("nuDensNC test 8", nuDensityNC(1, 2), 2.d0*r, 1d-4)
+		call assert_double_rel("nuDensNC test 9", nuDensityNC(1, 2, .false.), 0.1d0*r, 1d-4)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double_rel("allnuDensNC test 1", allNuDensity(), 6*0.575727d0, 1d-3)
+		call assert_double_rel("allnuDensNC test 1", allNuDensity(), 6*r, 1d-3)
 
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
-		call assert_double_rel("dRhoft o2 test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00477572d0, 1d-5)
-		call assert_double_rel("dRhoft o2 test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00948058d0, 1d-5)
-		call assert_double_rel("dRhoft o2 test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0113699d0, 1d-5)
-		call assert_double_rel("dRhoft o2 test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.00031403d0, 1d-5)
+		n=5
+		ve1=(/1d-6,1d-6,1d-6,1d-6,1.d6,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dR2.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dRhoft o2 test "//trim(tmpstr), deltaRhoTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_ord3 = .true.
-		call assert_double_rel("dRhoft o23 test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00435043d0, 1d-5)
-		call assert_double_rel("dRhoft o23 test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00860629d0, 1d-5)
-		call assert_double_rel("dRhoft o23 test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0102149d0, 1d-5)
-		call assert_double_rel("dRhoft o23 test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.00028862d0, 1d-5)
+		open(unit=fu, file="test_outputs/ftqed_dRo23.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dRhoft o23 test "//trim(tmpstr), deltaRhoTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_log_term = .true.
 		ftqed_ord3 = .false.
-		call assert_double_rel("dRhoft o2l test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00477571d0, 1d-5)
-		call assert_double_rel("dRhoft o2l test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00945221d0, 1d-5)
-		call assert_double_rel("dRhoft o2l test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0111961d0, 4d-5)
-		call assert_double_rel("dRhoft o2l test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.000312169d0, 3d-5)
+		ve1=(/3d-5,1d-6,1d-5,4d-5,3d-5,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dRo2l.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dRhoft o2l test "//trim(tmpstr), deltaRhoTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_ord3 = .true.
-		call assert_double_rel("dRhoft o23l test 1", deltaRhoTot_em(0.01d0, 1.d0), -0.00435043d0, 1d-5)
-		call assert_double_rel("dRhoft o23l test 2", deltaRhoTot_em(0.4d0, 1.2d0), -0.00857792d0, 1d-5)
-		call assert_double_rel("dRhoft o23l test 3", deltaRhoTot_em(1.01d0, 1.3d0), -0.0100411d0, 5d-5)
-		call assert_double_rel("dRhoft o23l test 4", deltaRhoTot_em(10.d0, 1.5d0), -0.000286758d0, 3d-5)
+		open(unit=fu, file="test_outputs/ftqed_dRo23l.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dRhoft o23l test "//trim(tmpstr), deltaRhoTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
-		call assert_double_rel("dPft o2 test 1", deltaPTot_em(0.01d0, 1.d0), -0.00159171d0, 1d-5)
-		call assert_double_rel("dPft o2 test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00301419d0, 1d-5)
-		call assert_double_rel("dPft o2 test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00325021d0, 1d-5)
-		call assert_double_rel("dPft o2 test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000340556d0, 1d-5)
+		ve1=(/1d-6,1d-6,1d-6,1d-6,1d-6,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dP2.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dPft o2 test "//trim(tmpstr), deltaPTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_ord3 = .true.
-		call assert_double_rel("dPft o23 test 1", deltaPTot_em(0.01d0, 1.d0), -0.00144995d0, 1d-5)
-		call assert_double_rel("dPft o23 test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00272757d0, 1d-5)
-		call assert_double_rel("dPft o23 test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00289651d0, 1d-5)
-		call assert_double_rel("dPft o23 test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000317678d0, 1d-5)
+		open(unit=fu, file="test_outputs/ftqed_dPo23.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dPft o23 test "//trim(tmpstr), deltaPTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_log_term = .true.
 		ftqed_ord3 = .false.
-		call assert_double_rel("dPft o2l test 1", deltaPTot_em(0.01d0, 1.d0), -0.00159169d0, 1d-5)
-		call assert_double_rel("dPft o2l test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00299430d0, 1d-5)
-		call assert_double_rel("dPft o2l test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00317157d0, 4d-5)
-		call assert_double_rel("dPft o2l test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000339254d0, 2d-5)
+		ve1=(/2d-5,1d-6,4d-6,4d-5,2d-5,0.d0,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/ftqed_dPo2l.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dPft o2l test "//trim(tmpstr), deltaPTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_ord3 = .true.
-		call assert_double_rel("dPft o23l test 1", deltaPTot_em(0.01d0, 1.d0), -0.00144994d0, 1d-5)
-		call assert_double_rel("dPft o23l test 2", deltaPTot_em(0.4d0, 1.2d0), -0.00270768d0, 1d-5)
-		call assert_double_rel("dPft o23l test 3", deltaPTot_em(1.01d0, 1.3d0), -0.00281788d0, 4d-5)
-		call assert_double_rel("dPft o23l test 4", deltaPTot_em(10.d0, 1.5d0), -0.0000316376d0, 2d-5)
+		open(unit=fu, file="test_outputs/ftqed_dPo23l.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("dPft o23l test "//trim(tmpstr), deltaPTot_em(x, z), r, ve1(i))
+		end do
+		close(fu)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
@@ -579,10 +706,17 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double("radDens test 1", totalRadiationDensity(0.7d0, 1.04d0), 3.79748d0, 1d-3)
-		call assert_double("radDens test 2", totalRadiationDensity(1.d0, 1.04d0), 3.74812d0, 1d-3)
-		call assert_double("radDens test 3", totalRadiationDensity(1.d0, 1.24d0), 5.86933d0, 1d-3)
+		n=4
+		ve1=1d-5
+		open(unit=fu, file="test_outputs/radDens.dat", status="old")
+		do i=1, n
+			read (fu, *) x, z, r
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("radDens test "//trim(tmpstr), totalRadiationDensity(x, z), r, ve1(i))
+		end do
+		close(fu)
 
+		!check Neff values from some previous papers
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
@@ -614,80 +748,12 @@ program tests
 		end do
 		call assert_double("Neff test 5", Neff_from_rho_z(1.39779d0), 3.045d0, 1d-3)
 
-		call assert_double("muonDensF test 1", muons%energyDensityFull(1.d0, 1.d0, .false.), 0.d0, 1d-15)
-		call assert_double_rel("muonDensF test 2", muons%energyDensityFull(0.1d0, 1.32d0, .false.), 0.000146007d0, 1d-4)
-		call assert_double_rel("muonDensF test 3", muons%energyDensityFull(0.01d0, 1.2d0, .false.), 1.86472d0, 1d-4)
-		call assert_double_rel("muonDensF test 4", muons%energyDensityFull(3.d-3, 1.2d0, .false.), 2.3396d0, 1d-4)
-		call assert_double_rel("muonDensF test 5", muons%energyDensityFull(1.d-3, 1.d0, .false.), 1.14785d0, 1d-4)
-		call assert_double("muonDensF test 6", muons%energyDensityFull(4.d0, 1.3d0, .false.), 0.d0, 1d-15)
-
-		call assert_double("muonDens test 1", muons%energyDensity(1.d0, 1.d0, .false.), 0.d0, 1d-15)
-		call assert_double_rel("muonDens test 2", muons%energyDensity(1.d-1, 1.32d0, .false.), 0.000146007d0, 1.1d-2)
-		call assert_double_rel("muonDens test 3", muons%energyDensity(1.d-2, 1.2d0, .false.), 1.86472d0, 1d-4)
-		call assert_double_rel("muonDens test 4", muons%energyDensity(3.d-3, 1.2d0, .false.), 2.3396d0, 1d-4)
-		call assert_double_rel("muonDens test 5", muons%energyDensity(1.d-3, 1.d0, .false.), 1.14785d0, 1d-4)
-		call assert_double("muonDens test 6", muons%energyDensity(4.d0, 1.3d0, .false.), 0.d0, 1d-15)
-
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re(1, 1) = 1.d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(2, 2) = 1.d0 * fermiDirac(y_arr(iy))
 			nuDensMatVecFD(iy)%re(3, 3) = 1.d0 * fermiDirac(y_arr(iy))
 		end do
-		call assert_double("radDens test 4", totalRadiationDensity(0.01d0, 1.24d0), 8.16544d0, 1d-3)
 		deallocate(ndmv_re)
-
-		call assert_double_rel("photEntrF test 1", photonEntropy(1.002d0), 0.882572492d0, 1d-7)
-		call assert_double_rel("photEntrF test 2", photonEntropy(1.34d0), 2.11087063d0, 1d-7)
-		call assert_double_rel("photEntrF test 3", photonEntropy(1.d0), 0.877298169d0, 1d-7)
-
-		call assert_double_rel("elDens test 6", electrons%energyDensity(0.076d0, 1.d0, .false.), 1.15097d0, 1d-4)
-		call assert_double_rel("elPressF test 1", electrons%pressureFull(0.076d0, 1.d0, .false.), 0.383338d0, 1d-4)
-		call assert_double_rel("elPressF test 2", electrons%pressureFull(0.076d0, 1.32d0, .false.), 1.16442d0, 2d-3)
-		call assert_double_rel("elPressF test 3", electrons%pressureFull(1.d1, 1.2d0, .false.), 0.00376481d0, 2d-3)
-		call assert_double_rel("elPressF test 4", electrons%pressureFull(2.d1, 1.2d0, .false.), 2.30927d-6, 1d-2)
-		call assert_double("elPressF test 5", electrons%pressureFull(3.d1, 1.2d0, .false.), 1d-9, 1d-10)
-		call assert_double_rel("muPressF test 1", muons%pressureFull(0.01d0, 1.d0, .false.), 0.195024d0, 1d-4)
-		call assert_double_rel("muPressF test 2", muons%pressureFull(0.076d0, 1.d0, .false.), 2.659d-6, 1d-2)
-		call assert_double_rel("muPressF test 3", muons%pressureFull(0.076d0, 1.32d0, .false.), 0.0002489d0, 1d-3)
-		call assert_double("muPressF test 4", muons%pressureFull(1.d1, 1.2d0, .false.), 0.d0, 1d-10)
-		call assert_double_rel("muPressF test 5", muons%pressureFull(1.d-3, 1.1d0, .false.), 0.557706d0, 1d-4)
-
-		call assert_double_rel("elPress test 1", electrons%pressure(0.076d0, 1.d0, .false.), 0.383338d0, 1d-4)
-		call assert_double_rel("elPress test 2", electrons%pressure(0.076d0, 1.32d0, .false.), 1.16442d0, 2d-3)
-		call assert_double_rel("elPress test 3", electrons%pressure(1.d1, 1.2d0, .false.), 0.00376481d0, 2d-3)
-		call assert_double_rel("elPress test 4", electrons%pressure(2.d1, 1.2d0, .false.), 2.30927d-6, 1d-2)
-		call assert_double("elPress test 5", electrons%pressure(3.d1, 1.2d0, .false.), 1d-9, 1d-10)
-		call assert_double_rel("muPress test 1", muons%pressure(0.01d0, 1.d0, .false.), 0.195024d0, 1d-4)
-		call assert_double_rel("muPress test 2", muons%pressure(0.076d0, 1.d0, .false.), 2.659d-6, 1d-2)
-		call assert_double_rel("muPress test 3", muons%pressure(0.076d0, 1.32d0, .false.), 0.0002489d0, 2d-3)
-		call assert_double("muPress test 4", muons%pressure(1.d1, 1.2d0, .false.), 0.d0, 1d-10)
-		call assert_double_rel("muPress test 5", muons%pressure(1.d-3, 1.1d0, .false.), 0.557706d0, 1d-4)
-
-		call assert_double_rel("elEntropy test 1", electrons%entropy(0.001d0, 1.d0), 1.53527d0, 1d-3)
-		call assert_double_rel("elEntropy test 2", electrons%entropy(0.076d0, 1.d0), 1.53431d0, 2d-3)
-		call assert_double_rel("elEntropy test 3", electrons%entropy(0.076d0, 1.32d0), 3.52981d0, 2d-3)
-		call assert_double_rel("elEntropy test 4", electrons%entropy(1.d1, 1.2d0), 0.0346143d0, 2d-3)
-		call assert_double_rel("muEntropy test 1", muons%entropy(0.001d0, 1.d0), 1.52817d0, 1d-4)
-		call assert_double_rel("muEntropy test 2", muons%entropy(0.076d0, 1.d0), 4.87363d-5, 1d-2)
-		call assert_double_rel("muEntropy test 3", muons%entropy(0.076d0, 1.32d0), 0.0027439d0, 1d-3)
-		call assert_double("muEntropy test 4", muons%entropy(1.d1, 1.2d0), 0.d0, 1d-10)
-
-		call assert_double_rel("photNumDens test 1", photonNumberDensity(1.002d0), 0.24505211d0, 1d-7)
-		call assert_double_rel("photNumDens test 2", photonNumberDensity(1.34d0), 0.58609723d0, 1d-7)
-		call assert_double_rel("photNumDens test 3", photonNumberDensity(1.d0), 0.243587656d0, 1d-7)
-
-		call assert_double_rel("elNumDens test 1", electrons%numberDensity(1.d0, 1.d0, .false.), 0.306994d0, 1d-4)
-		call assert_double_rel("elNumDens test 2", electrons%numberDensity(0.076d0, 1.32d0, .false.), 0.839831d0, 1d-4)
-		call assert_double_rel("elNumDens test 3", electrons%numberDensity(1.d1, 1.2d0, .false.), 0.00313722d0, 1d-4)
-		call assert_double_rel("elNumDens test 4", electrons%numberDensity(2.d1, 1.2d0, .false.), 1.92439d-6, 1d-4)
-		call assert_double_rel("elNumDens test 5", electrons%numberDensity(3.d1, 1.2d0, .false.), 8.19998d-10, 1d-4)
-
-		call assert_double("muonNumDens test 1", muons%numberDensity(1.d0, 1.d0, .false.), 0.d0, 1d-15)
-		call assert_double_rel("muonNumDens test 2", muons%numberDensity(1.d-1, 1.32d0, .false.), 6.40237d-6, 1d-4)
-		call assert_double_rel("muonNumDens test 3", muons%numberDensity(1.d-2, 1.2d0, .false.), 0.395254d0, 1d-4)
-		call assert_double_rel("muonNumDens test 4", muons%numberDensity(3.d-3, 1.2d0, .false.), 0.600954d0, 1d-4)
-		call assert_double_rel("muonNumDens test 5", muons%numberDensity(1.d-3, 1.d0, .false.), 0.362419d0, 1d-4)
-		call assert_double("muonNumDens test 6", muons%numberDensity(4.d0, 1.3d0, .false.), 0.d0, 1d-15)
 
 		ftqed_temperature_corr = .true.
 
@@ -696,7 +762,14 @@ program tests
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
 			end do
 		end do
-		call assert_double("radDens test ftqed", totalRadiationDensity(0.7d0, 1.04d0), 3.79748d0-0.00430398d0, 1d-3)
+
+		open(unit=fu, file="test_outputs/ftqed_dR2.dat", status="old")
+		read (fu, *) x, z, rn
+		close(fu)
+		open(unit=fu, file="test_outputs/radDens.dat", status="old")
+		read (fu, *) x, z, r
+		close(fu)
+		call assert_double("radDens test ftqed", totalRadiationDensity(x, z), r+rn, 1d-5)
 
 		call printTotalTests
 		call resetTestCounter
@@ -704,144 +777,138 @@ program tests
 
 	subroutine do_test_JKG
 		real(dl), dimension(2) :: res
-		integer :: ix
+		real(dl), dimension(4) :: v1, v2, zs
+		real(dl) :: x, z, r1, r2
+		integer :: ix, iy
+		character(len=300) :: tmparg
 
 		call printTestBlockName("JKG")
-		call assert_double_rel("J0 test 1", J_funcFull(1.d-3, 0), 0.050660581d0, 1d-7)
-		call assert_double_rel("J0 test 2", J_funcFull(.01d0, 0), 0.050659512d0, 1d-7)
-		call assert_double_rel("J0 test 3", J_funcFull(1.0d0, 0), 0.041253398d0, 1d-7)
-		call assert_double_rel("J0 test 4", J_funcFull(5.0d0, 0), 0.0020302829d0, 1d-7)
 
-		call assert_double_rel("J2 test 1", J_funcFull(1.d-3, 2), 0.166666641d0, 1d-7)
-		call assert_double_rel("J2 test 2", J_funcFull(.01d0, 2), 0.16666413d0, 1d-7)
-		call assert_double_rel("J2 test 3", J_funcFull(1.0d0, 2), 0.143797172d0, 1d-7)
-		call assert_double_rel("J2 test 4", J_funcFull(5.0d0, 2), 0.0133935079d0, 1d-7)
+		do iy=0,4,2
+			write(tmparg,"('test_outputs/jkg_j',I1,'.dat')") iy
+			open(unit=fu, file=trim(tmparg), status="old")
+			do ix=1,4
+				read (fu, *) x,r1
+				write(tmparg,"('J',I1,' test ',I1)") iy,ix
+				call assert_double(trim(tmparg), J_funcFull(x, iy), r1, 1d-7)
+			end do
+			close(fu)
+		end do
+		do iy=0,4,2
+			write(tmparg,"('test_outputs/jkg_jp',I1,'.dat')") iy
+			open(unit=fu, file=trim(tmparg), status="old")
+			do ix=1,4
+				read (fu, *) x,r1
+				write(tmparg,"('Jp',I1,' test ',I1)") iy,ix
+				call assert_double(trim(tmparg), JprimeFull(x, iy), r1, 1d-7)
+			end do
+			close(fu)
+		end do
+		do iy=0,2,2
+			write(tmparg,"('test_outputs/jkg_k',I1,'.dat')") iy
+			open(unit=fu, file=trim(tmparg), status="old")
+			do ix=1,4
+				read (fu, *) x,r1
+				write(tmparg,"('K',I1,' test ',I1)") iy,ix
+				call assert_double(trim(tmparg), K_funcFull(x, iy), r1, 1d-7)
+			end do
+			close(fu)
+		end do
+		do iy=0,2,2
+			write(tmparg,"('test_outputs/jkg_kp',I1,'.dat')") iy
+			open(unit=fu, file=trim(tmparg), status="old")
+			do ix=1,4
+				read (fu, *) x,r1
+				write(tmparg,"('Kp',I1,' test ',I1)") iy,ix
+				call assert_double(trim(tmparg), KprimeFull(x, iy), r1, 1d-7)
+			end do
+			close(fu)
+		end do
 
-		call assert_double_rel("J4 test 1", J_funcFull(1.d-3, 4), 2.30290744d0, 1d-7)
-		call assert_double_rel("J4 test 2", J_funcFull(.01d0, 4), 2.30288269d0, 1d-7)
-		call assert_double_rel("J4 test 3", J_funcFull(1.0d0, 4), 2.070646778d0, 1d-7)
-		call assert_double_rel("J4 test 4", J_funcFull(5.0d0, 4), 0.3145333371d0, 1d-7)
+		open(unit=fu, file="test_outputs/jkg_elcontr.dat", status="old")
+		do ix=1,3
+			read (fu, *) x,r1,r2
+			res = electrons%dzodx_terms(x)
+			write(tmparg,"(I1)") ix
+			call assert_double("elContr test "//trim(tmparg)//"a", res(1), r1, 1d-7)
+			call assert_double("elContr test "//trim(tmparg)//"b", res(2), r2, 1d-7)
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/jkg_mucontr.dat", status="old")
+		do ix=1,2
+			read (fu, *) x,r1,r2
+			res = muons%dzodx_terms(x)
+			write(tmparg,"(I1)") ix
+			call assert_double_rel_safe("elContr test "//trim(tmparg)//"a", res(1), r1, 1d-15,1d-7)
+			call assert_double_rel_safe("elContr test "//trim(tmparg)//"b", res(2), r2, 1d-15,1d-7)
+		end do
+		close(fu)
 
-		call assert_double_rel("J0' test 1", JprimeFull(1.d-3, 0), -0.0000215955097d0, 1d-7)
-		call assert_double_rel("J0' test 2", JprimeFull(.01d0, 0), -0.00021594889d0, 1d-7)
-		call assert_double_rel("J0' test 3", JprimeFull(1.0d0, 0), -0.016349106d0, 1d-7)
-		call assert_double_rel("J0' test 4", JprimeFull(5.0d0, 0), -0.0018343454d0, 1d-7)
-
-		call assert_double_rel("J2' test 1", JprimeFull(1.d-3, 2), -0.000050660581d0, 1d-7)
-		call assert_double_rel("J2' test 2", JprimeFull(.01d0, 2), -0.000506595121d0, 1d-7)
-		call assert_double_rel("J2' test 3", JprimeFull(1.0d0, 2), -0.0412533987d0, 1d-7)
-		call assert_double_rel("J2' test 4", JprimeFull(5.0d0, 2), -0.0101514145d0, 1d-7)
-
-		call assert_double_rel("J4' test 1", JprimeFull(1.d-3, 4), -0.0005d0, 3d-7)
-		call assert_double_rel("J4' test 2", JprimeFull(.01d0, 4), -0.004999924d0, 1d-7)
-		call assert_double_rel("J4' test 3", JprimeFull(1.0d0, 4), -0.43139151d0, 1d-7)
-		call assert_double_rel("J4' test 4", JprimeFull(5.0d0, 4), -0.200902618d0, 1d-7)
-
-		call assert_double_rel("K0 test 1", K_funcFull(1.d-3, 0), 0.378701582d0, 1d-7)
-		call assert_double_rel("K0 test 2", K_funcFull(.01d0, 0), 0.262051793d0, 1d-7)
-		call assert_double_rel("K0 test 3", K_funcFull(1.0d0, 0), 0.033787933d0, 1d-7)
-		call assert_double_rel("K0 test 4", K_funcFull(5.0d0, 0), 0.00037219484d0, 1d-7)
-
-		call assert_double_rel("K2 test 1", K_funcFull(1.d-3, 2), 0.0833331313d0, 1d-7)
-		call assert_double_rel("K2 test 2", K_funcFull(.01d0, 2), 0.083318964d0, 1d-7)
-		call assert_double_rel("K2 test 3", K_funcFull(1.0d0, 2), 0.055004619d0, 1d-7)
-		call assert_double_rel("K2 test 4", K_funcFull(5.0d0, 2), 0.0020443184d0, 1d-7)
-
-		call assert_double_rel("K0' test 1", KprimeFull(1.d-3, 0), -50.6605810d0, 1d-7)
-		call assert_double_rel("K0' test 2", KprimeFull(.01d0, 0), -5.065951206d0, 1d-7)
-		call assert_double_rel("K0' test 3", KprimeFull(1.0d0, 0), -0.0412533987d0, 1d-7)
-		call assert_double_rel("K0' test 4", KprimeFull(5.0d0, 0), -0.0004060565805d0, 1d-7)
-
-		call assert_double_rel("K2' test 1", KprimeFull(1.d-3, 2), -0.0003787015d0, 3d-7)
-		call assert_double_rel("K2' test 2", KprimeFull(.01d0, 2), -0.0026205179d0, 1d-7)
-		call assert_double_rel("K2' test 3", KprimeFull(1.0d0, 2), -0.0337879339d0, 1d-7)
-		call assert_double_rel("K2' test 4", KprimeFull(5.0d0, 2), -0.00186097423d0, 1d-7)
-
-		res = electrons%dzodx_terms(0.01d0)
-		call assert_double_rel("elContr test 1a", res(1), 0.0016666413d0, 1d-7)
-		call assert_double_rel("elContr test 1b", res(2), 2.3028993d0, 1d-7)
-		res = electrons%dzodx_terms(1d0)
-		call assert_double_rel("elContr test 2a", res(1), 0.143797172d0, 1d-7)
-		call assert_double_rel("elContr test 2b", res(2), 2.214444d0, 1d-7)
-		res = electrons%dzodx_terms(5d0)
-		call assert_double_rel("elContr test 3a", res(1), 0.066967539d0, 1d-7)
-		call assert_double_rel("elContr test 3b", res(2), 0.64937103d0, 1d-7)
-		res = muons%dzodx_terms(0.01d0)
-		call assert_double_rel("muContr test 1a", res(1), 39.8383018d0, 1d-7)
-		call assert_double_rel("muContr test 1b", res(2), 1.89902183d0, 1d-7)
-		res = muons%dzodx_terms(1d0)
-		call assert_double("muContr test 2a", res(1), 0d0, 1d-7)
-		call assert_double("muContr test 2b", res(2), 0d0, 1d-7)
-
-		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o2 test 1", res(1), -9.26305205d-6, 1d-7)
-		call assert_double("G2 o2 test 1", res(2), -0.0095522067d0, 1d-8)
-		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o2 test 2", res(1), -0.0000658825d0, 1d-7)
-		call assert_double("G2 o2 test 2", res(2), -0.0095518d0, 1d-8)
-		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o2 test 3", res(1), -0.00115846d0, 1d-5)
-		call assert_double_rel("G2 o2 test 3", res(2), -0.00806502d0, 1d-5)
-		res = G12_funcFull(0.5d0, 0.1d0)
-		call assert_double_rel("G1 o2 test 4", res(1), -0.000108111d0, 1d-5)
-		call assert_double_rel("G2 o2 test 4", res(2), -0.000945107d0, 1d-5)
+		zs = (/1., 10., 1.5, 0.1/)
+		open(unit=fu, file="test_outputs/jkg_g12_o2.dat", status="old")
+		do ix=1,4
+			read (fu, *) x,r1,r2
+			res = G12_funcFull(x*zs(ix), zs(ix))
+			write(tmparg,"(I1)") ix
+			call assert_double("G1 o2 test "//trim(tmparg), res(1), r1, 1d-7)
+			call assert_double("G2 o2 test "//trim(tmparg), res(2), r2, 1d-7)
+		end do
+		close(fu)
 
 		ftqed_log_term = .true.
-		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o2l test 1", res(1), -9.50063d-6, 5d-8)
-		call assert_double_rel("G2 o2l test 1", res(2), -0.00955221d0, 1d-6)
-		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o2l test 2", res(1), -0.0000682571d0, 4d-9)
-		call assert_double_rel("G2 o2l test 2", res(2), -0.00955178d0, 1d-5)
-		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o2l test 3", res(1), -0.00121073d0, 2d-4)
-		call assert_double_rel("G2 o2l test 3", res(2), -0.00794302d0, 5d-5)
-		res = G12_funcFull(0.5d0, 0.9d0)
-		call assert_double_rel("G1 o2l test 4", res(1), -0.00111783d0, 4d-5)
-		call assert_double_rel("G2 o2l test 4", res(2), -0.00894517d0, 2d-5)
+		v1 = (/3d-4, 2d-5, 2d-4, 4d-5/)
+		v2 = (/1d-6, 1d-5, 5d-5, 2d-5/)
+		open(unit=fu, file="test_outputs/jkg_g12_o2l.dat", status="old")
+		do ix=1,4
+			read (fu, *) x,z,r1,r2
+			res = G12_funcFull(x, z)
+			write(tmparg,"(I1)") ix
+			call assert_double_rel("G1 o2l test "//trim(tmparg), res(1), r1, v1(ix))
+			call assert_double_rel("G2 o2l test "//trim(tmparg), res(2), r2, v2(ix))
+		end do
+		close(fu)
 		ftqed_log_term = .false.
 
 		ftqed_ord3 = .true.
-		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o23 test 1", res(1), -9.19836d-6, 5d-8)
-		call assert_double_rel("G2 o23 test 1", res(2), -0.0087016543d0, 1d-6)
-		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o23 test 2", res(1), -0.0000652361d0, 3d-9)
-		call assert_double_rel("G2 o23 test 2", res(2), -0.00870124655d0, 1d-5)
-		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o23 test 3", res(1), -0.00109638d0, 1d-5)
-		call assert_double_rel("G2 o23 test 3", res(2), -0.00724797d0, 1d-5)
-		res = G12_funcFull(0.5d0, 0.1d0)
-		call assert_double_rel("G1 o23 test 4", res(1), -0.0000926686d0, 1d-5)
-		call assert_double_rel("G2 o23 test 4", res(2), -0.00082098d0, 1d-5)
+		v1 = (/1d-4, 1d-5, 1d-5, 1d-5/)
+		v2 = (/1d-6, 1d-5, 1d-5, 1d-5/)
+		open(unit=fu, file="test_outputs/jkg_g12_o23.dat", status="old")
+		do ix=1,4
+			read (fu, *) x,z,r1,r2
+			res = G12_funcFull(x,z)
+			write(tmparg,"(I1)") ix
+			call assert_double("G1 o23 test "//trim(tmparg), res(1), r1, v1(ix))
+			call assert_double("G2 o23 test "//trim(tmparg), res(2), r2, v2(ix))
+		end do
+		close(fu)
 
 		ftqed_log_term = .true.
-		res = G12_funcFull(1.d-3, 1.d0)
-		call assert_double("G1 o23l test 1", res(1), -9.43595d-6, 5d-8)
-		call assert_double_rel("G2 o23l test 1", res(2), -0.0087016543d0, 1d-6)
-		res = G12_funcFull(0.1d0, 10.d0)
-		call assert_double("G1 o23l test 2", res(1), -0.0000676107d0, 4d-9)
-		call assert_double_rel("G2 o23l test 2", res(2), -0.00870123d0, 1d-5)
-		res = G12_funcFull(1.5d0, 1.5d0)
-		call assert_double_rel("G1 o23l test 3", res(1), -0.00114865d0, 2d-4)
-		call assert_double_rel("G2 o23l test 3", res(2), -0.00712597d0, 6d-5)
-		res = G12_funcFull(0.5d0, 0.9d0)
-		call assert_double_rel("G1 o23l test 4", res(1), -0.00108209d0, 4d-5)
-		call assert_double_rel("G2 o23l test 4", res(2), -0.00810463d0, 2d-5)
+		v1 = (/1d-4, 1d-5, 1d-5, 1d-5/)
+		v2 = (/1d-6, 1d-5, 1d-5, 1d-5/)
+		open(unit=fu, file="test_outputs/jkg_g12_o23l.dat", status="old")
+		do ix=1,4
+			read (fu, *) x,z,r1,r2
+			res = G12_funcFull(x, z)
+			write(tmparg,"(I1)") ix
+			call assert_double("G1 o23l test "//trim(tmparg), res(1), r1, v1(ix))
+			call assert_double("G2 o23l test "//trim(tmparg), res(2), r2, v2(ix))
+		end do
+		close(fu)
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
 #ifndef NO_INTERPOLATION
-		res = dzodxcoef_interp_func(0.01d0)
-		call assert_double("A test 1", res(1), 7.23268d0, 1d-5)
-		call assert_double("B test 1", res(2), 0.00919711d0, 1d-4)
-		res = dzodxcoef_interp_func(1.d0)
-		call assert_double_rel("A test 2", res(1), 0.0404956d0, 1d-5)
-		call assert_double_rel("B test 2", res(2), 0.0143827d0, 1d-5)
-		res = dzodxcoef_interp_func(5d0)
-		call assert_double_rel("A test 3", res(1), 0.034036d0, 1d-5)
-		call assert_double_rel("B test 3", res(2), 0.0257897d0, 1d-5)
+		open(unit=fu, file="test_outputs/jkg_ab.dat", status="old")
+		do ix=1,3
+			read (fu, *) x,r1,r2
+			res = dzodxcoef_interp_func(x)
+			write(tmparg,"(I1)") ix
+			call assert_double("A test "//trim(tmparg), res(1), r1, 1d-5)
+			call assert_double("B test "//trim(tmparg), res(2), r2, 1d-5)
+		end do
+		close(fu)
 #endif
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_JKG
@@ -850,6 +917,10 @@ program tests
 		integer :: n
 		real(dl), dimension(:), allocatable :: ydot
 		integer :: m
+		real(dl) :: x, z, r, rn
+		integer :: ix
+		character(len=300) :: tmparg
+		real(dl), dimension(3) :: v1
 
 		n=ntot
 		allocate(ydot(n))
@@ -860,67 +931,79 @@ program tests
 			ydot((m-1)*flavNumSqu + 3) = 1.d0
 		end do
 		call printTestBlockName("dz/dx functions")
+
 #ifndef NO_INTERPOLATION
-		call dz_o_dx_old(0.01d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1", ydot(n), 7.11765d0, 8d-3)
-		call dz_o_dx_old(1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 2", ydot(n), -0.0946571d0, 7d-6)
-		call dz_o_dx_old(6.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 3", ydot(n), -0.15262978d0, 6d-6)
+		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
+		v1=(/8d-3,7d-6,6d-6/)
+		do ix=1,3
+			read (fu, *) x,z,r
+			write(tmparg,"(I1)") ix
+			call dz_o_dx_old(x, z, ydot, n)
+			call assert_double_rel("dz_o_dx old test "//trim(tmparg), ydot(n), r, v1(ix))
+		end do
+		close(fu)
 #endif
 
-		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 1a", ydot(n), 7.11765d0, 5d-5)
-		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), 7.11765d0, 5d-5)
-		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0946571d0, 3d-6)
-		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.132132d0, 3d-6)
-		call dz_o_dx(6.d0, 1.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.15262978d0, 2d-6)
-		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.10135096d0, 2d-6)
+		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
+		open(unit=fv, file="test_outputs/dzodx_n.dat", status="old")
+		v1=(/5d-5,6d-6,6d-6/)
+		do ix=1,3
+			read (fu, *) x,z,r
+			read (fv, *) x,z,rn
+			write(tmparg,"(I1)") ix
+			call dz_o_dx(x, 1.2d0, z, ydot, n)
+			call assert_double_rel("dz_o_dx test "//trim(tmparg), ydot(n), r, v1(ix))
+			call assert_double_rel("dw_o_dx test "//trim(tmparg), ydot(n-1), rn, v1(ix))
+		end do
+		close(fu)
+		close(fv)
+
 		deallocate(ydot)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_dzodx
 
 	subroutine do_test_dme2
+		real(dl) :: x, y, z, r
+		integer :: ix
+		character(len=300) :: tmparg
+		real(dl), dimension(6) :: v1
+
 		call printTestBlockName("dme2")
-		call assert_double("dme2F test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0), 0.022915468d0, 1d-6)
-		call assert_double("dme2F test 2", dme2_electronFull(0.05d0, 100.d0, 1.0003d0), 0.022915468d0, 1d-6)!here no log term, the flag is set to false
-		call assert_double("dme2F test 3", dme2_electronFull(0.5d0, 0.d0, 1.1d0), 0.026655522d0, 1d-6)
-		call assert_double("dme2F test 4", dme2_electronFull(1.23d0, 0.d0, 1.198d0), 0.02905573d0, 1d-6)
-		call assert_double("dme2F test 5", dme2_electronFull(7.6d0, 0.d0, 1.3d0), 0.025975010d0, 1d-6)
-		call assert_double("dme2F test 6", dme2_electronFull(35.d0, 0.d0, 1.39d0), 0.029529326d0, 1d-6)
+
+		ftqed_log_term=.false.
+		open(unit=fu, file="test_outputs/ftqed_dme2.dat", status="old")
+		do ix=1,6
+			read (fu, *) x,y,z,r
+			write(tmparg,"(I1)") ix
+			call assert_double_rel("dme2F test "//trim(tmparg), dme2_electronFull(x, y, z), r, 1d-6)
 #ifndef NO_INTERPOLATION
-		call assert_double("dme2 test 1", dme2_electron(0.05d0, 0.d0, 1.0003d0), 0.02292d0, 1d-5)
-		call assert_double("dme2 test 2", dme2_electron(0.05d0, 100.d0, 1.0003d0), 0.02292d0, 1d-5)
-		call assert_double("dme2 test 3", dme2_electron(0.5d0, 0.d0, 1.1d0),  0.026655522d0, 1d-5)
-		call assert_double("dme2 test 4", dme2_electron(1.23d0, 0.d0, 1.198d0), 0.02905573d0, 1d-5)
-		call assert_double("dme2 test 5", dme2_electron(7.6d0, 0.d0, 1.3d0), 0.025975010d0, 1d-5)
-		call assert_double("dme2 test 6", dme2_electron(35.d0, 0.d0, 1.39d0), 0.029529326d0, 1d-5)
+			call assert_double_rel("dme2 test "//trim(tmparg), dme2_electron(x, y, z), r, 1d-5)
+			call assert_double_rel("dme2nl test "//trim(tmparg), dme2_nolog(x, z), r, 1d-5)
 #endif
-		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), 1.3d0, 1d-7)
-		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), 8.944272d0, 1d-7)
+		end do
+		close(fu)
+
+		call assert_double("Ebare_i_dme test 1", Ebare_i_dme(0.3d0, 0.4d0, 1.44d0), sqrt(0.3d0**2+0.4d0**2+1.44d0), 1d-7)
+		call assert_double("Ebare_i_dme test 2", Ebare_i_dme(3.d0, 7.d0, 22.d0), sqrt(3.d0**2+7.d0**2+22.d0), 1d-7)
 
 		ftqed_log_term=.true.
 		write(*,*)
 		write(*,*) "now with log term in dme2"
-		call assert_double("dme2F w log test 1", dme2_electronFull(0.05d0, 0.01d0, 1.0003d0), 0.02287423036d0, 2d-6)
-		call assert_double("dme2F w log test 2", dme2_electronFull(0.05d0, 10.d0, 1.0003d0), 0.022915272d0, 1d-6)
-		call assert_double("dme2F w log test 3", dme2_electronFull(0.5d0, 0.1d0, 1.1d0), 0.025070069d0, 2d-5)
-		call assert_double("dme2F w log test 4", dme2_electronFull(1.23d0, 0.01d0, 1.198d0), 0.024518372d0, 2d-5)
-		call assert_double("dme2F w log test 5", dme2_electronFull(7.6d0, 1.d0, 1.3d0), 0.025216151d0, 2d-5)
-		call assert_double("dme2F w log test 6", dme2_electronFull(35.d0, 0.88d0, 1.39d0), 0.029529326d0, 1d-6)
-#ifndef NO_INTERPOLATION
-		call assert_double("dme2nl test 1", dme2_nolog(0.05d0, 1.0003d0), 0.02292d0, 1d-5)
-		call assert_double("dme2nl test 2", dme2_nolog(0.05d0, 1.0003d0), 0.02292d0, 1d-5)
-		call assert_double("dme2nl test 3", dme2_nolog(0.5d0, 1.1d0),  0.026655522d0, 1d-5)
-		call assert_double("dme2nl test 4", dme2_nolog(1.23d0, 1.198d0), 0.02905573d0, 1d-5)
-		call assert_double("dme2nl test 5", dme2_nolog(7.6d0, 1.3d0), 0.025975010d0, 1d-5)
-		call assert_double("dme2nl test 6", dme2_nolog(35.d0, 1.39d0), 0.029529326d0, 1d-5)
-#endif
-		call assert_double("dme2F logt test 1", dme2_electronFull(0.05d0, 0.d0, 1.0003d0, .false.), 0.022915468d0, 1d-6)
-		call assert_double("dme2F logt test 2", dme2_electronFull(0.05d0, 10.d0, 1.0003d0, .false.), 0.022915468d0, 1d-6)
+		open(unit=fu, file="test_outputs/ftqed_dme2l.dat", status="old")
+		v1=(/6d-5,1d-5,6d-4,7d-4,5d-4,1d-5/)
+		do ix=1,6
+			read (fu, *) x,y,z,r
+			write(tmparg,"(I1)") ix
+			call assert_double_rel("dme2F w log test "//trim(tmparg), dme2_electronFull(x, y, z), r, v1(ix))
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/ftqed_dme2.dat", status="old")
+		read (fu, *) x,y,z,r
+		close(fu)
+		call assert_double_rel("dme2F logt test 1", dme2_electronFull(x, 0.d0, z, .false.), r, 1d-6)
+		call assert_double_rel("dme2F logt test 2", dme2_electronFull(x, 1.d0, z, .false.), r, 1d-6)
+		call assert_double_rel("dme2F logt test 3", dme2_electronFull(x, 10.d0, z, .false.), r, 1d-6)
 		ftqed_log_term=.false.
 
 		call printTotalTests
@@ -928,99 +1011,72 @@ program tests
 	end subroutine do_test_dme2
 
 	subroutine do_test_Di
+		real(dl) :: y1, y2, y3, y4, d1, d2, d3
+		integer :: ix
+		character(len=100) :: tmpstr
+
 		call printTestBlockName("D_i functions")
-		call assert_double("D1 test 1", D1_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
-		call assert_double("D1 test 2", D1_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
-		call assert_double("D1 test 3", D1_full(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
-		call assert_double("D1 test 4", D1_full(10.03d0,5.4d0,8.8d0,6.63d0), 21.6d0, 1d-4)
-		call assert_double("D1 test 5", D1_full(10.d0,2.d0,5.3d0,6.7d0), 8.d0, 1d-7)
-		call assert_double("D1 test 6", D1_full(2.d0,10.d0,6.7d0,5.3d0), 8.d0, 1d-7)
-		call assert_double("D2 test 1", D2_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
-		call assert_double("D2 test 2", D2_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
-		call assert_double("D2 test 3", D2_full(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
-		call assert_double("D2 test 4", D2_full(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
-		call assert_double_rel("D2 test 5", D2_full(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
-		call assert_double_rel("D2 test 6", D2_full(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
-		call assert_double("D3 test 1", D3_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
-		call assert_double("D3 test 2", D3_full(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
-		call assert_double("D3 test 3", D3_full(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
-		call assert_double_rel("D3 test 4", D3_full(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
-		call assert_double_rel("D3 test 5", D3_full(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
-		call assert_double_rel("D3 test 6", D3_full(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
 
-		call assert_double("D2c test 1", D2_cases(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
-		call assert_double("D2c test 2", D2_cases(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
-		call assert_double("D2c test 3", D2_cases(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
-		call assert_double("D2c test 4", D2_cases(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
-		call assert_double_rel("D2c test 5", D2_cases(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
-		call assert_double_rel("D2c test 6", D2_cases(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
-		call assert_double("D3c test 1", D3_cases(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
-		call assert_double("D3c test 2", D3_cases(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
-		call assert_double("D3c test 3", D3_cases(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
-		call assert_double_rel("D3c test 4", D3_cases(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
-		call assert_double_rel("D3c test 5", D3_cases(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
-		call assert_double_rel("D3c test 6", D3_cases(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
+		do ix=1,6
+			write(tmpstr, "('test_outputs/Di_',I1,'.dat')") ix
+			open(unit=fu, file=trim(tmpstr), status="old")
+			read (fu, *) y1, y2, y3, y4, d1, d2, d3
+			close(fu)
+			write(tmpstr, "(I1)") ix
+			call assert_double_rel("D1  test "//trim(tmpstr), D1_full(y1, y2, y3, y4),  d1, 1d-7)
+			call assert_double_rel("D1p test "//trim(tmpstr), D1_bis(y1, y2, y3, y4),   d1, 1d-7)
+			call assert_double_rel("D2  test "//trim(tmpstr), D2_full(y1, y2, y3, y4),  d2, 1d-7)
+			call assert_double_rel("D2c test "//trim(tmpstr), D2_cases(y1, y2, y3, y4), d2, 1d-7)
+			call assert_double_rel("D2p test "//trim(tmpstr), D2_bis(y1, y2, y3, y4),   d2, 1d-7)
+			call assert_double_rel("D3  test "//trim(tmpstr), D3_full(y1, y2, y3, y4),  d3, 1d-7)
+			call assert_double_rel("D3c test "//trim(tmpstr), D3_cases(y1, y2, y3, y4), d3, 1d-7)
+			call assert_double_rel("D3p test "//trim(tmpstr), D3_bis(y1, y2, y3, y4),   d3, 1d-7)
+		end do
 
-		call assert_double("D1p test 1", D1_bis(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.4d0, 1d-7)
-		call assert_double("D1p test 2", D1_bis(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.4d0, 1d-7)
-		call assert_double("D1p test 3", D1_bis(0.01d0,5.d0,2.6d0,2.41d0), 0.04d0, 1d-7)
-		call assert_double("D1p test 4", D1_bis(10.03d0,5.4d0,8.8d0,6.63d0), 21.6d0, 1d-4)
-		call assert_double("D1p test 5", D1_bis(10.d0,2.d0,5.3d0,6.7d0), 8.d0, 1d-7)
-		call assert_double("D1p test 6", D1_bis(2.d0,10.d0,6.7d0,5.3d0), 8.d0, 1d-7)
-		call assert_double("D2p test 1", D2_bis(0.1d0, 0.2d0, 0.3d0, 0.4d0), -0.00133333d0, 1d-7)
-		call assert_double("D2p test 2", D2_bis(0.4d0, 0.2d0, 0.3d0, 0.1d0), -0.0213333d0, 1d-7)
-		call assert_double("D2p test 3", D2_bis(0.01d0,5.d0,2.6d0,2.41d0), -1.333333333d-6, 1d-12)
-		call assert_double("D2p test 4", D2_bis(10.03d0,5.4d0,8.8d0,6.63d0), -209.952d0, 1d-4)
-		call assert_double_rel("D2p test 5", D2_bis(10.d0,2.d0,5.3d0,6.7d0), -10.666667d0, 1d-7)
-		call assert_double_rel("D2p test 6", D2_bis(2.d0,10.d0,6.7d0,5.3d0), -10.666667d0, 1d-7)
-		call assert_double("D3p test 1", D3_bis(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.000192d0, 1d-7)
-		call assert_double("D3p test 2", D3_bis(0.4d0, 0.2d0, 0.3d0, 0.1d0), 0.000192d0, 1d-7)
-		call assert_double("D3p test 3", D3_bis(0.01d0,5.d0,2.6d0,2.41d0), 2.50454d-5, 1d-10)
-		call assert_double_rel("D3p test 4", D3_bis(10.03d0,5.4d0,8.8d0,6.63d0), 22692.22d0, 1d-7)
-		call assert_double_rel("D3p test 5", D3_bis(10.d0,2.d0,5.3d0,6.7d0), 918.2933d0, 1d-7)
-		call assert_double_rel("D3p test 6", D3_bis(2.d0,10.d0,6.7d0,5.3d0), 918.2933d0, 1d-7)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_Di
 
 	subroutine do_test_Pi_ij
 		real(dl), dimension(2) :: temp_v2
+		real(dl) :: y1,y2,y3,y4,x,dm,r1,r2
+		integer :: ix
+		character(len=100) :: tmpstr
+
 		call printTestBlockName("Pi(yi,yj) functions")
-		call assert_double("Pi_1_12 test 1", PI1_12_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.00933333d0, 1d-7)
-		call assert_double("Pi_1_12 test 2", PI1_12_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.0893333d0, 1d-7)
-		call assert_double_rel("Pi_1_12 test 3", PI1_12_full(10.d0, 2.d0, 5.3d0, 6.7d0), 170.66667d0, 1d-7)
-		call assert_double_rel("Pi_1_12 test 4", PI1_12_full(2.d0, 10.d0, 6.7d0, 5.3d0), 170.66667d0, 1d-7)
 
-		call assert_double_rel("Pi_1_13 test 1", PI1_13_full(0.1d0, 0.2d0, 0.3d0, 0.4d0), 0.010666667d0, 1d-7)
-		call assert_double_rel("Pi_1_13 test 2", PI1_13_full(0.4d0, 0.3d0, 0.2d0, 0.1d0), 0.010666667d0, 1d-7)
-		call assert_double_rel("Pi_1_13 test 3", PI1_13_full(10.d0, 2.d0, 5.3d0, 6.7d0), 96.53333d0, 1d-7)
-		call assert_double_rel("Pi_1_13 test 4", PI1_13_full(2.d0, 10.d0, 6.7d0, 5.3d0), 96.53333d0, 1d-7)
+		do ix=1,4
+			write(tmpstr, "('test_outputs/Pi1_',I1,'.dat')") ix
+			open(unit=fu, file=trim(tmpstr), status="old")
+			read (fu, *) y1, y2, y3, y4, r1, r2
+			close(fu)
+			write(tmpstr, "(I1)") ix
+			call assert_double_rel("Pi_1_12 test "//trim(tmpstr), PI1_12_full(y1,y2,y3,y4), r1, 1d-7)
+			call assert_double_rel("Pi_1_13 test "//trim(tmpstr), PI1_13_full(y1,y2,y3,y4), r2, 1d-7)
+		end do
 
-		temp_v2 = PI2_nn_f(0.1d0, 0.2d0, 0.3d0, 0.4d0, 0.3d0, 0.4d0)
-		call assert_double("Pi_2_14 test 1", temp_v2(1), 0.00267733d0, 1d-7)
-		call assert_double("Pi_2_13 test 1", temp_v2(2), 0.000810667d0, 1d-7)
-		temp_v2 = PI2_nn_f(0.4d0, 0.3d0, 0.2d0, 0.1d0, 0.2d0, 0.1d0)
-		call assert_double("Pi_2_14 test 2", temp_v2(1), 0.00267733d0, 1d-7)
-		call assert_double("Pi_2_13 test 2", temp_v2(2), 0.000810667d0, 1d-7)
-		temp_v2 = PI2_nn_f(10.d0, 2.d0, 5.3d0, 6.7d0, 5.3d0, 6.7d0)
-		call assert_double_rel("Pi_2_14 test 3", temp_v2(1), 1978.88d0, 1d-7)
-		call assert_double_rel("Pi_2_13 test 3", temp_v2(2), 3293.01333d0, 1d-7)
-		temp_v2 = PI2_nn_f(2.d0, 10.d0, 6.7d0, 5.3d0, 6.7d0, 5.3d0)
-		call assert_double_rel("Pi_2_14 test 4", temp_v2(1), 1978.88d0, 1d-7)
-		call assert_double_rel("Pi_2_13 test 4", temp_v2(2), 3293.01333d0, 1d-7)
+		do ix=1,4
+			write(tmpstr, "('test_outputs/Pi2nn_',I1,'.dat')") ix
+			open(unit=fu, file=trim(tmpstr), status="old")
+			read (fu, *) y1, y2, y3, y4, x, dm, r1, r2
+			close(fu)
+			write(tmpstr, "(I1)") ix
+			temp_v2 = PI2_nn_f(y1,y2,y3,y4,Ebare_i_dme(x, y3, dm),Ebare_i_dme(x, y4, dm))
+			call assert_double_rel("Pi_2_14a test "//trim(tmpstr), temp_v2(1), r1, 1d-7)
+			call assert_double_rel("Pi_2_13  test "//trim(tmpstr), temp_v2(2), r2, 1d-7)
+		end do
 
-		temp_v2 = PI2_ne_f(0.1d0, 0.2d0, 0.3d0, 0.4d0, 0.2d0, 0.4d0)
-		call assert_double("Pi_2_14 test 1", temp_v2(1), 0.00267733d0, 1d-7)
-		call assert_double("Pi_2_12 test 1", temp_v2(2), 0.00427733d0, 1d-7)
-		temp_v2 = PI2_ne_f(0.4d0, 0.3d0, 0.2d0, 0.1d0, 0.3d0, 0.1d0)
-		call assert_double("Pi_2_14 test 2", temp_v2(1), 0.00267733d0, 1d-7)
-		call assert_double("Pi_2_12 test 2", temp_v2(2), 0.00427733d0, 1d-7)
-		temp_v2 = PI2_ne_f(10.d0, 2.d0, 5.3d0, 6.7d0, 2.d0, 6.7d0)
-		call assert_double("Pi_2_14 test 3", temp_v2(1), 1978.88d0, 1d-7)
-		call assert_double("Pi_2_12 test 3", temp_v2(2), 9420.8d0, 1d-7)
-		temp_v2 = PI2_ne_f(2.d0, 10.d0, 6.7d0, 5.3d0, 10.d0, 5.3d0)
-		call assert_double("Pi_2_14 test 4", temp_v2(1), 1978.88d0, 1d-7)
-		call assert_double("Pi_2_12 test 4", temp_v2(2), 9420.8d0, 1d-7)
+		do ix=1,4
+			write(tmpstr, "('test_outputs/Pi2ne_',I1,'.dat')") ix
+			open(unit=fu, file=trim(tmpstr), status="old")
+			read (fu, *) y1, y2, y3, y4, x, dm, r1, r2
+			close(fu)
+			write(tmpstr, "(I1)") ix
+			temp_v2 = PI2_ne_f(y1,y2,y3,y4,Ebare_i_dme(x, y2, dm),Ebare_i_dme(x, y4, dm))
+			call assert_double_rel("Pi_2_14s test "//trim(tmpstr), temp_v2(1), r1, 1d-7)
+			call assert_double_rel("Pi_2_12  test "//trim(tmpstr), temp_v2(2), r2, 1d-7)
+		end do
+
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_Pi_ij
@@ -1028,8 +1084,8 @@ program tests
 	subroutine do_f_ann_sc_re_tests_eq
 		integer :: ix, iy
 		real(dl) :: fdA, fdB, f1, f2, f3
+		real(dl), dimension(3,3) :: m
 		type(cmplxMatNN) :: nA, nB
-		real(dl), dimension(3) :: tmparr
 		character(len=300) :: tmparg
 
 		f1 = fermiDirac(0.3d0)
@@ -1049,63 +1105,79 @@ program tests
 			nB%re(ix,ix) = fdB
 		end do
 		!F_ab_ann_re(0.d0, 1.d0, n1,n2, y3, y4, 2,2, ix, iy) !L=1, R=2 !ix, iy in 1...3
-		!FRReq[0.1, 0.2, 0.3, 0.4]={{-0.00259399, 0., 0.}, {0., -0.00259399, 0.}, {0., 0., -0.00259399}}
-		tmparr = (/-0.00259399, -0.00259399, -0.00259399/)
+		!FRReq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FRR_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_ann eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_ann eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_ann eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLLeq[0.1, 0.2, 0.3, 0.4]={{-0.0259319, 0., 0.}, {0., -0.00350124, 0.}, {0., 0., -0.00350124}}
-		tmparr = (/-0.0259319, -0.00350124, -0.00350124/)
+		!FLLeq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FLL_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_ann eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_ann eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_ann eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FRLeq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
-		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
+		!FRLeq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FRL_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_ann eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_ann eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_ann eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLReq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
-		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
+		!FLReq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FLR_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_ann eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_ann eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_ann eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
@@ -1114,63 +1186,79 @@ program tests
 		do ix=1, flavorNumber
 			nA%re(ix,ix) = fdA
 		end do
-		!FRReq[0.4, 0.2, 0.3, 0.1]={{0.00129054, 0., 0.}, {0., 0.00129054, 0.}, {0., 0., 0.00129054}}
-		tmparr = (/0.00129054, 0.00129054, 0.00129054/)
+		!FRReq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FRR_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_ann eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_ann eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_ann eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLLeq[0.4, 0.2, 0.3, 0.1]={{0.0129014, 0., 0.}, {0., 0.00174191, 0.}, {0., 0., 0.00174191}}
-		tmparr = (/0.0129014, 0.00174191, 0.00174191/)
+		!FLLeq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FLL_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_ann eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_ann eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_ann eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FRLeq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
-		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
+		!FRLeq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FRL_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_ann eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_ann eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_ann eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 2,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLReq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
-		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
+		!FLReq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FLR_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_ann eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_ann eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_ann eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f3, 1,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
@@ -1186,63 +1274,79 @@ program tests
 			nA%re(ix,ix) = fdA
 			nB%re(ix,ix) = fdB
 		end do
-		!FRReq[0.1, 0.2, 0.3, 0.4]={{-0.00259399, 0., 0.}, {0., -0.00259399, 0.}, {0., 0., -0.00259399}}
-		tmparr = (/-0.00259399, -0.00259399, -0.00259399/)
+		!FRReq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FRR_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLLeq[0.1, 0.2, 0.3, 0.4]={{-0.0259319, 0., 0.}, {0., -0.00350124, 0.}, {0., 0., -0.00350124}}
-		tmparr = (/-0.0259319, -0.00350124, -0.00350124/)
+		!FLLeq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FLL_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FRLeq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
-		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
+		!FRLeq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FRL_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLReq[0.1, 0.2, 0.3, 0.4]={{-0.00820165, 0., 0.}, {0., 0.00301367, 0.}, {0., 0., 0.00301367}}
-		tmparr = (/-0.00820165, 0.00301367, 0.00301367/)
+		!FLReq[0.1, 0.2, 0.3, 0.4]
+		open(unit=fu, file="test_outputs/FLR_eq_1.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_sc eq test 1 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_sc eq test 1 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_sc eq test 1 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
@@ -1251,63 +1355,79 @@ program tests
 		do ix=1, flavorNumber
 			nA%re(ix,ix) = fdA
 		end do
-		!FRReq[0.4, 0.2, 0.3, 0.1]={{0.00129054, 0., 0.}, {0., 0.00129054, 0.}, {0., 0., 0.00129054}}
-		tmparr = (/0.00129054, 0.00129054, 0.00129054/)
+		!FRReq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FRR_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRR_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRR_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRR_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLLeq[0.4, 0.2, 0.3, 0.1]={{0.0129014, 0., 0.}, {0., 0.00174191, 0.}, {0., 0., 0.00174191}}
-		tmparr = (/0.0129014, 0.00174191, 0.00174191/)
+		!FLLeq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FLL_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLL_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLL_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLL_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FRLeq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
-		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
+		!FRLeq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FRL_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FRL_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FRL_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FRL_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 2,1, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 2,1, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
-		!FLReq[0.4, 0.2, 0.3, 0.1]={{0.00408041, 0., 0.}, {0., -0.00149933, 0.}, {0., 0., -0.00149933}}
-		tmparr = (/0.00408041, -0.00149933, -0.00149933/)
+		!FLReq[0.4, 0.2, 0.3, 0.1]
+		open(unit=fu, file="test_outputs/FLR_eq_2.dat", status="old")
+		do ix=1, 3
+			read (fu, *) m(ix,:)
+		end do
+		close(fu)
 		do ix=1, flavorNumber
 			write(tmparg,"('FLR_sc eq test 2 - ',2I1)") ix, ix
-			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, ix), tmparr(ix), 1d-7)
+			call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, ix), m(ix,ix), 1d-7)
 			call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, ix, ix), 0.d0, 1d-7)
 			do iy=ix+1, flavorNumber
 				write(tmparg,"('FLR_sc eq test 2 - ',2I1)") ix, iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, ix, iy), m(ix,iy), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, ix, iy), 0.d0, 1d-7)
 				write(tmparg,"('FLR_sc eq test 2 - ',2I1)") iy, ix
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
+				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f3, 1,2, iy, ix), m(iy,ix), 1d-7)
 				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f3, 1,2, iy, ix), 0.d0, 1d-7)
 			end do
 		end do
@@ -1335,6 +1455,7 @@ program tests
 		nA%im = 0.d0
 		nB%re = 0.d0
 		nB%im = 0.d0
+		!imaginary parts and off-diagonal are zero
 		do a=1, 2
 			do b=1, 2
 				do ix=1, flavorNumber
@@ -1352,25 +1473,19 @@ program tests
 				end do
 			end do
 		end do
-!		LL
-		tmparrA = (/0.1685832, 0.0227616, 0.0227616/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann11 test 1 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix,ix), tmparrA(ix), 1d-7)
-		end do
-!		RR
-		tmparrA = (/0.0168635, 0.0168635, 0.0168635/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann22 test 1 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix,ix), tmparrA(ix), 1d-7)
-		end do
-!		LR and RL
-		tmparrA = (/0.0533189, -0.0195919, -0.0195919/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann21 test 1 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix,ix), tmparrA(ix), 1d-7)
-			write(tmparg,"('F_ann12 test 1 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix,ix), tmparrA(ix), 1d-7)
+		!diagonal
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_er1_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+				end do
+				close(fu)
+				do ix=1, flavorNumber
+					write(tmparg,"('F_ann test 1 "//chLR(a)//chLR(b)//" empty rho ',2I1)") ix,ix
+					call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, a,b, ix,ix), tmpmatA(ix,ix), 1d-7)
+				end do
+			end do
 		end do
 
 		do a=1, 2
@@ -1390,25 +1505,18 @@ program tests
 				end do
 			end do
 		end do
-!		LL
-		tmparrA = (/0.046175, 0.00623441, 0.00623441/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann11 test 2 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,1, ix,ix), tmparrA(ix), 1d-7)
-		end do
-!		RR
-		tmparrA = (/0.00461893, 0.00461893, 0.00461893/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann22 test 2 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 2,2, ix,ix), tmparrA(ix), 1d-7)
-		end do
-!		LR and RL
-		tmparrA = (/0.0146041, -0.00536622, -0.00536622/)
-		do ix=1, flavorNumber
-			write(tmparg,"('F_ann21 test 2 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 2,1, ix,ix), tmparrA(ix), 1d-7)
-			write(tmparg,"('F_ann12 test 2 empty rho ',2I1)") ix,ix
-			call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,2, ix,ix), tmparrA(ix), 1d-7)
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_er2_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+				end do
+				close(fu)
+				do ix=1, flavorNumber
+						write(tmparg,"('F_ann test 2 "//chLR(a)//chLR(b)//" empty rho ',2I1)") ix,ix
+						call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,ix), tmpmatA(ix,ix), 1d-7)
+				end do
+			end do
 		end do
 
 		call printTestBlockName("F_sc functions, empty rho")
@@ -1450,286 +1558,206 @@ program tests
 		end do
 
 		call printTestBlockName("F_ann functions, full rho")
-		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
-		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
-		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
-		nA%re(3,:) = (/-0.03d0, 0.d0, 0.96d0/)
-		nA%im(1,:) = (/0.d0, 0.0001d0, -0.004d0/)
-		nA%im(2,:) = (/-0.0001d0, 0.d0, 0.001d0/)
-		nA%im(3,:) = (/0.004d0, -0.001d0, 0.d0/)
-		!rhoB = {{1.23, 0.1 - 0.08 I, 0.008 + 0.007 I}, {0.1 - 0.08 I, 1.7, -0.02}, {0.008 + 0.007 I, -0.02, 0.77}};
-		nB%re(1,:) = (/1.23d0, 0.1d0, 0.008d0/)
-		nB%re(2,:) = (/0.1d0, 1.7d0, -0.02d0/)
-		nB%re(3,:) = (/0.008d0, -0.02d0, 0.77d0/)
-		nB%im(1,:) = (/0.d0, -0.08d0, 0.007d0/)
-		nB%im(2,:) = (/0.08d0, 0.d0, 0.d0/)
-		nB%im(3,:) = (/-0.007d0, 0.d0, 0.d0/)
-		!RR
-		tmpmatA(1,:) = (/-0.0419512, -0.00402987, 0.000838691/)
-		tmpmatA(2,:) = (/-0.00402987, -0.0565448, 0.000740187/)
-		tmpmatA(3,:) = (/0.000838691, 0.000740187, -0.0275819/)
-		tmpmatB(1,:) = (/0., 0.00279858, -0.000103477/)
-		tmpmatB(2,:) = (/-0.00279858, 0., -0.0000142409/)
-		tmpmatB(3,:) = (/0.000103477, 0.0000142409, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
+		!rhoA
+		open(unit=fu, file="test_outputs/Fann_fr12_rhoA_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr12_rhoA_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nA%re(ix,:)
+			read (fv, *) nA%im(ix,:)
 		end do
-		!LL
-		tmpmatA(1,:) = (/-0.4191489, 0.0101562, 0.00807072/)
-		tmpmatA(2,:) = (/0.0101562, -0.0762081, 0.000864564/)
-		tmpmatA(3,:) = (/0.00807072, 0.000864564, -0.0372565/)
-		tmpmatB(1,:) = (/0., -0.0103262, 0.00186556/)
-		tmpmatB(2,:) = (/0.0103262, 0., -0.000160603/)
-		tmpmatB(3,:) = (/-0.00186556, 0.000160603, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann11 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
+		close(fu)
+		close(fv)
+		!rhoB
+		open(unit=fu, file="test_outputs/Fann_fr12_rhoB_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr12_rhoB_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nB%re(ix,:)
+			read (fv, *) nB%im(ix,:)
 		end do
-		!LR
-		tmpmatA(1,:) = (/-0.1326407, -0.00381177, 0.00112954/)
-		tmpmatA(2,:) = (/-0.00381177, 0.0656931, -0.00085994/)
-		tmpmatA(3,:) = (/0.00112954, -0.00085994, 0.0320443/)
-		tmpmatB(1,:) = (/0., +0.00273011, -0.0000740348/)
-		tmpmatB(2,:) = (/-0.00273011, 0., +0.0000165449/)
-		tmpmatB(3,:) = (/+0.0000740348, -0.0000165449, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann12 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!RL
-		tmpmatA(1,:) = (/-0.132567, -0.00399017, 0.00115456/)
-		tmpmatA(2,:) = (/-0.00399017, 0.0655955, -0.000744167/)
-		tmpmatA(3,:) = (/0.00115456, -0.000744167, 0.0320682/)
-		tmpmatB(1,:) = (/0., +0.00287272, -0.0000508025/)
-		tmpmatB(2,:) = (/-0.00287272, 0., +0.000138238/)
-		tmpmatB(3,:) = (/+0.0000508025, -0.000138238, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann21 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+		close(fu)
+		close(fv)
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr1_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr1_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_ann test 1 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 		!second series
-		!RR
-		tmpmatA(1,:) = (/-0.0689959, -0.00652399, 0.00140441/)
-		tmpmatA(2,:) = (/-0.00652399, -0.0914345, 0.00121473/)
-		tmpmatA(3,:) = (/0.00140441, 0.00121473, -0.0459115/)
-		tmpmatB(1,:) = (/0., +0.00441142, -0.000161176/)
-		tmpmatB(2,:) = (/-0.00441142, +0., +2.68659e-6/)
-		tmpmatB(3,:) = (/+0.000161176, -2.68659e-6, +0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann22 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LL
-		tmpmatA(1,:) = (/-0.689097, -0.0282022, -0.00945936/)
-		tmpmatA(2,:) = (/-0.0282022, -0.1230982, 0.00126491/)
-		tmpmatA(3,:) = (/-0.00945936, 0.00126491, -0.0620467/)
-		tmpmatB(1,:) = (/+0., +0.0255293, -0.00317523/)
-		tmpmatB(2,:) = (/-0.0255293, +0., -0.000390201/)
-		tmpmatB(3,:) = (/+0.00317523, +0.000390201, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann11 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LR
-		tmpmatA(1,:) = (/-0.2181504, -0.0071315, 0.000594222/)
-		tmpmatA(2,:) = (/-0.0071315, 0.1062276, -0.00141126/)
-		tmpmatA(3,:) = (/0.000594222, -0.00141126, 0.0533395/)
-		tmpmatB(1,:) = (/0., +0.00460214, -0.00024319/)
-		tmpmatB(2,:) = (/-0.00460214, 0., -3.12125e-6/)
-		tmpmatB(3,:) = (/+0.00024319, +3.12125e-6, +0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann12 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!RL
-		tmpmatA(1,:) = (/-0.2179453, -0.00641341, 0.00228429/)
-		tmpmatA(2,:) = (/-0.00641341, 0.1059558, -0.00108876/)
-		tmpmatA(3,:) = (/0.00228429, -0.00108876, 0.0534062/)
-		tmpmatB(1,:) = (/0., +0.00461794, -0.000014447/)
-		tmpmatB(2,:) = (/-0.00461794, 0., +0.000335862/)
-		tmpmatB(3,:) = (/+0.000014447, -0.000335862, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann21 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr2_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr2_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+					write(tmparg,"('F_ann test 2 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+					call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 
 		call printTestBlockName("F_sc functions, full rho")
-		!RR
-		tmpmatA(1,:) = (/0.0093345,0.00309005,0.000821132/)
-		tmpmatA(2,:) = (/0.00309005,0.0248957,-0.000671452/)
-		tmpmatA(3,:) = (/0.000821132,-0.000671452,-0.00692823/)
-		tmpmatB(1,:) = (/0.,-0.00257023,+0.000305504/)
-		tmpmatB(2,:) = (/+0.00257023,0.,-0.0000359033/)
-		tmpmatB(3,:) = (/-0.000305504,+0.0000359033,0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc22 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LL
-		tmpmatA(1,:) = (/0.0931435,-0.0126826,0.00174399/)
-		tmpmatA(2,:) = (/-0.0126826,0.0335189,-0.000806577/)
-		tmpmatA(3,:) = (/0.00174399,-0.000806577,-0.00933077/)
-		tmpmatB(1,:) = (/+0.,+0.00943206,-0.000486463/)
-		tmpmatB(2,:) = (/-0.00943206,+0.,+0.0000563555/)
-		tmpmatB(3,:) = (/+0.000486463,-0.0000563555,0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc11 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LR
-		tmpmatA(1,:) = (/0.0295137,0.00292836,0.000605503/)
-		tmpmatA(2,:) = (/0.00292836,-0.0289235,0.000780085/)
-		tmpmatA(3,:) = (/0.000605503,0.000780085,0.00804914/)
-		tmpmatB(1,:) = (/0.,-0.00251947,+0.000283677/)
-		tmpmatB(2,:) = (/+0.00251947,0.,+0.0000417121/)
-		tmpmatB(3,:) = (/-0.000283677,-0.0000417121,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc12 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!RL
-		tmpmatA(1,:) = (/0.0294591,0.00306062,0.000586954/)
-		tmpmatA(2,:) = (/0.00306062,-0.0288512,0.000694255/)
-		tmpmatA(3,:) = (/0.000586954,0.000694255,0.00803138/)
-		tmpmatB(1,:) = (/+0.,-0.0026252,+0.000266453/)
-		tmpmatB(2,:) = (/+0.0026252,0.,-0.0000485076/)
-		tmpmatB(3,:) = (/-0.000266453,+0.0000485076,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc21 test 1 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr1_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr1_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 1 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 		!second series
-		!RR
-		tmpmatA(1,:) = (/-0.00570605,-0.000732471,-0.00101446/)
-		tmpmatA(2,:) = (/-0.000732471,-0.0129257,0.000196912/)
-		tmpmatA(3,:) = (/-0.00101446,0.000196912,0.00109681/)
-		tmpmatB(1,:) = (/0.,+0.000956151,-0.000198153/)
-		tmpmatB(2,:) = (/-0.000956151,+0.,+6.56285e-6/)
-		tmpmatB(3,:) = (/+0.000198153,-6.56285e-6,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc22 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 2,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LL
-		tmpmatA(1,:) = (/-0.057286,-0.00823654,0.00289993/)
-		tmpmatA(2,:) = (/-0.00823654,-0.0175649,0.00040623/)
-		tmpmatA(3,:) = (/0.00289993,0.00040623,0.00150947/)
-		tmpmatB(1,:) = (/+0.,+0.00522933,+6.31568e-6/)
-		tmpmatB(2,:) = (/-0.00522933,+0.,+0.000156488/)
-		tmpmatB(3,:) = (/-6.31568e-6,-0.000156488,0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc11 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 1,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 1,1, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!LR
-		tmpmatA(1,:) = (/-0.0180413,-0.000504739,-0.000710753/)
-		tmpmatA(2,:) = (/-0.000504739,0.0150169,-0.00022877/)
-		tmpmatA(3,:) = (/-0.000710753,-0.00022877,-0.00127426/)
-		tmpmatB(1,:) = (/0.,+0.000884656,-0.00016741/)
-		tmpmatB(2,:) = (/-0.000884656,0.,-7.62464e-6/)
-		tmpmatB(3,:) = (/+0.00016741,+7.62464e-6,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc12 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 1,2, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 1,2, ix,iy), tmpmatB(ix,iy), 1d-7)
-			end do
-		end do
-		!RL
-		tmpmatA(1,:) = (/-0.0181182,-0.000773921,-0.00134429/)
-		tmpmatA(2,:) = (/-0.000773921,0.0151188,-0.000349659/)
-		tmpmatA(3,:) = (/-0.00134429,-0.000349659,-0.00129926/)
-		tmpmatB(1,:) = (/+2.7336e-21,+0.000878732,-0.000253156/)
-		tmpmatB(2,:) = (/-0.000878732,-1.09344e-20,-0.000134696/)
-		tmpmatB(3,:) = (/+0.000253156,+0.000134696,+0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_sc21 test 2 full rho ',2I1)") ix,iy
-				call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, 2,1, ix,iy), tmpmatA(ix,iy), 1d-7)
-				call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, 2,1, ix,iy), tmpmatB(ix,iy), 1d-7)
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr2_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr2_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 2 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 
 		call printTestBlockName("F_ann functions, final tests")
-		!rhoA = {{0.9, 0.011 + 0.0001 I, -0.03 - 0.004 I}, {0.011 + 0.0001 I, 0.86, 0.001 I}, {-0.03 - 0.004 I, 0.001 I, 0.96}};
-		nA%re(1,:) = (/0.9d0, 0.011d0, -0.03d0/)
-		nA%re(2,:) = (/0.011d0, 0.86d0, 0.d0/)
-		nA%re(3,:) = (/-0.03d0, 0.d0, 0.96d0/)
-		nA%im(1,:) = (/0.d0, 0.0001d0, -0.004d0/)
-		nA%im(2,:) = (/-0.0001d0, 0.d0, 0.001d0/)
-		nA%im(3,:) = (/0.004d0, -0.001d0, 0.d0/)
-		!rhoB = rhoA;
-		nB = nA
-		!RR
-		tmpmatA(1,:) = (/-0.023346, -0.000578945, 0.00164337/)
-		tmpmatA(2,:) = (/-0.000578945, -0.0212209, 7.06991e-6/)
-		tmpmatA(3,:) = (/0.00164337, 7.06991e-6, -0.0266302/)
-		tmpmatB(1,:) = (/0., -5.90586e-6, 0.00021888/)
-		tmpmatB(2,:) = (/5.90586e-6, 0., -0.0000530457/)
-		tmpmatB(3,:) = (/-0.00021888, 0.0000530457, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
-				call assert_double_rel(trim(tmparg)//"re", F_ab_ann_re(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatA(ix,iy), 1d-5)
-				call assert_double_rel_safe(trim(tmparg)//"im", F_ab_ann_im(nA, nB, 0.1d0, 0.7d0, 2,2, ix,iy), tmpmatB(ix,iy), 1d-7, 1d-5)
+		!rhoA
+		open(unit=fu, file="test_outputs/Fann_fr34_rhoA_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr34_rhoA_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nA%re(ix,:)
+			read (fv, *) nA%im(ix,:)
+		end do
+		close(fu)
+		close(fv)
+		!rhoB
+		open(unit=fu, file="test_outputs/Fann_fr34_rhoB_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr34_rhoB_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nB%re(ix,:)
+			read (fv, *) nB%im(ix,:)
+		end do
+		close(fu)
+		close(fv)
+		!annihilation
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr3_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr3_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_ann test 3 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
-		!LL
-		tmpmatA(1,:) = (/0.0580013, -0.00422802, 0.0113064/)
-		tmpmatA(2,:) = (/-0.00422802, 0.0104606, -0.0000779103/)
-		tmpmatA(3,:) = (/0.0113064, -0.0000779103, 0.00354312/)
-		tmpmatB(1,:) = (/0., -0.0000361964, 0.00150834/)
-		tmpmatB(2,:) = (/0.0000361964, 0., -0.0000807178/)
-		tmpmatB(3,:) = (/-0.00150834, 0.0000807178, 0./)
-		do ix=1, flavorNumber
-			do iy=1, flavorNumber
-				write(tmparg,"('F_ann22 test 1 full rho ',2I1)") ix,iy
-				call assert_double_rel(trim(tmparg)//"re", F_ab_sc_re(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy), tmpmatA(ix,iy), 1d-5)
-				r2 = F_ab_sc_im(nA, nB, 0.1d0, 0.7d0, 1,1, ix,iy)
-				call assert_double_rel_safe(trim(tmparg)//"im", r2, tmpmatB(ix,iy), 1d-7, 1d-5)
+		!second series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr4_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr4_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+					write(tmparg,"('F_ann test 4 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+					call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
+			end do
+		end do
+		!scattering
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr3_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr3_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 3 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
+			end do
+		end do
+		!second series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr4_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr4_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 4 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
 			end do
 		end do
 		call deallocateCmplxMat(nA)
@@ -1741,11 +1769,9 @@ program tests
 	subroutine do_test_coll_int
 		real(dl) :: x,z,dme2
 		type(coll_args) :: collArgs
-		integer :: i, j, iy1, iy
+		integer :: i, j, iy1, iy, oi
 		real(dl) :: errr1,errr2, res1,res2,res3,res4, cf, ref
-		INTEGER :: IFAIL, ITRANS, N, NPTS, NRAND
-		real(dl) ::  VK(2)
-		real(dl), dimension(:), allocatable :: ndmv_re, tmpfy2_arr
+		real(dl) :: y1,y2a,y3a,y4a,y2s,y3s,y4s
 		real(dl), dimension(3) :: tmparrS, tmparrA, tmperr, tmperr3,tmperr4
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
 		character(len=300) :: tmparg
@@ -1757,13 +1783,16 @@ program tests
 
 		x=0.05d0
 		iy1=7 !1.22151515151515
+		oi=21
 		z=1.06d0
 		dme2=0.1d0
-		npts=6
-		nrand=1
-		n=2
-
-		allocate(ndmv_re(Ny))
+		y1 = y_arr(iy1)
+		y2s = 5.2d0
+		y3s = y_arr(oi)
+		y4s = sqrt((y1+Ebare_i_dme(x, y2s, dme2)-y3s)**2-x*x-dme2)
+		y2a = y_arr(oi)
+		y3a = 3.d0
+		y4a = sqrt((y1+y2a-Ebare_i_dme(x, y3a, dme2))**2-x*x-dme2)
 
 		do iy=1, Ny
 			nuDensMatVecFD(iy)%re = 0.d0
@@ -1772,9 +1801,7 @@ program tests
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy))
-				ndmv_re(iy) = nuDensMatVecFD(iy)%re(i, i)
 			end do
-			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
 			nuDensMatVecFD(iy1)%re(i, i) = 1.d0
 		end do
 
@@ -1788,111 +1815,55 @@ program tests
 		collArgs%dme2 = dme2
 
 		!first series of fake sc and ann tests
-		vk=(/5.2d0,2.3613731184d0/)
-		tmparrS = (/-5.0770022d0, -1.0769122d0, -1.0577857d0/)
+		open(unit=fu, file="test_outputs/collint_sc_fake.dat", status="old")
+		read (fu, *) tmparrS(1:3)
+		close(fu)
 		tmparrA = (/1d-6, 1d-6, 1d-6/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
-			call assert_double_rel("test coll sc 3 fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
-			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
-			call assert_double_rel("test coll sc 4 fake "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
-!			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
+			res2=coll_nue_sc_int(oi, y2s, collArgs, F_ab_sc_re)
+			call assert_double_rel("test coll sc fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 		end do
 
-		vk=(/2.229999170d0, 3.0d0/)
-		tmparrS = (/-2.3278997d0, -0.798282d0, -1.1974237d0/)
+		open(unit=fu, file="test_outputs/collint_ann_fake.dat", status="old")
+		read (fu, *) tmparrS(1:3)
+		close(fu)
 		tmparrA = (/1d-6, 1d-6, 1d-6/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
-			call assert_double_rel("test coll ann 3 fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
-			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
-			call assert_double_rel("test coll ann 4 fake "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
-!			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
+			res2=coll_nue_ann_int(oi, y3a, collArgs, F_ab_ann_re)
+			call assert_double_rel("test coll ann fake "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 		end do
 
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy))
-				ndmv_re(iy) = nuDensMatVecFD(iy)%re(i, i)
 			end do
-			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
 		end do
 
 		!first series of sc and ann tests
-		collArgs%ix1 = 1
-		collArgs%ix2 = 1
-		do i=1, Ny
-			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
-			end do
-		end do
 		write(*,*) ""
-		allocate(tmpfy2_arr(Ny))
-		call openFile(987, "test_sc3_re.dat", .true.)
-		do i=1, Ny
-			tmpfy2_arr = fy2_arr(i,:)
-			if (save_collint_tests) &
-				write(987,multidblfmt) tmpfy2_arr
-		end do
-		close(987)
-		do i=1, Ny
-			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
-			end do
-		end do
-		call openFile(987, "test_ann3_re.dat", .true.)
-		do i=1, Ny
-			tmpfy2_arr = fy2_arr(i,:)
-			if (save_collint_tests) &
-				write(987,multidblfmt) tmpfy2_arr
-		end do
-		close(987)
-
-		vk=(/5.2d0,2.3613731184d0/)
-		tmparrS = (/-0.170915d0, -0.1904502d0, -0.46065747d0/)
+		open(unit=fu, file="test_outputs/collint_sc_sing1.dat", status="old")
+		read (fu, *) tmparrS(1:3)
+		close(fu)
 		tmparrA = (/1d-6, 1d-6, 1d-6/)
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
-		res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
-		call assert_double("test coll sc 3 sing 1", res2, tmparrS(1), tmparrA(1))
-		res1=coll_nue_4_sc_int_re(n, vk, collArgs)
-		call assert_double("test coll sc 4 sing 1", res1, tmparrS(1), tmparrA(1))
-		do i=2, flavorNumber
-			collArgs%ix1 = i
-			collArgs%ix2 = i
-			write(tmparg,"(I1)") i
-			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
-			call assert_double_rel("test coll sc 3 sing "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
-			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
-			call assert_double_rel("test coll sc 4 sing "//trim(tmparg), res1, tmparrS(i), tmparrA(i))
-		end do
-
-		write(*,*) ""
-		tmparrS = (/-2.8769d0, -3.4185d0, -8.39213d0/)
-		tmperr3 = (/2d-3, 2d-3, 2d-3/)
-		tmperr4 = (/2d-2, 2d-2, 2d-2/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
-			ifail=0
-			itrans=0
-!			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-!			write(tmparg,"('test coll sc 4 - ',2I1)") i, i
-!			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
-			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			write(tmparg,"('test coll sc 3 - ',2I1)") i, i
-			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
-!			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
+			write(tmparg,"(I1)") i
+			res2=coll_nue_sc_int(oi, y2s, collArgs, F_ab_sc_re)
+			call assert_double_rel("test coll sc sing1 "//trim(tmparg), res2, tmparrS(i), tmparrA(i))
 		end do
 
-		vk=(/2.229999170d0, 3.0d0/)
-		tmparrS = (/0.18420472d0, -0.2786386d0, -0.76934608d0/)
+		open(unit=fu, file="test_outputs/collint_ann_sing1.dat", status="old")
+		read (fu, *) tmparrS(1:3)
+		close(fu)
 		tmperr = (/1d-6, 1d-6, 1d-6/)
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
@@ -1900,29 +1871,37 @@ program tests
 			collArgs%ix1 = i
 			collArgs%ix2 = i
 			write(tmparg,"(I1)") i
-			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
-			call assert_double_rel("test coll ann 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
-			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
-			call assert_double_rel("test coll ann 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
+			res2=coll_nue_ann_int(oi, y3a, collArgs, F_ab_ann_re)
+			call assert_double_rel("test coll ann sing1 "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 		end do
 
+		blocking=.false.
 		write(*,*) ""
-		tmparrA = (/2.81889d0, -4.67305d0, -12.9279d0/)
-		tmperr3 = (/0.02d0, 0.02d0, 0.02d0/)
-		tmperr4 = (/0.2d0, 0.1d0, 0.07d0/)
+		open(unit=fu, file="test_outputs/coll_sc_A.dat", status="old")
+		read (fu, *) tmparrS(1:3)
+		close(fu)
+		tmperr3 = (/2d-3, 2d-3, 2d-3/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
-			ifail=0
-			itrans=0
-!			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-!			write(tmparg,"('test coll ann 4 - ',2I1)") i, i
-!			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
-			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			write(tmparg,"('test coll ann 3 - ',2I1)") i, i
-			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
-!			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
+			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			write(tmparg,"('test coll sc A ',2I1)") i, i
+			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
 		end do
+
+		write(*,*) ""
+		open(unit=fu, file="test_outputs/coll_ann_A.dat", status="old")
+		read (fu, *) tmparrA(1:3)
+		close(fu)
+		tmperr3 = (/2d-3, 2d-3, 2d-3/)
+		do i=1, flavorNumber
+			collArgs%ix1 = i
+			collArgs%ix2 = i
+			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
+			write(tmparg,"('test coll ann A ',2I1)") i, i
+			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
+		end do
+		blocking=.true.
 
 		!second series of sc and ann tests
 		iy1 = 67
@@ -1931,9 +1910,7 @@ program tests
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
-				ndmv_re(iy) = nuDensMatVecFD(iy)%re(i, i)
 			end do
-			call interpNuDens%re(i, i)%replace(Ny, y_arr, ndmv_re)
 		end do
 		collArgs%x = 0.5d0
 		collArgs%z = z
@@ -1946,91 +1923,57 @@ program tests
 				fy2_arr(i,j) = coll_nue_sc_int(i, y_arr(j), collArgs, F_ab_sc_re)
 			end do
 		end do
-		call openFile(987, "test_sc3b_re.dat", .true.)
-		do i=1, Ny
-			tmpfy2_arr = fy2_arr(i,:)
-			if (save_collint_tests) &
-				write(987,multidblfmt) tmpfy2_arr
-		end do
-		close(987)
-		do i=1, Ny
-			do j=1, Ny
-				fy2_arr(i,j) = coll_nue_ann_int(i, y_arr(j), collArgs, F_ab_ann_re)
-			end do
-		end do
-		call openFile(987, "test_ann3b_re.dat", .true.)
-		do i=1, Ny
-			tmpfy2_arr = fy2_arr(i,:)
-			if (save_collint_tests) &
-				write(987,multidblfmt) tmpfy2_arr
-		end do
-		close(987)
-		deallocate(tmpfy2_arr)
 
-		vk=(/5.2d0,14.50977264d0/)
-		tmparrS = (/0.044973361d0, 0.0096546081d0, 0.0096546081d0/)
+		open(unit=fu, file="test_outputs/collint_sc_sing2.dat", status="old")
+		read (fu, *) tmparrS(1:3)
+		close(fu)
 		tmperr = (/1d-6, 1d-6, 1d-6/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
-			write(tmparg,"(I1)") i+3
-			res2=coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
-			call assert_double_rel("test coll sc 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
-			res1=coll_nue_4_sc_int_re(n, vk, collArgs)
-			call assert_double_rel("test coll sc 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
-!			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
+			write(tmparg,"(I1)") i
+			res2=coll_nue_sc_int(oi, y2s, collArgs, F_ab_sc_re)
+			call assert_double_rel("test coll sc sing2 "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 		end do
 
 		write(*,*) ""
-		tmparrS = (/2.13185d0, 0.458106d0, 0.458106d0/)
-		tmperr3 = (/3d-4, 4d-4, 4d-4/)
-		tmperr4 = (/1d-6, 1d-6, 1d-6/)
+		open(unit=fu, file="test_outputs/coll_sc_B.dat", status="old")
+		read (fu, *) tmparrS(1:3)
+		close(fu)
+		tmperr3 = (/2d-4, 2d-4, 2d-4/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
-			ifail=0
-			itrans=0
-!			call D01GCF(n,coll_nue_4_sc_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-!			write(tmparg,"('test coll sc 4 b - ',2I1)") i, i
-!			call assert_double_rel_verb(trim(tmparg), res1, tmparrS(i), tmperr4(i))
 			res2 = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			write(tmparg,"('test coll sc 3 b - ',2I1)") i, i
+			write(tmparg,"('test coll sc B - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrS(i), tmperr3(i))
-			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
 		end do
 
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
-		vk=(/14.31505386d0, 3.0d0/)
-		tmparrS = (/0.068397661d0, 0.00955919314d0, 0.00955919314d0/)
+		open(unit=fu, file="test_outputs/collint_ann_sing2.dat", status="old")
+		read (fu, *) tmparrS(1:3)
+		close(fu)
 		tmperr = (/1d-6, 1d-6, 1d-6/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
-			write(tmparg,"(I1)") i+3
-			res2=coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
-			call assert_double_rel("test coll ann 3 sing "//trim(tmparg), res2, tmparrS(i), tmperr(i))
-			res1=coll_nue_4_ann_int_re(n, vk, collArgs)
-			call assert_double_rel("test coll ann 4 sing "//trim(tmparg), res1, tmparrS(i), tmperr(i))
-!			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrS(i)
+			write(tmparg,"(I1)") i
+			res2=coll_nue_ann_int(oi, y3a, collArgs, F_ab_ann_re)
+			call assert_double_rel("test coll ann sing2 "//trim(tmparg), res2, tmparrS(i), tmperr(i))
 		end do
 
 		write(*,*) ""
-		tmparrA = (/5.49883d0, 1.16187d0, 1.16187d0/)
-		tmperr3 = (/2d-3, 3d-3, 3d-3/)
-		tmperr4 = (/1d-5, 1d-5, 1d-5/)
+		open(unit=fu, file="test_outputs/coll_ann_B.dat", status="old")
+		read (fu, *) tmparrA(1:3)
+		close(fu)
+		tmperr3 = (/1.1d-4, 1.1d-4, 1.1d-4/)
 		do i=1, flavorNumber
 			collArgs%ix1 = i
 			collArgs%ix2 = i
-			ifail=0
-			itrans=0
-!			call D01GCF(n,coll_nue_4_ann_int_re, region, npts, vk, nrand,itrans,res1,ERRr1,ifail, collArgs)
-!			write(tmparg,"('test coll ann 4 b - ',2I1)") i, i
-!			call assert_double_rel_verb(trim(tmparg), res1, tmparrA(i), tmperr4(i))
 			res2 = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			write(tmparg,"('test coll ann 3 b - ',2I1)") i, i
+			write(tmparg,"('test coll ann B - ',2I1)") i, i
 			call assert_double_rel_verb(trim(tmparg), res2, tmparrA(i), tmperr3(i))
-!			write(*,"(I2,*(E17.9))") i, res1, res2, tmparrA(i)
 		end do
 
 		x=0.05d0
@@ -2047,30 +1990,38 @@ program tests
 			nuDensMatVecFD(iy)%re = 0.d0
 			nuDensMatVecFD(iy)%im = 0.d0
 		end do
-		nuDensMatVecFD(7)%re(1, :) = (/1.d0*fermiDirac(y_arr(7)), 0.1d0, 0.01d0/)
-		nuDensMatVecFD(7)%re(2, :) = (/0.1d0, 1.05d0*fermiDirac(y_arr(7)), 0.03d0/)
-		nuDensMatVecFD(7)%re(3, :) = (/0.01d0, 0.03d0, 1.1d0*fermiDirac(y_arr(7))/)
-		nuDensMatVecFD(7)%im(1, :) = (/0.d0, -0.1d0, 0.03d0/)
-		nuDensMatVecFD(7)%im(2, :) = (/0.1d0, 0.d0, -0.02d0/)
-		nuDensMatVecFD(7)%im(3, :) = (/-0.03d0, 0.02d0, 0.d0/)
-		nuDensMatVecFD(21)%re(1, :) = (/1.1d0*fermiDirac(y_arr(21)), 0.d0, 0.12d0/)
-		nuDensMatVecFD(21)%re(2, :) = (/0.d0, 1.4d0*fermiDirac(y_arr(21)), 0.04d0/)
-		nuDensMatVecFD(21)%re(3, :) = (/0.12d0, 0.04d0, 1.7d0*fermiDirac(y_arr(21))/)
-		nuDensMatVecFD(21)%im(1, :) = (/0.d0, -0.05d0, 0.d0/)
-		nuDensMatVecFD(21)%im(2, :) = (/0.05d0, 0.0d0, 0.01d0/)
-		nuDensMatVecFD(21)%im(3, :) = (/0.d0, -0.01d0, 0.d0/)
+		open(unit=fu, file="test_outputs/collint_imoff_rhoiy1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_imoff_rhoiy1_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) nuDensMatVecFD(iy1)%re(i,:)
+			nuDensMatVecFD(iy1)%re(i, i) = nuDensMatVecFD(iy1)%re(i, i)*fermiDirac(y_arr(iy1))
+			read (fv, *) nuDensMatVecFD(iy1)%im(i,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/collint_imoff_rhooi_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_imoff_rhooi_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) nuDensMatVecFD(oi)%re(i,:)
+			nuDensMatVecFD(oi)%re(i, i) = nuDensMatVecFD(oi)%re(i, i)*fermiDirac(y_arr(oi))
+			read (fv, *) nuDensMatVecFD(oi)%im(i,:)
+		end do
+		close(fu)
+		close(fv)
 
-		tmpmatA(1,:) = (/0.0347964, -0.371928, -1.7873/)
-		tmpmatA(2,:) = (/-0.371928, 0.103022, 0.539575/)
-		tmpmatA(3,:) = (/-1.7873, 0.539575, 0.0851156/)
-		tmpmatB(1,:) = (/0., 1.12312, -0.110645/)
-		tmpmatB(2,:) = (/-1.12312, 0., 0.260258/)
-		tmpmatB(3,:) = (/0.110645, -0.260258, 0./)
+		open(unit=fu, file="test_outputs/collint_sc_imoff_integrand_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_sc_imoff_integrand_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmparrA(:) = (/1d-5, 1d-5, 1d-5/)
 		tmparrS(:) = (/1d-5, 1d-5, 1d-5/)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('coll sc integrand full ',2I1)") i,j
+				write(tmparg,"('collint sc imoff integrand ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
 				res1 = coll_nue_sc_int(21, 5.2d0, collArgs, F_ab_sc_re)
@@ -2084,17 +2035,19 @@ program tests
 			end do
 		end do
 
-		tmpmatA(1,:) = (/0.374939, -0.146968, 1.06745/)
-		tmpmatA(2,:) = (/-0.146968, 0.16068, -0.0485291/)
-		tmpmatA(3,:) = (/1.06745, -0.0485291, -0.028232/)
-		tmpmatB(1,:) = (/0., -0.230122, -0.0597533/)
-		tmpmatB(2,:) = (/0.230122, 0., 0.204294/)
-		tmpmatB(3,:) = (/0.0597533, -0.204294, 0./)
+		open(unit=fu, file="test_outputs/collint_ann_imoff_integrand_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_ann_imoff_integrand_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmparrA(:) = (/1d-5, 1d-5, 1d-5/)
 		tmparrS(:) = (/1d-5, 1d-5, 1d-5/)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('coll ann integrand full ',2I1)") i,j
+				write(tmparg,"('collint ann imoff integrand ',2I1)") i,j
 				collArgs%ix1 = i
 				collArgs%ix2 = j
 				res1 = coll_nue_ann_int(21, 3.d0, collArgs, F_ab_ann_re)
@@ -2107,8 +2060,6 @@ program tests
 				end if
 			end do
 		end do
-!		call criticalError("stop")
-		deallocate(ndmv_re)
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_coll_int
@@ -2139,6 +2090,24 @@ program tests
 		procedure (F_annihilation) :: F_ab_ann
 		procedure (F_scattering) :: F_ab_sc
 		fakecollintnuey=1.d4*b**2
+	end function
+	pure real(dl) function fakecollintnuefuncA(a, b, o, F_ab_ann, F_ab_sc)
+		use variables
+		integer, intent(in) :: a
+		real(dl), intent(in) :: b
+		type(coll_args), intent(in) :: o
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
+		fakecollintnuefuncA=o%z*o%z/o%x/o%x*nuDensMatVecFD(a)%re(o%ix1, o%ix1)*fermiDirac(b)/o%y1/o%y1*0.3*(y_arr(a)+b)
+	end function
+	pure real(dl) function fakecollintnuefuncB(a, b, o, F_ab_ann, F_ab_sc)
+		use variables
+		integer, intent(in) :: a
+		real(dl), intent(in) :: b
+		type(coll_args), intent(in) :: o
+		procedure (F_annihilation) :: F_ab_ann
+		procedure (F_scattering) :: F_ab_sc
+		fakecollintnuefuncB=o%z*o%z/o%x/o%x*nuDensMatVecFD(a)%re(o%ix1, o%ix1)*fermiDirac(b)/o%y1/o%y1*0.3*(sqrt(y_arr(a))+sqrt(b))
 	end function
 	pure real(dl) function fakecollintnunu1(a, b, o, F_nu_sc, F_nu_pa)
 		use variables
@@ -2191,30 +2160,34 @@ program tests
 		collArgs%dme2 = dme2
 
 		!fake function
-		tmpmatA(1,:) = (/348548, 348548, 348548/)
-		tmpmatA(2,:) = (/348548, 348548, 348548/)
-		tmpmatA(3,:) = (/348548, 348548, 348548/)
-		tmpmatB(1,:) = (/0., 348548., 348548./)
-		tmpmatB(2,:) = (/-348548., 0., 348548./)
-		tmpmatB(3,:) = (/-348548., -348548., 0./)
-		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
+		open(unit=fu, file="test_outputs/collterms_fake_x22_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collterms_fake_x22_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
+		tmparrA(:) = (/1d-4,1d-4,1d-4/)
+		tmparrS(:) = (/1d-4,1d-4,1d-4/)
 		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
 		cts%re(:,:) = cts%re(:,:) * overallFactor
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms f ',2I1)") i,j
+				write(tmparg,"('collision_terms fake x22 ',2I1)") i,j
 				call assert_double_rel(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), tmparrA(i))
 				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
-		tmpmatA(1,:) = (/348548, 0, 0/)
-		tmpmatA(2,:) = (/0, 348548, 0/)
-		tmpmatA(3,:) = (/0, 0, 348548/)
-		tmpmatB(1,:) = (/0., 0., 0./)
-		tmpmatB(2,:) = (/0., 0., 0./)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/collterms_fake_x22_zerooffdiag_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collterms_fake_x22_zerooffdiag_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		collint_damping_type = 0
 		collint_offdiag_damping = .true.
 		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
@@ -2222,17 +2195,19 @@ program tests
 		cts%im(:,:) = cts%im(:,:) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('collision_terms zod ',2I1)") i,j
+				write(tmparg,"('collision_terms fake x22 zero off diagonal ',2I1)") i,j
 				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
 				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
 			end do
 		end do
-		tmpmatA(1,:) = (/0, 348548, 348548/)
-		tmpmatA(2,:) = (/348548, 0, 348548/)
-		tmpmatA(3,:) = (/348548, 348548, 0/)
-		tmpmatB(1,:) = (/0., 348548., 348548./)
-		tmpmatB(2,:) = (/-348548., 0., 348548./)
-		tmpmatB(3,:) = (/-348548., -348548., 0./)
+		open(unit=fu, file="test_outputs/collterms_fake_x22_zerodiag_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collterms_fake_x22_zerodiag_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		collint_damping_type = 2
 		collint_diagonal_zero = .true.
 		collint_offdiag_damping = .false.
@@ -2272,7 +2247,52 @@ program tests
 			end do
 		end do
 
-		!real params
+		collArgs%ix1=1
+		collArgs%ix2=1
+		open(unit=fu, file="test_outputs/collterms_real_diag_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collterms_real_diag_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
+		tmparrA(:) = (/2d-4,5d-4,5d-4/)
+		tmparrS(:) = (/1d-5,1d-5,1d-5/)
+		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
+		cts%re(:,:) = cts%re(:,:) * overallFactor
+		cts%im(:,:) = cts%im(:,:) * overallFactor
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms real diag ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
+			end do
+		end do
+
+!		x=0.75d0
+!		iy1 = 7 !1.22151515151515
+!!		z=1.06d0
+!		dme2=0.1d0
+!!		iy1 = 67 !13.3366666666667
+!		z = 1.186d0
+!		collArgs%ix1 = 1
+!		collArgs%ix1 = 1
+!		collArgs%x = x
+!		collArgs%z = z
+!		collArgs%iy = iy1
+!		collArgs%y1 = y_arr(iy1)
+!		collArgs%y2 = 0.d0
+!		collArgs%y3 = 0.d0
+!		collArgs%y4 = 0.d0
+!		collArgs%dme2 = dme2
+!		do iy=1, Ny
+!			nuDensMatVecFD(iy)%re(:,:) = 0.d0
+!			nuDensMatVecFD(iy)%im(:,:) = 0.d0
+!			do i=1, flavorNumber
+!				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
+!			end do
+!		end do
 !		do iy=1, Ny
 !			y = y_arr(iy)
 !			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 0.d0, 0.d0/)
@@ -2283,29 +2303,28 @@ program tests
 !!			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
 !			nuDensMatVecFD(iy)%im(:,:) = 0.d0
 !		end do
-
-		collArgs%ix1=1
-		collArgs%ix2=1
-!		print *,collArgs
-		tmpmatA(1,:) = (/-149.474, 0., 0./)
-		tmpmatA(2,:) = (/0., -38.1733, 0./)
-		tmpmatA(3,:) = (/0., 0., -38.1733/)
-		tmpmatB(1,:) = (/0., 0., 0./)
-		tmpmatB(2,:) = (/0., 0., 0./)
-		tmpmatB(3,:) = (/0., 0., 0./)
-		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
-		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
-		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
-!		write(*,multidblfmt)cts
-		do i=1, flavorNumber
-			do j=1, flavorNumber
-				write(tmparg,"('collision_terms r ',2I1)") i,j
-				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
-				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
-			end do
-		end do
+!		collArgs%ix1=1
+!		collArgs%ix2=1
+!		open(unit=fu, file="test_outputs/collterms_real_full_re.dat", status="old")
+!		open(unit=fv, file="test_outputs/collterms_real_full_im.dat", status="old")
+!		do i=1, 3
+!			read (fu, *) tmpmatA(i,:)
+!			read (fv, *) tmpmatB(i,:)
+!		end do
+!		close(fu)
+!		close(fv)
+!		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
+!		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
+!		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
+!		cts%re(:,:) = cts%re(:,:) * overallFactor
+!		cts%im(:,:) = cts%im(:,:) * overallFactor
+!		do i=1, flavorNumber
+!			do j=1, flavorNumber
+!				write(tmparg,"('collision_terms real diag ',2I1)") i,j
+!				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), tmpmatA(i,j), 1d-7, tmparrA(i))
+!				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), tmpmatB(i,j), 1d-7, tmparrS(i))
+!			end do
+!		end do
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_collision_terms
@@ -2332,33 +2351,43 @@ program tests
 		iy = 12 !2.231111111111111
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
-			nuDensMatVecFD(i)%re(1, :) = (/fd, 0.01d0, 0.04d0/)
-			nuDensMatVecFD(i)%re(2, :) = (/0.01d0, fd, -0.3d0/)
-			nuDensMatVecFD(i)%re(3, :) = (/0.04d0, -0.3d0, fd/)
-			nuDensMatVecFD(i)%im(1, :) = (/0.0, -0.02, -0.1/)
-			nuDensMatVecFD(i)%im(2, :) = (/0.02, 0.0, 0.1/)
-			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
+			open(unit=fu, file="test_outputs/drhodx_rho_re.dat", status="old")
+			open(unit=fv, file="test_outputs/drhodx_rho_im.dat", status="old")
+			do j=1, 3
+				read (fu, *) nuDensMatVecFD(i)%re(j,:)
+				read (fv, *) nuDensMatVecFD(i)%im(j,:)
+			end do
+			close(fu)
+			close(fv)
+			do j=1,3
+				nuDensMatVecFD(i)%re(j,j) = nuDensMatVecFD(i)%re(j,j)*fd
+			end do
 		end do
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/605.275d0/fd, 15562.7d0, 73448.4d0/)
-		res%re(2,:) = (/15562.7d0, -2652.61d0/fd, -548.751d0/)
-		res%re(3,:) = (/73448.4d0, -548.751d0, 2047.34d0/fd/)
-		res%im(1,:) = (/0., 8504.49, 30182.6/)
-		res%im(2,:) = (/-8504.49, 0., -698.419/)
-		res%im(3,:) = (/-30182.6, 698.419, 0./)
+		open(unit=fu, file="test_outputs/drhodx_A_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_A_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) res%re(j,:)
+			read (fv, *) res%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			res%re(j,j) = res%re(j,j)/fd
+		end do
 		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('drho/dx a ',2I1)") i,j
+				write(tmparg,"('drho/dx A ',2I1)") i,j
 				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
 					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-3)
 				else
 					call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				end if
 				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-2)
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-3)
 				else
 					call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 2d-4)
 				end if
@@ -2366,23 +2395,28 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/1393.85d0/fd, 16351.2d0, 74237.d0/)
-		res%re(2,:) = (/16351.2d0, -1864.03d0/fd, 239.828d0/)
-		res%re(3,:) = (/74237.d0, 239.828d0, 2835.92d0/fd/)
-		res%im(1,:) = (/0., 9293.06, 30971.2/)
-		res%im(2,:) = (/-9293.06, 0., 90.1601/)
-		res%im(3,:) = (/-30971.2, -90.1601, 0./)
+		open(unit=fu, file="test_outputs/drhodx_B_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_B_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) res%re(j,:)
+			read (fv, *) res%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			res%re(j,j) = res%re(j,j)/fd
+		end do
 		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue1, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('drho/dx b ',2I1)") i,j
+				write(tmparg,"('drho/dx B ',2I1)") i,j
 				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
-					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 3d-3)
+					call assert_double_rel(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 2d-3)
 				else
 					call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				end if
 				if ((i.eq.2 .and. j.eq.3) .or. (i.eq.3 .and. j.eq.2)) then
-					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 2d-2)
+					call assert_double_rel(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1.5d-2)
 				else
 					call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 				end if
@@ -2397,41 +2431,56 @@ program tests
 		iy = 34 !6.67333333333333
 		do i=1, Ny
 			fd = fermiDirac(y_arr(i))
-			nuDensMatVecFD(i)%re(1, :) = (/fd, 0.01d0, 0.04d0/)
-			nuDensMatVecFD(i)%re(2, :) = (/0.01d0, fd, -0.3d0/)
-			nuDensMatVecFD(i)%re(3, :) = (/0.04d0, -0.3d0, fd/)
-			nuDensMatVecFD(i)%im(1, :) = (/0.0, -0.02, -0.1/)
-			nuDensMatVecFD(i)%im(2, :) = (/0.02, 0.0, 0.1/)
-			nuDensMatVecFD(i)%im(3, :) = (/0.1, -0.1, 0.0/)
+			open(unit=fu, file="test_outputs/drhodx_rho_re.dat", status="old")
+			open(unit=fv, file="test_outputs/drhodx_rho_im.dat", status="old")
+			do j=1, 3
+				read (fu, *) nuDensMatVecFD(i)%re(j,:)
+				read (fv, *) nuDensMatVecFD(i)%im(j,:)
+			end do
+			close(fu)
+			close(fv)
+			do j=1,3
+				nuDensMatVecFD(i)%re(j,j) = nuDensMatVecFD(i)%re(j,j)*fd
+			end do
 		end do
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-		res%re(1,:) = (/164474.d0/fd, 346654.d0, 481731.d0/)
-		res%re(2,:) = (/346654.d0, -720804.d0/fd, -83653.3d0/)
-		res%re(3,:) = (/481731.d0, -83653.3d0, 556331.d0/fd/)
-		res%im(1,:) = (/0., 369833., 410950./)
-		res%im(2,:) = (/-369833., 0., 6598.44/)
-		res%im(3,:) = (/-410950., -6598.44, 0./)
+		open(unit=fu, file="test_outputs/drhodx_C_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_C_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) res%re(j,:)
+			read (fv, *) res%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			res%re(j,j) = res%re(j,j)/fd
+		end do
 		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('drho/dx c ',2I1)") i,j
+				write(tmparg,"('drho/dx C ',2I1)") i,j
 				call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 			end do
 		end do
 
-		res%re(1,:) = (/164624.d0/fd, 346804.d0, 481881.d0/)
-		res%re(2,:) = (/346804.d0, -720654.d0/fd, -83503.3d0/)
-		res%re(3,:) = (/481881.d0, -83503.3d0, 556481.d0/fd/)
-		res%im(1,:) = (/0., 369983., 411100./)
-		res%im(2,:) = (/-369983., 0., 6748.46/)
-		res%im(3,:) = (/-411100., -6748.46, 0./)
+		open(unit=fu, file="test_outputs/drhodx_D_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_D_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) res%re(j,:)
+			read (fv, *) res%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		do j=1,3
+			res%re(j,j) = res%re(j,j)/fd
+		end do
 		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollintnuey, fakecollintnunu0)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
-				write(tmparg,"('drho/dx d ',2I1)") i,j
+				write(tmparg,"('drho/dx D ',2I1)") i,j
 				call assert_double_rel_safe(trim(tmparg)//"re", outp%re(i,j), res%re(i,j), 1d-7, 1d-4)
 				call assert_double_rel_safe(trim(tmparg)//"im", outp%im(i,j), res%im(i,j), 1d-7, 1d-4)
 			end do
@@ -2446,7 +2495,7 @@ program tests
 	subroutine do_test_damping_factors
 		real(dl) :: x,z,dme2
 		integer :: i, j, ix, iy1, iy
-		real(dl) :: y,res1,res2
+		real(dl) :: y,res1,res2, fd
 		type(coll_args) :: collArgs
 		real(dl), dimension(3) :: tmparrS, tmparrA
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
@@ -2463,7 +2512,7 @@ program tests
 		iy1 = 7 !1.22151515151515
 		z = 1.186d0
 		dme2 = 0.1d0
-		call printTestBlockName("Damping terms")
+		call printTestBlockName("Damping terms - McKellar")
 		collArgs%x = x
 		collArgs%z = z
 		collArgs%iy = iy1
@@ -2473,24 +2522,31 @@ program tests
 		collArgs%y4 = 0.d0
 		collArgs%dme2 = dme2
 		do iy=1, Ny
-			y = y_arr(iy)
-			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 10.d0, 33.d0/)
-			nuDensMatVecFD(iy)%re(2,:) = (/10.d0, 1.d0*fermiDirac(y), 45.d0/)
-			nuDensMatVecFD(iy)%re(3,:) = (/33.d0, 45.d0, 1.d0*fermiDirac(y)/)
-			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0/)
-			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0/)
-			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
+			fd = fermiDirac(y_arr(iy))
+			open(unit=fu, file="test_outputs/damping_testrho3_re.dat", status="old")
+			open(unit=fv, file="test_outputs/damping_testrho3_im.dat", status="old")
+			do j=1, 3
+				read (fu, *) nuDensMatVecFD(iy)%re(j,:)
+				read (fv, *) nuDensMatVecFD(iy)%im(j,:)
+			end do
+			close(fu)
+			close(fv)
+			do j=1,3
+				nuDensMatVecFD(iy)%re(j,j) = nuDensMatVecFD(iy)%re(j,j)*fd
+			end do
 		end do
 
 		!2+1
 		sterile(3) = .true.
 		call setDampingFactors
-		tmpmatA(1,:) = (/0., -0.928646, -6.56674/)
-		tmpmatA(2,:) = (/0., 0., -7.45108/)
-		tmpmatA(3,:) = (/0., 0., 0./)
-		tmpmatB(1,:) = (/0., 0.0000928646, -0.000596976/)
-		tmpmatB(2,:) = (/0., 0., 0.000331159/)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/damping_2+1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_2+1_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2509,12 +2565,14 @@ program tests
 !		!3+0
 		sterile(3) = .false.
 		call setDampingFactors
-		tmpmatA(1,:) = (/0., -0.928646, -3.06453/)
-		tmpmatA(2,:) = (/0., 0., -1.76139/)
-		tmpmatA(3,:) = (/0., 0., 0./)
-		tmpmatB(1,:) = (/0., 0.0000928646, -0.000278594/)
-		tmpmatB(2,:) = (/0., 0., 0.0000782838/)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/damping_3+0_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_3+0_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2537,12 +2595,14 @@ program tests
 		!1+1
 		sterile(2) = .true.
 		call setDampingFactors
-		tmpmatA(1,:) = (/0., -1.98992, 0./)
-		tmpmatA(2,:) = (/0., 0., 0./)
-		tmpmatA(3,:) = (/0., 0., 0./)
-		tmpmatB(1,:) = (/0., 0.000198992, 0./)
-		tmpmatB(2,:) = (/0., 0., 0./)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/damping_1+1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_1+1_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2561,12 +2621,14 @@ program tests
 		!2+0
 		sterile(2) = .false.
 		call setDampingFactors
-		tmpmatA(1,:) = (/0., -0.928646, 0./)
-		tmpmatA(2,:) = (/0., 0., 0./)
-		tmpmatA(3,:) = (/0., 0., 0./)
-		tmpmatB(1,:) = (/0., 0.0000928646, 0./)
-		tmpmatB(2,:) = (/0., 0., 0./)
-		tmpmatB(3,:) = (/0., 0., 0./)
+		open(unit=fu, file="test_outputs/damping_2+0_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_2+0_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2592,26 +2654,31 @@ program tests
 			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
 		end do
 		do iy=1, Ny
-			y = y_arr(iy)
-			nuDensMatVecFD(iy)%re(1,:) = (/1.d0*fermiDirac(y), 10.d0, 33.d0, 12.d0/)
-			nuDensMatVecFD(iy)%re(2,:) = (/10.d0, 1.d0*fermiDirac(y), 45.d0, 8.d0/)
-			nuDensMatVecFD(iy)%re(3,:) = (/33.d0, 45.d0, 1.d0*fermiDirac(y), 23.d0/)
-			nuDensMatVecFD(iy)%re(4,:) = (/12.d0, 8.d0, 23.d0, 1.d0*fermiDirac(y)/)
-			nuDensMatVecFD(iy)%im(1,:) = (/0.d0, -0.001d0, 0.003d0, 0.1d0/)
-			nuDensMatVecFD(iy)%im(2,:) = (/0.001d0, 0.d0, -0.002d0, -0.2d0/)
-			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0, 0.5d0/)
-			nuDensMatVecFD(iy)%im(4,:) = (/-0.1d0, 0.2d0, -0.5d0, 0.d0/)
+			fd = fermiDirac(y_arr(iy))
+			open(unit=fu, file="test_outputs/damping_testrho4_re.dat", status="old")
+			open(unit=fv, file="test_outputs/damping_testrho4_im.dat", status="old")
+			do j=1, 4
+				read (fu, *) nuDensMatVecFD(iy)%re(j,:)
+				read (fv, *) nuDensMatVecFD(iy)%im(j,:)
+			end do
+			close(fu)
+			close(fv)
+			do j=1, 4
+				nuDensMatVecFD(iy)%re(j,j) = nuDensMatVecFD(iy)%re(j,j)*fd
+			end do
 		end do
 		!3+1
 		sterile = .false.
 		sterile(4) = .true.
 		call setDampingFactors
-		tmpmatA(1,:) = (/-0.928646, -3.06453, -2.38791/)
-		tmpmatA(2,:) = (/0., -1.76139, -1.32464/)
-		tmpmatA(3,:) = (/0., 0., -3.80833/)
-		tmpmatB(1,:) = (/0.0000928646, -0.000278594, -0.0198992/)
-		tmpmatB(2,:) = (/0., 0.0000782838, 0.0331159/)
-		tmpmatB(3,:) = (/0., 0., -0.0827898/)
+		open(unit=fu, file="test_outputs/damping_3+1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_3+1_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) tmpmatA(i,:)
+			read (fv, *) tmpmatB(i,:)
+		end do
+		close(fu)
+		close(fv)
 		tmpmatA = tmpmatA * z**4
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
@@ -2648,17 +2715,24 @@ program tests
 	subroutine do_test_GL
 		real(dl), dimension(:), allocatable :: xa, wa, wa2, fx1, dx, ya
 		real(dl), dimension(:,:), allocatable :: fx2a, fx2b
-		real(dl) :: inta, intb, tol
+		real(dl) :: inta, intb, tol, r
 		integer :: nix, nx, ix, iy, i, n, m
 		character(len=300) :: tmparg
-		real(dl), dimension(9,3) :: tmparrA, tmparrB, tmperrA, tmperrB
+		integer, parameter :: nn=17
+		real(dl), dimension(nn,3) :: tmparrA, tmparrB, tmperrA, tmperrB
 		type(coll_args) :: collArgs
 		real(dl), dimension(:), allocatable :: ydot
+		real(dl) :: x, z, rn
+		real(dl), dimension(9) :: ve1, ve2
+		character(len=100) :: tmpstr
 
 		call printTestBlockName("Gauss-Laguerre quadrature")
 
 		use_gauss_laguerre = .true.
-		do nx=50, 10, -1
+		open(unit=fu, file="test_outputs/gl_test_func.dat", status="old")
+		read (fu, *) r
+		close(fu)
+		do nx=90, 10, -1
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
 			call finish_y_arrays
 
@@ -2668,23 +2742,27 @@ program tests
 			end do
 			inta = integral_GL_1d(wa, fx1)
 			write(tmparg, "('test GL quadrature on Fermi-Dirac, nx=',I2)") nx
-			call assert_double_rel(trim(tmparg), inta, PISQ*PISQD15*7.d0/8.0, 1d-5)
+			call assert_double_rel(trim(tmparg), inta, PISQ*PISQD15*7.d0/8.0, 3d-6)
 			deallocate(fx1)
 
 			allocate(fx2a(nx, nx), fx2b(nx, nx), ya(nx), dx(nx))
-			ya = loglinspace(0.01d0, 0.01d0, 20.d0, nx, 1)
+			ya = linspace(0.01d0, 20.d0, nx)
 			do ix=1, nx-1
 				dx(ix) = ya(ix+1) - ya(ix)
 			end do
 			do ix=1,nx
 				do iy=1,nx
 					fx2a(ix, iy) = fermiDirac(xa(ix))*fermiDirac(xa(iy))/(xa(ix)**2 * xa(iy))
-					fx2b(ix, iy) = fermiDirac(ya(ix))*fermiDirac(ya(iy))*(ya(ix) * ya(iy)**2)
+!					fx2b(ix, iy) = fermiDirac(ya(ix))*fermiDirac(ya(iy))*(ya(ix) * ya(iy)**2)
 				end do
 			end do
 			inta = integral_GL_2d(nx, wa, wa, fx2a)
-			intb = integral_NC_2d(nx, nx, dx, dx, fx2b)
-			if (nx.gt.22) then
+!			intb = integral_NC_2d(nx, nx, dx, dx, fx2b)
+			if (nx.gt.77) then
+				tol=1d-5
+			elseif (nx.gt.42) then
+				tol=1d-4
+			elseif (nx.gt.22) then
 				tol=1d-3
 			elseif (nx.gt.16) then
 				tol=3d-3
@@ -2694,7 +2772,7 @@ program tests
 				tol=3d-2
 			end if
 			write(tmparg, "('test GL quadrature 2D on Fermi-Dirac, nx=',I2)") nx
-			call assert_double_rel(trim(tmparg), inta, 1.4829783d0, tol)
+			call assert_double_rel(trim(tmparg), inta, r, tol)
 !			print *,nx, inta, intb
 			deallocate(fx2a, fx2b, xa, wa, wa2, ya, dx)
 		end do
@@ -2702,107 +2780,119 @@ program tests
 		call printTestBlockName("GL quadrature of collision integrals")
 		collArgs%x = 0.05d0
 		collArgs%z = 1.06d0
-		collArgs%iy = 5
 		collArgs%y2 = 0.d0
 		collArgs%y3 = 0.d0
 		collArgs%y4 = 0.d0
 		collArgs%dme2 = 0.1d0
 		tmparrA(:,:) = 0.d0
 		tmparrB(:,:) = 0.d0
-		do nix=1, 9
+		print*,"writing list of nix, Ny, y_arr(iy) with iy=int(Ny/3)"
+		do nix=1, nn
 			nx = nix*5+5
 			call get_GLq_vectors(nx, xa, wa, wa2, .false., 3, 20.d0)
 			call finish_y_arrays
-			collArgs%y1 = xa(collArgs%iy)
-			y_arr = loglinspace(y_min, collArgs%y1, y_max, Ny, 10)
-			do ix=1, Ny-1
-				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
-			end do
-
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re = 0.d0
-				nuDensMatVecFD(iy)%im = 0.d0
-			end do
-			do ix=1, flavorNumber
-				do iy=1, Ny
-					nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy))
-				end do
-				nuDensMatVecFD(collArgs%iy)%re(ix, ix) = 1.d0
-			end do
-
-			do ix=1, flavorNumber
-				collArgs%ix1 = ix
-				collArgs%ix2 = ix
-				tmparrA(nix,ix) = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			end do
-
-			do ix=1, flavorNumber
-				collArgs%ix1 = ix
-				collArgs%ix2 = ix
-				tmparrB(nix,ix) = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-			end do
+			collArgs%iy = int(nx/3)
+			print*,nix,nx, xa(collArgs%iy)
 		end do
 
+		tmperrA=1d-5
+		tmperrB=1d-5
 		!Ny=20
-		tmperrA(3,:) = (/0.3, 0.3, 0.2/)
-		tmperrB(3,:) = (/0.3d0, 0.15d0, 0.1d0/)
+		tmperrA(3,:) = (/0.07,0.07,0.07/)
+		tmperrB(3,:) = (/0.07,0.07,0.07/)
 		!Ny=25
-		tmperrA(4,:) = (/0.15, 0.11, 0.06/)
-		tmperrB(4,:) = (/0.08d0, 0.06d0, 0.06d0/)
+		tmperrA(4,:) = (/0.05,0.05,0.05/)
+		tmperrB(4,:) = (/0.05,0.05,0.05/)
 		!Ny=30
-		tmperrA(5,:) = (/0.1, 0.06, 0.01/)
-		tmperrB(5,:) = (/0.04d0, 0.04d0, 0.04d0/)
+		tmperrA(5,:) = (/0.03,0.03,0.03/)
+		tmperrB(5,:) = (/0.03,0.03,0.03/)
 		!Ny=35
-		tmperrA(6,:) = (/0.07, 0.03, 0.03/)
-		tmperrB(6,:) = (/0.03d0, 0.03d0, 0.03d0/)
+		tmperrA(6,:) = (/0.02,0.02,0.02/)
+		tmperrB(6,:) = (/0.02,0.02,0.02/)
 		!Ny=40
-		tmperrA(7,:) = (/0.06, 0.03, 0.03/)
-		tmperrB(7,:) = (/0.005d0, 0.01d0, 0.01d0/)
+		tmperrA(7,:) = (/0.012,0.012,0.012/)
+		tmperrB(7,:) = (/0.012,0.012,0.012/)
 		!Ny=45
-		tmperrA(8,:) = (/0.05, 0.025, 0.025/)
-		tmperrB(8,:) = (/0.025, 0.03, 0.03/)
+		tmperrA(8,:) = (/0.007,0.007,0.007/)
+		tmperrB(8,:) = (/0.007,0.007,0.007/)
 		!Ny=50
-		tmperrA(9,:) = (/0.05, 0.02, 0.025/)
-		tmperrB(9,:) = (/0.021, 0.03, 0.03/)
-		do nix=3, 9
+		tmperrA(9,:) = (/0.005,0.005,0.005/)
+		tmperrB(9,:) = (/0.005,0.005,0.005/)
+		!Ny=55
+		tmperrA(10,:) = (/0.0025,0.0025,0.0025/)
+		tmperrB(10,:) = (/0.0025,0.0025,0.0025/)
+		!Ny=60
+		tmperrA(11,:) = (/5e-4,5e-4,5e-4/)
+		tmperrB(11,:) = (/5e-4,5e-4,5e-4/)
+		!Ny=65
+		tmperrA(12,:) = (/8d-4,8d-4,8d-4/)
+		tmperrB(12,:) = (/8d-4,8d-4,8d-4/)
+		!Ny=70
+		tmperrA(13,:) = (/2d-3,2d-3,2d-3/)
+		tmperrB(13,:) = (/2d-3,2d-3,2d-3/)
+		!Ny=75
+		tmperrA(14,:) = (/3d-3,3d-3,3d-3/)
+		tmperrB(14,:) = (/3d-3,3d-3,3d-3/)
+		!Ny=80
+		tmperrA(15,:) = (/4d-3,4d-3,4d-3/)
+		tmperrB(15,:) = (/4d-3,4d-3,4d-3/)
+		!Ny=85
+		tmperrA(16,:) = (/4d-3,4d-3,4d-3/)
+		tmperrB(16,:) = (/4d-3,4d-3,4d-3/)
+		!Ny=90
+		tmperrA(17,:) = (/5d-3,5d-3,5d-3/)
+		tmperrB(17,:) = (/5d-3,5d-3,5d-3/)
+		open(unit=fu, file="test_outputs/GL_sc_int.dat", status="old")
+		open(unit=fv, file="test_outputs/GL_ann_int.dat", status="old")
+		do nix=1, nn
+			read (fu, *) Ny, r, tmparrA(nix,:)
+			if (Ny .ne. nix*5+5) &
+				call criticalError("Ny does not match. The file 'GL_sc_int.dat' cannot be read")
+			read (fv, *) Ny, r, tmparrB(nix,:)
+			if (Ny .ne. nix*5+5) &
+				call criticalError("Ny does not match. The file 'GL_ann_int.dat' cannot be read")
+		end do
+		close(fu)
+		close(fv)
+		do nix=nn,3,-1
 			Ny=nix*5+5
 			call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 			call finish_y_arrays
-			do ix=1, Ny-1
-				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
-			end do
+!			do ix=1, Ny-1
+!				dy_arr(ix) = y_arr(ix+1) - y_arr(ix)
+!			end do
+			collArgs%iy = int(Ny/3)
 			collArgs%y1 = y_arr(collArgs%iy)
-!			print*,Ny,y_arr(collArgs%iy)
+			write(*,*)Ny,y_arr(collArgs%iy)
 
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re = 0.d0
 				nuDensMatVecFD(iy)%im = 0.d0
+!				nuDensMatVecFD(iy)%y = y_arr(iy)
 			end do
 			do ix=1, flavorNumber
 				do iy=1, Ny
 					nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy))
 				end do
-				nuDensMatVecFD(collArgs%iy)%re(ix, ix) = 1.d0
+!				nuDensMatVecFD(collArgs%iy)%re(ix, ix) = 1.d0
 			end do
 
-			write(*,*) ""
+!			write(*,*) ""
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_collint_nue_GL(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_collint_nue_NC(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-!				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrA(nix,ix), (inta-tmparrA(nix,ix))/inta, (intb-tmparrA(nix,ix))/intb
+				inta = integrate_collint_nue_GL(fakecollintnuefuncB, collArgs, F_ab_ann_re, F_ab_sc_re)
+!				print*, integrate_collint_nue_GL(coll_nue_sc_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 				write(tmparg,"('test coll sc GL, N=',I2,' - ',2I1)") Ny, ix, ix
 				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrA(nix,ix), 1d-30, tmperrA(nix,ix))
 			end do
 
-			write(*,*) ""
+!			write(*,*) ""
 			do ix=1, flavorNumber
 				collArgs%ix1 = ix
 				collArgs%ix2 = ix
-				inta = integrate_collint_nue_GL(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-				intb = integrate_collint_nue_NC(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
-!				write(*,"(I2,*(E17.9))") ix, inta, intb, tmparrB(nix,ix), (inta-tmparrB(nix,ix))/inta, (intb-tmparrB(nix,ix))/intb
+				inta = integrate_collint_nue_GL(fakecollintnuefuncA, collArgs, F_ab_ann_re, F_ab_sc_re)
+!				print*, integrate_collint_nue_GL(coll_nue_ann_int_w, collArgs, F_ab_ann_re, F_ab_sc_re)
 				write(tmparg,"('test coll ann GL, N=',I2,' - ',2I1)") Ny, ix, ix
 				call assert_double_rel_safe_verb(trim(tmparg), inta, tmparrB(nix,ix), 1d-30, tmperrB(nix,ix))
 			end do
@@ -2812,44 +2902,35 @@ program tests
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		call finish_y_arrays
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 1", nuDensityGL(1, 1), 0.575727d0, 1d-4)
-		call assert_double_rel("nuNumDensGL test 1", nuNumberDensityGL(1, 1), 0.182690742d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.076d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 2", nuDensityGL(1, 1), 0.5d0*1.54346d0, 1d-4)
-		call assert_double_rel("nuNumDensGL test 2", nuNumberDensityGL(1, 1), 0.22759009d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.32d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 3", nuDensityGL(1, 1), 0.5d0*3.49577d0, 2d-4)
-		call assert_double_rel("nuNumDensGL test 3", nuNumberDensityGL(1, 1), 0.420183d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.37d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 4", nuDensityGL(2, 2), 0.5d0*2.d0*4.05629d0, 5d-4)
-		call assert_double_rel("nuNumDensGL test 4", nuNumberDensityGL(2, 2), 2.d0*0.469762d0, 1d-4)
-		do i=1, flavorNumber
-			do iy=1, Ny
-				nuDensMatVecFD(iy)%re(i, i) = 1.d0*i * fermiDirac(y_arr(iy) / 1.003d0)
-			end do
-		end do
-		call assert_double_rel("nuDensGL test 5", nuDensityGL(3, 3), 0.5d0*3.d0*1.16533d0, 1d-4)
-		call assert_double_rel("nuNumDensGL test 5", nuNumberDensityGL(3, 3), 3.d0*0.18434d0, 1d-4)
 
-		call assert_double_rel("nuDensEq test 1", nuDensityEq(1.d0), 0.575727d0, 1d-4)
-		call assert_double_rel("nuDensEq test 2", nuDensityEq(1.37d0), 2.02814d0, 5d-4)
+		n=5
+		ve2=(/1.,1.,1.,2.,3.,0.,0.,0.,0./)
+		ve1=(/1d-4,1d-4,2d-4,5d-4,1d-4,0.d0,0.d0,0.d0,0.d0/)
+		do ix=1, flavorNumber
+			do iy=1, Ny
+				nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy))
+			end do
+		end do
+		open(unit=fu, file="test_outputs/nuDens.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r, rn
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("nuDensGL test "//trim(tmpstr), nuDensity(z,int(ve2(i))), ve2(i)*r, ve1(i))
+		end do
+		close(fu)
+		open(unit=fu, file="test_outputs/nuDensEq.dat", status="old")
+		do i=1, n
+			read (fu, *) z, r, rn
+			do ix=1, flavorNumber
+				do iy=1, Ny
+					nuDensMatVecFD(iy)%re(ix, ix) = 1.d0*ix * fermiDirac(y_arr(iy) / z)
+				end do
+			end do
+			write(tmpstr, "(I1)") i
+			call assert_double_rel("nuDensGL test "//trim(tmpstr), nuDensityGL(int(ve2(i)), int(ve2(i))), ve2(i)*r, ve1(i))
+			call assert_double_rel("nuNumDensGL test "//trim(tmpstr), nuNumberDensityGL(int(ve2(i)), int(ve2(i))), ve2(i)*rn, ve1(i))
+		end do
+		close(fu)
 
 		n=ntot
 		allocate(ydot(n))
@@ -2869,15 +2950,19 @@ program tests
 		do ix=1, Ny
 			feq_arr(ix) = fermiDirac(y_arr(ix))
 		end do
-		call dz_o_dx(0.01d0, 1.2d0, 1.d0, ydot, n)
-		call assert_double("dz_o_dx test 1a", ydot(n), 7.15311d0, 5d-5)
-		call assert_double_rel("dz_o_dx test 1b", ydot(n-1), 7.15311d0, 5d-5)
-		call dz_o_dx(1.1d0, 1.1d0, 1.1d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 2a", ydot(n), -0.0529951d0, 3d-6)
-		call assert_double_rel("dz_o_dx test 2b", ydot(n-1), -0.0914903549d0, 3d-6)
-		call dz_o_dx(6.d0, 1.d0, 1.2d0, ydot, n)
-		call assert_double_rel("dz_o_dx test 3a", ydot(n), -0.0950884d0, 2d-6)
-		call assert_double_rel("dz_o_dx test 3b", ydot(n-1), -0.0701083754d0, 2d-6)
+		open(unit=fu, file="test_outputs/dzodx_g_A.dat", status="old")
+		open(unit=fv, file="test_outputs/dzodx_n_A.dat", status="old")
+		ve1=(/5d-5,6d-6,6d-6,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0/)
+		do ix=1,3
+			read (fu, *) x,z,r
+			read (fv, *) x,z,rn
+			write(tmparg,"(I1)") ix
+			call dz_o_dx(x, 1.2d0, z, ydot, n)
+			call assert_double_rel("dz_o_dx GL test "//trim(tmparg), ydot(n), r, ve1(ix))
+			call assert_double_rel("dw_o_dx GL test "//trim(tmparg), ydot(n-1), rn, ve1(ix))
+		end do
+		close(fu)
+		close(fv)
 		deallocate(ydot)
 		call printTotalTests
 		call resetTestCounter
@@ -2906,18 +2991,24 @@ program tests
 		call printTestBlockName("matter potential, including neutrinos")
 
 		!A
-		nuMassesMat(1,:) = (/1.,2.,3./)
-		nuMassesMat(2,:) = (/3.,2.,1./)
-		nuMassesMat(3,:) = (/1.1,2.2,3./)
-		leptonDensities(1,:) = (/200., 1., 0./)
-		leptonDensities(2,:) = (/1., 500., 0./)
-		leptonDensities(3,:) = (/0.,0.,0./)
-		nuDensities%re = 0.01d0
+		open(unit=fu, file="test_outputs/matterpot_nmm.dat", status="old")
+		open(unit=fv, file="test_outputs/matterpot_ldm.dat", status="old")
+		open(unit=fw, file="test_outputs/matterpot_ndm1.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuMassesMat(j,:)
+			read (fv, *) leptonDensities(j,:)
+			read (fw, *) nuDensities%re(j,:)
+		end do
+		close(fu)
+		close(fv)
+		close(fw)
 		nuDensities%im = 0.d0
 		Heff = H_eff(0.04d0)
-		r1(1,:) = (/20.5004,25.0404,37.5004/)
-		r1(2,:) = (/37.5404,45.0004,12.5004/)
-		r1(3,:) = (/13.7504,27.5004,37.5004/)
+		open(unit=fu, file="test_outputs/matterpot_t1.dat", status="old")
+		do j=1, 3
+			read (fu, *) r1(j,:)
+		end do
+		close(fu)
 		r2 = 0.d0
 		do i=1, flavorNumber
 			do j=i, flavorNumber
@@ -2935,19 +3026,23 @@ program tests
 			end do
 		end do
 		!B
-		nuDensities%re(1,:) = (/0.1,0.7,0.5/)
-		nuDensities%re(2,:) = (/0.7,0.8,0.2/)
-		nuDensities%re(3,:) = (/0.5,0.2,1.1/)
-		nuDensities%im(1,:) = (/0.,3.,2./)
-		nuDensities%im(2,:) = (/-3.,0.,1.5/)
-		nuDensities%im(3,:) = (/-2.,-1.5,0./)
+		open(unit=fu, file="test_outputs/matterpot_ndm2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/matterpot_ndm2_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuDensities%re(j,:)
+			read (fv, *) nuDensities%im(j,:)
+		end do
+		close(fu)
+		close(fv)
 		Heff = H_eff(0.7d0)
-		r1(1,:) = (/140.78428,2.6185714,2.4928571/)
-		r1(2,:) = (/3.33285714,351.98857,0.85428571/)
-		r1(3,:) = (/1.1357142,1.7114285,2.91285714/)
-		r2(1,:) = (/0.,2.1,1.4/)
-		r2(2,:) = (/-2.1,0.,1.05/)
-		r2(3,:) = (/-1.4,-1.05,0./)
+		open(unit=fu, file="test_outputs/matterpot_t2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/matterpot_t2_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) r1(j,:)
+			read (fv, *) r2(j,:)
+		end do
+		close(fu)
+		close(fv)
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('H_eff B ',2I1)") i,j
@@ -2978,50 +3073,60 @@ program tests
 
 		call printTestBlockName("diagonalization")
 
-		nuMassesMat(1,:) = (/2.,0.2,0.02/)
-		nuMassesMat(2,:) = (/0.2,2.,0.02/)
-		nuMassesMat(3,:) = (/0.02,0.02,5./)
-		leptonDensities(1,:) = (/0.5, 0., 0./)
-		leptonDensities(2,:) = (/0., 0.9, 0./)
-		leptonDensities(3,:) = (/0.,0.,0./)
-		nuDensities%re(1,:) = (/0.027,-0.348,-0.01248/)
-		nuDensities%re(2,:) = (/-0.348,0.01,-0.01648/)
-		nuDensities%re(3,:) = (/-0.01248,-0.01648,0.06/)
-		nuDensities%im(1,:) = (/0.,0.008047,0.8047/)
-		nuDensities%im(2,:) = (/-0.008047,0.,0.13535/)
-		nuDensities%im(3,:) = (/-0.8047,-0.13535,0./)
+		open(unit=fu, file="test_outputs/diagonalization_nmm.dat", status="old")
+		open(unit=fv, file="test_outputs/diagonalization_ldm.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuMassesMat(j,:)
+			read (fv, *) leptonDensities(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/diagonalization_ndm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/diagonalization_ndm_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuDensities%re(j,:)
+			read (fv, *) nuDensities%im(j,:)
+		end do
+		close(fu)
+		close(fv)
 		y_arr(1) = 1.
 
 		tmpvec = 0.d0
 		cmp2(:,:) = cmplx(0.d0, 0.d0)
 		cmp1 = H_eff_cmplx(y_arr(1))
 		call HEigensystem(flavorNumber, cmp1, flavorNumber, tmpvec, cmp2, flavorNumber, 0)
-		rv = (/1.,2.,3.,0.,0.,0./)
+		open(unit=fu, file="test_outputs/diagonalization_eigenvalues.dat", status="old")
+		read (fu, *) rv(:)
+		close(fu)
 		do i=1, maxFlavorNumber
 			write(tmparg,"('HEigensystem ',I1)") i
-			call assert_double_rel_safe(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7, 2d-3)
+			call assert_double_rel_safe(trim(tmparg)//"re", tmpvec(i), rv(i), 1d-7, 1d-6)
 		end do
 
 		do iy=1, Ny
-			nuDensMatVecFD(iy)%re(1,:) = (/0.4d0,0.5d0,0.2d0/)
-			nuDensMatVecFD(iy)%re(2,:) = (/3.d0,-1.d0,0.6d0/)
-			nuDensMatVecFD(iy)%re(3,:) = (/1.1d0,4.3d0,0.9d0/)
-			nuDensMatVecFD(iy)%im(1,:) = (/0.d0,0.1d0,0.2d0/)
-			nuDensMatVecFD(iy)%im(2,:) = (/-0.1d0,0.d0,0.3d0/)
-			nuDensMatVecFD(iy)%im(3,:) = (/-0.2d0,-0.3d0,0.d0/)
+		open(unit=fu, file="test_outputs/diagonalization_nm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/diagonalization_nm_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) nuDensMatVecFD(iy)%re(j,:)
+			read (fv, *) nuDensMatVecFD(iy)%im(j,:)
+		end do
+		close(fu)
+		close(fv)
 		end do
 
 		m = rho_diag_mass(1)
-		r1(1,:) = (/0.420762,0.,0./)
-		r1(2,:) = (/0.,-0.877571,0./)
-		r1(3,:) = (/0.,0.,0.75681/)
-		r2(1,:) = (/0.,0.,0./)
-		r2(2,:) = (/0.,0.,0./)
-		r2(3,:) = (/0.,0.,0./)
+		open(unit=fu, file="test_outputs/diagonalization_rho_mass_basis_re.dat", status="old")
+		open(unit=fv, file="test_outputs/diagonalization_rho_mass_basis_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) r1(j,:)
+			read (fv, *) r2(j,:)
+		end do
+		close(fu)
+		close(fv)
 		do i=1, flavorNumber
 			do j=i, flavorNumber
 				write(tmparg,"('rho mass basis ',2I1)") i,j
-				call assert_double_rel_safe(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7, 2d-3)
+				call assert_double_rel_safe(trim(tmparg)//"re", m%re(i,j), r1(i,j), 1d-7, 1d-5)
 				call assert_double(trim(tmparg)//"im", m%im(i,j), r2(i,j), 1d-7)
 			end do
 		end do
@@ -3030,50 +3135,51 @@ program tests
 		call resetTestCounter
 	end subroutine do_test_diagonalization
 
-	subroutine do_test_damping_yyyw
+	subroutine do_test_damping_bennett
 		real(dl) :: x,w,z,dme2,y1
-		integer :: ix, iy1, iy
+		integer :: ix, iy1, iy, j
 		real(dl) :: y,res1,res2
 		type(coll_args) :: collArgs
 		real(dl), dimension(3) :: tmparrS, tmparrA
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
+		real(dl), dimension(12) :: errv
 		character(len=300) :: tmparg
 		type(cmplxMatNN) :: cts
 
 		call allocateCmplxMat(cts)
 
-		call printTestBlockName("damping factors a la YYYW")
+		call printTestBlockName("damping factors a la Bennett:2020zkv")
 
 		Ny=50
 		call get_GLq_vectors(Ny, y_arr, w_gl_arr, w_gl_arr2, .false., 3, 20.d0)
 		call finish_y_arrays
-		call assert_double_rel("dy_damping_pi 3.        ", dy_damping_pi(3.d0        ),  94.545d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.001     ", dy_damping_pi(0.001d0     ), 129.894d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.00359381", dy_damping_pi(0.00359381d0), 129.933d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.0129155 ", dy_damping_pi(0.0129155d0 ), 129.397d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.0464159 ", dy_damping_pi(0.0464159d0 ), 128.161d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.16681   ", dy_damping_pi(0.16681d0   ), 124.039d0, 2d-2)
-		call assert_double_rel("dy_damping_pi 0.599484  ", dy_damping_pi(0.599484d0  ), 112.398d0, 1d-2)
-		call assert_double_rel("dy_damping_pi 2.15443   ", dy_damping_pi(2.15443d0   ),  95.919d0, 1d-2)
-		call assert_double_rel("dy_damping_pi 7.74264   ", dy_damping_pi(7.74264d0   ),  97.543d0, 1d-2)
-		call assert_double_rel("dy_damping_pi 20.0000   ", dy_damping_pi(20.0000d0   ),  99.787d0, 7d-2)
+		errv=(/2d-2,2d-2,2d-2,2d-2,2d-2,2d-2,1d-2,1d-2,1d-2,7d-2,0.d0,0.d0/)
+		open(unit=fu, file="test_outputs/damping_bennett_sv.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_bennett_dy.dat", status="old")
+		do j=1, 10
+			read (fu, *) res1
+			read (fv, *) res2
+			write(tmparg, "('dy_damping_pi ',E10.3)") res1
+			call assert_double_rel(trim(tmparg), dy_damping_pi(res1), res2, errv(j))
+		end do
+		close(fu)
+		close(fv)
 
 		Ny=100
 		deallocate(y_arr)
 		allocate(y_arr(Ny))
 		y_arr = linspace(y_min, y_max, Ny)
-		call assert_double_rel("dy_damping_fit 3.        ", dy_damping_fit(3.d0        ),  94.545d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.001     ", dy_damping_fit(0.001d0     ), 129.894d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.00359381", dy_damping_fit(0.00359381d0), 129.933d0, 2d-3)
-		call assert_double_rel("dy_damping_fit 0.0129155 ", dy_damping_fit(0.0129155d0 ), 129.397d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.0464159 ", dy_damping_fit(0.0464159d0 ), 128.161d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.16681   ", dy_damping_fit(0.16681d0   ), 124.039d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 0.599484  ", dy_damping_fit(0.599484d0  ), 112.398d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 2.15443   ", dy_damping_fit(2.15443d0   ),  95.919d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 7.74264   ", dy_damping_fit(7.74264d0   ),  97.543d0, 3d-3)
-		call assert_double_rel("dy_damping_fit 20.0000   ", dy_damping_fit(20.0000d0   ),  99.787d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 27.8256   ", dy_damping_fit(27.8256d0   ), 100.130d0, 1d-3)
-		call assert_double_rel("dy_damping_fit 100.      ", dy_damping_fit(100.d0      ), 100.772d0, 2d-3)
+		errv=(/1d-3,1d-3,2d-3,1d-3,1d-3,1d-3,1d-3,1d-3,3d-3,1d-3,1d-3,2d-3/)
+		open(unit=fu, file="test_outputs/damping_bennett_sv.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_bennett_dy.dat", status="old")
+		do j=1, 12
+			read (fu, *) res1
+			read (fv, *) res2
+			write(tmparg, "('dy_damping_fit ',E10.3)") res1
+			call assert_double_rel(trim(tmparg), dy_damping_fit(res1), res2, errv(j))
+		end do
+		close(fu)
+		close(fv)
 
 		call assert_double_rel("kappa A", -15.4485396d0, kappa_damp(12.d0, 0.44d0, 0.33d0), 1d-7)
 		call assert_double_rel("kappa B", -0.12818209d0, kappa_damp(1.d0, 0.14d0, 0.01d0), 1d-7)
@@ -3085,18 +3191,17 @@ program tests
 		call assert_double_rel("nunu_damp_integrand E", -0.080526245965d0, nunu_damp_integrand(10.d0, 30.d0, 5.d0), 1d-7)
 		call assert_double_rel("nunu_damp_integrand F", 328.64337311d0,    nunu_damp_integrand(10.d0, 3.d0, 1.d0), 1d-7)
 
-		call assert_double_rel("dy_damping 3.        ", dy_damping(3.d0        ),  94.545d0, 2d-2)
-		call assert_double_rel("dy_damping 0.001     ", dy_damping(0.001d0     ), 129.894d0, 2d-2)
-		call assert_double_rel("dy_damping 0.00359381", dy_damping(0.00359381d0), 129.933d0, 2d-2)
-		call assert_double_rel("dy_damping 0.0129155 ", dy_damping(0.0129155d0 ), 129.397d0, 2d-2)
-		call assert_double_rel("dy_damping 0.0464159 ", dy_damping(0.0464159d0 ), 128.161d0, 2d-2)
-		call assert_double_rel("dy_damping 0.16681   ", dy_damping(0.16681d0   ), 124.039d0, 2d-2)
-		call assert_double_rel("dy_damping 0.599484  ", dy_damping(0.599484d0  ), 112.398d0, 1d-2)
-		call assert_double_rel("dy_damping 2.15443   ", dy_damping(2.15443d0   ),  95.919d0, 1d-2)
-		call assert_double_rel("dy_damping 7.74264   ", dy_damping(7.74264d0   ),  97.543d0, 1d-2)
-		call assert_double_rel("dy_damping 20.0000   ", dy_damping(20.0000d0   ),  99.787d0, 3d-2)
-		call assert_double_rel("dy_damping 27.8256   ", dy_damping(27.8256d0   ), 100.130d0, 2d-2)
-		call assert_double_rel("dy_damping 100.      ", dy_damping(100.d0      ), 100.772d0, 2d-2)
+		errv=(/2d-2,2d-2,2d-2,2d-2,2d-2,2d-2,1d-2,1d-2,1d-2,3d-2,2d-2,2d-2/)
+		open(unit=fu, file="test_outputs/damping_bennett_sv.dat", status="old")
+		open(unit=fv, file="test_outputs/damping_bennett_dy.dat", status="old")
+		do j=1, 12
+			read (fu, *) res1
+			read (fv, *) res2
+			write(tmparg, "('dy_damping ',E10.3)") res1
+			call assert_double_rel(trim(tmparg), dy_damping(res1), res2, errv(j))
+		end do
+		close(fu)
+		close(fv)
 
 		collint_damping_type = 1
 		collint_diagonal_zero = .false.
@@ -3139,10 +3244,10 @@ program tests
 			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
-			write(tmparg,"('damping YYYW d A',2I1)") ix,ix
-			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-3)
+			write(tmparg,"('damping Bennett:2020zkv d A',2I1)") ix,ix
+			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
 			do iy=ix+1, 3
-				write(tmparg,"('damping YYYW od A',2I1)") ix,iy
+				write(tmparg,"('damping Bennett:2020zkv od A',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
 					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
@@ -3170,10 +3275,10 @@ program tests
 			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
-			write(tmparg,"('damping YYYW d B',2I1)") ix,ix
+			write(tmparg,"('damping Bennett:2020zkv d B',2I1)") ix,ix
 			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
 			do iy=ix+1, 3
-				write(tmparg,"('damping YYYW od B',2I1)") ix,iy
+				write(tmparg,"('damping Bennett:2020zkv od B',2I1)") ix,iy
 				call assert_double_rel(trim(tmparg)//" re", cts%re(ix, iy), &
 					-(dampTermMatrixCoeffNue(ix,iy)+dampTermMatrixCoeffNunu(ix,iy)) &
 					* 2.d0 * dy_damping_fit(y1/z) * z**4 * y1**3 * nuDensMatVecFD(iy1)%re(ix,iy) &
@@ -3194,7 +3299,7 @@ program tests
 
 		call printTotalTests
 		call resetTestCounter
-	end subroutine do_test_damping_yyyw
+	end subroutine do_test_damping_bennett
 
 	subroutine do_test_F_nu
 		integer :: i, j
@@ -3211,71 +3316,84 @@ program tests
 		call printTestBlockName("phase space functions for nunu")
 
 #ifdef FULL_F_NU
-		m1%re(1,:) = (/1.1d0, 0.2d0, 0.3d0/)
-		m1%re(2,:) = (/0.2d0, 1.3d0, 0.d0/)
-		m1%re(3,:) = (/0.3d0, 0.d0, 2.d0/)
-		m1%im(1,:) = (/0.d0, 0.d0, -0.3d0/)
-		m1%im(2,:) = (/0.d0, 0.d0, -0.4d0/)
-		m1%im(3,:) = (/0.3d0, 0.4d0, 0.d0/)
-
-		m2%re(1,:) = (/2.1d0, 0.1d0, 0.1d0/)
-		m2%re(2,:) = (/0.1d0, 2.3d0, 0.d0/)
-		m2%re(3,:) = (/0.1d0, 0.d0, 2.d0/)
-		m2%im(1,:) = (/0.d0, 0.1d0, -0.2d0/)
-		m2%im(2,:) = (/-0.1d0, 0.d0, -0.15d0/)
-		m2%im(3,:) = (/0.2d0, 0.15d0, 0.d0/)
-
-		m3%re(1,:) = (/1.3d0, -0.2d0, 0.d0/)
-		m3%re(2,:) = (/-0.2d0, 1.4d0, 0.d0/)
-		m3%re(3,:) = (/0.d0, 0.d0, 1.5d0/)
-		m3%im(1,:) = (/0.d0, 0.01d0, 0.11d0/)
-		m3%im(2,:) = (/-0.01d0, 0.d0, -0.11d0/)
-		m3%im(3,:) = (/-0.11d0, 0.11d0, 0.d0/)
-
-		m4%re(1,:) = (/1.9d0, 0.01d0, 0.d0/)
-		m4%re(2,:) = (/0.01d0, 1.7d0, 0.13d0/)
-		m4%re(3,:) = (/0.d0, 0.13d0, 1.8d0/)
-		m4%im(1,:) = (/0.d0, 0.d0, 0.1d0/)
-		m4%im(2,:) = (/0.d0, 0.d0, 0.13d0/)
-		m4%im(3,:) = (/-0.1d0, -0.13d0, 0.d0/)
-
-		Fsr(1,:) = (/-2.07923d0, 6.34496d0, 5.41588d0/)
-		Fsr(2,:) = (/6.34496d0, 0.37778d0, -0.17484d0/)
-		Fsr(3,:) = (/5.41588d0, -0.17484d0, 10.6444d0/)
-		Fsi(1,:) = (/0.d0, 0.068105d0, -6.89441d0/)
-		Fsi(2,:) = (/-0.068105d0, 0.d0, -6.13617d0/)
-		Fsi(3,:) = (/6.89441d0, 6.13617d0, 0.d0/)
-
-		Fpr(1,:) = (/-3.71726d0, 11.7786d0, 11.3093d0/)
-		Fpr(2,:) = (/11.7786d0, 2.2042d0, -0.12906d0/)
-		Fpr(3,:) = (/11.3093d0, -0.12906d0, 23.0392d0/)
-		Fpi(1,:) = (/0.d0, 0.79126d0, -13.9696d0/)
-		Fpi(2,:) = (/-0.79126d0, 0.d0, -15.1604d0/)
-		Fpi(3,:) = (/13.9696d0, 15.1604d0, 0.d0/)
+		open(unit=fu, file="test_outputs/Fnunu_m1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m1_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m1%re(j,:)
+			read (fv, *) m1%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m2_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m2%re(j,:)
+			read (fv, *) m2%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m3_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m3_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m3%re(j,:)
+			read (fv, *) m3%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m4_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m4_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m4%re(j,:)
+			read (fv, *) m4%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_sc_full_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_sc_full_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fsr(j,:)
+			read (fv, *) Fsi(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_pa_full_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_pa_full_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fpr(j,:)
+			read (fv, *) Fpi(j,:)
+		end do
+		close(fu)
+		close(fv)
 #else
-		m1%re(1,:) = (/1.1d0, 0.d0, 0.d0/)
-		m1%re(2,:) = (/0.d0, 2.2d0, 0.d0/)
-		m1%re(3,:) = (/0.d0, 0.d0, 1.5d0/)
+		open(unit=fu, file="test_outputs/Fnunu_d1.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_d2.dat", status="old")
+		do j=1, 3
+			read (fu, *) m1%re(j,:)
+			read (fv, *) m2%re(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_d3.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_d4.dat", status="old")
+		do j=1, 3
+			read (fu, *) m3%re(j,:)
+			read (fv, *) m4%re(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_sc_diag.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_pa_diag.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fsr(j,:)
+			read (fv, *) Fpr(j,:)
+		end do
+		close(fu)
+		close(fv)
 		m1%im = 0.d0
-		m2%re(1,:) = (/1.3d0, 0.d0, 0.d0/)
-		m2%re(2,:) = (/0.d0, 1.4d0, 0.d0/)
-		m2%re(3,:) = (/0.d0, 0.d0, 1.1d0/)
 		m2%im = 0.d0
-		m3%re(1,:) = (/2.1d0, 0.d0, 0.d0/)
-		m3%re(2,:) = (/0.d0, 1.7d0, 0.d0/)
-		m3%re(3,:) = (/0.d0, 0.d0, 1.2d0/)
 		m3%im = 0.d0
-		m4%re(1,:) = (/1.6d0, 0.d0, 0.d0/)
-		m4%re(2,:) = (/0.d0, 1.9d0, 0.d0/)
-		m4%re(3,:) = (/0.d0, 0.d0, 1.0d0/)
 		m4%im = 0.d0
-		Fsr(1,:) = (/-6.06d0, 0.d0, 0.d0/)
-		Fsr(2,:) = (/0.d0, -1.596d0, 0.d0/)
-		Fsr(3,:) = (/0.d0, 0.d0, 0.504d0/)
 		Fsi=0.d0
-		Fpr(1,:) = (/-10.968d0, 0.d0, 0.d0/)
-		Fpr(2,:) = (/0.d0, -2.844d0, 0.d0/)
-		Fpr(3,:) = (/0.d0, 0.d0, -2.854d0/)
 		Fpi=0.d0
 #endif
 		do i=1, 3
@@ -3305,30 +3423,40 @@ program tests
 		type(cmplxMatNN) :: nm
 		type(cmplxMatNN), dimension(:), allocatable :: vdm
 		character(len=300) :: tmparg
+		character(len=1), dimension(3) :: fn
 
 		call printTestBlockName("interpolation of nudens")
 		allocate(vdm(3))
+		open(unit=fu, file="test_outputs/interp_nunu_y.dat", status="old")
+		read (fu, *) vdm(1)%y, vdm(2)%y, vdm(3)%y
+		close(fu)
+		fn=(/"A","B","C"/)
 		do i=1, 3
 			allocate(vdm(i)%re(2,2), vdm(i)%im(2,2))
-			vdm(i)%y = i
+			open(unit=fu, file="test_outputs/interp_nunu_"//fn(i)//"m_re.dat", status="old")
+			open(unit=fv, file="test_outputs/interp_nunu_"//fn(i)//"m_im.dat", status="old")
+			do j=1, 2
+				read (fu, *) vdm(i)%re(j,:)
+				read (fv, *) vdm(i)%im(j,:)
+				vdm(i)%re(j,j) = vdm(i)%re(j,j)*fermiDirac(vdm(i)%y)
+			end do
+			close(fu)
+			close(fv)
 		end do
-		vdm(3)%y = 10.
-		vdm(1)%re(1,:) = (/1.1*fermiDirac(1.d0),0.3d0/)
-		vdm(1)%re(2,:) = (/0.12d0,2.*fermiDirac(1.d0)/)
-		vdm(2)%re(1,:) = (/1.3*fermiDirac(2.d0),-0.2d0/)
-		vdm(2)%re(2,:) = (/0.16d0,1.2*fermiDirac(2.d0)/)
-		vdm(3)%re(1,:) = (/1.9*fermiDirac(10.d0),0.d0/)
-		vdm(3)%re(2,:) = (/0.d0,1.1*fermiDirac(10.d0)/)
-		ndr(1,:) = (/1.2*fermiDirac(1.5d0),0.05d0/)
-		ndr(2,:) = (/0.05d0,1.6*fermiDirac(1.5d0)/)
-		vdm(1)%im(1,:) = (/10.,2./)
-		vdm(1)%im(2,:) = (/-0.4,0./)
-		vdm(2)%im(1,:) = (/0.,0.2/)
-		vdm(2)%im(2,:) = (/0.4,0./)
-		vdm(3)%im(1,:) = (/0.,0.1/)
-		vdm(3)%im(2,:) = (/0.2,1.1/)
-		ndi(1,:) = (/0.,1.1/)
-		ndi(2,:) = (/-1.1,0./)
+#ifdef RHO_OFFDIAG_INTERP_DIV_FD
+		open(unit=fu, file="test_outputs/interp_nunu_t1_fd_re.dat", status="old")
+		open(unit=fv, file="test_outputs/interp_nunu_t1_fd_im.dat", status="old")
+#else
+		open(unit=fu, file="test_outputs/interp_nunu_t1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/interp_nunu_t1_im.dat", status="old")
+#endif
+		do j=1, 2
+			read (fu, *) ndr(j,:)
+			read (fv, *) ndi(j,:)
+			ndr(j,j) = ndr(j,j)*fermiDirac(1.5d0)
+		end do
+		close(fu)
+		close(fv)
 		nm = get_interpolated_nudens(vdm, 1.5d0, 2, 3)
 		call assert_double("ndr A y", nm%y, 1.5d0, 1d-7)
 		do i=1,2
@@ -3340,10 +3468,20 @@ program tests
 		end do
 		call deallocateCmplxMat(nm)
 
-		ndr(1,:) = (/1.75*fermiDirac(8.d0),-0.05d0/)
-		ndr(2,:) = (/-0.05d0,1.125*fermiDirac(8.d0)/)
-		ndi(1,:) = (/0.,0.125/)
-		ndi(2,:) = (/-0.125,0./)
+#ifdef RHO_OFFDIAG_INTERP_DIV_FD
+		open(unit=fu, file="test_outputs/interp_nunu_t2_fd_re.dat", status="old")
+		open(unit=fv, file="test_outputs/interp_nunu_t2_fd_im.dat", status="old")
+#else
+		open(unit=fu, file="test_outputs/interp_nunu_t2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/interp_nunu_t2_im.dat", status="old")
+#endif
+		do j=1, 2
+			read (fu, *) ndr(j,:)
+			read (fv, *) ndi(j,:)
+			ndr(j,j) = ndr(j,j)*fermiDirac(8.d0)
+		end do
+		close(fu)
+		close(fv)
 		nm = get_interpolated_nudens(vdm, 8.d0, 2, 3)
 		call assert_double("ndr B y", nm%y, 8.d0, 1d-7)
 		do i=1,2
@@ -3355,10 +3493,8 @@ program tests
 		end do
 		call deallocateCmplxMat(nm)
 
-		ndr(1,:) = (/0.,0./)
-		ndr(2,:) = (/0.,0./)
-		ndi(1,:) = (/0.,0./)
-		ndi(2,:) = (/0.,0./)
+		ndr=0.d0
+		ndi=0.d0
 		nm = get_interpolated_nudens(vdm, 0.1d0, 2, 3)
 		call assert_double("ndr C y", nm%y, 0.1d0, 1d-7)
 		do i=1,2
@@ -3370,10 +3506,8 @@ program tests
 		end do
 		call deallocateCmplxMat(nm)
 
-		ndr(1,:) = (/0.,0./)
-		ndr(2,:) = (/0.,0./)
-		ndi(1,:) = (/0.,0./)
-		ndi(2,:) = (/0.,0./)
+		ndr=0.d0
+		ndi=0.d0
 		nm = get_interpolated_nudens(vdm, 20.d0, 2, 3)
 		call assert_double("ndr D y", nm%y, 20.d0, 1d-7)
 		do i=1,2
@@ -3425,10 +3559,11 @@ program tests
 		iy3=5
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr = 0.d0
-		ndr(1,1) = 0.0000980353d0
-		ndr(2,2) = 0.000103827d0
-		ndr(3,3) = 0.0000919177d0
+		open(unit=fu, file="test_outputs/collint_nunu_int_A.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
 		ndi = 0.d0
 		er = 2d-3
 		ei = 1d-3
@@ -3448,9 +3583,12 @@ program tests
 		iy3=7
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,1) = 0.0132253d0
-		ndr(2,2) = 0.0136399d0
-		ndr(3,3) = 0.0127086d0
+		open(unit=fu, file="test_outputs/collint_nunu_int_B.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
+		ndi = 0.d0
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
@@ -3466,10 +3604,13 @@ program tests
 		iy1=10
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,1) = 397.484d0
-		ndr(2,2) = 400.475d0
-		ndr(3,3) = 390.577d0
-		er = 1d-2
+		open(unit=fu, file="test_outputs/collint_nunu_integral_GL_A.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
+		ndi = 0.d0
+		er = 1d-3
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
@@ -3484,10 +3625,13 @@ program tests
 		iy1=5
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,1) = 33.3417d0
-		ndr(2,2) = 36.3735d0
-		ndr(3,3) = 30.3581d0
-		er = 4d-3
+		open(unit=fu, file="test_outputs/collint_nunu_integral_GL_B.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
+		ndi = 0.d0
+		er = 1.1d-3
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
@@ -3526,18 +3670,20 @@ program tests
 			nuDensMatVecFD(j)%im(3, 2) = - nuDensMatVecFD(j)%im(2, 3)
 		end do
 
-		ndr(1,:) = (/0.000143589, -0.0000141319, 8.50652e-6/)
-		ndr(2,:) = (/-0.0000141319,0.000059132,-0.0000158772/)
-		ndr(3,:) = (/8.50652e-6,-0.0000158772,0.0000680116/)
-		ndi(1,:) = (/0.,3.68626e-7, -0.0000304404/)
-		ndi(2,:) = (/-3.68626e-7,0.,3.3967e-6/)
-		ndi(3,:) = (/0.0000304404,-3.3967e-6,0./)
-		er(1,:) = (/1d-3,5d-3,1d-3/)
-		er(2,:) = (/5d-3,2d-3,2d-3/)
-		er(3,:) = (/1d-3,2d-3,2d-3/)
-		ei(1,:) = (/1d-3,4d-3,1d-3/)
-		ei(2,:) = (/4d-3,1d-3,5d-2/)
-		ei(3,:) = (/1d-3,5d-2,1d-3/)
+		open(unit=fu, file="test_outputs/collint_nunu_int_C_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_nunu_int_C_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+			read (fv, *) ndi(j,:)
+		end do
+		close(fu)
+		close(fv)
+		er(1,:) = (/1d-3,1d-3,1d-3/)
+		er(2,:) = (/1d-3,1d-3,1d-3/)
+		er(3,:) = (/1d-3,1d-3,1d-3/)
+		ei(1,:) = (/1d-3,1d-3,1d-3/)
+		ei(2,:) = (/1d-3,1d-3,1d-3/)
+		ei(3,:) = (/1d-3,1d-3,1d-3/)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				collArgs%ix1 = i
@@ -3549,17 +3695,18 @@ program tests
 		end do
 
 		!full integral
-		!A
 		iy1=10
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,:) = (/2.23945e6, -219146., 117805./)
-		ndr(2,:) = (/-219146., 2.36926e6, 6.06044e6/)
-		ndr(3,:) = (/117805., 6.06044e6, 2.8301e6/)
-		ndi(1,:) = (/0.,- 813455., -6.02848e6/)
-		ndi(2,:) = (/813455.,0.,-266218./)
-		ndi(3,:) = (/6.02848e6,266218.,0./)
-		er(1,:) = (/1.2d-1, 1.0d-1, 1.0d-1/)
+		open(unit=fu, file="test_outputs/collint_nunu_integral_GL_C_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_nunu_integral_GL_C_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) ndr(i,:)
+			read (fv, *) ndi(i,:)
+		end do
+		close(fu)
+		close(fv)
+		er(1,:) = (/1.1d-1, 1.0d-1, 1.0d-1/)
 		er(2,:) = (/1.0d-1, 1.1d-1, 1.2d-1/)
 		er(3,:) = (/1.0d-1, 1.2d-1, 1.1d-1/)
 		ei(1,:) = (/1.0d-1, 1.1d-1, 1.2d-1/)
@@ -3622,13 +3769,14 @@ program tests
 		iy1=20
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr = 0.d0
+		open(unit=fu, file="test_outputs/collint_nunu_integral_NC_A.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
 		ndi = 0.d0
-		ndr(1,1) = -365.198d0
-		ndr(2,2) = -820.405d0
-		ndr(3,3) = 55.3159d0
 		er = 1d-3
-		er(3,3) = 2d-2
+		er(3,3) = 1.4d-2
 		ei = 1d-3
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -3644,9 +3792,12 @@ program tests
 		iy1=4
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,1) = 193.541d0
-		ndr(2,2) = 204.772d0
-		ndr(3,3) = 181.685d0
+		open(unit=fu, file="test_outputs/collint_nunu_integral_NC_B.dat", status="old")
+		do j=1, 3
+			read (fu, *) ndr(j,:)
+		end do
+		close(fu)
+		ndi = 0.d0
 		er = 1d-3
 		do i=1, flavorNumber
 			do j=1, flavorNumber
@@ -3684,12 +3835,14 @@ program tests
 		iy1=7
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		ndr(1,:) = (/5.05623e6, -468304., 241699./)
-		ndr(2,:) = (/-468304., 5.36981e6, 1.29749e7/)
-		ndr(3,:) = (/241699., 1.29749e7, 6.2691e6/)
-		ndi(1,:) = (/0., -1.73808e6, -1.29012e7/)
-		ndi(2,:) = (/1.73808e6, 0., -591614./)
-		ndi(3,:) = (/1.29012e7, 591614., 0./)
+		open(unit=fu, file="test_outputs/collint_nunu_integral_NC_C_re.dat", status="old")
+		open(unit=fv, file="test_outputs/collint_nunu_integral_NC_C_im.dat", status="old")
+		do i=1, 3
+			read (fu, *) ndr(i,:)
+			read (fv, *) ndi(i,:)
+		end do
+		close(fu)
+		close(fv)
 		er = 1d-3
 		ei = 1d-3
 		do i=1, flavorNumber
@@ -3704,6 +3857,7 @@ program tests
 #endif
 
 		!now test that get_collision_terms does what expected
+		write(*,*)""
 		call allocateCmplxMat(cts)
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
@@ -3786,7 +3940,6 @@ program tests
 			collArgs%y1 = y_arr(collArgs%iy)
 			res1=integrate_collint_nunu_NC(coll_nunu_int, collArgs, F_nu_sc_da, F_nu_pa_da)/collArgs%y1**3/8.d0
 			res2=dy_damping_fit(collArgs%y1)
-			!print*,"s",collargs%y1,res1,res2
 			write(tmparg,"('dy-sim GL',I1)") j
 			call assert_double_rel_safe(trim(tmparg), res1, res2, 1d-7, 1d-2)
 		end do

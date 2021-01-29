@@ -940,7 +940,7 @@ enddo                                                   !SG-PF
 		call addToLog("[cosmology] ...done!")
 	end subroutine test_nuDens_speed
 
-	!kappa function for damping terms (YYYW)
+	!kappa function for damping terms (Bennett:2020zkv)
 	elemental function kappa_damp(a, b, c)
 		real(dl) :: kappa_damp
 		real(dl), intent(in) :: a, b, c

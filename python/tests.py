@@ -481,9 +481,9 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertTrue(np.isclose(run.x[0], 0.01, rtol=1e-4))
             self.assertTrue(np.isclose(run.x[-1], 35.0, rtol=1e-4))
             self.assertTrue(np.isclose(run.z[0], 1.0288, rtol=1e-4))
-            self.assertTrue(np.isclose(run.Neff, 3.0429, atol=1e-4))
-            self.assertTrue(np.isclose(run.wfin, 1.0965, atol=1e-4))
-            self.assertTrue(np.isclose(run.zfin, 1.5357, atol=1e-4))
+            self.assertTrue(np.isclose(run.Neff, 3.04348, atol=1e-4))
+            self.assertTrue(np.isclose(run.wfin, 1.09657, atol=1e-5))
+            self.assertTrue(np.isclose(run.zfin, 1.53573, atol=1e-5))
             self.assertTrue(np.isclose(run.deltaNeffi[0], 1.0158, atol=1e-4))
             self.assertTrue(np.isclose(run.deltaNeffi[1], 1.0139, atol=1e-4))
             self.assertTrue(np.isclose(run.deltaNeffi[2], 1.0132, atol=1e-4))
@@ -4158,11 +4158,11 @@ class TestPrepareIni(unittest.TestCase):
                 ),
                 call(
                     "--collint_damping_type",
-                    choices=["zero", "yyyw", "McKellar:1992ja"],
-                    default="yyyw",
+                    choices=["zero", "Bennett:2020zkv", "McKellar:1992ja"],
+                    default="Bennett:2020zkv",
                     help="define the scheme for the off-diagonal contribution of collision integrals."
                     + "Use 'zero' to ignore all the off-diagonal components, "
-                    + "'yyyw' to use the expressions from YYYW or "
+                    + "'Bennett:2020zkv' to use the expressions from the paper Bennett:2020zkv or "
                     + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
                 ),
                 call(
@@ -4308,19 +4308,7 @@ class TestPrepareIni(unittest.TestCase):
                 call("--x_in", type=float, default=0.01, help="initial value of x"),
                 call("--x_fin", type=float, default=35, help="final value of x"),
                 call("--Ny", type=int, default=30, help="number of total points in y"),
-                call(
-                    "--Nylog",
-                    type=int,
-                    default=5,
-                    help="number of log-spaced points between y_in and y_cen",
-                ),
                 call("--y_min", type=float, default=0.01, help="minimum value of y"),
-                call(
-                    "--y_cen",
-                    type=float,
-                    default=1,
-                    help="value of y where to switch between log- and linear spacing",
-                ),
                 call("--y_max", type=float, default=20, help="maximum value of y"),
                 call(
                     "--dlsoda_atol",
@@ -4437,9 +4425,7 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.x_in, 0.01)
         self.assertEqual(args.x_fin, 35)
         self.assertEqual(args.Ny, 30)
-        self.assertEqual(args.Nylog, 5)
         self.assertEqual(args.y_min, 0.01)
-        self.assertEqual(args.y_cen, 1)
         self.assertEqual(args.y_max, 20)
         self.assertEqual(args.dlsoda_rtol, 1.0e-6)
         self.assertEqual(args.dlsoda_atol, 1.0e-6)
@@ -4449,7 +4435,7 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.no_GL, False)
         self.assertEqual(args.collint_diagonal_zero, False)
         self.assertEqual(args.collint_offdiag_nodamp, False)
-        self.assertEqual(args.collint_damping_type, "yyyw")
+        self.assertEqual(args.collint_damping_type, "Bennett:2020zkv")
         self.assertEqual(args.collint_d_no_nue, False)
         self.assertEqual(args.collint_d_no_nunu, False)
         self.assertEqual(args.collint_od_no_nue, False)
@@ -4487,9 +4473,7 @@ class TestPrepareIni(unittest.TestCase):
             ["--x_in=0.1"],
             ["--x_fin=40.5"],
             ["--Ny=30"],
-            ["--Nylog=5"],
             ["--y_min=0.02"],
-            ["--y_cen=2.2"],
             ["--y_max=30.6"],
             ["--dlsoda_rtol=1.3e-5"],
             ["--dlsoda_atol=1.3e-4"],
@@ -4525,9 +4509,7 @@ class TestPrepareIni(unittest.TestCase):
             ["--x_in=abc"],
             ["--x_fin=abc"],
             ["--Ny=abc"],
-            ["--Nylog=abc"],
             ["--y_min=abc"],
-            ["--y_cen=abc"],
             ["--y_max=abc"],
             ["--dlsoda_rtol=abc"],
             ["--dlsoda_atol=abc"],
@@ -4761,15 +4743,13 @@ class TestPrepareIni(unittest.TestCase):
                 "verbose": "vb",
                 "collint_diagonal_zero": False,
                 "collint_offdiag_nodamp": False,
-                "collint_damping_type": "yyyw",
+                "collint_damping_type": "Bennett:2020zkv",
                 "Nx": 200,
                 "x_in": 0.001,
                 "x_fin": 35,
                 "Trh": 123.0,
                 "Ny": 24,
-                "Nylog": 4,
                 "y_min": 0.01,
-                "y_cen": 1,
                 "y_max": 20,
                 "dlsoda_atol_z": 1e-6,
                 "dlsoda_atol_d": 1e-6,
@@ -4815,9 +4795,7 @@ class TestPrepareIni(unittest.TestCase):
                 "x_fin": 35,
                 "Trh": 123.0,
                 "Ny": 24,
-                "Nylog": 4,
                 "y_min": 0.01,
-                "y_cen": 1,
                 "y_max": 20,
                 "dlsoda_atol": "dlsoda_atol_z = %s\n" % 1e-6
                 + "dlsoda_atol_d = %s\n" % 1e-6
@@ -4849,9 +4827,7 @@ class TestPrepareIni(unittest.TestCase):
                 "x_fin": 35,
                 "Trh": 123.0,
                 "Ny": 24,
-                "Nylog": 4,
                 "y_min": 0.01,
-                "y_cen": 1,
                 "y_max": 20,
                 "dlsoda_atol": 1e-5,
                 "dlsoda_atol_z": 1e-6,
@@ -4894,9 +4870,7 @@ class TestPrepareIni(unittest.TestCase):
                 "x_fin": 35,
                 "Trh": 123.0,
                 "Ny": 24,
-                "Nylog": 4,
                 "y_min": 0.01,
-                "y_cen": 1,
                 "y_max": 20,
                 "collint_d_no_nue": "F",
                 "collint_d_no_nunu": "F",
@@ -5000,9 +4974,7 @@ class TestPrepareIni(unittest.TestCase):
             "x_in": 0.001,
             "x_fin": 35,
             "Ny": 24,
-            "Nylog": 4,
             "y_min": 0.01,
-            "y_cen": 1,
             "y_max": 20,
             "ftqed_temperature_corr": "F",
             "ftqed_ord3": "T",
@@ -5054,9 +5026,7 @@ class TestPrepareIni(unittest.TestCase):
             "x_fin = 35",
             "use_gauss_laguerre = T",
             "Ny = 24",
-            "Nylog = 4",
             "y_min = 0.01",
-            "y_cen = 1",
             "y_max = 20",
             "outputFolder = abcd/",
             "checkpoint = T",

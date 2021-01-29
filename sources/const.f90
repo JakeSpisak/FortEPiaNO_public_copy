@@ -1,8 +1,9 @@
 module Precision
 implicit none
 
-integer, parameter :: dl = KIND(1.d0)
 integer, parameter :: sp = KIND(1.0)
+integer, parameter :: dl = KIND(1.d0)
+integer, parameter :: qp = 16
 end module Precision
 
 module constants
@@ -30,48 +31,48 @@ module constants
 
 	real(dl), parameter :: zero = 0.0d0
 
-	!most constants are from the PDG 2018, with 2019 update, as of 19/11/19
-	!M. Tanabashi et al. (Particle Data Group), Phys.Rev.D, 98, 030001 (2018).
-	real(dl), parameter :: m_e = 0.5109989461*Mev2eV!eV
+	!most constants are from the PDG 2020
+#ifndef SINSQTHW
+#define SINSQTHW 0.23121
+#endif
+	!numbers used in the real calculation
+	real(dl), parameter :: m_e = 0.51099895*Mev2eV!eV
+	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
+	real(dl), parameter :: sin2thW_Z = 0.23121
+	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
+	real(dl), parameter :: planck_mass = 1.220890e19*Gev2eV
 	real(dl), parameter :: m_e_sq = m_e**2
 	real(dl), parameter :: m_e_cub = m_e**3
-	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
 	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
 	real(dl), parameter :: x_muon_cut = 0.5d0!do not compute mu densities above this value, to avoid float overflow
 	real(dl), parameter :: G_F = 1.1663787d-5/(Gev2eV*Gev2eV)
 	real(dl), parameter :: G_Fsq = G_F * G_F
-#ifndef DO_TESTS
-	real(dl), parameter :: sin2thW = 0.23122
-	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
-#else
-	real(dl), parameter :: sin2thW = 0.23129
-	real(dl), parameter :: m_W = 80.385*Gev2eV!eV
-#endif
-	real(dl), parameter :: cos2thW = 1.d0-sin2thW
+	real(dl), parameter :: cos2thW_Z = 1.d0-sin2thW_Z
 #ifdef GLR_ZERO_MOMENTUM
 	!from 10.1016/j.ppnp.2013.03.004
+	real(dl), parameter :: sin2thW = 0.23871
 	real(dl), parameter :: gLe = 0.727d0
 	real(dl), parameter :: gLmt = -0.273d0
 	real(dl), parameter :: gRemt = 0.233d0
 #else
+	real(dl), parameter :: sin2thW = SINSQTHW
 	real(dl), parameter :: gLe = sin2thW + 0.5d0
 	real(dl), parameter :: gLmt = sin2thW - 0.5d0
 	real(dl), parameter :: gRemt = sin2thW
 #endif
-	real(dl), parameter :: alpha_fine = 1.d0/137.035999139d0
+	real(dl), parameter :: alpha_fine = 1.d0/137.035999084d0
 	real(dl), parameter :: electron_charge = sqrt(4*PI*alpha_fine)
 	real(dl), parameter :: electron_charge_sq = electron_charge ** 2
 	real(dl), parameter :: electron_charge_cub = electron_charge ** 3
-	real(dl), parameter :: planck_mass = 1.220910e19*Gev2eV
 
 	integer,  parameter :: maxFlavorNumber = 6
 	integer,  parameter :: i_flavorNumber = 3
-	!from PDG 2018: M. Tanabashi et al. (Particle Data Group), Phys.Rev.D, 98, 030001 (2018).
-	real(dl), parameter :: i_theta12 = 0.297
-	real(dl), parameter :: i_theta13 = 0.0215
-	real(dl), parameter :: i_theta23 = 0.425
-	real(dl), parameter :: i_dm21 = 7.37e-05
-	real(dl), parameter :: i_dm31 = 0.00256
+	!from PDG 2020
+	real(dl), parameter :: i_theta12 = 0.307
+	real(dl), parameter :: i_theta13 = 0.0218
+	real(dl), parameter :: i_theta23 = 0.545
+	real(dl), parameter :: i_dm21 = 7.53e-05
+	real(dl), parameter :: i_dm31 = 0.002453+i_dm21
 
 	real(dl), parameter :: leptDensFactor = -2*SQRT2*G_F*m_e**6/(m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
@@ -81,7 +82,7 @@ module constants
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
 
 	character(len=5), parameter :: dblfmt = "E17.9"
-	character(len=10), parameter :: multidblfmt = "(*(E17.9))"
+	character(len=10), parameter :: multidblfmt = "(*("//dblfmt//"))"
 end module constants
 
 module variables
@@ -152,8 +153,8 @@ module variables
 	integer :: verbose = 1
 	real(dl) :: Nprintderivs = 100.d0
 	logical :: use_gauss_laguerre
-	integer :: Nx, Ny, Nylog
-	real(dl) :: x_in, x_fin, y_min, y_max, y_cen, z_in, logx_in, logx_fin
+	integer :: Nx, Ny
+	real(dl) :: x_in, x_fin, y_min, y_max, z_in, logx_in, logx_fin
 	real(dl) :: t_in
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
 	real(dl), dimension(:), allocatable :: feq_arr
@@ -185,6 +186,7 @@ module variables
 	integer, parameter :: interp_nx0 = 750, interp_nz0 = 250, interp_nxz0 = 1800
 	integer :: interp_nx, interp_nz, interp_nxz
 	integer, parameter :: interp_ny = 100
+	logical :: tests_interpolations = .true.
 	real(dl), parameter :: interp_logy_min = -2.
 	real(dl), parameter :: interp_logy_max = 1.5
 	real(dl), parameter :: interp_zmin0 = 0.9d0, interp_zmax0 = 1.5d0
@@ -195,8 +197,18 @@ module variables
 	real(dl), dimension(:), allocatable :: interp_yvec
 	real(dl), dimension(:), allocatable :: interp_zvec
 	real(dl), dimension(:), allocatable :: interp_xozvec
+	real(dl) :: low_xoz
 
 	contains
+
+	function get_interpolation_folder()
+		character (len=300) :: get_interpolation_folder
+		write(get_interpolation_folder, &
+			"('interpolations/xi',SP 1P E9.2,'_xf',1P E8.2E1,'_yl',1P E8.2E1,'_yu',1P E8.2E1,'_zl',1P E8.2E1,'_zu',1P E8.2E1,'_xz',1P E8.2E1,'/')" &
+		) &
+			x_in, x_fin, y_min, y_max, interp_zmin, interp_zmax, low_xoz
+		call system("mkdir -p "//trim(get_interpolation_folder))
+	end function
 
 	pure subroutine allocateCmplxMat(m)
 		type(cmplxMatNN), intent(inout) :: m

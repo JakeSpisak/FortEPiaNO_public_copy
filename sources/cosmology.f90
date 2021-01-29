@@ -5,6 +5,7 @@ module fpCosmology
 	use fpErrors
 	use ftqed
 	use linear_interpolation_module
+	use sgTestUtils
 	implicit none
 
 	type nonRelativistic_fermion
@@ -230,6 +231,9 @@ module fpCosmology
 		integer :: ix, iz, iflag
 		real(dl) :: x,z, t1,t2
 		real(8) :: timer1
+		character(len=300) :: tmpstr
+		integer, parameter :: uid = 8324
+		logical :: exists
 
 		call addToLog("[cosmo] Initializing "//fermionName//"...")
 		cls%fermionName = fermionName
@@ -242,33 +246,108 @@ module fpCosmology
 		allocate(edwt_vec(interp_nx, interp_nz))
 		allocate(p_vec(interp_nx, interp_nz))
 		thmass = isElectron .and. ftqed_e_mth_leptondens
-		!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
-		do ix=1, interp_nx
-			do iz=1, interp_nz
-				if (cls%isElectron) &
-					edwt_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .true.)
-				ednt_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .false.)
-				p_vec(ix,iz) = cls%pressureFull(interp_xvec(ix), interp_zvec(iz), thmass)
+		write(tmpstr, "(A,'cosmo_',A,'_',L,'_',L,'_',L,'.dat')") trim(get_interpolation_folder()), fermionName, thmass, ftqed_temperature_corr, ftqed_log_term
+		inquire(file=trim(tmpstr), exist=exists)
+		if (exists) then
+			call addToLog("[cosmo] read values from file: "//trim(tmpstr))
+			open(file=trim(tmpstr), unit=uid, form="unformatted")
+			do ix=1, interp_nx
+				do iz=1, interp_nz
+					if (cls%isElectron) then
+						read(uid) edwt_vec(ix,iz), ednt_vec(ix,iz), p_vec(ix,iz)
+					else
+						read(uid) ednt_vec(ix,iz), p_vec(ix,iz)
+					end if
+				end do
 			end do
-		end do
-		!$omp end parallel do
+			close(uid)
+			call addToLog("[cosmo] check if few saved values are correct: ")
+			ix=123
+			iz=89
+			if (cls%isElectron) &
+				call assert_double_rel_safe( &
+					"check saved "//fermionName//" quantities edwt A", &
+					edwt_vec(ix,iz), &
+					cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .true.), &
+					1d-7, 1d-6 &
+				)
+			call assert_double_rel_safe( &
+				"check saved "//fermionName//" quantities ednt A", &
+				ednt_vec(ix,iz), &
+				cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .false.), &
+				1d-7, 1d-6 &
+			)
+			call assert_double_rel_safe( &
+				"check saved "//fermionName//" quantities p A", &
+				p_vec(ix,iz), &
+				cls%pressureFull(interp_xvec(ix), interp_zvec(iz), thmass), &
+				1d-7, 1d-6 &
+			)
+			ix=611
+			iz=189
+			if (cls%isElectron) &
+				call assert_double_rel_safe( &
+					"check saved "//fermionName//" quantities edwt A", &
+					edwt_vec(ix,iz), &
+					cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .true.), &
+					1d-7, 1d-6 &
+				)
+			call assert_double_rel_safe( &
+				"check saved "//fermionName//" quantities ednt A", &
+				ednt_vec(ix,iz), &
+				cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .false.), &
+				1d-7, 1d-6 &
+			)
+			call assert_double_rel_safe( &
+				"check saved "//fermionName//" quantities p A", &
+				p_vec(ix,iz), &
+				cls%pressureFull(interp_xvec(ix), interp_zvec(iz), thmass), &
+				1d-7, 1d-6 &
+			)
+			call addToLog("everything works!")
+		else
+			!$omp parallel do default(shared) private(ix, iz) schedule(dynamic)
+			do ix=1, interp_nx
+				do iz=1, interp_nz
+					if (cls%isElectron) &
+						edwt_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .true.)
+					ednt_vec(ix,iz) = cls%energyDensityFull(interp_xvec(ix), interp_zvec(iz), .false.)
+					p_vec(ix,iz) = cls%pressureFull(interp_xvec(ix), interp_zvec(iz), thmass)
+				end do
+			end do
+			!$omp end parallel do
+			open(file=trim(tmpstr), unit=uid, status="unknown", form="unformatted")
+			do ix=1, interp_nx
+				do iz=1, interp_nz
+					if (cls%isElectron) then
+						write(uid) edwt_vec(ix,iz), ednt_vec(ix,iz), p_vec(ix,iz)
+					else
+						write(uid) ednt_vec(ix,iz), p_vec(ix,iz)
+					end if
+				end do
+			end do
+			close(uid)
+			call addToLog("[cosmo] values saved to file: "//trim(tmpstr))
+		end if
 		if (cls%isElectron) &
 			call cls%enDensWThMassInterp%initialize(interp_xvec, interp_zvec, edwt_vec, iflag)!linear
 		call cls%enDensNoThMassInterp%initialize(interp_xvec, interp_zvec, ednt_vec, iflag)!linear
 		call cls%pressInterp%initialize(interp_xvec, interp_zvec, p_vec, iflag)!linear
 
-		call random_seed()
-		call random_number(x)
-		call random_number(z)
-		x=(x_fin-x_in)*x + x_in
-		z=0.4d0*z + z_in
-		write(*,"(' [cosmo] test energyDensity/pressure interpolation in x,z=',*(E12.5))") x, z
-		t1 = cls%energyDensityFull(x, z, thmass)
-		t2 = cls%energyDensity(x, z, thmass)
-		write(*,"(' [cosmo] comparing energy density (true vs interp): ',*(E17.10))") t1, t2
-		t1 = cls%pressureFull(x, z, thmass)
-		t2 = cls%pressure(x, z, thmass)
-		write(*,"(' [cosmo] comparing pressure (true vs interp): ',*(E17.10))") t1, t2
+		if (tests_interpolations) then
+			call random_seed()
+			call random_number(x)
+			call random_number(z)
+			x=(x_fin-x_in)*x + x_in
+			z=0.4d0*z + z_in
+			write(*,"(' [cosmo] test energyDensity/pressure interpolation in x,z=',*(E12.5))") x, z
+			t1 = cls%energyDensityFull(x, z, thmass)
+			t2 = cls%energyDensity(x, z, thmass)
+			write(*,"(' [cosmo] comparing energy density (true vs interp): ',*(E17.10))") t1, t2
+			t1 = cls%pressureFull(x, z, thmass)
+			t2 = cls%pressure(x, z, thmass)
+			write(*,"(' [cosmo] comparing pressure (true vs interp): ',*(E17.10))") t1, t2
+		endif
 #endif
 		call addToLog("[cosmo] ...done!")
 	end subroutine nonRelativistic_initialize

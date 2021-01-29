@@ -40,25 +40,16 @@ module fpInteractions
 		integer :: ix, iy
 		real(dl) :: nue_nue_nux, nue_nue_nus, nue_numu_nutau, nue_nux_nus
 		real(dl) :: nunu_nue_nux, nunu_nue_nus, nunu_numu_nutau, nunu_nux_nus
-		real(dl) :: xW
-
-		xW = sin2thW
 
 		dampTermMatrixCoeffNue = 0.d0
 		dampTermMatrixCoeffNunu = 0.d0
 
+#ifdef NO_NUE_ANNIHILATION
+		if (collint_offdiag_damping) &
+			call criticalError("Nu-e annihilation channel can only be disabled in full integral calculations at the moment")
+#else
 		!numbers from McKellar:1992ja
 		!terms for scattering, annihilation with electrons
-#ifdef NO_NUE_ANNIHILATION
-		!nu_e - nu_X
-		nue_nue_nux = 8.d0
-		!nu_mu - nu_tau
-		nue_numu_nutau = 0.d0
-		!nu_e - nu_s
-		nue_nue_nus = 2.d0*(8.d0*sin2thW**2 + 4.d0*sin2thW + 1.d0)
-		!nu_X - nu_s
-		nue_nux_nus = 2.d0*(8.d0*sin2thW**2 - 4.d0*sin2thW + 1.d0)
-#else
 		!nu_e - nu_X
 		nue_nue_nux = &
 			8.d0 &!e+nu -> e+nu
@@ -88,15 +79,17 @@ module fpInteractions
 		nunu_nux_nus = 2.d0 * 13.d0 !nu+(b)nu -> nu+(b)nu
 
 		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
-			!formulas from YYYW notes
+			!formulas from Bennett:2020zkv
 			nunu_nue_nux = 1.d0
 			nunu_numu_nutau = 1.d0
-			nue_nue_nux = 2.d0*xW**2 + 0.25d0
-			nue_numu_nutau = 2.d0*xW**2 - xW + 0.25d0
+			nue_nue_nux = 2.d0*sin2thW**2 + 0.25d0
+			nue_numu_nutau = 2.d0*sin2thW**2 - sin2thW + 0.25d0
 			nunu_nue_nus = 0.d0!check
 			nunu_nux_nus = 0.d0!check
-			nue_nue_nus = 3.d0*xW**2 + 1.d0*xW + 0.25d0!check
-			nue_nux_nus = 3.d0*xW**2 - 1.d0*xW + 0.25d0!check
+			nue_nue_nus = 3.d0*sin2thW**2 + 1.d0*sin2thW + 0.25d0!check
+			nue_nux_nus = 3.d0*sin2thW**2 - 1.d0*sin2thW + 0.25d0!check
+			if (any(sterile)) &
+				call criticalError("Error: damping terms not yet implemented with sterile neutrinos.")
 		end if
 		if (flavorNumber .ge. 2) then
 			if (sterile(2)) then
@@ -134,8 +127,8 @@ module fpInteractions
 		end do
 
 		if (collint_offdiag_damping .and. collint_damping_type.eq.1) then
-			!formulas from YYYW notes
-			write(*,*) "[collint] Example d(y) for damping factors a la YYYW..."
+			!formulas from Bennett:2020zkv
+			write(*,*) "[collint] Example d(y) for damping factors a la Bennett:2020zkv..."
 			write(*,"(3A14)") "y", "f_eq(y)", "d(y)"
 			do ix=1, Ny
 				write(*,"(3E14.6)") y_arr(ix), feq_arr(ix), dy_damping_fit(y_arr(ix))
@@ -1062,31 +1055,31 @@ module fpInteractions
 	end function PI2_ne_f
 
 	!integrands of collision terms
-	pure function coll_nue_ann_int(iy2, y4, obj, F_ab)
+	pure function coll_nue_ann_int(iy2, y3, obj, F_ab)
 		!annihilation
 		use fpInterfaces1
 		procedure (F_annihilation) :: F_ab
 		integer, intent(in) :: iy2
-		real(dl), intent(in) :: y4
+		real(dl), intent(in) :: y3
 		type(coll_args), intent(in) :: obj
 		real(dl) :: coll_nue_ann_int
 		real(dl), dimension(2) :: pi2_vec
-		real(dl) :: y2, y3, f3, f4, E3, E4, dme2, t1, t2
+		real(dl) :: y2, y4, f3, f4, E3, E4, dme2, t1, t2
 
 		coll_nue_ann_int = 0.d0
 
 		dme2 = obj%dme2
 		y2 = y_arr(iy2)
-		E4 = Ebare_i_dme(obj%x, y4, dme2)
-		E3 = obj%y1 + y2 - E4
-		t1 = E3*E3
+		E3 = Ebare_i_dme(obj%x, y3, dme2)
+		E4 = obj%y1 + y2 - E3
+		t1 = E4*E4
 		t2 = obj%x*obj%x + dme2
 		if (t1<t2) then
-			y3 = -1.d0
+			y4 = -1.d0
 		else
-			y3 = sqrt(t1 - t2)
+			y4 = sqrt(t1 - t2)
 		endif
-		if (.not.(y3.lt.0.d0 &
+		if (.not.(y4.lt.0.d0 &
 				.or. obj%y1.gt.y3+y2+y4 &
 				.or. y2.gt.obj%y1+y3+y4 &
 				.or. y3.gt.obj%y1+y2+y4 &
@@ -1096,7 +1089,6 @@ module fpInteractions
 			pi2_vec = PI2_nn_f(obj%y1, y2, y3, y4, E3, E4)
 			coll_nue_ann_int = coll_nue_ann_int + &
 				y3/E3 * &
-				y4/E4 * &
 				( &
 					pi2_vec(1) * F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 1, 1, obj%ix1,obj%ix2) &
 					+ pi2_vec(2) * F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy2),f3,f4, 2, 2, obj%ix1,obj%ix2) &
@@ -1141,7 +1133,6 @@ module fpInteractions
 			pi2_vec = PI2_ne_f (obj%y1, y2, y3, y4, E2, E4)
 			coll_nue_sc_int = coll_nue_sc_int + &
 				y2/E2 * &
-				y4/E4 * &
 				( &
 					( pi2_vec(1) + pi2_vec(2) ) * ( & !F_sc^LL + F_sc^RR
 						F_ab(nuDensMatVecFD(obj%iy),nuDensMatVecFD(iy3),f2,f4, 1, 1, obj%ix1,obj%ix2) &
@@ -1355,7 +1346,7 @@ module fpInteractions
 			!coefficient for damping terms
 			if (collint_damping_type.eq.2) then !dampings from McKellar:1992ja
 				dampfact = z*z*z*z * y1*y1*y1 * dampTermFactor
-			else if (collint_damping_type.eq.1) then !dampings from YYYW
+			else if (collint_damping_type.eq.1) then !dampings from Bennett:2020zkv
 				dampfact = z*z*z*z * y1*y1*y1 * 2.d0 * dy_damping_fit(y1/z)
 			end if
 			!off-diagonal elements:
@@ -1368,7 +1359,6 @@ module fpInteractions
 						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_im, F_ab_sc_im)
 					end if
-#ifndef DO_TESTS
 #ifdef FULL_F_NU
 					if (.not.collint_od_no_nunu) then
 						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
@@ -1376,7 +1366,6 @@ module fpInteractions
 						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_im, F_nu_pa_im)/4.d0
 					end if
-#endif
 #endif
 				end do
 #ifndef DO_TESTS

@@ -6,12 +6,20 @@ FortEPiaNO is a Fortran code to compute the evolution of neutrino oscillations i
 The code is written to flexible, it can work with two to six neutrinos (active or sterile).  
 At the moment, no lepton asymmetries nor non-standard interactions are implemented.
 
-If you use this code for scientific publications, please cite the paper:  
+If you use this code for scientific publications, please cite the papers:  
 **Thermalisation of sterile neutrinos in the early Universe in the 3+1 scheme with full mixing matrix**  
 _S. Gariazzo, P.F. de Salas, S. Pastor_  
 JCAP 07 (2019) 014.  
 [arxiv:1905.11290](https://arxiv.org/abs/1905.11290),  
 see also on [INSPIRE](https://inspirehep.net/record/1736955).  
+
+and
+
+**Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED**  
+_J.J. Bennett and others_
+[arxiv:2012.02726](https://arxiv.org/abs/2012.02726),  
+see also on [INSPIRE](https://inspirehep.net/record/1835091).  
+
 ```
 @article{Gariazzo:2019gyi,
       author         = "Gariazzo, S. and de Salas, P. F. and Pastor, S.",
@@ -26,6 +34,15 @@ see also on [INSPIRE](https://inspirehep.net/record/1736955).
       archivePrefix  = "arXiv",
       primaryClass   = "astro-ph.CO",
       SLACcitation   = "%%CITATION = ARXIV:1905.11290;%%"
+}
+@Article{Bennett:2020zkv,
+        author = "Bennett, Jack J. and others",
+         title = "{Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED}",
+          year = "2020",
+ archiveprefix = "arXiv",
+  primaryclass = "hep-ph",
+        eprint = "2012.02726",
+  reportnumber = "CPPC-2020-10",
 }
 ```
 
@@ -64,6 +81,9 @@ For example (add the option to the `make` command):
 * `LOW_REHEATING=1` enables calculations for the low-reheating model;
 * `NO_MUONS=1` disables the contribution of muons to the energy budget of the universe.
 * `NO_NUE_ANNIHILATION=1` disables the contribution from neutrino to electron annihilation processes to collision integrals.
+* `RHO_OFFDIAG_INTERP_DIV_FD=1` enables to interpolate all the entries of the neutrino density matrix after dividing by a Fermi-Dirac distribution (by default, this is done only for diagonal entries).
+* `SINSQTHW=x` to set a custom value equal to `x` for the weak mixing angle (for example SINSQTHW=0.23).
+
 
 **WARNING**: the test suite will not work if the flag `NO_MUONS=1` is activated, or even if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
 
@@ -144,6 +164,17 @@ Auxiliary files, which in principle you should not need to edit:
 * `stuff.f90`: old functions that were used in previous versions of the code and now enter only the tests;
 * `test_utils.f90`: assertion functions and test counts;
 * `utilities.f90`: utilities for integration, interpolation, checkpointing, log file manipulation, time measurements.
+
+
+### 3.1.Additional scripts
+Together with the main code, the fortran sources include few useful scripts that allow to generate some auxiliary files.  
+Such files (they store the position and weight of Gauss-Laguerre momentum nodes, and values to be interpolated for electron mass corrections, cosmological quantities, FTQED corrections) would be generated in any case during the execution of the main program, but you can prepare them earlier, once and for all.
+
+The scripts are:
+
+* `bin/prepare_gl_nodes`: it produces a file with the position and weights of all `N` nodes for each valid degree `N` of Laguerre polynomials that can be used in the code. In the default configuration, this will generate two sets of 1500 files. Compile with `make preparenodes`.
+* `bin/prepare_interpolations`: using few different available options, it generates files with all the points that are used to compute interpolated quantities in the code. These include cosmological and FTQED integrals such as the electron mass corrections or energy density. Compile with `make prepareinterp` (with precompiler options, eventually, including the values of XIN, XFIN, YMIN, YMAX, STARTX).
+* `bin/read_gl_nodes`: read first and last nodes from the previously created list, and store them in a file, used for internal checks if available. Compile with `make readnodes`.
 
 
 ## 4.Acknowledgments
