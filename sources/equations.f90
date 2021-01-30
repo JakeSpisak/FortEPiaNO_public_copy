@@ -606,7 +606,7 @@ module fpEquations
 	end subroutine saveRelevantInfo
 
 	subroutine solver
-		real(dl) :: xstart, xend, xchk
+		real(dl) :: xstart, xend, xchk, xs
 		integer :: ix, nchk, ix_in
 		character(len=3) :: istchar
 		character(len=100) :: tmpstring
@@ -619,7 +619,7 @@ module fpEquations
 		integer,dimension(8) :: values
 		integer, parameter :: timefileu = 8970
 		character(len=*), parameter :: timefilen = '/time.log'
-        integer :: m, i, j, k
+		integer :: m, i, j, k
 
 		deriv_counter = 0
 
@@ -636,6 +636,7 @@ module fpEquations
 		lrw=22+ntot*(ntot+9)
 		liw=20+ntot
 		allocate(atol(ntot), rwork(lrw), iwork(liw))
+		atol = dlsoda_atol_z
 		k = 1
 		do m = 1, Ny
 			do i = 1, flavorNumber
@@ -660,6 +661,7 @@ module fpEquations
 		jt=2
 
 		call densMat_2_vec(nuDensVec)
+
 		nuDensVec(ntot-1) = z_in - 1.d0 !neutrino temperature start at same value as photon temperature
 		nuDensVec(ntot) = z_in - 1.d0
 
@@ -683,6 +685,7 @@ module fpEquations
 		end if
 
 		do ix=ix_in+1, Nx
+			xs = xstart
 			xend   = x_arr(ix)
 			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") xstart, xend
 			call addToLog("[solver] Start DLSODA..."//trim(tmpstring))
@@ -870,8 +873,10 @@ module fpEquations
 		use fpInterfaces1
 		procedure (nuDensity_integrator), pointer :: nuDensityInt
 		real(dl) :: ndeq, tmp, w, z
+		real(dl) :: totrhonu, Neff
 		real(dl), dimension(:), allocatable :: tmpvec
 		integer :: ix, iy
+		type(cmplxMatNN), dimension(:), allocatable :: rho_mass
 
 		if (use_gauss_laguerre) then
 			nuDensityInt => nuDensityGL
@@ -879,6 +884,10 @@ module fpEquations
 			nuDensityInt => nuDensityNC
 		end if
 
+		w = nuDensVec(ntot-1) + 1.d0
+		z = nuDensVec(ntot) + 1.d0
+
+		!save final diagonal elements of the neutrino density matrix, in flavor basis
 		call openFile(9876, trim(outputFolder)//'/rho_final.dat', .true.)
 		allocate(tmpvec(flavorNumber))
 		do iy=1, nY
@@ -888,10 +897,25 @@ module fpEquations
 			write(9876, multidblfmt) nuDensMatVecFD(iy)%y, tmpvec
 		end do
 		close(9876)
+		!save final diagonal elements of the neutrino density matrix, in mass basis
+		allocate(rho_mass(Ny))
+		call updateMatterDensities(x_arr(Nx), z)
+		!$omp parallel do shared(rho_mass) private(iy) schedule(static)
+		do iy=1, Ny
+			rho_mass(iy) = rho_diag_mass(iy)
+		end do
+		!$omp end parallel do
+		call openFile(9876, trim(outputFolder)//'/rho_final_mass.dat', .true.)
+		do iy=1, nY
+			do ix=1, flavorNumber
+				tmpvec(ix)=rho_mass(iy)%re(ix, ix)
+			end do
+			write(9876, multidblfmt) nuDensMatVecFD(iy)%y, tmpvec
+		end do
+		close(9876)
+		deallocate(rho_mass)
 		deallocate(tmpvec)
 
-		w = nuDensVec(ntot-1) + 1.d0
-		z = nuDensVec(ntot) + 1.d0
 		call openFile(9876, trim(outputFolder)//'/resume.dat', .true.)
 		if (save_w_evolution) then
 			write(*,"('final w = ',F11.8)") w
@@ -899,17 +923,16 @@ module fpEquations
 		end if
 		write(*,"('final z = ',F11.8)") z
 		write(9876,"('final z = ',F11.8)") z
-		!since it was never taken into account, w must not be used here to get the delta_rho,
-		!otherwise the result is not referring to the same quantity
-		ndeq=nuDensityEq(1.d0)
+		totrhonu = allNuDensity()
+		Neff = Neff_from_rho_z(z)
 		do ix=1, flavorNumber
-			tmp = (nuDensityInt(ix, ix) - ndeq)*nuFactor(ix)/ndeq
-			write(*,"('dRho_',I1,'  = ',F9.6)") ix, tmp
-			write(9876,"('dRho_',I1,'  = ',F9.6)") ix, tmp
+			tmp = nuDensityInt(ix, ix)*nuFactor(ix)/totrhonu * Neff
+			write(*,"('deltaNeff_',I1,'  = ',F9.6)") ix, tmp
+			write(9876,"('deltaNeff_',I1,'  = ',F9.6)") ix, tmp
 		end do
-		tmp = Neff_from_rho_z(z)
-		write(*,"('Neff    = ',F9.6)") tmp
-		write(9876,"('Neff    = ',F9.6)") tmp
+		write(*,"('Neff    = ',F9.6)") Neff
+		write(9876,"('Neff    = ',F9.6)") Neff
+
 		close(9876)
 	end subroutine finalresults
 end module fpEquations

@@ -612,6 +612,7 @@ enddo                                                   !SG-PF
 		integrate_dRhoNu = params%evaluate(y)
 	end function integrate_dRhoNu
 
+#ifndef NO_INTERPOLATION
 	subroutine dz_o_dx_old(x,z, ydot, n)!eq 17 from doi:10.1016/S0370-2693(02)01622-2
 		real(dl), intent(in) :: x,z
 		integer, intent(in) :: n
@@ -699,6 +700,7 @@ enddo                                                   !SG-PF
 
 		call addToLog("[equations] ...done!")
 	end subroutine test_dzodx_speed
+#endif
 
 	!cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 	function rombint_vec(obj,f,a,b,tol, maxit)

@@ -137,6 +137,8 @@ program tests
 		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
 		low_xoz = x_in/interp_zmax
 		interp_xozvec = logspace(log10(low_xoz), logx_fin, interp_nxz)
+		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
+		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 	end subroutine do_test_initialization
 
 	subroutine do_basic_tests
@@ -883,6 +885,7 @@ program tests
 		ftqed_log_term = .false.
 		ftqed_ord3 = .false.
 
+#ifndef NO_INTERPOLATION
 		open(unit=fu, file="test_outputs/jkg_ab.dat", status="old")
 		do ix=1,3
 			read (fu, *) x,r1,r2
@@ -892,6 +895,7 @@ program tests
 			call assert_double("B test "//trim(tmparg), res(2), r2, 1d-5)
 		end do
 		close(fu)
+#endif
 
 		call printTotalTests
 		call resetTestCounter
@@ -916,6 +920,7 @@ program tests
 		end do
 		call printTestBlockName("dz/dx functions")
 
+#ifndef NO_INTERPOLATION
 		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
 		v1=(/8d-3,7d-6,6d-6/)
 		do ix=1,3
@@ -925,6 +930,7 @@ program tests
 			call assert_double_rel("dz_o_dx old test "//trim(tmparg), ydot(n), r, v1(ix))
 		end do
 		close(fu)
+#endif
 
 		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
 		open(unit=fv, file="test_outputs/dzodx_n.dat", status="old")
@@ -959,8 +965,10 @@ program tests
 			read (fu, *) x,y,z,r
 			write(tmparg,"(I1)") ix
 			call assert_double_rel("dme2F test "//trim(tmparg), dme2_electronFull(x, y, z), r, 1d-6)
+#ifndef NO_INTERPOLATION
 			call assert_double_rel("dme2 test "//trim(tmparg), dme2_electron(x, y, z), r, 1d-5)
 			call assert_double_rel("dme2nl test "//trim(tmparg), dme2_nolog(x, z), r, 1d-5)
+#endif
 		end do
 		close(fu)
 
@@ -1886,6 +1894,7 @@ program tests
 		!second series of sc and ann tests
 		iy1 = 67
 		z = 1.3d0
+		collArgs%y1 = y_arr(iy1)
 		do i=1, flavorNumber
 			do iy=1, Ny
 				nuDensMatVecFD(iy)%re(i, i) = 1.d0 * fermiDirac(y_arr(iy))
@@ -3114,17 +3123,6 @@ program tests
 		call resetTestCounter
 	end subroutine do_test_diagonalization
 
-	subroutine do_timing_tests
-		timing_tests = .true.
-		call test_dzodx_speed
-		call test_nuDens_speed
-		call time_electron_energyDensity
-		call init_interp_dme2_e
-		call init_interp_FD
-		call init_interp_d123
-		call test_speed_coll_int
-	end subroutine do_timing_tests
-
 	subroutine do_test_damping_bennett
 		real(dl) :: x,w,z,dme2,y1
 		integer :: ix, iy1, iy, j
@@ -3234,7 +3232,7 @@ program tests
 			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
 		do ix=1, 3
-			write(tmparg,"('damping Bennett:2020zkv d A',2I1)") ix,iy
+			write(tmparg,"('damping Bennett:2020zkv d A',2I1)") ix,ix
 			call assert_double_rel(trim(tmparg)//" re", cts%re(ix, ix), res1, 1d-4)
 			do iy=ix+1, 3
 				write(tmparg,"('damping Bennett:2020zkv od A',2I1)") ix,iy
@@ -3956,4 +3954,21 @@ program tests
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_collint_nunu
+
+	subroutine do_timing_tests
+		timing_tests = .true.
+#ifndef NO_INTERPOLATION
+		call test_dzodx_speed
+#endif
+		call test_nuDens_speed
+		call time_electron_energyDensity
+
+#ifndef NO_INTERPOLATION
+		call init_interp_dme2_e
+#endif
+		call init_interp_FD
+		call init_interp_d123
+		call test_speed_coll_int
+	end subroutine do_timing_tests
+
 end program tests

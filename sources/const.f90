@@ -40,6 +40,7 @@ module constants
 	real(dl), parameter :: sin2thW_Z = 0.23121
 	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
 	real(dl), parameter :: planck_mass = 1.220890e19*Gev2eV
+	real(dl), parameter :: m_e_sq = m_e**2
 	real(dl), parameter :: m_e_cub = m_e**3
 	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
 	real(dl), parameter :: x_muon_cut = 0.5d0!do not compute mu densities above this value, to avoid float overflow

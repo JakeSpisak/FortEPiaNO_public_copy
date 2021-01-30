@@ -93,8 +93,6 @@ This mostly concerns integrals of energy densities (photons, charged leptons) an
 In order to change this default behaviour and use the full expressions at each step, at the expense of slightly slowing down the calculation, one can compile the code using `make NO_INTERPOLATION=1`, so that the interpolations will be disabled.
 For the default configuration in the `ini/explanatory.ini` file, the actual change in the final effective number of neutrinos is smaller than `1e-4` and the execution takes approximately 15% longer.
 
-**WARNING**: the test suite will not compile if the flag `NO_INTERPOLATION=1` is activated, or if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
-
 
 ## 2.Python scripts
 Some useful python scripts are delivered together with the main fortran code.
@@ -128,6 +126,7 @@ For possible plotting functions include:
 * `plotNeff`: plot the evolution of the effective number of neutrinos, which is correctly normalized only at very early times or today;
 * `plotEnergyDensity`: plot the evolution of the energy density of the different components and their sum;
 * `plotEntropy`: plot the evolution of the entropy density of the different components and their sum;
+* `plotNumberDensity`: plot the evolution of the number density of the different components and their sum;
 * `doAllPlots`: it will create a series of pdf plots in the output folder, calling
 `plotZ`, `plotW`, `plotRhoFin`, `plotRhoDiagY`, `plotRhoOffDiagY`, `plotdRhoOffDiagY`,
 for flavor and mass eigenstates if available.

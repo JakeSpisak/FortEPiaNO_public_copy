@@ -210,7 +210,7 @@ def setParser():
     parser.add_argument(
         "--Nx", type=int, default=200, help="number of points to save in x"
     )
-    parser.add_argument("--x_in", type=float, default=0.001, help="initial value of x")
+    parser.add_argument("--x_in", type=float, default=0.01, help="initial value of x")
     parser.add_argument("--x_fin", type=float, default=35, help="final value of x")
     parser.add_argument(
         "--Ny", type=int, default=30, help="number of total points in y"

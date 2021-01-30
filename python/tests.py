@@ -8,6 +8,7 @@ import matplotlib
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 if sys.version_info[0] < 3:
     import unittest2 as unittest
@@ -59,9 +60,14 @@ def setUpModule():
 
 def tearDownModule():
     """Delete test folder"""
-    folder = "output/no/"
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
+    for folder in [
+        "output/no/",
+        "output/nonexistent",
+        "output/nonexistent1",
+        "output/nonexistent2",
+    ]:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
 
 
 class FPTestCase(unittest.TestCase):
@@ -285,6 +291,99 @@ class TestFortepianoOutput(FPTestCase):
         self.assertEqualArray(x, [np.nan])
         self.assertEqualArray(y, [np.nan])
 
+    def test_setParser(self):
+        """test the fortepianoOutput.setParser function"""
+        parser = argparse.ArgumentParser()
+        parser.add_argument = MagicMock()
+        with patch("argparse.ArgumentParser", return_value=parser) as _ap, patch(
+            "argparse.ArgumentParser.add_argument"
+        ) as _aa:
+            self.assertEqual(fpom.setParser(), parser)
+            _ap.assert_called_once_with(prog="fortepianoOutput.py")
+        parser.add_argument.assert_has_calls(
+            [
+                call(
+                    "folder",
+                    help="the name of the output folder that contains"
+                    + " the results of the Fortran code",
+                ),
+                call(
+                    "--nnu",
+                    type=int,
+                    default=3,
+                    help="number of neutrinos to consider"
+                    + " (if more rows/columns of the density matrix exist, "
+                    + "they will be ignored)",
+                ),
+                call(
+                    "--label",
+                    default="",
+                    help="a label to identify the run in the plot legends",
+                ),
+                call(
+                    "--deltas",
+                    action="store_true",
+                    help="if True, print the relative variation of "
+                    + " energy and number density for each neutrino",
+                ),
+                call(
+                    "--full",
+                    action="store_false",
+                    help="if True, read also all the off-diagonal"
+                    + " density matrix elements, otherwise ignore them"
+                    + " (to save time if not needed in the plots, for example)",
+                ),
+                call(
+                    "--plots",
+                    action="store_true",
+                    help="if True, produce a series of plots"
+                    + " after having read all the files",
+                ),
+                call(
+                    "--verbose",
+                    action="store_false",
+                    help="increase the number of messages printed by the code",
+                ),
+            ],
+            any_order=True,
+        )
+
+    def test_parsing(self):
+        """test that there are no errors in the parsing process"""
+        parser = fpom.setParser()
+        with self.assertRaises(SystemExit):
+            args = parser.parse_args(["abc", "def"])
+        args = parser.parse_args(["outdir"])
+        self.assertEqual(args.folder, "outdir")
+        self.assertEqual(args.nnu, 3)
+        self.assertEqual(args.label, "")
+        self.assertEqual(args.deltas, False)
+        self.assertEqual(args.full, True)
+        self.assertEqual(args.plots, False)
+        self.assertEqual(args.verbose, True)
+        for arg, val, lin in [
+            ["nnu", 4, "--nnu=4"],
+            ["label", "'abc d'", "--label='abc d'"],
+            ["deltas", True, "--deltas"],
+            ["full", False, "--full"],
+            ["plots", True, "--plots"],
+            ["verbose", False, "--verbose"],
+        ]:
+            args = parser.parse_args(["outdir", lin])
+            self.assertEqual(args.folder, "outdir")
+            self.assertEqual(args.nnu, val if "nnu" == arg else 3)
+            self.assertEqual(args.label, val if "label" == arg else "")
+            self.assertEqual(args.deltas, val if "deltas" == arg else False)
+            self.assertEqual(args.full, val if "full" == arg else True)
+            self.assertEqual(args.plots, val if "plots" == arg else False)
+            self.assertEqual(args.verbose, val if "verbose" == arg else True)
+        for lin in [
+            "--nnu=4.25",
+            "--nnu=aaa",
+        ]:
+            with self.assertRaises(SystemExit):
+                args = parser.parse_args(["outdir", lin])
+
 
 class TestFortEPiaNORun(FPTestCase):
     """Testing the FortEPiaNORun class"""
@@ -324,28 +423,42 @@ class TestFortEPiaNORun(FPTestCase):
         """test an example with FortEPiaNORun from explanatory.ini"""
         folder = "output/"
         run = fpom.FortEPiaNORun(folder, label="label")
+        with open("%s/ini.log" % folder) as _ini:
+            ini = _ini.read()
+        self.assertEqual(run.ini, ini.replace("\n", " "))
+        self.assertEqual(run.zCol, 1)
         fc = np.loadtxt("%s/fd.dat" % folder)
         self.assertEqualArray(run.yv, fc[:, 0])
         self.assertEqualArray(run.fd, fc[:, 1])
+        self.assertEqual(fc.shape[1], 2)
         fc = np.loadtxt("%s/z.dat" % folder)
+        Nx = len(fc)
         self.assertEqualArray(run.zdat, fc)
+        self.assertEqual(fc.shape[1], 3)
         fc = np.loadtxt("%s/Neff.dat" % folder)
         self.assertEqualArray(run.Neffdat, fc)
+        self.assertEqual(fc.shape[1], 3)
         fc = np.loadtxt("%s/energyDensity.dat" % folder)
         self.assertEqualArray(run.endens, fc)
+        self.assertEqual(fc.shape[1], 8)
         fc = np.loadtxt("%s/entropy.dat" % folder)
         self.assertEqualArray(run.entropy, fc)
+        self.assertEqual(fc.shape[1], 8)
         fc = np.loadtxt("%s/numberDensity.dat" % folder)
         self.assertEqualArray(run.number, fc)
+        self.assertEqual(fc.shape[1], 8)
         self.assertTrue(hasattr(run, "resume"))
         self.assertTrue(run.hasResume)
-        self.assertTrue(np.isclose(run.Neff, 3.04348, atol=1e-4))
-        self.assertTrue(np.isclose(run.wfin, 1.09657, atol=1e-5))
-        self.assertTrue(np.isclose(run.zfin, 1.53573, atol=1e-5))
-        self.assertIsInstance(run.deltarhofin, list)
-        self.assertTrue(np.isclose(run.deltarhofin[0], 0.46678, atol=2e-4))
-        self.assertTrue(np.isclose(run.deltarhofin[1], 0.46363, atol=2e-4))
-        self.assertTrue(np.isclose(run.deltarhofin[2], 0.46348, atol=2e-4))
+        self.assertIsInstance(run.deltaNeffi, np.ndarray)
+        self.assertTrue(np.isclose(run.x[0], 0.01, rtol=1e-4))
+        self.assertTrue(np.isclose(run.x[-1], 35.0, rtol=1e-4))
+        self.assertTrue(np.isclose(run.z[0], 1.0288, rtol=1e-4))
+        self.assertTrue(np.isclose(run.Neff, 3.0434, atol=2e-4))
+        self.assertTrue(np.isclose(run.wfin, 1.09652, atol=1e-4))
+        self.assertTrue(np.isclose(run.zfin, 1.53575, atol=1e-4))
+        self.assertTrue(np.isclose(run.deltaNeffi[0], 1.01594, atol=1e-4))
+        self.assertTrue(np.isclose(run.deltaNeffi[1], 1.01376, atol=1e-4))
+        self.assertTrue(np.isclose(run.deltaNeffi[2], 1.01366, atol=1e-4))
         self.assertEqual(len(run.rho), 3)
         self.assertEqual(len(run.rho[0]), 3)
         self.assertEqual(len(run.rho), 3)
@@ -362,6 +475,55 @@ class TestFortEPiaNORun(FPTestCase):
                 self.assertEqualArray(run.rho[i, j, 0], fc)
                 fc = np.loadtxt("%s/nuDens_nd_%d%d_im.dat" % (folder, i + 1, j + 1))
                 self.assertEqualArray(run.rho[i, j, 1], fc)
+        fc = np.loadtxt("%s/rho_final.dat" % folder)
+        self.assertEqualArray(fc.shape, (len(run.yv), 1 + run.nnu))
+        fc = np.loadtxt("%s/rho_final_mass.dat" % folder)
+        self.assertEqualArray(fc.shape, (len(run.yv), 1 + run.nnu))
+        # test that "deltas" creates the delta_ed and delta_nd attributes
+        self.assertFalse(hasattr(run, "delta_ed"))
+        self.assertFalse(hasattr(run, "delta_nd"))
+        run = fpom.FortEPiaNORun(folder, label="label", deltas=True)
+        rx = 0
+        self.assertEqualArray(
+            run.delta_ed,
+            [
+                (run.endens[-1, run.zCol + 4 + i] - run.endens[rx, run.zCol + 4 + i])
+                / run.endens[rx, run.zCol + 4 + i]
+                * 100
+                for i in range(run.nnu)
+            ],
+        )
+        self.assertEqual(
+            run.tot_delta_ed,
+            (
+                (
+                    np.sum(run.endens[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.endens[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                )
+                / np.sum(run.endens[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                * 100
+            ),
+        )
+        self.assertEqualArray(
+            run.delta_nd,
+            [
+                (run.number[-1, run.zCol + 4 + i] - run.number[rx, run.zCol + 4 + i])
+                / run.number[rx, run.zCol + 4 + i]
+                * 100
+                for i in range(run.nnu)
+            ],
+        )
+        self.assertEqual(
+            run.tot_delta_nd,
+            (
+                (
+                    np.sum(run.number[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                )
+                / np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                * 100
+            ),
+        )
         # now just do plots in order to see that everything works till the end
         self.runAllPlots(run)
 
@@ -382,7 +544,10 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "rhoM"))
         self.assertFalse(hasattr(run, "resume"))
         self.assertFalse(hasattr(run, "hasResume"))
-        self.assertFalse(hasattr(run, "deltarhofin"))
+        self.assertFalse(hasattr(run, "deltaNeffi"))
+        self.assertFalse(hasattr(run, "ini"))
+        self.assertFalse(hasattr(run, "zCol"))
+        self.assertFalse(hasattr(run, "filter99"))
         self.runAllPlots(run)
 
         # repeat creating some bad resume file, e.g. with nans
@@ -409,21 +574,43 @@ class TestFortEPiaNORun(FPTestCase):
                 self.assertTrue(np.isnan(run.rho[i, j, 0]))
                 self.assertTrue(np.isnan(run.rho[i, j, 1]))
         with open("%s/resume.dat" % folder) as _f:
-            resume = _f.read().replace("\n", " ")
-        self.assertEqual(run.resume, resume)
+            resume = _f.read()
+        self.assertEqual(run.resume, resume.replace("\n", " "))
         self.assertTrue(run.hasResume)
-        self.assertEqualArray(run.deltarhofin, [np.nan, np.nan, np.nan])
+        self.assertEqualArray(run.deltaNeffi, [np.nan, np.nan, np.nan])
         self.runAllPlots(run)
 
     def test_init(self):
         """test __init__"""
         folder = "output/"
         with patch("fortepianoOutput.FortEPiaNORun.doAllPlots") as _pl, patch(
+            "fortepianoOutput.FortEPiaNORun.readIni"
+        ) as _ri, patch("fortepianoOutput.FortEPiaNORun.readFD") as _rf, patch(
+            "fortepianoOutput.FortEPiaNORun.readWZ"
+        ) as _rw, patch(
+            "fortepianoOutput.FortEPiaNORun.readNeff"
+        ) as _rn, patch(
+            "fortepianoOutput.FortEPiaNORun.readEENDensities"
+        ) as _rd, patch(
+            "fortepianoOutput.FortEPiaNORun.readResume"
+        ) as _rr, patch(
+            "fortepianoOutput.FortEPiaNORun.readNuDensMatrix"
+        ) as _rm, patch(
+            "fortepianoOutput.FortEPiaNORun.prepareRhoFinal"
+        ) as _prf, patch(
             "fortepianoOutput.FortEPiaNORun.printTableLine"
         ) as _ptl:
             run = fpom.FortEPiaNORun(folder)
             self.assertEqual(_pl.call_count, 0)
-            _ptl.assert_called_once()
+            _ri.assert_called_once_with()
+            _rf.assert_called_once_with()
+            _rw.assert_called_once_with()
+            _rn.assert_called_once_with()
+            _rd.assert_called_once_with(False)
+            _rr.assert_called_once_with()
+            _rm.assert_called_once_with(True)
+            _prf.assert_called_once_with()
+            _ptl.assert_called_once_with()
         self.assertEqual(run.folder, folder)
         self.assertTrue(run.full)
         self.assertEqual(run.label, "")
@@ -431,18 +618,541 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertTrue(run.verbose)
 
         with patch("fortepianoOutput.FortEPiaNORun.doAllPlots") as _pl, patch(
+            "fortepianoOutput.FortEPiaNORun.readIni"
+        ) as _ri, patch("fortepianoOutput.FortEPiaNORun.readFD") as _rf, patch(
+            "fortepianoOutput.FortEPiaNORun.readWZ"
+        ) as _rw, patch(
+            "fortepianoOutput.FortEPiaNORun.readNeff"
+        ) as _rn, patch(
+            "fortepianoOutput.FortEPiaNORun.readEENDensities"
+        ) as _rd, patch(
+            "fortepianoOutput.FortEPiaNORun.readResume"
+        ) as _rr, patch(
+            "fortepianoOutput.FortEPiaNORun.readNuDensMatrix"
+        ) as _rm, patch(
+            "fortepianoOutput.FortEPiaNORun.prepareRhoFinal"
+        ) as _prf, patch(
             "fortepianoOutput.FortEPiaNORun.printTableLine"
         ) as _ptl:
             run = fpom.FortEPiaNORun(
-                folder, label="l", full=False, nnu=2, verbose=False, plots=True
+                folder,
+                nnu=2,
+                label="l",
+                deltas=True,
+                full=False,
+                verbose=False,
+                plots=True,
             )
-            _pl.assert_called_once()
-            _ptl.assert_called_once()
+            _pl.assert_called_once_with()
+            _ri.assert_called_once_with()
+            _rf.assert_called_once_with()
+            _rw.assert_called_once_with()
+            _rn.assert_called_once_with()
+            _rd.assert_called_once_with(True)
+            _rr.assert_called_once_with()
+            _rm.assert_called_once_with(False)
+            _prf.assert_called_once_with()
+            _ptl.assert_called_once_with()
         self.assertEqual(run.folder, folder)
         self.assertFalse(run.full)
         self.assertEqual(run.label, "l")
         self.assertEqual(run.nnu, 2)
         self.assertFalse(run.verbose)
+
+    def test_checkZdat(self):
+        """test the checkZdat property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertFalse(run.checkZdat())
+        run.zdat = "abc"
+        self.assertFalse(run.checkZdat())
+        run.zdat = np.array([[np.nan, np.nan, np.nan]])
+        self.assertFalse(run.checkZdat())
+        run.zdat = np.array([[np.nan, np.nan, np.nan], [np.nan, np.nan, np.nan]])
+        self.assertFalse(run.checkZdat())
+        run.zdat = np.array([[1, 2, 3]])
+        self.assertTrue(run.checkZdat())
+        run.zdat = np.array([[1, 2, 3], [4, 5, 6]])
+        self.assertTrue(run.checkZdat())
+
+    def test_x(self):
+        """test the x property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertTrue(np.isnan(run.x))
+        run.zdat = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(run.x, run.zdat[:, 0])
+
+    def test_z(self):
+        """test the z property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertTrue(np.isnan(run.z))
+        run.zdat = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(run.z, run.zdat[:, 1])
+
+    def test_Tgamma(self):
+        """test the Tgamma property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.zdat = np.array(
+            [
+                [11.0, 12.0, 13.0, 14.0],
+                [12.3, 13.4, 14.5, 15.6],
+                [13.4, 14.5, 15.6, 16.7],
+            ]
+        )
+        self.assertEqualArray(
+            run.Tgamma, run.zdat[:, 1] * fpom.ELECTRONMASS_MEV / run.zdat[:, 0]
+        )
+
+    def test_drhonu_dx(self):
+        """test the drhonu_dx property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertTrue(np.isnan(run.drhonu_dx))
+
+    def test_drhonu_dx_savgol(self):
+        """test the drhonu_dx_savgol property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertTrue(np.isnan(run.drhonu_dx_savgol))
+
+    def test_N_func(self):
+        """test the N_func property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertTrue(np.isnan(run.N_func))
+
+    def test_N_savgol(self):
+        """test the N_savgol property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertTrue(np.isnan(run.N_savgol))
+
+    def test_readEENDensities(self):
+        """test readEENDensities"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.folder = "output/nonexistent1"
+        self.assertFalse(hasattr(run, "endens"))
+        self.assertFalse(hasattr(run, "entropy"))
+        self.assertFalse(hasattr(run, "number"))
+        self.assertFalse(hasattr(run, "delta_ed"))
+        self.assertFalse(hasattr(run, "tot_delta_ed"))
+        self.assertFalse(hasattr(run, "delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_nd"))
+        if os.path.exists(run.folder):
+            shutil.rmtree(run.folder)
+        os.mkdir(run.folder)
+        run.readEENDensities()
+        self.assertTrue(np.isnan(run.endens))
+        self.assertTrue(np.isnan(run.entropy))
+        self.assertTrue(np.isnan(run.number))
+        with patch("numpy.loadtxt", return_value=np.array([0, 0])) as _l:
+            run.readEENDensities(deltas=True)
+            _l.assert_any_call("%s/energyDensity.dat" % run.folder)
+            _l.assert_any_call("%s/entropy.dat" % run.folder)
+            _l.assert_any_call("%s/numberDensity.dat" % run.folder)
+        self.assertEqualArray(run.endens, [0, 0])
+        self.assertEqualArray(run.entropy, [0, 0])
+        self.assertEqualArray(run.number, [0, 0])
+        self.assertFalse(hasattr(run, "delta_ed"))
+        self.assertFalse(hasattr(run, "tot_delta_ed"))
+        self.assertFalse(hasattr(run, "delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_nd"))
+        run.folder = "output/"
+        run.readIni()
+        run.readEENDensities()
+        self.assertEqualArray(
+            run.endens, np.loadtxt("%s/energyDensity.dat" % run.folder)
+        )
+        self.assertEqualArray(run.entropy, np.loadtxt("%s/entropy.dat" % run.folder))
+        self.assertEqualArray(
+            run.number, np.loadtxt("%s/numberDensity.dat" % run.folder)
+        )
+        self.assertFalse(hasattr(run, "delta_ed"))
+        self.assertFalse(hasattr(run, "tot_delta_ed"))
+        self.assertFalse(hasattr(run, "delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_nd"))
+        run.readEENDensities(deltas=True)
+        self.assertEqualArray(
+            run.endens, np.loadtxt("%s/energyDensity.dat" % run.folder)
+        )
+        self.assertEqualArray(run.entropy, np.loadtxt("%s/entropy.dat" % run.folder))
+        self.assertEqualArray(
+            run.number, np.loadtxt("%s/numberDensity.dat" % run.folder)
+        )
+        rx = 0
+        self.assertEqualArray(
+            run.delta_ed,
+            [
+                (run.endens[-1, run.zCol + 4 + i] - run.endens[rx, run.zCol + 4 + i])
+                / run.endens[rx, run.zCol + 4 + i]
+                * 100
+                for i in range(run.nnu)
+            ],
+        )
+        self.assertEqual(
+            run.tot_delta_ed,
+            (
+                (
+                    np.sum(run.endens[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.endens[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                )
+                / np.sum(run.endens[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                * 100
+            ),
+        )
+        self.assertEqualArray(
+            run.delta_nd,
+            [
+                (run.number[-1, run.zCol + 4 + i] - run.number[rx, run.zCol + 4 + i])
+                / run.number[rx, run.zCol + 4 + i]
+                * 100
+                for i in range(run.nnu)
+            ],
+        )
+        self.assertEqual(
+            run.tot_delta_nd,
+            (
+                (
+                    np.sum(run.number[-1, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                    - np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                )
+                / np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
+                * 100
+            ),
+        )
+
+    def test_readFD(self):
+        """test readFD"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        for e in [IOError, OSError]:
+            with patch("numpy.loadtxt", side_effect=e) as _l:
+                run.readFD()
+                _l.assert_called_once_with("output/nonexistent/fd.dat")
+                self.assertTrue(np.isnan(run.fd))
+                self.assertTrue(np.isnan(run.yv))
+        with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+            run.readFD()
+            _l.assert_called_once_with("output/nonexistent/fd.dat")
+            self.assertEqualArray(run.fd, [2, 4])
+            self.assertEqualArray(run.yv, [1, 3])
+
+    def test_readIni(self):
+        """test readIni"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.folder = "output/nonexistent1"
+        if os.path.exists(run.folder):
+            shutil.rmtree(run.folder)
+        os.mkdir(run.folder)
+        self.assertFalse(hasattr(run, "zCol"))
+        run.readIni()
+        self.assertEqual(run.ini, "")
+        self.assertEqual(run.zCol, 1)
+
+    def test_readNeff(self):
+        """test readNeff"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        for l in [False]:
+            for e in [IOError, OSError]:
+                with patch("numpy.loadtxt", side_effect=e) as _l:
+                    run.readNeff()
+                    _l.assert_called_once_with("output/nonexistent/Neff.dat")
+                    self.assertEqualArray(
+                        run.Neffdat,
+                        [[np.nan, np.nan, np.nan, np.nan]]
+                        if l
+                        else [[np.nan, np.nan, np.nan]],
+                    )
+            with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+                run.readNeff()
+                _l.assert_called_once_with("output/nonexistent/Neff.dat")
+                self.assertEqualArray(run.Neffdat, [[1, 2], [3, 4]])
+
+    def test_readNuDensMatrix(self):
+        """test readNuDensMatrix"""
+        run = fpom.FortEPiaNORun("output/nonexistent", nnu=4)
+        run.readNuDensMatrix()
+        for i in range(run.nnu):
+            self.assertTrue(np.isnan(run.rho[i, i, 0]))
+            self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            self.assertEqual(run.rho[i, i, 1], None)
+            self.assertEqual(run.rhoM[i, i, 1], None)
+            for j in range(i + 1, run.nnu):
+                self.assertTrue(np.isnan(run.rho[i, j, 0]))
+                self.assertTrue(np.isnan(run.rho[i, j, 1]))
+                self.assertEqual(run.rhoM[i, j, 0], None)
+                self.assertEqual(run.rhoM[i, j, 1], None)
+        run.readNuDensMatrix(full=False)
+        for i in range(run.nnu):
+            self.assertTrue(np.isnan(run.rho[i, i, 0]))
+            self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            self.assertEqual(run.rho[i, i, 1], None)
+            self.assertEqual(run.rhoM[i, i, 1], None)
+            for j in range(i + 1, run.nnu):
+                self.assertEqual(run.rho[i, j, 0], None)
+                self.assertEqual(run.rho[i, j, 1], None)
+                self.assertEqual(run.rhoM[i, j, 0], None)
+                self.assertEqual(run.rhoM[i, j, 1], None)
+        run.folder = "output/"
+        run.readNuDensMatrix(full=False)
+        for i in range(run.nnu):
+            if i < 3:
+                self.assertEqualArray(
+                    run.rho[i, i, 0],
+                    np.loadtxt("%s/nuDens_diag%d.dat" % (run.folder, i + 1)),
+                )
+                self.assertEqualArray(
+                    run.rhoM[i, i, 0],
+                    np.loadtxt("%s/nuDens_mass%d.dat" % (run.folder, i + 1)),
+                )
+            else:
+                self.assertTrue(np.isnan(run.rho[i, i, 0]))
+                self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            self.assertEqual(run.rho[i, i, 1], None)
+            self.assertEqual(run.rhoM[i, i, 1], None)
+            for j in range(i + 1, run.nnu):
+                self.assertEqual(run.rho[i, j, 0], None)
+                self.assertEqual(run.rho[i, j, 1], None)
+                self.assertEqual(run.rhoM[i, j, 0], None)
+                self.assertEqual(run.rhoM[i, j, 1], None)
+        run.readNuDensMatrix(full=True)
+        for i in range(run.nnu):
+            if i < 3:
+                self.assertEqualArray(
+                    run.rho[i, i, 0],
+                    np.loadtxt("%s/nuDens_diag%d.dat" % (run.folder, i + 1)),
+                )
+                self.assertEqualArray(
+                    run.rhoM[i, i, 0],
+                    np.loadtxt("%s/nuDens_mass%d.dat" % (run.folder, i + 1)),
+                )
+            else:
+                self.assertTrue(np.isnan(run.rho[i, i, 0]))
+                self.assertTrue(np.isnan(run.rhoM[i, i, 0]))
+            self.assertEqual(run.rho[i, i, 1], None)
+            self.assertEqual(run.rhoM[i, i, 1], None)
+            for j in range(i + 1, run.nnu):
+                if i < 3 and j < 3:
+                    self.assertEqualArray(
+                        run.rho[i, j, 0],
+                        np.loadtxt(
+                            "%s/nuDens_nd_%d%d_re.dat" % (run.folder, i + 1, j + 1)
+                        ),
+                    )
+                    self.assertEqualArray(
+                        run.rho[i, j, 1],
+                        np.loadtxt(
+                            "%s/nuDens_nd_%d%d_im.dat" % (run.folder, i + 1, j + 1)
+                        ),
+                    )
+                else:
+                    self.assertTrue(np.isnan(run.rho[i, j, 0]))
+                    self.assertTrue(np.isnan(run.rho[i, j, 1]))
+                self.assertEqual(run.rhoM[i, j, 0], None)
+                self.assertEqual(run.rhoM[i, j, 1], None)
+
+    def test_readResume(self):
+        """test readResume"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.folder = "output/nonexistent2"
+        if os.path.exists(run.folder):
+            shutil.rmtree(run.folder)
+        os.mkdir(run.folder)
+        run.readResume()
+        self.assertEqual(run.resume, "")
+        self.assertFalse(run.hasResume)
+        self.assertFalse(hasattr(run, "Neff"))
+        self.assertFalse(hasattr(run, "zfin"))
+        self.assertFalse(hasattr(run, "wfin"))
+        self.assertFalse(hasattr(run, "deltaNeffi"))
+        t = "Neff=abc"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t)
+        self.assertTrue(run.hasResume)
+        self.assertTrue(np.isnan(run.Neff))
+        self.assertTrue(np.isnan(run.zfin))
+        self.assertTrue(np.isnan(run.wfin))
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = "Neff=3.21\nfinal z =  a2bc"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertTrue(np.isnan(run.zfin))
+        self.assertTrue(np.isnan(run.wfin))
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = "Neff=3.21\nfinal z =  12bc\nfinal w=#"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertTrue(np.isnan(run.wfin))
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12"
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = (
+            "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12"
+            + "\ndeltaneff_0 = 1.015\ndeltaNeff_a = 1.014"
+        )
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertEqualArray(run.deltaNeffi, [np.nan for i in range(run.nnu)])
+        t = (
+            "Neff=3.21\nfinal z =  12bc\nfinal w =-0.12\n"
+            + "\ndeltaNeff_0 = 1.015\ndeltaNeff_a = 1.014\ndeltaNeff_2 = 1.013"
+        )
+        with open("%s/resume.dat" % run.folder, "w") as _f:
+            _f.write(t)
+        run.readResume()
+        self.assertEqual(run.resume, t.replace("\n", " "))
+        self.assertTrue(run.hasResume)
+        self.assertEqual(run.Neff, 3.21)
+        self.assertEqual(run.zfin, 12)
+        self.assertEqual(run.wfin, -0.12)
+        self.assertEqualArray(run.deltaNeffi, [1.015, 1.013])
+
+    def test_readWZ(self):
+        """test readWZ"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        for l in [False]:
+            for e in [IOError, OSError]:
+                with patch("numpy.loadtxt", side_effect=e) as _l:
+                    run.readWZ()
+                    _l.assert_called_once_with("output/nonexistent/z.dat")
+                    self.assertEqualArray(
+                        run.zdat,
+                        [[np.nan, np.nan, np.nan, np.nan]]
+                        if l
+                        else [[np.nan, np.nan, np.nan]],
+                    )
+            with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+                run.readWZ()
+                _l.assert_called_once_with("output/nonexistent/z.dat")
+                self.assertEqualArray(run.zdat, [[1, 2], [3, 4]])
+
+    def test_prepareRhoFinal(self):
+        """test prepareRhoFinal"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        self.assertFalse(hasattr(run, "wfin"))
+        with patch("os.path.exists") as _p:
+            run.prepareRhoFinal()
+            self.assertEqual(_p.call_count, 0)
+        run.wfin = np.nan
+        with patch("os.path.exists") as _p:
+            run.prepareRhoFinal()
+            self.assertEqual(_p.call_count, 0)
+        run.wfin = 1.1
+        self.assertFalse(hasattr(run, "zfin"))
+        with patch("os.path.exists") as _p:
+            run.prepareRhoFinal()
+            self.assertEqual(_p.call_count, 0)
+        run.zfin = np.nan
+        with patch("os.path.exists") as _p:
+            run.prepareRhoFinal()
+            self.assertEqual(_p.call_count, 0)
+        run.zfin = 1.5
+        for pex in [[True, True, True, True, True, True], [False, False]]:
+            with patch("os.path.exists", side_effect=pex) as _p, patch(
+                "numpy.loadtxt"
+            ) as _l:
+                run.prepareRhoFinal()
+                self.assertEqual(_l.call_count, 0)
+        run.wfin = 1.1
+        data = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+        zid = (11.0 / 4.0) ** (1.0 / 3.0)
+        var = np.column_stack(
+            (
+                data[:, 0],
+                np.array(
+                    [
+                        data[:, i] * (np.exp(data[:, 0] / run.wfin) + 1)
+                        for i in range(1, data.shape[1])
+                    ]
+                ).T,
+            )
+        )
+        nor = np.column_stack(
+            (
+                var[:, 0],
+                np.array(
+                    [
+                        interp1d(var[:, 0], var[:, i], fill_value="extrapolate")(
+                            var[:, 0] * run.wfin
+                        )
+                        * (zid / run.zfin * run.wfin) ** 4
+                        for i in range(1, data.shape[1])
+                    ]
+                ).T,
+            )
+        )
+        with patch(
+            "os.path.exists", side_effect=[True, True, False, True, True, False]
+        ) as _p, patch("numpy.loadtxt", return_value=data) as _l, patch(
+            "numpy.savetxt"
+        ) as _s:
+            run.prepareRhoFinal()
+            for i, fm in enumerate(["rho_final", "rho_final_mass"]):
+                _p.assert_any_call("%s/%s.dat" % (run.folder, fm))
+                _p.assert_any_call("%s/%s_norm.dat" % (run.folder, fm))
+                _p.assert_any_call("%s/%s_var.dat" % (run.folder, fm))
+                _l.assert_any_call("%s/%s.dat" % (run.folder, fm))
+                self.assertEqual(
+                    _s.call_args_list[2 * i][0][0], "%s/%s_var.dat" % (run.folder, fm)
+                )
+                self.assertEqualArray(_s.call_args_list[2 * i][0][1], var)
+                self.assertEqual(_s.call_args_list[2 * i][1], {"fmt": "%15.7e"})
+                self.assertEqual(
+                    _s.call_args_list[2 * i + 1][0][0],
+                    "%s/%s_norm.dat" % (run.folder, fm),
+                )
+                self.assertEqualArray(_s.call_args_list[2 * i + 1][0][1], nor)
+                self.assertEqual(_s.call_args_list[2 * i + 1][1], {"fmt": "%15.7e"})
 
     def test_interpolateRhoIJ(self):
         """test interpolateRhoIJ"""
@@ -1297,7 +2007,7 @@ class TestFortEPiaNORun(FPTestCase):
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.ylabel"
         ) as _yl:
-            run.plotRhoX(1, 0.5, i2=0, ri=1, ls=":", lc="r", y2=True)
+            run.plotRhoX(1, 0.5, i2=0, ri=1, ls=":", lc="r", y2=True, lab="aaa")
             _yl.assert_called_once_with(r"$y^2\rho_{\alpha\beta}(y)$")
             self.assertEqualArray(
                 _plt.call_args[0],
@@ -1306,8 +2016,7 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(
                 _plt.call_args[1],
                 {
-                    "label": r"%s $\alpha\beta$=%d%d %s x=%f"
-                    % (run.label, 2, 1, "im", 0.5),
+                    "label": r"aaa",
                     "ls": ":",
                     "c": "r",
                 },
@@ -1323,6 +2032,30 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqualArray(
                 _plt.call_args[0],
                 run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True),
+            )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoX(1, 0.5, mass=True, divide_by=2.0)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            self.assertEqualArray(
+                _plt.call_args[0],
+                [x, np.array(y) / 2.0],
+            )
+        with self.assertRaises(AttributeError):
+            run.plotRhoX(1, 0.5, mass=True, divide_fd=True)
+        run.fd = np.linspace(0.1, 10, 200)
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoX(1, 0.5, mass=True, divide_fd=True)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            self.assertEqualArray(
+                _plt.call_args[0],
+                [x, np.array(y) / run.fd],
+            )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoX(1, 0.5, mass=True, divide_fd=True, divide_by=2.0)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            self.assertEqualArray(
+                _plt.call_args[0],
+                [x, np.array(y) / run.fd / 2.0],
             )
 
     def test_plotRhoDiagY(self):
@@ -1406,6 +2139,16 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args[1],
                 {"label": "lab", "ls": "-", "c": "k"},
             )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoDiagY(1, 2.5, "-", mass=True, lab="lab", divide_by=3.0)
+            x, yv = run.interpolateRhoIJ(1, 1, 2.5, mass=True)
+            self.assertEqualArray(_plt.call_args[0], [x, np.asarray(yv) / 3.0])
+            self.assertEqual(
+                _plt.call_args[1],
+                {"label": "lab", "ls": "-", "c": "k"},
+            )
+        with self.assertRaises(TypeError):
+            run.plotRhoDiagY(1, 2.5, "-", mass=True, lab="lab", divide_by="a")
 
     def test_plotdRhoDiagY(self):
         """test plotdRhoDiagY"""
@@ -1699,6 +2442,7 @@ class TestFortEPiaNORun(FPTestCase):
         """test plotNeff"""
         run = fpom.FortEPiaNORun("output/nonexistent")
         run.nnu = 2
+        run.zCol = 1
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotNeff()
             run.Neffdat = np.array([[np.nan, np.nan], [np.nan, np.nan]])
@@ -1827,6 +2571,71 @@ class TestFortEPiaNORun(FPTestCase):
                 _syl.call_args_list[3][0][0],
                 np.asarray([1.5, 2.5]) * (11.0 / 4) ** (4.0 / 3),
             )
+        run.Neffdat = data
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "numpy.savetxt"
+        ) as _sv, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch(
+            "fortepianoOutput.FortEPiaNORun.integrateRho_yn"
+        ) as _int:
+            run.plotNeff(axes=False, lc="r", ls=":", lab="mylabel")
+            _xs.assert_called_once_with("log")
+            _xl.assert_called_once_with("$x$")
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0],
+                fpom.stripRepeated(data, 0, 1),
+            )
+            self.assertEqual(
+                _plt.call_args[1],
+                {"ls": ":", "c": "r", "label": "mylabel"},
+            )
+            self.assertEqual(_sv.call_count, 0)
+            self.assertEqual(_int.call_count, 0)
+        plt.figure()
+        ax = plt.gca()
+        ax1 = ax.twiny()
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "numpy.savetxt"
+        ) as _sv, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch(
+            "fortepianoOutput.FortEPiaNORun.integrateRho_yn"
+        ) as _int, patch(
+            "matplotlib.pyplot.gca", return_value=ax
+        ) as _gca, patch(
+            "matplotlib.pyplot.Axes.twinx", return_value=ax1
+        ) as _twx, patch(
+            "matplotlib.pyplot.Axes.set_ylim"
+        ) as _syl, patch(
+            "matplotlib.pyplot.Axes.set_ylabel"
+        ) as _sya:
+            run.plotNeff()
+            _xs.assert_called_once_with("log")
+            _xl.assert_called_once_with("$x$")
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0],
+                fpom.stripRepeated(data, 0, 1),
+            )
+            self.assertEqual(_sv.call_count, 0)
+            self.assertEqual(_int.call_count, 0)
+            _gca.assert_called_once_with()
+            _twx.assert_called_once_with()
+            _syl.assert_any_call([0.5, 4.5])
+            self.assertEqualArray(
+                _syl.call_args_list[1][0][0],
+                np.asarray([0.5, 4.5]) * (11.0 / 4) ** (4.0 / 3),
+            )
+            _sya.assert_any_call(r"$N_{\rm eff}^{\rm in}$")
+            _sya.assert_any_call(r"$N_{\rm eff}^{\rm now}$")
+            run.plotNeff(nefflims=[1.5, 2.5])
+            self.assertEqualArray(_syl.call_args_list[2][0][0], [1.5, 2.5])
+            self.assertEqualArray(
+                _syl.call_args_list[3][0][0],
+                np.asarray([1.5, 2.5]) * (11.0 / 4) ** (4.0 / 3),
+            )
 
     def test_plotEnergyDensity(self):
         """test plotEnergyDensity"""
@@ -1847,7 +2656,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 9)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+                [
+                    run.endens[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.endens]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -1870,7 +2682,7 @@ class TestFortEPiaNORun(FPTestCase):
             ):
                 self.assertEqualArray(
                     _plt.call_args_list[1 + ix][0],
-                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[1 + ix][1],
@@ -1883,7 +2695,10 @@ class TestFortEPiaNORun(FPTestCase):
                 )
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, run.zCol + 1] + run.endens[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -1898,7 +2713,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.endens[:, 0],
-                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                    run.endens[:, run.zCol + 1]
+                    + run.endens[:, run.zCol + 2]
+                    + run.endens[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -1941,7 +2758,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 7)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+                [
+                    run.endens[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.endens]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -1958,7 +2778,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -1972,7 +2792,10 @@ class TestFortEPiaNORun(FPTestCase):
                 ii += 1
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, run.zCol + 1] + run.endens[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -1987,7 +2810,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.endens[:, 0],
-                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                    run.endens[:, run.zCol + 1]
+                    + run.endens[:, run.zCol + 2]
+                    + run.endens[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2017,7 +2842,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 8)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+                [
+                    run.endens[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.endens]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2034,7 +2862,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2065,7 +2893,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 10)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.endens[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.endens])],
+                [
+                    run.endens[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.endens]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2082,7 +2913,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.endens[:, 0], run.endens[:, 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2096,7 +2927,10 @@ class TestFortEPiaNORun(FPTestCase):
                 ii += 1
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.endens[:, 0], run.endens[:, 2] + run.endens[:, 3]],
+                [
+                    run.endens[:, 0],
+                    run.endens[:, run.zCol + 1] + run.endens[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2111,7 +2945,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.endens[:, 0],
-                    run.endens[:, 2] + run.endens[:, 3] + run.endens[:, 4],
+                    run.endens[:, run.zCol + 1]
+                    + run.endens[:, run.zCol + 2]
+                    + run.endens[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2143,7 +2979,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 9)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+                [
+                    run.entropy[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2166,7 +3005,7 @@ class TestFortEPiaNORun(FPTestCase):
             ):
                 self.assertEqualArray(
                     _plt.call_args_list[1 + ix][0],
-                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                    [run.entropy[:, 0], run.entropy[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[1 + ix][1],
@@ -2179,7 +3018,10 @@ class TestFortEPiaNORun(FPTestCase):
                 )
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, run.zCol + 1] + run.entropy[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2194,7 +3036,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.entropy[:, 0],
-                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                    run.entropy[:, run.zCol + 1]
+                    + run.entropy[:, run.zCol + 2]
+                    + run.entropy[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2237,7 +3081,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 7)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+                [
+                    run.entropy[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2254,7 +3101,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                    [run.entropy[:, 0], run.entropy[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2268,7 +3115,10 @@ class TestFortEPiaNORun(FPTestCase):
                 ii += 1
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, run.zCol + 1] + run.entropy[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2283,7 +3133,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.entropy[:, 0],
-                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                    run.entropy[:, run.zCol + 1]
+                    + run.entropy[:, run.zCol + 2]
+                    + run.entropy[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2313,7 +3165,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 8)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+                [
+                    run.entropy[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2330,7 +3185,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                    [run.entropy[:, 0], run.entropy[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2361,7 +3216,10 @@ class TestFortEPiaNORun(FPTestCase):
             self.assertEqual(_plt.call_count, 10)
             self.assertEqualArray(
                 _plt.call_args_list[0][0],
-                [run.entropy[:, 0], np.asarray([np.sum(cl[2:]) for cl in run.entropy])],
+                [
+                    run.entropy[:, 0],
+                    np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy]),
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[0][1],
@@ -2378,7 +3236,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.entropy[:, 0], run.entropy[:, 2 + ix]],
+                    [run.entropy[:, 0], run.entropy[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2392,7 +3250,10 @@ class TestFortEPiaNORun(FPTestCase):
                 ii += 1
             self.assertEqualArray(
                 _plt.call_args_list[-2][0],
-                [run.entropy[:, 0], run.entropy[:, 2] + run.entropy[:, 3]],
+                [
+                    run.entropy[:, 0],
+                    run.entropy[:, run.zCol + 1] + run.entropy[:, run.zCol + 2],
+                ],
             )
             self.assertEqual(
                 _plt.call_args_list[-2][1],
@@ -2407,7 +3268,9 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args_list[-1][0],
                 [
                     run.entropy[:, 0],
-                    run.entropy[:, 2] + run.entropy[:, 3] + run.entropy[:, 4],
+                    run.entropy[:, run.zCol + 1]
+                    + run.entropy[:, run.zCol + 2]
+                    + run.entropy[:, run.zCol + 3],
                 ],
             )
             self.assertEqual(
@@ -2449,7 +3312,7 @@ class TestFortEPiaNORun(FPTestCase):
             ):
                 self.assertEqualArray(
                     _plt.call_args_list[ix][0],
-                    [run.number[:, 0], run.number[:, 2 + ix]],
+                    [run.number[:, 0], run.number[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ix][1],
@@ -2489,7 +3352,7 @@ class TestFortEPiaNORun(FPTestCase):
                     continue
                 self.assertEqualArray(
                     _plt.call_args_list[ii][0],
-                    [run.number[:, 0], run.number[:, 2 + ix]],
+                    [run.number[:, 0], run.number[:, run.zCol + 1 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[ii][1],
@@ -2514,6 +3377,8 @@ class TestFortEPiaNORun(FPTestCase):
         ) as _plNf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
         ) as _plRdy, patch(
+            "fortepianoOutput.FortEPiaNORun.plotdRhoDiagY"
+        ) as _plDRdy, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoFin"
         ) as _plRf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoOffDiagY"
@@ -2526,9 +3391,14 @@ class TestFortEPiaNORun(FPTestCase):
             _plW.assert_called_once_with(lc="k", ls=":", lab="w")
             _plNf.assert_called_once_with(lc="k", axes=False)
             self.assertEqual(_plRdy.call_count, 6)
+            self.assertEqual(_plDRdy.call_count, 6)
             for i in range(run.nnu):
                 _plRdy.assert_any_call(i, 5.0, fpom.styles[i], lc=fpom.colors[i])
                 _plRdy.assert_any_call(
+                    i, 5.0, fpom.styles[i], lc=fpom.colors[i], mass=True
+                )
+                _plDRdy.assert_any_call(i, 5.0, fpom.styles[i], lc=fpom.colors[i])
+                _plDRdy.assert_any_call(
                     i, 5.0, fpom.styles[i], lc=fpom.colors[i], mass=True
                 )
             self.assertEqual(_plRf.call_count, 6)
@@ -2550,17 +3420,17 @@ class TestFortEPiaNORun(FPTestCase):
                     ),
                     call(
                         "%s/rho_diag.pdf" % run.folder,
-                        xlab="$x$",
-                        ylab=r"$\rho_{\alpha\alpha}$",
-                        xscale="log",
                         yscale="log",
                     ),
                     call(
+                        "%s/drho_diag.pdf" % run.folder,
+                    ),
+                    call(
                         "%s/rho_mass_diag.pdf" % run.folder,
-                        xlab="$x$",
-                        ylab=r"$\rho_{\alpha\alpha}$",
-                        xscale="log",
                         yscale="log",
+                    ),
+                    call(
+                        "%s/drho_mass_diag.pdf" % run.folder,
                     ),
                     call(
                         "%s/rhofin_diag.pdf" % run.folder, xscale="linear", yscale="log"
@@ -2585,6 +3455,8 @@ class TestFortEPiaNORun(FPTestCase):
         ) as _plNf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoDiagY"
         ) as _plRdy, patch(
+            "fortepianoOutput.FortEPiaNORun.plotdRhoDiagY"
+        ) as _plDRdy, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoFin"
         ) as _plRf, patch(
             "fortepianoOutput.FortEPiaNORun.plotRhoOffDiagY"
@@ -2597,9 +3469,14 @@ class TestFortEPiaNORun(FPTestCase):
             _plW.assert_called_once_with(lc="abc", ls=":", lab="w")
             _plNf.assert_called_once_with(lc="abc", axes=False)
             self.assertEqual(_plRdy.call_count, 6)
+            self.assertEqual(_plDRdy.call_count, 6)
             for i in range(run.nnu):
                 _plRdy.assert_any_call(i, 2.5, fpom.styles[i], lc=fpom.colors[i])
                 _plRdy.assert_any_call(
+                    i, 2.5, fpom.styles[i], lc=fpom.colors[i], mass=True
+                )
+                _plDRdy.assert_any_call(i, 2.5, fpom.styles[i], lc=fpom.colors[i])
+                _plDRdy.assert_any_call(
                     i, 2.5, fpom.styles[i], lc=fpom.colors[i], mass=True
                 )
             self.assertEqual(_plRf.call_count, 6)
@@ -2621,17 +3498,17 @@ class TestFortEPiaNORun(FPTestCase):
                     ),
                     call(
                         "%s/rho_diag.pdf" % run.folder,
-                        xlab="$x$",
-                        ylab=r"$\rho_{\alpha\alpha}$",
-                        xscale="log",
                         yscale="log",
                     ),
                     call(
+                        "%s/drho_diag.pdf" % run.folder,
+                    ),
+                    call(
                         "%s/rho_mass_diag.pdf" % run.folder,
-                        xlab="$x$",
-                        ylab=r"$\rho_{\alpha\alpha}$",
-                        xscale="log",
                         yscale="log",
+                    ),
+                    call(
+                        "%s/drho_mass_diag.pdf" % run.folder,
                     ),
                     call(
                         "%s/rhofin_diag.pdf" % run.folder, xscale="linear", yscale="log"
@@ -2913,7 +3790,7 @@ class TestPrepareIni(unittest.TestCase):
                     default=200,
                     help="number of points to save in x",
                 ),
-                call("--x_in", type=float, default=0.001, help="initial value of x"),
+                call("--x_in", type=float, default=0.01, help="initial value of x"),
                 call("--x_fin", type=float, default=35, help="final value of x"),
                 call("--Ny", type=int, default=30, help="number of total points in y"),
                 call("--y_min", type=float, default=0.01, help="minimum value of y"),
@@ -3025,7 +3902,7 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.verbose, 1)
         self.assertEqual(args.verbose_deriv_freq, 100)
         self.assertEqual(args.Nx, 200)
-        self.assertEqual(args.x_in, 0.001)
+        self.assertEqual(args.x_in, 0.01)
         self.assertEqual(args.x_fin, 35)
         self.assertEqual(args.Ny, 30)
         self.assertEqual(args.y_min, 0.01)
