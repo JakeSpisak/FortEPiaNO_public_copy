@@ -20,3 +20,4 @@ grids/
 .tox*/
 GL_nodes/
 interpolations/
+!test_outputs/*.dat
