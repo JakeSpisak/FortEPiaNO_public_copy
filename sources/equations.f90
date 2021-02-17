@@ -145,15 +145,13 @@ module fpEquations
 		end do
 		numw = g12(1) + elContr0(1)
 		denw = PISQ/7.5d0 + g12(2) + elContr0(2)
-#ifdef NO_MUONS
-		do j=1, fermions_number
-#else
+#ifndef NO_MUONS
 		do j=2, fermions_number
-#endif
 			fContr = fermions(j)%dzodx_terms(xoz)
 			numw = numw + fContr(1)
 			denw = denw + fContr(2)
 		end do
+#endif
 	end subroutine do_ABweq
 
 	subroutine init_interp_jkyg12
