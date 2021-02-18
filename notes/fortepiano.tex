@@ -156,7 +156,7 @@ Other matrices that we need to define are
 \mathbb{E}_\nu=S_a\frac{1}{\pi^2}\left(\int \mathrm{d}y y^3\varrho\right) S_a\,
 \quad\mbox{with }S_a=\text{diag}(1,1,1,0,\ldots)\,,
 \end{equation}
-while the interaction matrices used in the the collision terms,
+while the interaction matrices used in the collision terms,
 presented in section~\ref{sec:collint}, are
 \begin{equation}
 \label{eq:gLR}
@@ -597,6 +597,96 @@ we use an equation similar to Eq.~\eqref{eq:dz_dx_nxn},
 but considering only relativistic electrons, i.e.\ fixing $r_e=0$ in the equation.
 
 
+\subsection{Non-Standard Interactions (NSI)}
+\label{ssec:nsi}
+In case NSI are active (the code must be compiled with \texttt{FULL\_F\_AB=1}),
+some of the previous equations are modified to take into account the new couplings,
+see e.g.~\cite{deSalas:2016ztq}.
+The interactions described by the $G^{L,R}$ matrices in equation~\eqref{eq:gLR},
+which enter the collision terms described in the following section,
+are modified to take into account the possible additional couplings.
+The matrices $G^{L,R}$, therefore, become:
+\begin{equation}
+\label{eq:gLR_nsi}
+G^L
+=
+\left(
+\begin{array}{cccc}
+g_L+\epsilon^L_{ee} & \epsilon^L_{e\mu} & \epsilon^L_{e\tau} &\ldots \\
+\epsilon^L_{e\mu} & \tilde g_L + \epsilon^L_{\mu\mu} & \epsilon^L_{e\mu} &\ldots \\
+\epsilon^L_{e\tau} & \epsilon^L_{\mu\tau} & \tilde g_L + \epsilon^L_{\tau\tau} &\ldots \\
+\vdots&&&\ddots
+\end{array}
+\right)
+\qquad
+\text{and}
+\qquad
+G^R
+=
+\left(
+\begin{array}{cccc}
+g_R+\epsilon^R_{ee} & \epsilon^R_{e\mu} & \epsilon^R_{e\tau} &\ldots \\
+\epsilon^R_{e\mu} & g_R + \epsilon^R_{\mu\mu} & \epsilon^R_{e\mu} &\ldots \\
+\epsilon^R_{e\tau} & \epsilon^R_{\mu\tau} & g_R + \epsilon^R_{\tau\tau} &\ldots \\
+\vdots&&&\ddots
+\end{array}
+\right)
+\,.
+\end{equation}
+
+Defining $\epsilon_{\alpha\beta}=\epsilon^{L}_{\alpha\beta}+\epsilon^{R}_{\alpha\beta}$,
+\begin{equation}
+\label{eq:E_nsi_emu}
+\mathbb{E}_e^{\rm NSI}
+=
+\left(
+\begin{array}{cccc}
+1+\epsilon_{ee} & \epsilon_{e\mu} & \epsilon_{e\tau} &\ldots \\
+\epsilon_{e\mu} & \epsilon_{\mu\mu} & \epsilon_{e\mu} &\ldots \\
+\epsilon_{e\tau} & \epsilon_{\mu\tau} & \epsilon_{\tau\tau} &\ldots \\
+\vdots&&&\ddots
+\end{array}
+\right)
+\qquad
+\text{and}
+\qquad
+\mathbb{E}_\mu^{\rm NSI}
+=
+\left(
+\begin{array}{cccc}
+0 & 0 & 0 &\ldots \\
+0 & 1 & 0 &\ldots \\
+0 & 0 & 0 &\ldots \\
+\vdots&&&\ddots
+\end{array}
+\right)
+\,,
+\end{equation}
+the matter potentials involving leptons in equation~\eqref{eq:matterpotentials_nxn}
+are also modified to:
+\begin{equation}
+\label{eq:leptonmatterpotentials_nxn_nsi}
+\mathbb{E}_\ell
+=
+\rho_e\,
+\mathbb{E}_e^{\rm NSI}
++
+\rho_\mu\,
+\mathbb{E}_\mu^{\rm NSI}
+\,,
+\qquad
+\qquad
+\mathbb{P}_\ell
+=
+P_e\,
+\mathbb{E}_e^{\rm NSI}
++
+P_\mu\,
+\mathbb{E}_\mu^{\rm NSI}
+\,.
+\end{equation}
+
+
 \section{Collision integrals}
 \label{sec:collint}
 The full collision terms are defined by the sum
@@ -972,7 +1062,7 @@ $F=7\pi^4 z^4 y^3/135$ is a common normalisation coefficient.
 
 
 \section{Solver and initial conditions}
-\label{ssec:solver}
+\label{sec:solver}
 We solve the differential equations with the \dlsoda\ routine
 from the \texttt{ODEPACK}%
 \footnote{\url{https://computation.llnl.gov/casc/odepack/odepack_home.html}.}\
@@ -1382,6 +1472,11 @@ The default configuration of the code (\texttt{ini/explanatory.ini}) is the foll
 \texttt{dm31 = 2.5283e-3} (eV$^2$).
 %
 \item
+\textbf{NSI parameters}: the new couplings appearing in equation~\eqref{eq:gLR_nsi} are by default fixed to zero.
+To change them, lines such as \texttt{nsi\_GX\_ij = 0.0}, where \texttt{X} can be L or R and $i, j\in[1,2,3,\ldots],\, j\geq i$, should be added to the configuration file.
+Notice that these parameters are not considered if the code is compiled without the option \texttt{FULL\_F\_AB=1} (see section~\ref{ssec:precompiler}).
+%
+\item
 \textbf{Collision integrals}: non-zero (\texttt{collint\_diagonal\_zero = F}) diagonal terms
 computed taking into account only the contribution from neutrino--electron interactions
 (\texttt{collint\_d\_no\_nue = F}, \texttt{collint\_d\_no\_nunu = T}),
@@ -1453,7 +1548,8 @@ computed at zero momentum transfer \cite{Erler:2013xha} in Eq.~\eqref{eq:gLR}.
 \item \texttt{FULL\_F\_AB}: full matrix multiplication
 when computing neutrino--electron collision integrals
 (Eqs.~\eqref{eq:F_ab_sc} and \eqref{eq:F_ab_ann}).
-No effect on the code execution unless the diagonal matrices $G_{L,R}$ are modified to be off-diagonal.
+Such option has no effect on the code execution unless the diagonal matrices $G^{L,R}$ are modified to be off-diagonal,
+that is to say, for example, by setting some of the NSI parameters different from zero.
 %
 \item \texttt{FULL\_F\_NU}: take into account the full neutrino density matrix
 when computing neutrino--neutrino collision integrals
