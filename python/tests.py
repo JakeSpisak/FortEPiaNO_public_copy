@@ -270,6 +270,26 @@ class TestFortepianoOutput(FPTestCase):
             self.assertEqualArray(
                 _syi.call_args[0][0], np.asarray(lims) * (11.0 / 4) ** (4.0 / 3)
             )
+        # Neff_axes
+        with patch("matplotlib.pyplot.title") as _tit, patch(
+            "matplotlib.pyplot.gca", return_value=ax
+        ) as _gca, patch("matplotlib.pyplot.Axes.tick_params") as _tpa, patch(
+            "matplotlib.pyplot.Axes.set_ylabel"
+        ) as _syb, patch(
+            "matplotlib.pyplot.Axes.get_ylim", return_value=lims
+        ) as _gyi, patch(
+            "matplotlib.pyplot.Axes.twinx", return_value=ax1
+        ) as _twx, patch(
+            "matplotlib.pyplot.Axes.set_ylim"
+        ) as _syi, patch(
+            "matplotlib.pyplot.tight_layout"
+        ) as _tig, patch(
+            "matplotlib.pyplot.savefig", side_effect=[None, None, FileNotFoundError]
+        ) as _sfi, patch(
+            "matplotlib.pyplot.close"
+        ) as _clo:
+            fpom.finalizePlot("fname", Neff_axes=False, inTicks=False)
+            self.assertEqual(_tpa.call_count, 0)
 
     def test_stripRepeated(self):
         """test stripRepeated"""
@@ -524,6 +544,11 @@ class TestFortEPiaNORun(FPTestCase):
                 * 100
             ),
         )
+        ds = np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy])
+        self.assertEqual(
+            run.tot_delta_sd,
+            (ds[-1] - ds[rx]) / ds[rx] * 100,
+        )
         # now just do plots in order to see that everything works till the end
         self.runAllPlots(run)
 
@@ -745,6 +770,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "tot_delta_ed"))
         self.assertFalse(hasattr(run, "delta_nd"))
         self.assertFalse(hasattr(run, "tot_delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_sd"))
         if os.path.exists(run.folder):
             shutil.rmtree(run.folder)
         os.mkdir(run.folder)
@@ -764,6 +790,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "tot_delta_ed"))
         self.assertFalse(hasattr(run, "delta_nd"))
         self.assertFalse(hasattr(run, "tot_delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_sd"))
         run.folder = "output/"
         run.readIni()
         run.readEENDensities()
@@ -778,6 +805,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "tot_delta_ed"))
         self.assertFalse(hasattr(run, "delta_nd"))
         self.assertFalse(hasattr(run, "tot_delta_nd"))
+        self.assertFalse(hasattr(run, "tot_delta_sd"))
         run.readEENDensities(deltas=True)
         self.assertEqualArray(
             run.endens, np.loadtxt("%s/energyDensity.dat" % run.folder)
@@ -826,6 +854,11 @@ class TestFortEPiaNORun(FPTestCase):
                 / np.sum(run.number[rx, run.zCol + 4 : run.zCol + 4 + run.nnu])
                 * 100
             ),
+        )
+        ds = np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy])
+        self.assertEqual(
+            run.tot_delta_sd,
+            (ds[-1] - ds[rx]) / ds[rx] * 100,
         )
 
     def test_readFD(self):
@@ -1571,6 +1604,24 @@ class TestFortEPiaNORun(FPTestCase):
                 _plt.call_args[1],
                 {"label": r"%s $\alpha$=%d" % (run.label, 2), "ls": "-", "c": "k"},
             )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoDiag(1, 1, "-", mass=True, lab="")
+            self.assertEqualArray(
+                _plt.call_args[0], fpom.stripRepeated(run.rhoM[1, 1, 0], 0, 1)
+            )
+            self.assertEqual(
+                _plt.call_args[1],
+                {"label": r"", "ls": "-", "c": "k"},
+            )
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoDiag(1, 1, "-", mass=True, lab="abc")
+            self.assertEqualArray(
+                _plt.call_args[0], fpom.stripRepeated(run.rhoM[1, 1, 0], 0, 1)
+            )
+            self.assertEqual(
+                _plt.call_args[1],
+                {"label": r"abc", "ls": "-", "c": "k"},
+            )
 
     def test_plotdRhoDiag(self):
         """test plotdRhoDiag"""
@@ -1889,6 +1940,7 @@ class TestFortEPiaNORun(FPTestCase):
             ],
         )
         run.yv = np.linspace(0.01, 20, 200)
+        run.fd = run.yv ** 2 / (1.0 + np.exp(run.yv))
         run.rho[0, 0, 0] = np.array(
             [[0] + list(run.yv), [1] + list(1.0 / (np.exp(run.yv) + 1))]
         )
@@ -1939,6 +1991,14 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotRhoFin(1, mass=True, lab="lab")
             self.assertEqualArray(
                 _plt.call_args[0], [run.yv, run.rhoM[1, 1, 0][-1, 1:]]
+            )
+            self.assertEqual(_plt.call_args[1], {"label": r"lab", "ls": "-", "c": "k"})
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotRhoFin(0, divide_fd=True, lab="lab")
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0],
+                [run.yv, run.rho[0, 0, 0][-1, 1:] / (run.fd / run.yv ** 2)],
             )
             self.assertEqual(_plt.call_args[1], {"label": r"lab", "ls": "-", "c": "k"})
 
@@ -2048,14 +2108,14 @@ class TestFortEPiaNORun(FPTestCase):
             x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
             self.assertEqualArray(
                 _plt.call_args[0],
-                [x, np.array(y) / run.fd],
+                [x, np.array(y) / (run.fd / run.yv ** 2)],
             )
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotRhoX(1, 0.5, mass=True, divide_fd=True, divide_by=2.0)
             x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
             self.assertEqualArray(
                 _plt.call_args[0],
-                [x, np.array(y) / run.fd / 2.0],
+                [x, np.array(y) / (run.fd / run.yv ** 2) / 2.0],
             )
 
     def test_plotRhoDiagY(self):
@@ -2637,6 +2697,143 @@ class TestFortEPiaNORun(FPTestCase):
                 np.asarray([1.5, 2.5]) * (11.0 / 4) ** (4.0 / 3),
             )
 
+    def test_plotNeffAtAllX(self):
+        """test plotNeffAtAllX"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.nnu = 2
+        run.zCol = 1
+        with patch("matplotlib.pyplot.plot") as _plt:
+            run.plotNeffAtAllX()
+            run.zdat = np.array([[np.nan, np.nan], [np.nan, np.nan]])
+            run.plotNeffAtAllX()
+            run.endens = np.array([[np.nan, np.nan], [np.nan, np.nan]])
+            run.plotNeffAtAllX()
+            run.rho = self.explanatory.rho
+            run.plotNeffAtAllX()
+            self.assertEqual(_plt.call_count, 0)
+        endensx = 0
+        endensgamma = 2
+        endensnu0 = 5
+        run.zdat = self.explanatory.zdat
+        run.endens = self.explanatory.endens
+        rhogammas = run.endens[:, (endensx, endensgamma)][:, :]
+        rns = np.sum(run.endens[:, endensnu0 : endensnu0 + run.nnu][:, :], axis=1)
+        xs = run.endens[:, endensx][:]
+        rhonus = np.array(list(zip(xs, rns)))
+        zs = run.zdat[:, (0, run.zCol)][:]
+        ws = run.zdat[:, run.zCol + 1]
+        frhonu = interp1d(*fpom.stripRepeated(rhonus, 0, 1))
+        frhoga = interp1d(*fpom.stripRepeated(rhogammas, 0, 1))
+        zs[:, 1] = zs[:, 1] / ws[:]
+        fzow = interp1d(*fpom.stripRepeated(zs, 0, 1))
+        data = np.asarray(
+            [
+                [
+                    x,
+                    8.0 / 7.0 * frhonu(x) / frhoga(x) * fzow(x) ** 4.0,
+                ]
+                for x in rhogammas[:, 0]
+            ]
+        )
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "numpy.savetxt"
+        ) as _sv, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "numpy.savetxt"
+        ) as _sv, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs:
+            run.plotNeffAtAllX()
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0],
+                (data[:, 0], data[:, 1]),
+            )
+            self.assertEqual(
+                _plt.call_args[1],
+                {"ls": "-", "c": "k", "label": run.label},
+            )
+            _xl.assert_called_once_with(r"$x$")
+            _yl.assert_called_once_with(r"$N_{\rm eff}$")
+            _xs.assert_called_once_with("log")
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "numpy.savetxt"
+        ) as _sv, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "numpy.savetxt"
+        ) as _sv, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs:
+            run.plotNeffAtAllX(ls=":", lc="r", lab="abc")
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0],
+                (data[:, 0], data[:, 1]),
+            )
+            self.assertEqual(
+                _plt.call_args[1],
+                {"ls": ":", "c": "r", "label": "abc"},
+            )
+            _xl.assert_called_once_with(r"$x$")
+            _yl.assert_called_once_with(r"$N_{\rm eff}$")
+            _xs.assert_called_once_with("log")
+        del run.endens
+        run.rho = self.explanatory.rho
+        run.nnu = 3
+        run.yv = self.explanatory.yv
+        rhogammas = np.array(
+            [[x, fpom.PISQD15 * z ** 4] for x, z in run.zdat[:, (0, run.zCol)]]
+        )
+        rhonus = np.array(
+            [
+                [
+                    x,
+                    np.sum([1.3 for inu in range(run.nnu)]),
+                ]
+                for ix, [x, z] in enumerate(run.zdat[:, (0, run.zCol)])
+            ]
+        )
+        frhonu = interp1d(*fpom.stripRepeated(rhonus, 0, 1))
+        frhoga = interp1d(*fpom.stripRepeated(rhogammas, 0, 1))
+        data = np.asarray(
+            [
+                [
+                    x,
+                    8.0 / 7.0 * frhonu(x) / frhoga(x) * fzow(x) ** 4.0,
+                ]
+                for x in rhogammas[:, 0]
+            ]
+        )
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "numpy.savetxt"
+        ) as _sv, patch("matplotlib.pyplot.xlabel") as _xl, patch(
+            "numpy.savetxt"
+        ) as _sv, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch(
+            "fortepianoOutput.FortEPiaNORun.integrateRho_yn",
+            return_value=1.3,
+        ) as _int:
+            run.plotNeffAtAllX()
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0],
+                (data[:, 0], data[:, 1]),
+            )
+            self.assertEqual(
+                _plt.call_args[1],
+                {"ls": "-", "c": "k", "label": run.label},
+            )
+            _int.assert_any_call(0, 3, ix=0)
+            _int.assert_any_call(0, 3, ix=len(run.zdat) - 1)
+            _xl.assert_called_once_with(r"$x$")
+            _yl.assert_called_once_with(r"$N_{\rm eff}$")
+            _xs.assert_called_once_with("log")
+
     def test_plotEnergyDensity(self):
         """test plotEnergyDensity"""
         run = fpom.FortEPiaNORun("output/nonexistent")
@@ -2959,6 +3156,66 @@ class TestFortEPiaNORun(FPTestCase):
                     "lw": 2,
                 },
             )
+
+    def test_plotDeltaEntropy(self):
+        """test plotDeltaEntropy"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        with self.assertRaises(AttributeError):
+            run.plotDeltaEntropy()
+        run.entropy = None
+        with self.assertRaises(TypeError):
+            run.plotDeltaEntropy()
+        run.entropy = [0, 1, 2]
+        with self.assertRaises(AttributeError):
+            run.plotDeltaEntropy()
+        run.zCol = 1
+        with self.assertRaises(TypeError):
+            run.plotDeltaEntropy()
+        run = self.explanatory
+        ds = np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy])
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.yscale") as _ys, patch(
+            "matplotlib.pyplot.xlabel"
+        ) as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotDeltaEntropy()
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0],
+                np.array(
+                    [
+                        run.entropy[:, 0],
+                        (ds / ds[0] - 1.0) * 100.0,
+                    ]
+                ),
+            )
+            self.assertEqual(
+                _plt.call_args[1], {"c": "k", "ls": "-", "label": run.label}
+            )
+            _xs.assert_called_once_with("log")
+            _xl.assert_called_once_with("$x$")
+            _yl.assert_called_once_with(r"$\delta s_{\rm tot}$ [%]")
+        with patch("matplotlib.pyplot.plot") as _plt, patch(
+            "matplotlib.pyplot.xscale"
+        ) as _xs, patch("matplotlib.pyplot.yscale") as _ys, patch(
+            "matplotlib.pyplot.xlabel"
+        ) as _xl, patch(
+            "matplotlib.pyplot.ylabel"
+        ) as _yl:
+            run.plotDeltaEntropy(lc="r", ls=":", lab="abc")
+            _plt.assert_called_once()
+            self.assertEqualArray(
+                _plt.call_args[0],
+                np.array(
+                    [
+                        run.entropy[:, 0],
+                        (ds / ds[0] - 1.0) * 100.0,
+                    ]
+                ),
+            )
+            self.assertEqual(_plt.call_args[1], {"c": "r", "ls": ":", "label": "abc"})
 
     def test_plotEntropy(self):
         """test plotEntropy"""

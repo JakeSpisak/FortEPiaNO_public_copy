@@ -52,6 +52,7 @@ def finalizePlot(
     yscale=None,
     xlim=None,
     ylim=None,
+    inTicks=True,
     legcol=1,
     legend=True,
     x_T=False,
@@ -84,7 +85,7 @@ def finalizePlot(
     """
     plt.title(title)
     ax = plt.gca()
-    if not Neff_axes:
+    if not Neff_axes and inTicks:
         ax.tick_params(
             "both",
             which="both",
@@ -364,6 +365,19 @@ class FortEPiaNORun:
             self.entropy = np.loadtxt("%s/entropy.dat" % self.folder)
         except (IOError, OSError):
             self.entropy = np.nan
+        else:
+            try:
+                self.entropy[:, :]
+            except IndexError:
+                pass
+            else:
+                if deltas:
+                    ds = np.asarray(
+                        [np.sum(cl[self.zCol + 1 :]) for cl in self.entropy]
+                    )
+                    self.tot_delta_sd = (ds[-1] - ds[refIx]) / ds[refIx] * 100
+                    if self.verbose:
+                        print("delta entropy density:\t%f%%" % self.tot_delta_sd)
         try:
             self.number = np.loadtxt("%s/numberDensity.dat" % self.folder)
         except (IOError, OSError):
@@ -898,7 +912,7 @@ class FortEPiaNORun:
         plt.xlabel("$x$")
         plt.ylabel(r"$z-z_{\rm ref}$")
 
-    def plotRhoDiag(self, inu, iy, ls, lc="k", mass=False):
+    def plotRhoDiag(self, inu, iy, ls, lc="k", lab=None, mass=False):
         """Plot one diagonal element of the density matrix
         at a given point (index iy) in the momentum grid,
         as a function of x
@@ -908,6 +922,8 @@ class FortEPiaNORun:
             iy: the index of the requested momentum in the momentum grid
             ls: the line style
             lc (default "k"): the line color
+            lab (default None): if not None, the custom value
+                for the line label
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
@@ -926,7 +942,7 @@ class FortEPiaNORun:
             return
         plt.plot(
             *stripRepeated(rho[inu, inu, 0], 0, iy),
-            label=r"%s $\alpha$=%d" % (self.label, inu + 1),
+            label=r"%s $\alpha$=%d" % (self.label, inu + 1) if lab is None else lab,
             ls=ls,
             c=lc
         )
@@ -1068,7 +1084,16 @@ class FortEPiaNORun:
         plt.ylabel(r"$d\rho_{\alpha\beta}/dx$")
 
     def plotRhoFin(
-        self, i1, i2=None, ri=0, ls="-", lc="k", y2=False, lab=None, mass=False
+        self,
+        i1,
+        i2=None,
+        ri=0,
+        ls="-",
+        lc="k",
+        y2=False,
+        lab=None,
+        mass=False,
+        divide_fd=False,
     ):
         """Plot the y dependence of an element of the density matrix
         at the final x
@@ -1088,6 +1113,8 @@ class FortEPiaNORun:
             lab (default None): if not None, the line label
             mass (default False): if True, use the density matrix
                 in the mass basis
+            divide_fd (default False): if True,
+                divide by the Fermi Dirac (self.fd/self.yv**2)
         """
         if i2 is None:
             i2 = i1
@@ -1113,7 +1140,13 @@ class FortEPiaNORun:
             else lab
         )
         fyv = self.yv ** 2 * rho[i1, i2, ri][-1, 1:] if y2 else rho[i1, i2, ri][-1, 1:]
-        plt.plot(self.yv, fyv, ls=ls, c=lc, label=label)
+        plt.plot(
+            self.yv,
+            fyv / ((self.fd / self.yv ** 2) if divide_fd else 1.0),
+            ls=ls,
+            c=lc,
+            label=label,
+        )
         plt.xlabel("$y$")
         plt.ylabel(r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$" % ("y^2" if y2 else ""))
 
@@ -1152,7 +1185,7 @@ class FortEPiaNORun:
             divide_by (default 1.0): divide the rho values by the given
                 float or array
             divide_fd (default False): if True,
-                divide by self.fd
+                divide by the Fermi Dirac (self.fd/self.yv**2)
         """
         if i2 is None:
             i2 = i1
@@ -1166,7 +1199,7 @@ class FortEPiaNORun:
         xv, yv = interp
         plt.plot(
             xv,
-            yv / divide_by / (self.fd if divide_fd else 1.0),
+            yv / divide_by / ((self.fd / self.yv ** 2) if divide_fd else 1.0),
             ls=ls,
             c=lc,
             label=r"%s $\alpha\beta$=%d%d %s x=%f"
@@ -1460,6 +1493,98 @@ class FortEPiaNORun:
             ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}$")
             ax1.set_ylim(np.asarray(nefflims) * (11.0 / 4) ** (4.0 / 3))
 
+    def plotNeffAtAllX(
+        self,
+        lc="k",
+        ls="-",
+        lab=None,
+        endensx=0,
+        endensgamma=2,
+        endensnu0=5,
+    ):
+        """Plot the evolution of Neff as a function of x, computing Neff
+        at each moment using rho_nu, rho_gamma, z, w.
+        May not give perfectly correct results due to numerical
+        instability in the calculation of z/w.
+
+        Parameters:
+            lc (default "k"): the line color
+            ls (default "-"): the line style
+            lab (default None): if not None, the line label
+            endensx (default 0): index of
+                the x column in self.endens
+            endensgamma (default 2): index of
+                the photon energy density column in self.endens
+            endensnu0 (default 5): index of
+                the first neutrino energy density column in self.endens
+        """
+        try:
+            rhogammas = self.endens[:, (endensx, endensgamma)][:, :]
+        except (AttributeError, TypeError, IndexError):
+            print(traceback.format_exc())
+            try:
+                self.zdat[:, (0, self.zCol)][:]
+            except (AttributeError, TypeError):
+                print(traceback.format_exc())
+                return
+            rhogammas = np.array(
+                [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zCol)]]
+            )
+        try:
+            rns = np.sum(self.endens[:, endensnu0 : endensnu0 + self.nnu][:, :], axis=1)
+            xs = self.endens[:, endensx][:]
+            rhonus = np.array(list(zip(xs, rns)))
+        except (AttributeError, TypeError, IndexError):
+            print(traceback.format_exc())
+            try:
+                [self.rho[inu, inu, 0][:] for inu in range(self.nnu)]
+            except (AttributeError, TypeError):
+                print(traceback.format_exc())
+                return
+            rhonus = np.array(
+                [
+                    [
+                        x,
+                        np.sum(
+                            [
+                                self.integrateRho_yn(inu, 3, ix=ix)
+                                for inu in range(self.nnu)
+                            ]
+                        ),
+                    ]
+                    for ix, [x, z] in enumerate(self.zdat[:, (0, self.zCol)])
+                ]
+            )
+        try:
+            zs = self.zdat[:, (0, self.zCol)][:]
+            ws = self.zdat[:, self.zCol + 1]
+        except (AttributeError, TypeError, IndexError):
+            print(traceback.format_exc())
+            return
+        frhonu = interp1d(*stripRepeated(rhonus, 0, 1))
+        frhoga = interp1d(*stripRepeated(rhogammas, 0, 1))
+        zs[:, 1] = zs[:, 1] / ws[:]
+        fzow = interp1d(*stripRepeated(zs, 0, 1))
+        data = np.asarray(
+            [
+                [
+                    x,
+                    8.0 / 7.0 * frhonu(x) / frhoga(x) * fzow(x) ** 4.0,
+                ]
+                for x in rhogammas[:, 0]
+            ]
+        )
+        plt.plot(
+            data[:, 0],
+            data[:, 1],
+            ls=ls,
+            c=lc,
+            label=self.label if lab is None else lab,
+        )
+        plt.xscale("log")
+        plt.xlabel(r"$x$")
+        plt.ylabel(r"$N_{\rm eff}$")
+
     def plotEnergyDensity(
         self,
         gamma_e=True,
@@ -1570,6 +1695,31 @@ class FortEPiaNORun:
                 ls=gems if not allstyles else allstyles,
                 lw=lw,
             )
+
+    def plotDeltaEntropy(
+        self,
+        lc="k",
+        ls="-",
+        lab=None,
+    ):
+        """Plot the variation in total entropy as a function of x
+
+        Parameters:
+            lc (default "k"): the line color
+            ls (default "-"): the line style
+            lab (default None): if not None, the line label
+        """
+        ds = np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.entropy])
+        plt.plot(
+            self.entropy[:, 0],
+            (ds / ds[0] - 1.0) * 100.0,
+            c=lc,
+            ls=ls,
+            label=self.label if lab is None else lab,
+        )
+        plt.xscale("log")
+        plt.xlabel("$x$")
+        plt.ylabel(r"$\delta s_{\rm tot}$ [%]")
 
     def plotEntropy(
         self,
