@@ -3914,26 +3914,6 @@ class TestPrepareIni(unittest.TestCase):
                     + "'McKellar:1992ja' for the expressions from the paper McKellar:1992ja",
                 ),
                 call(
-                    "--collint_d_no_nue",
-                    action="store_true",
-                    help="disable nue contributions to diagonal damping terms",
-                ),
-                call(
-                    "--collint_d_no_nunu",
-                    action="store_true",
-                    help="disable nunu contributions to diagonal damping terms",
-                ),
-                call(
-                    "--collint_od_no_nue",
-                    action="store_true",
-                    help="disable nue contributions to off-diagonal damping terms",
-                ),
-                call(
-                    "--collint_od_no_nunu",
-                    action="store_true",
-                    help="disable nunu contributions to off-diagonal damping terms",
-                ),
-                call(
                     "--qed_corrections",
                     choices=["no", "o2", "o3", "o2ln", "o3ln"],
                     default="o3",
@@ -3991,42 +3971,6 @@ class TestPrepareIni(unittest.TestCase):
                     type=float,
                     default=0.0,
                     help=r"define $\Delta m^2_{41}$",
-                ),
-                call(
-                    "--th12",
-                    type=float,
-                    default=0.0,
-                    help=r"define $\theta_{12}$ or $\sin^2 \theta_{12}$",
-                ),
-                call(
-                    "--th13",
-                    type=float,
-                    default=0.0,
-                    help=r"define $\theta_{13}$ or $\sin^2 \theta_{13}$",
-                ),
-                call(
-                    "--th14",
-                    type=float,
-                    default=0.0,
-                    help=r"define $\theta_{14}$ or $\sin^2 \theta_{14}$",
-                ),
-                call(
-                    "--th23",
-                    type=float,
-                    default=0.0,
-                    help=r"define $\theta_{23}$ or $\sin^2 \theta_{23}$",
-                ),
-                call(
-                    "--th24",
-                    type=float,
-                    default=0.0,
-                    help=r"define $\theta_{24}$ or $\sin^2 \theta_{24}$",
-                ),
-                call(
-                    "--th34",
-                    type=float,
-                    default=0.0,
-                    help=r"define $\theta_{34}$ or $\sin^2 \theta_{34}$",
                 ),
                 call(
                     "-V",
@@ -4126,6 +4070,41 @@ class TestPrepareIni(unittest.TestCase):
                     help="do not use the Gauss-Laguerre method for integrals "
                     + "and for spacing the y points",
                 ),
+            ]
+            + [
+                call(
+                    "--collint_%s_no_%s" % (d, c),
+                    action="store_true",
+                    help="disable %s contributions to %s damping terms"
+                    % (c, "diagonal" if d == "d" else "off-diagonal"),
+                )
+                for c in ["nue", "nunu"]
+                for d in ["d", "od"]
+            ]
+            + [
+                call(
+                    "--th%d%d" % (j, i),
+                    type=float,
+                    default=0.0,
+                    help=r"define $\theta_{%d%d}$ or $\sin^2 \theta_{%d%d}$"
+                    % (j, i, j, i),
+                )
+                for i in range(1, 5)
+                for j in range(1, i)
+            ]
+            + [
+                call(
+                    "--nsi_G%s_%d%d" % (a, i, j),
+                    type=float,
+                    default=0.0,
+                    help=r"define $\epsilon^{%s}_{%d%d}$" % (a, i, j)
+                    if i == j
+                    else r"define $\epsilon^{%s}_{%d%d} = \epsilon^{%s}_{%d%d}$"
+                    % (a, i, j, a, j, i),
+                )
+                for a in ["L", "R"]
+                for i in range(1, 4)
+                for j in range(i, 4)
             ],
             any_order=True,
         )
@@ -4147,15 +4126,15 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.default_active, "VLC")
         self.assertEqual(args.default_sterile, "Gariazzo&al")
         self.assertEqual(args.use_sinsq, True)
-        self.assertEqual(args.dm21, 0.0)
-        self.assertEqual(args.dm31, 0.0)
-        self.assertEqual(args.dm41, 0.0)
-        self.assertEqual(args.th12, 0.0)
-        self.assertEqual(args.th13, 0.0)
-        self.assertEqual(args.th14, 0.0)
-        self.assertEqual(args.th23, 0.0)
-        self.assertEqual(args.th24, 0.0)
-        self.assertEqual(args.th34, 0.0)
+        for i in range(2, 5):
+            self.assertEqual(getattr(args, "dm%d1" % i), 0.0)
+        for i in range(1, 5):
+            for j in range(1, i):
+                self.assertEqual(getattr(args, "th%d%d" % (j, i)), 0.0)
+        for a in ["L", "R"]:
+            for i in range(1, 4):
+                for j in range(i, 4):
+                    self.assertEqual(getattr(args, "nsi_G%s_%d%d" % (a, i, j)), 0.0)
         self.assertEqual(args.verbose, 1)
         self.assertEqual(args.verbose_deriv_freq, 100)
         self.assertEqual(args.Nx, 200)
@@ -4183,82 +4162,84 @@ class TestPrepareIni(unittest.TestCase):
         self.assertEqual(args.save_nuDens, False)
         self.assertEqual(args.save_number, False)
         self.assertEqual(args.save_z, False)
-        for l in [
-            ["--ordering=NO"],
-            ["--ordering=IO"],
-            ["--default_active=None"],
-            ["--default_active=Bari"],
-            ["--default_active=NuFit"],
-            ["--default_active=VLC"],
-            ["--default_sterile=None"],
-            ["--default_sterile=Gariazzo&al"],
-            ["--sinsq"],
-            ["--dm21=1.23"],
-            ["--dm31=1.23"],
-            ["--dm41=1.23"],
-            ["--th12=0.01"],
-            ["--th13=0.01"],
-            ["--th14=0.01"],
-            ["--th23=0.01"],
-            ["--th24=0.01"],
-            ["--th34=0.01"],
-            ["-V=2"],
-            ["--verbose=2"],
-            ["--verbose_deriv_freq=200"],
-            ["--Nx=100"],
-            ["--x_in=0.1"],
-            ["--x_fin=40.5"],
-            ["--Ny=30"],
-            ["--y_min=0.02"],
-            ["--y_max=30.6"],
-            ["--dlsoda_rtol=1.3e-5"],
-            ["--dlsoda_atol=1.3e-4"],
-            ["--dlsoda_atol_z=1.2e-6"],
-            ["--dlsoda_atol_d=1.2e-6"],
-            ["--dlsoda_atol_o=1.2e-6"],
-            ["--no_GL"],
-            ["--save_energy_entropy"],
-            ["--save_fd"],
-            ["--save_Neff"],
-            ["--save_nuDens"],
-            ["--save_number"],
-            ["--save_z"],
-        ]:
+        for l in (
+            [
+                ["--ordering=NO"],
+                ["--ordering=IO"],
+                ["--default_active=None"],
+                ["--default_active=Bari"],
+                ["--default_active=NuFit"],
+                ["--default_active=VLC"],
+                ["--default_sterile=None"],
+                ["--default_sterile=Gariazzo&al"],
+                ["--sinsq"],
+                ["-V=2"],
+                ["--verbose=2"],
+                ["--verbose_deriv_freq=200"],
+                ["--Nx=100"],
+                ["--x_in=0.1"],
+                ["--x_fin=40.5"],
+                ["--Ny=30"],
+                ["--y_min=0.02"],
+                ["--y_max=30.6"],
+                ["--dlsoda_rtol=1.3e-5"],
+                ["--dlsoda_atol=1.3e-4"],
+                ["--dlsoda_atol_z=1.2e-6"],
+                ["--dlsoda_atol_d=1.2e-6"],
+                ["--dlsoda_atol_o=1.2e-6"],
+                ["--no_GL"],
+                ["--save_energy_entropy"],
+                ["--save_fd"],
+                ["--save_Neff"],
+                ["--save_nuDens"],
+                ["--save_number"],
+                ["--save_z"],
+            ]
+            + [["--dm%d1=1.23" % i] for i in range(2, 5)]
+            + [["--th%d%d=0.01" % (j, i)] for i in range(1, 5) for j in range(1, i)]
+            + [
+                ["--nsi_G%s_%d%d=0.02" % (a, i, j)]
+                for a in ["L", "R"]
+                for i in range(1, 4)
+                for j in range(i, 4)
+            ]
+        ):
             args = parser.parse_args(baseargs + l)
-        for l in [
-            ["--someoption"],
-            ["--ordering=abc"],
-            ["--default_active=abc"],
-            ["--dm21=abc"],
-            ["--dm31=abc"],
-            ["--dm41=abc"],
-            ["--th12=abc"],
-            ["--th13=abc"],
-            ["--th14=abc"],
-            ["--th23=abc"],
-            ["--th24=abc"],
-            ["--th34=abc"],
-            ["--verbose=abc"],
-            ["--verbose_deriv_freq=abc"],
-            ["--Nx=abc"],
-            ["--x_in=abc"],
-            ["--x_fin=abc"],
-            ["--Ny=abc"],
-            ["--y_min=abc"],
-            ["--y_max=abc"],
-            ["--dlsoda_rtol=abc"],
-            ["--dlsoda_atol=abc"],
-            ["--dlsoda_atol_z=abc"],
-            ["--dlsoda_atol_d=abc"],
-            ["--dlsoda_atol_o=abc"],
-            ["--no_GL=a"],
-            ["--save_energy_entropy=a"],
-            ["--save_fd=a"],
-            ["--save_Neff=a"],
-            ["--save_nuDens=a"],
-            ["--save_number=a"],
-            ["--save_z=a"],
-        ]:
+        for l in (
+            [
+                ["--someoption"],
+                ["--ordering=abc"],
+                ["--default_active=abc"],
+                ["--verbose=abc"],
+                ["--verbose_deriv_freq=abc"],
+                ["--Nx=abc"],
+                ["--x_in=abc"],
+                ["--x_fin=abc"],
+                ["--Ny=abc"],
+                ["--y_min=abc"],
+                ["--y_max=abc"],
+                ["--dlsoda_rtol=abc"],
+                ["--dlsoda_atol=abc"],
+                ["--dlsoda_atol_z=abc"],
+                ["--dlsoda_atol_d=abc"],
+                ["--dlsoda_atol_o=abc"],
+                ["--no_GL=a"],
+                ["--save_energy_entropy=a"],
+                ["--save_fd=a"],
+                ["--save_Neff=a"],
+                ["--save_nuDens=a"],
+                ["--save_number=a"],
+                ["--save_z=a"],
+            ]
+            + [["--dm%d1=abc" % i] for i in range(2, 5)]
+            + [["--th%d%d=abc" % (j, i)] for i in range(1, 5) for j in range(1, i)]
+            + [
+                ["--nsi_G%s_%d%d=abc" % (a, i, j)]
+                for a in ["L", "R"]
+                for i in range(1, 4)
+                for j in range(i, 4)
+            ]
+        ):
             with self.assertRaises(SystemExit):
                 args = parser.parse_args(baseargs + l)
         values = pim.getIniValues(args)
@@ -4484,6 +4465,20 @@ class TestPrepareIni(unittest.TestCase):
                 "Ny": 24,
                 "y_min": 0.01,
                 "y_max": 20,
+                "nsi_GL_11": 1.1,
+                "nsi_GL_12": 1.2,
+                "nsi_GL_13": 1.3,
+                "nsi_GL_22": 2.2,
+                "nsi_GL_23": 2.3,
+                "nsi_GL_33": 3.3,
+                "nsi_GL_31": 3.1,
+                "nsi_GR_11": 11,
+                "nsi_GR_12": 12,
+                "nsi_GR_13": 13,
+                "nsi_GR_22": 22,
+                "nsi_GR_23": 23,
+                "nsi_GR_33": 33,
+                "nsi_GR_21": 21,
                 "dlsoda_atol_z": 1e-6,
                 "dlsoda_atol_d": 1e-6,
                 "dlsoda_atol_o": 1e-7,
@@ -4544,6 +4539,25 @@ class TestPrepareIni(unittest.TestCase):
                 "ftqed_temperature_corr": "F",
                 "ftqed_ord3": "F",
                 "ftqed_log_term": "F",
+                "nsi": "\n".join(
+                    [
+                        "%s = %f" % (k, v)
+                        for k, v in {
+                            "nsi_GL_11": 1.1,
+                            "nsi_GL_12": 1.2,
+                            "nsi_GL_13": 1.3,
+                            "nsi_GL_22": 2.2,
+                            "nsi_GL_23": 2.3,
+                            "nsi_GL_33": 3.3,
+                            "nsi_GR_11": 11,
+                            "nsi_GR_12": 12,
+                            "nsi_GR_13": 13,
+                            "nsi_GR_22": 22,
+                            "nsi_GR_23": 23,
+                            "nsi_GR_33": 33,
+                        }.items()
+                    ]
+                ),
             },
         )
         args = Namespace(
@@ -4558,6 +4572,18 @@ class TestPrepareIni(unittest.TestCase):
                 "Ny": 24,
                 "y_min": 0.01,
                 "y_max": 20,
+                "nsi_GL_11": 0.0,
+                "nsi_GL_12": 0.0,
+                "nsi_GL_13": 0.0,
+                "nsi_GL_22": 0.0,
+                "nsi_GL_23": 0.0,
+                "nsi_GL_33": 0.0,
+                "nsi_GR_11": 0.0,
+                "nsi_GR_12": 0.0,
+                "nsi_GR_13": 0.0,
+                "nsi_GR_22": 0.0,
+                "nsi_GR_23": 0.0,
+                "nsi_GR_33": 0.0,
                 "dlsoda_atol": 1e-5,
                 "dlsoda_atol_z": 1e-6,
                 "dlsoda_atol_d": 1e-6,
@@ -4619,6 +4645,17 @@ class TestPrepareIni(unittest.TestCase):
                 "ftqed_temperature_corr": "T",
                 "ftqed_ord3": "F",
                 "ftqed_log_term": "F",
+                "nsi": "\n".join(
+                    [
+                        "%s = %f" % (k, v)
+                        for k, v in {
+                            "nsi_G%s_%d%d" % (a, i, j): 0.0
+                            for a in ["L", "R"]
+                            for i in range(1, 4)
+                            for j in range(i, 4)
+                        }.items()
+                    ]
+                ),
             },
         )
         args.collint_damping_type = "McKellar:1992ja"
@@ -4686,6 +4723,7 @@ class TestPrepareIni(unittest.TestCase):
             "th23": 0.5,
             "dm21": 8e-5,
             "th12": 0.01,
+            "nsi": "nsi_GL_11=0.0\nnsi_GR_33=1.1",
             "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
             "sterile": "sterile1 = F\nsterile2 = T",
             "collint_diagonal_zero": "F",
@@ -4735,6 +4773,8 @@ class TestPrepareIni(unittest.TestCase):
             "theta24 = 0.2",
             "theta34 = 0.3",
             "dm41 = 1.23",
+            "nsi_GL_11=0.0",
+            "nsi_GR_33=1.1",
             "collint_diagonal_zero = F",
             "collint_offdiag_damping = T",
             "collint_damping_type = 1",

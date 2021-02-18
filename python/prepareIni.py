@@ -150,54 +150,34 @@ def setParser():
         action="store_false",
         help=r"use the $\sin^2$ of the mixing angles as input",
     )
-    parser.add_argument(
-        "--dm21", type=float, default=0.0, help=r"define $\Delta m^2_{21}$"
-    )
-    parser.add_argument(
-        "--dm31",
-        type=float,
-        default=0.0,
-        help=r"define $\Delta m^2_{31}$ (pass negative value for inverted ordering)",
-    )
-    parser.add_argument(
-        "--dm41", type=float, default=0.0, help=r"define $\Delta m^2_{41}$"
-    )
-    parser.add_argument(
-        "--th12",
-        type=float,
-        default=0.0,
-        help=r"define $\theta_{12}$ or $\sin^2 \theta_{12}$",
-    )
-    parser.add_argument(
-        "--th13",
-        type=float,
-        default=0.0,
-        help=r"define $\theta_{13}$ or $\sin^2 \theta_{13}$",
-    )
-    parser.add_argument(
-        "--th14",
-        type=float,
-        default=0.0,
-        help=r"define $\theta_{14}$ or $\sin^2 \theta_{14}$",
-    )
-    parser.add_argument(
-        "--th23",
-        type=float,
-        default=0.0,
-        help=r"define $\theta_{23}$ or $\sin^2 \theta_{23}$",
-    )
-    parser.add_argument(
-        "--th24",
-        type=float,
-        default=0.0,
-        help=r"define $\theta_{24}$ or $\sin^2 \theta_{24}$",
-    )
-    parser.add_argument(
-        "--th34",
-        type=float,
-        default=0.0,
-        help=r"define $\theta_{34}$ or $\sin^2 \theta_{34}$",
-    )
+    for i in range(2, 5):
+        parser.add_argument(
+            "--dm%d1" % i,
+            type=float,
+            default=0.0,
+            help=r"define $\Delta m^2_{%d1}$%s"
+            % (i, " (pass negative value for inverted ordering)" if i == 3 else ""),
+        )
+    for i in range(1, 5):
+        for j in range(1, i):
+            parser.add_argument(
+                "--th%d%d" % (j, i),
+                type=float,
+                default=0.0,
+                help=r"define $\theta_{%d%d}$ or $\sin^2 \theta_{%d%d}$" % (j, i, j, i),
+            )
+    for a in ["L", "R"]:
+        for i in range(1, 4):
+            for j in range(i, 4):
+                parser.add_argument(
+                    "--nsi_G%s_%d%d" % (a, i, j),
+                    type=float,
+                    default=0.0,
+                    help=r"define $\epsilon^{%s}_{%d%d}$" % (a, i, j)
+                    if i == j
+                    else r"define $\epsilon^{%s}_{%d%d} = \epsilon^{%s}_{%d%d}$"
+                    % (a, i, j, a, j, i),
+                )
     parser.add_argument(
         "-V", "--verbose", type=int, default=1, help="define the verbosity of the code"
     )
@@ -366,6 +346,13 @@ def getIniValues(args):
         a dictionary
     """
     values = oscParams(args)
+    nsi = {}
+    for a in ["L", "R"]:
+        for i in range(1, 4):
+            for j in range(i, 4):
+                b = "nsi_G%s_%d%d" % (a, i, j)
+                nsi[b] = getattr(args, b)
+    values["nsi"] = "\n".join(["%s = %f" % (k, v) for k, v in nsi.items()])
     for p in [
         "verbose",
         "Nx",
@@ -465,6 +452,8 @@ theta14 = {th14:}
 theta24 = {th24:}
 theta34 = {th34:}
 dm41 = {dm41:}
+
+{nsi:}
 
 collint_diagonal_zero = {collint_diagonal_zero:}
 collint_offdiag_damping = {collint_offdiag_damping:}
