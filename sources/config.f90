@@ -138,8 +138,12 @@ module fpConfig
 		real(dl), dimension(:), allocatable :: diag_el
 		integer :: ix, iy
 		real(dl) :: fdm, fdme
+		real(dl) :: eps
+		character(len=300) :: tmpstr
 
 		allocate(diag_el(flavorNumber))
+		allocate(nsi_epsilon(flavorNumber, flavorNumber))
+		nsi_epsilon = 0.d0
 
 		!GL
 		diag_el = gLmt
@@ -148,6 +152,18 @@ module fpConfig
 			if (sterile(ix)) diag_el(ix) = 0.d0
 		end do
 		call createDiagMat(GL_mat, flavorNumber, diag_el)
+#ifdef FULL_F_AB
+		do ix=1, flavorNumber
+			do iy=ix, flavorNumber
+				write(tmpstr,"('nsi_GL_',2I1)") ix, iy
+				eps = read_ini_real(trim(tmpstr), 0.d0)
+				GL_mat(ix, iy) = GL_mat(ix, iy) + eps
+				GL_mat(iy, ix) = GL_mat(ix, iy)
+				nsi_epsilon(ix, iy) = nsi_epsilon(ix, iy) + eps
+				nsi_epsilon(iy, ix) = nsi_epsilon(ix, iy)
+			end do
+		end do
+#endif
 		write(*,*) "G_L:"
 		call printMat(GL_mat)
 		GLR_vec(1,:,:) = GL_mat
@@ -158,9 +174,25 @@ module fpConfig
 			if (sterile(ix)) diag_el(ix) = 0.d0
 		end do
 		call createDiagMat(GR_mat, flavorNumber, diag_el)
+#ifdef FULL_F_AB
+		do ix=1, flavorNumber
+			do iy=ix, flavorNumber
+				write(tmpstr,"('nsi_GR_',2I1)") ix, iy
+				eps = read_ini_real(trim(tmpstr), 0.d0)
+				GR_mat(ix, iy) = GR_mat(ix, iy) + eps
+				GR_mat(iy, ix) = GR_mat(ix, iy)
+				nsi_epsilon(ix, iy) = nsi_epsilon(ix, iy) + eps
+				nsi_epsilon(iy, ix) = nsi_epsilon(ix, iy)
+			end do
+		end do
+#endif
 		write(*,*) "G_R:"
 		call printMat(GR_mat)
 		GLR_vec(2,:,:) = GR_mat
+#ifdef FULL_F_AB
+		write(*,*) "NSI epsilon:"
+		call printMat(nsi_epsilon)
+#endif
 
 		call setDampingFactors
 

@@ -28,6 +28,7 @@ module fpEquations
 	subroutine updateMatterDensities(x, z)
 		real(dl), intent(in) :: x, z
 		real(dl) :: ldf
+		real(dl) :: ldfe
 		integer :: ix, iy
 		procedure (nuDensity_integrator), pointer :: nuDensityInt
 
@@ -39,13 +40,21 @@ module fpEquations
 
 		leptonDensities = 0.d0
 		ldf = leptDensFactor / x**6
-		leptonDensities(1,1) = ldf * ( &
+		ldfe = ldf * ( &
 			electrons%energyDensity(x, z, ftqed_e_mth_leptondens) &
 			+ electrons%pressure(x, z, ftqed_e_mth_leptondens) &
 		)
+		leptonDensities(1,1) = ldfe
+#ifdef FULL_F_AB
+		do ix=1, flavorNumber
+			do iy=1, flavorNumber
+				leptonDensities(ix, iy) = leptonDensities(ix, iy) + ldfe * nsi_epsilon(ix, iy)
+			end do
+		end do
+#endif
 #ifndef NO_MUONS
 		if (flavorNumber.gt.2) &
-			leptonDensities(2,2) = ldf * ( &
+			leptonDensities(2,2) = leptonDensities(2,2) + ldf * ( &
 				muons%energyDensity(x, z, .false.) &
 				+ muons%pressure(x, z, .false.) &
 			)
