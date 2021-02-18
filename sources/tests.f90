@@ -1439,6 +1439,7 @@ program tests
 		integer :: a, b, ix, iy
 		real(dl) :: fdA, fdB, f1, f2, f3, r1, r2
 		type(cmplxMatNN) :: nA, nB
+		real(dl), dimension(:), allocatable :: diag_el
 		character(len=300) :: tmparg
 		real(dl), dimension(3) :: tmparrA, tmparrB
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
@@ -1758,6 +1759,137 @@ program tests
 				end do
 			end do
 		end do
+
+#ifdef FULL_F_AB
+		call printTestBlockName("F_ann functions, full_f_ab")
+		!rhoA
+		open(unit=fu, file="test_outputs/GLnsi.dat", status="old")
+		open(unit=fv, file="test_outputs/GRnsi.dat", status="old")
+		do ix=1, 3
+			read (fu, *) GLR_vec(1,ix,:)
+			read (fv, *) GLR_vec(2,ix,:)
+		end do
+		close(fu)
+		close(fv)
+		!rhoA
+		open(unit=fu, file="test_outputs/Fann_fr56_rhoA_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr56_rhoA_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nA%re(ix,:)
+			read (fv, *) nA%im(ix,:)
+		end do
+		close(fu)
+		close(fv)
+		!rhoB
+		open(unit=fu, file="test_outputs/Fann_fr56_rhoB_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fann_fr56_rhoB_im.dat", status="old")
+		do ix=1, 3
+			read (fu, *) nB%re(ix,:)
+			read (fv, *) nB%im(ix,:)
+		end do
+		close(fu)
+		close(fv)
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr5_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr5_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_ann test 5 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_ann_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_ann_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
+			end do
+		end do
+		!second series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fann_fr6_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fann_fr6_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+					write(tmparg,"('F_ann test 6 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+					call assert_double(trim(tmparg)//"re", F_ab_ann_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+					call assert_double(trim(tmparg)//"im", F_ab_ann_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
+			end do
+		end do
+
+		call printTestBlockName("F_sc functions, full_f_ab")
+		!first series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr5_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr5_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 5 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nA, nB, f1, f2, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nA, nB, f1, f2, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
+			end do
+		end do
+		!second series
+		do a=1,2
+			do b=1,2
+				open(unit=fu, file="test_outputs/Fsc_fr6_"//chLR(a)//chLR(b)//"_re.dat", status="old")
+				open(unit=fv, file="test_outputs/Fsc_fr6_"//chLR(a)//chLR(b)//"_im.dat", status="old")
+				do ix=1, 3
+					read (fu, *) tmpmatA(ix,:)
+					read (fv, *) tmpmatB(ix,:)
+				end do
+				close(fu)
+				close(fv)
+				do ix=1, flavorNumber
+					do iy=1, flavorNumber
+						write(tmparg,"('F_sc test 6 "//chLR(a)//chLR(b)//" full rho ',2I1)") ix,iy
+						call assert_double(trim(tmparg)//"re", F_ab_sc_re(nB, nA, f2, f3, a,b, ix,iy), tmpmatA(ix,iy), 1d-7)
+						call assert_double(trim(tmparg)//"im", F_ab_sc_im(nB, nA, f2, f3, a,b, ix,iy), tmpmatB(ix,iy), 1d-7)
+					end do
+				end do
+			end do
+		end do
+
+		allocate(diag_el(flavorNumber))
+		diag_el = gLmt
+		diag_el(1) = gLe
+		do ix=1, flavorNumber
+			if (sterile(ix)) diag_el(ix) = 0.d0
+		end do
+		call createDiagMat(GL_mat, flavorNumber, diag_el)
+		GLR_vec(1,:,:) = GL_mat
+
+		diag_el = gRemt
+		do ix=1, flavorNumber
+			if (sterile(ix)) diag_el(ix) = 0.d0
+		end do
+		call createDiagMat(GR_mat, flavorNumber, diag_el)
+		GLR_vec(2,:,:) = GR_mat
+		deallocate(diag_el)
+#endif
+
 		call deallocateCmplxMat(nA)
 		call deallocateCmplxMat(nB)
 		call printTotalTests

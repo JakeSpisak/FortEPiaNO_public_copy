@@ -32,6 +32,7 @@ module fpStuff
 		deallocate(dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu)
 		deallocate(GL_mat, GR_mat, GLR_vec)
 		deallocate(mixingAngles, massSplittings)
+		deallocate(nsi_epsilon)
 	end subroutine deallocateStuff
 
 	pure subroutine deallocateCmplxMat(m)

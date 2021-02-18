@@ -27,6 +27,7 @@ module fpConfig
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 		allocate(massSplittings(nf))
 		allocate(mixingAngles(nf,nf))
+		allocate(nsi_epsilon(nf,nf))
 
 		if (.not.allocated(ln_2dint_y)) &
 			allocate(ln_2dint_y(ln_2dint_Npts), ln_2dint_dy(ln_2dint_Npts))
@@ -142,7 +143,6 @@ module fpConfig
 		character(len=300) :: tmpstr
 
 		allocate(diag_el(flavorNumber))
-		allocate(nsi_epsilon(flavorNumber, flavorNumber))
 		nsi_epsilon = 0.d0
 
 		!GL
@@ -152,6 +152,7 @@ module fpConfig
 			if (sterile(ix)) diag_el(ix) = 0.d0
 		end do
 		call createDiagMat(GL_mat, flavorNumber, diag_el)
+#ifndef DO_TESTS
 #ifdef FULL_F_AB
 		do ix=1, flavorNumber
 			do iy=ix, flavorNumber
@@ -164,6 +165,7 @@ module fpConfig
 			end do
 		end do
 #endif
+#endif
 		write(*,*) "G_L:"
 		call printMat(GL_mat)
 		GLR_vec(1,:,:) = GL_mat
@@ -174,6 +176,7 @@ module fpConfig
 			if (sterile(ix)) diag_el(ix) = 0.d0
 		end do
 		call createDiagMat(GR_mat, flavorNumber, diag_el)
+#ifndef DO_TESTS
 #ifdef FULL_F_AB
 		do ix=1, flavorNumber
 			do iy=ix, flavorNumber
@@ -185,6 +188,7 @@ module fpConfig
 				nsi_epsilon(iy, ix) = nsi_epsilon(ix, iy)
 			end do
 		end do
+#endif
 #endif
 		write(*,*) "G_R:"
 		call printMat(GR_mat)
