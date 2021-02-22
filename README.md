@@ -16,7 +16,7 @@ see also on [INSPIRE](https://inspirehep.net/record/1736955).
 and
 
 **Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED**  
-_J.J. Bennett and others_
+_J.J. Bennett and others_  
 [arxiv:2012.02726](https://arxiv.org/abs/2012.02726),  
 see also on [INSPIRE](https://inspirehep.net/record/1835091).  
 
