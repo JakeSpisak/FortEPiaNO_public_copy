@@ -1228,7 +1228,7 @@ class TestFortEPiaNORun(FPTestCase):
         run.yv = np.array([x for x in range(3)])
         self.assertEqualArray(run.interpolateRhoIJ(0, 0, 2), [[0, 1, 3], [13, 24, 33]])
         self.assertEqualArray(
-            run.interpolateRhoIJ(0, 0, 2, y2=True),
+            run.interpolateRhoIJ(0, 0, 2, yexp=2),
             [[0, 1, 3], [y * 4 for y in [13, 24, 33]]],
         )
         self.assertEqualArray(
@@ -1287,7 +1287,7 @@ class TestFortEPiaNORun(FPTestCase):
             run.interpolateRhoIJ_x(0, 0, 2), [[0, 1, 2], [12, 22, 32]]
         )
         self.assertEqualArray(
-            run.interpolateRhoIJ_x(0, 0, 2, y2=True),
+            run.interpolateRhoIJ_x(0, 0, 2, yexp=2),
             [[0, 1, 2], [0, 22, 4 * 32]],
         )
         self.assertEqualArray(
@@ -1968,8 +1968,8 @@ class TestFortEPiaNORun(FPTestCase):
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.ylabel"
         ) as _yl:
-            run.plotRhoFin(1, i2=0, ri=1, ls=":", lc="r", y2=True)
-            _yl.assert_called_once_with(r"$y^2\rho_{\alpha\beta}^{\rm fin}(y)$")
+            run.plotRhoFin(1, i2=0, ri=1, ls=":", lc="r", yexp=2)
+            _yl.assert_called_once_with(r"$y^{2}\rho_{\alpha\beta}^{\rm fin}(y)$")
             self.assertEqualArray(
                 _plt.call_args[0], [run.yv, run.yv ** 2 * run.rho[1, 0, 1][-1, 1:]]
             )
@@ -2053,7 +2053,7 @@ class TestFortEPiaNORun(FPTestCase):
             _plt.assert_called_once()
             self.assertEqualArray(
                 _plt.call_args[0],
-                run.interpolateRhoIJ_x(0, 0, 0.5, 0, y2=False, mass=False),
+                run.interpolateRhoIJ_x(0, 0, 0.5, 0, yexp=0, mass=False),
             )
             self.assertEqual(
                 _plt.call_args[1],
@@ -2067,11 +2067,11 @@ class TestFortEPiaNORun(FPTestCase):
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.ylabel"
         ) as _yl:
-            run.plotRhoX(1, 0.5, i2=0, ri=1, ls=":", lc="r", y2=True, lab="aaa")
-            _yl.assert_called_once_with(r"$y^2\rho_{\alpha\beta}(y)$")
+            run.plotRhoX(1, 0.5, i2=0, ri=1, ls=":", lc="r", yexp=2, lab="aaa")
+            _yl.assert_called_once_with(r"$y^{2}\rho_{\alpha\beta}(y)$")
             self.assertEqualArray(
                 _plt.call_args[0],
-                run.interpolateRhoIJ_x(1, 0, 0.5, 1, y2=True, mass=False),
+                run.interpolateRhoIJ_x(1, 0, 0.5, 1, yexp=2, mass=False),
             )
             self.assertEqual(
                 _plt.call_args[1],
@@ -2091,11 +2091,11 @@ class TestFortEPiaNORun(FPTestCase):
             run.plotRhoX(1, 0.5, mass=True)
             self.assertEqualArray(
                 _plt.call_args[0],
-                run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True),
+                run.interpolateRhoIJ_x(1, 1, 0.5, 0, yexp=0, mass=True),
             )
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotRhoX(1, 0.5, mass=True, divide_by=2.0)
-            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, yexp=0, mass=True)
             self.assertEqualArray(
                 _plt.call_args[0],
                 [x, np.array(y) / 2.0],
@@ -2105,14 +2105,14 @@ class TestFortEPiaNORun(FPTestCase):
         run.fd = np.linspace(0.1, 10, 200)
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotRhoX(1, 0.5, mass=True, divide_fd=True)
-            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, yexp=0, mass=True)
             self.assertEqualArray(
                 _plt.call_args[0],
                 [x, np.array(y) / (run.fd / run.yv ** 2)],
             )
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotRhoX(1, 0.5, mass=True, divide_fd=True, divide_by=2.0)
-            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, y2=False, mass=True)
+            x, y = run.interpolateRhoIJ_x(1, 1, 0.5, 0, yexp=0, mass=True)
             self.assertEqualArray(
                 _plt.call_args[0],
                 [x, np.array(y) / (run.fd / run.yv ** 2) / 2.0],
@@ -2177,8 +2177,8 @@ class TestFortEPiaNORun(FPTestCase):
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.ylabel"
         ) as _yl:
-            run.plotRhoDiagY(1, 2.5, ":", lc="r", y2=True)
-            _yl.assert_called_once_with(r"$y^2\rho_{\alpha\alpha}$")
+            run.plotRhoDiagY(1, 2.5, ":", lc="r", yexp=2)
+            _yl.assert_called_once_with(r"$y^{2}\rho_{\alpha\alpha}$")
             x, yv = run.interpolateRhoIJ(1, 1, 2.5)
             self.assertEqualArray(_plt.call_args[0], [x, np.array(yv) * 2.5 ** 2])
             self.assertEqual(
@@ -2269,8 +2269,8 @@ class TestFortEPiaNORun(FPTestCase):
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.ylabel"
         ) as _yl:
-            run.plotdRhoDiagY(1, 2.5, ":", lc="r", y2=True)
-            _yl.assert_called_once_with(r"$dy^2\rho_{\alpha\alpha}/dx$")
+            run.plotdRhoDiagY(1, 2.5, ":", lc="r", yexp=2)
+            _yl.assert_called_once_with(r"$dy^{2}\rho_{\alpha\alpha}/dx$")
             x, yv = run.interpolateRhoIJ(1, 1, 2.5)
             self.assertEqualArray(
                 _plt.call_args[0], [x, np.gradient(np.array(yv) * 2.5 ** 2, x)]
@@ -3660,9 +3660,9 @@ class TestFortEPiaNORun(FPTestCase):
                 )
             self.assertEqual(_plRf.call_count, 6)
             for i in range(run.nnu):
-                _plRf.assert_any_call(i, ls=fpom.styles[i], lc=fpom.colors[i], y2=True)
+                _plRf.assert_any_call(i, ls=fpom.styles[i], lc=fpom.colors[i], yexp=2)
                 _plRf.assert_any_call(
-                    i, ls=fpom.styles[i], lc=fpom.colors[i], y2=True, mass=True
+                    i, ls=fpom.styles[i], lc=fpom.colors[i], yexp=2, mass=True
                 )
             self.assertEqual(_plRoy.call_count, 3)
             self.assertEqual(_plDRoy.call_count, 3)
@@ -3738,9 +3738,9 @@ class TestFortEPiaNORun(FPTestCase):
                 )
             self.assertEqual(_plRf.call_count, 6)
             for i in range(run.nnu):
-                _plRf.assert_any_call(i, ls=fpom.styles[i], lc=fpom.colors[i], y2=True)
+                _plRf.assert_any_call(i, ls=fpom.styles[i], lc=fpom.colors[i], yexp=2)
                 _plRf.assert_any_call(
-                    i, ls=fpom.styles[i], lc=fpom.colors[i], y2=True, mass=True
+                    i, ls=fpom.styles[i], lc=fpom.colors[i], yexp=2, mass=True
                 )
             self.assertEqual(_plRoy.call_count, 3)
             self.assertEqual(_plDRoy.call_count, 3)
