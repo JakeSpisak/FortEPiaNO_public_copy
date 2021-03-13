@@ -33,6 +33,7 @@ program tests
 
 	call do_basic_tests
 	call do_test_NC_integrals
+	call do_test_densMat2vec
 	call do_test_commutator
 	call do_test_JKG
 	call do_test_dme2
@@ -264,6 +265,86 @@ program tests
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_NC_integrals
+
+	subroutine do_test_densMat2vec
+		real(dl), dimension(:), allocatable :: vec
+		integer :: i,j,k,m
+		character(len=300) :: tmparg
+
+		call printTestBlockName("densMat_2_vec and vec_2_densMat")
+
+		allocate(vec(Ny))
+		do m=1, Ny
+			do i=1, flavorNumber
+				do j=1, flavorNumber
+					nuDensMatVec(m)%re(i, j) = 1.d0*i + 3.d0*j + 10.*m
+					nuDensMatVec(m)%im(i, j) = -(1.d0*i + 3.d0*j + 10.*m)
+				end do
+			end do
+		end do
+		call densMat_2_vec(vec)
+		k=1
+		do m=1, Ny
+			do i=1, flavorNumber
+				write(tmparg, "('dm2v ',3I3)") k,m,i
+				call assert_double_rel(trim(tmparg)//"re", vec(k+i-1), nuDensMatVec(m)%re(i,i), 1d-7)
+			end do
+			k=k+flavorNumber
+			if (has_offdiagonal()) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						write(tmparg, "('dm2v ',4I3)") k,m,i,j
+						call assert_double_rel(trim(tmparg)//"re", vec(k), nuDensMatVec(m)%re(i,j), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im", vec(k+1), nuDensMatVec(m)%im(i,j), 1d-7)
+						k=k+2
+					end do
+				end do
+			end if
+		end do
+
+		do m=1, Ny
+			nuDensMatVec(m)%re = 0.
+			nuDensMatVec(m)%im = 0.
+			nuDensMatVecFD(m)%re = 0.
+			nuDensMatVecFD(m)%im = 0.
+		end do
+		do k=1, ntot
+			vec(k) = 0.1*k
+		end do
+		call vec_2_densMat(vec)
+		k=1
+		do m=1, Ny
+			do i=1, flavorNumber
+				write(tmparg, "('dm2v ',3I3)") k,m,i
+				call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(i,i), vec(k+i-1), 1d-7)
+				call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(i,i), 0.d0, 1d-10)
+				call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(i,i), (1.d0 + vec(k+i-1)) * feq_arr(m), 1d-7)
+				call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(i,i), 0.d0, 1d-10)
+			end do
+			k=k+flavorNumber
+			if (has_offdiagonal()) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						write(tmparg, "('dm2v ',4I3)") k,m,i,j
+						call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(i,j), vec(k), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(i,j), vec(k+1), 1d-7)
+						call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(i,j), vec(k), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(i,j), vec(k+1), 1d-7)
+						write(tmparg, "('dm2v ',4I3)") k,m,j,i
+						call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(j,i), vec(k), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(j,i), -vec(k+1), 1d-7)
+						call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(j,i), vec(k), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(j,i), -vec(k+1), 1d-7)
+						k=k+2
+					end do
+				end do
+			end if
+		end do
+
+		deallocate(vec)
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_densMat2vec
 
 	subroutine do_test_commutator
 		real(dl), dimension(:,:), allocatable :: m1, m2, m3, res
