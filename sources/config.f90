@@ -404,6 +404,8 @@ module fpConfig
 				sterile(ix) = read_ini_logical(trim(tmparg), .true.)
 			end if
 		end do
+		if (any(sterile) .and. .not.collint_d_no_nunu) &
+			call criticalError("Diagonal neutrino-neutrino collision terms do not work with sterile neutrinos yet.")
 		tot_factor_active_nu = 0.d0
 		tot_factor_nu = 0.d0
 		do ix=1, flavorNumber
