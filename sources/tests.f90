@@ -1,4 +1,5 @@
 program tests
+	use fpversion
 	use precision
 	use variables
 	use fpConfig
@@ -13,15 +14,17 @@ program tests
 	integer, parameter :: fu = 89237, fv = 89238, fw = 89239
 	character(len=1), dimension(2), parameter :: chLR=(/'L','R'/)
 
+	write(*,*) "This is FortEPiaNO version "//version
+
 	call openLogFile
 #ifdef GLR_ZERO_MOMENTUM
-    call criticalError("Tests will fail if they were compiled with GLR_ZERO_MOMENTUM=1")
+	call criticalError("Tests will fail if they were compiled with GLR_ZERO_MOMENTUM=1")
 #endif
 #ifdef NO_NUE_ANNIHILATION
-    call criticalError("Tests will fail if they were compiled with NO_NUE_ANNIHILATION=1")
+	call criticalError("Tests will fail if they were compiled with NO_NUE_ANNIHILATION=1")
 #endif
 #ifdef SINSQTHW
-    call criticalError("Tests will fail if they were compiled with any non-standard SINSQTHW")
+	call criticalError("Tests will fail if they were compiled with any non-standard SINSQTHW")
 #endif
 
 	write(*,*) ""
