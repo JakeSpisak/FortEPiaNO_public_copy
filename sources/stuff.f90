@@ -947,7 +947,7 @@ enddo                                                   !SG-PF
 		kappa_damp = a*a*(c-b) - 2.d0/3.d0*a* (c**3-b**3) + (c**5-b**5)/5.d0
 	end function kappa_damp
 
-	!function that returns the integrand of the nunu damping coefficient in YYYW terms using K kernels
+	!function that returns the integrand of the nunu damping coefficient in Bennett:2020zkv terms using K kernels
 	elemental function nunu_damp_integrand(p, p1, q)
 		real(dl) :: nunu_damp_integrand
 		real(dl), intent(in) :: p, q, p1
@@ -999,7 +999,7 @@ enddo                                                   !SG-PF
 		deallocate(ya, dya, fy2_arr)
 	end function dy_damping
 
-	!function that returns the integrand of the nunu damping coefficient in YYYW terms using PI kernels
+	!function that returns the integrand of the nunu damping coefficient in Bennett:2020zkv terms using PI kernels
 	elemental function nunu_damp_integrand_pi(p, p1, q)
 		real(dl) :: nunu_damp_integrand_pi
 		real(dl), intent(in) :: p, q, p1

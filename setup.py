@@ -3,17 +3,20 @@
 
 from setuptools import setup
 
-version = "1.0.0"
-
 
 def readme():
     with open("README.md") as f:
         return f.read()
 
 
+def version():
+    with open("VERSION") as f:
+        return f.read().split(" ")[0]
+
+
 setup(
     name="fortepiano",
-    version=version,
+    version=version(),
     description="support scripts for FortEPiaNO",
     long_description_content_type="text/markdown",
     long_description=readme(),
@@ -32,4 +35,5 @@ setup(
         'mock;python_version<"3"',
         'unittest2;python_version<"3"',
     ],
+    data_files=[("python", ["LICENSE.txt", "VERSION", "icon.png"])],
 )
