@@ -3,6 +3,8 @@
 
 from setuptools import setup
 
+version = "1.0.0"
+
 
 def readme():
     with open("README.md") as f:
@@ -11,14 +13,15 @@ def readme():
 
 setup(
     name="fortepiano",
+    version=version,
     description="support scripts for FortEPiaNO",
     long_description_content_type="text/markdown",
     long_description=readme(),
     author="S. Gariazzo",
     author_email="stefano.gariazzo@gmail.com",
     url="https://bitbucket.org/ahep_cosmo/fortepiano_public/",
-    # license="GPL-3.0",
-    # keywords="",
+    license="GPL-3.0",
+    keywords="neutrino decoupling, neutrino oscillations, early universe, Neff, effective number of relativistic species",
     install_requires=[
         "argparse",
         'matplotlib(>2,<3);python_version<"3"',
