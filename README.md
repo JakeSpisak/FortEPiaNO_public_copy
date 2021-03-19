@@ -1,6 +1,6 @@
 # [FortEPiaNO](https://bitbucket.org/ahep_cosmo/fortepiano_public/)
 FORTran-Evolved PrImordiAl Neutrino Oscillations  
-by S. Gariazzo (gariazzo@ific.uv.es) and P.F. de Salas (pablo.fernandez@fysik.su.se)
+by S. Gariazzo (gariazzo@ific.uv.es), P.F. de Salas (pablo.fernandez@fysik.su.se) and S. Pastor (pastor@ific.uv.es)
 
 FortEPiaNO is a Fortran code to compute the evolution of neutrino oscillations in the early universe.  
 The code is written to flexible, it can work with two to six neutrinos (active or sterile).  
@@ -17,6 +17,7 @@ and
 
 **Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED**  
 _J.J. Bennett and others_  
+To appear in JCAP.  
 [arxiv:2012.02726](https://arxiv.org/abs/2012.02726),  
 see also on [INSPIRE](https://inspirehep.net/record/1835091).  
 
