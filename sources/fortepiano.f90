@@ -4,6 +4,7 @@ program fortepiano
 	use fpConfig
 	use fpErrors
 	use fpEquations
+	use fpoutput
 	implicit none
 
 	write(*,*) "This is FortEPiaNO version "//version

@@ -3841,7 +3841,7 @@ class TestFortEPiaNORun(FPTestCase):
 
 
 class TestPrepareIni(unittest.TestCase):
-    """Testing the prepareIni module """
+    """Testing the prepareIni module"""
 
     testIni = "test_ini_file.ini"
 

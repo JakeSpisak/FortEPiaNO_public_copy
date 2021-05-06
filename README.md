@@ -156,6 +156,7 @@ Should you need to edit the source codes, this is more or less the content of ea
 * `fortepiano.f90`: main program;
 * `ftqed.f90`: functions and utilities to compute finite-temperature QED corrections;
 * `interactions.f90`: functions that define the neutrino interactions and the collision terms;
+* `matter.f90`: functions for the matter potential terms and rotation to the mass basis;
 * `tests.f90`: numerical tests for the software.
 
 Auxiliary files, which in principle you should not need to edit:
@@ -167,6 +168,7 @@ Auxiliary files, which in principle you should not need to edit:
 * `linear_interpolation_module.f90`: linear interpolation utilities;
 * `matrix_utils.f90`: utilities for creating and manipulating matrices;
 * `odepack*`: DLSODA and related utilities;
+* `output`: store and print output of the code;
 * `stuff.f90`: old functions that were used in previous versions of the code and now enter only the tests;
 * `test_utils.f90`: assertion functions and test counts;
 * `utilities.f90`: utilities for integration, interpolation, checkpointing, log file manipulation, time measurements.

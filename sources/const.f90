@@ -219,6 +219,58 @@ module variables
 		logical :: has_offdiagonal
 		has_offdiagonal = .not.(collint_offdiag_damping .and. collint_damping_type.eq.0)
 	end function has_offdiagonal
+
+	subroutine densMat_2_vec(vec)
+		real(dL), dimension(:), intent(out) :: vec
+		integer :: i,j,k,m
+
+		k=1
+		do m=1, Ny
+			do i=1, flavorNumber
+				vec(k+i-1) = nuDensMatVec(m)%re(i,i)
+			end do
+			k=k+flavorNumber
+			if (has_offdiagonal()) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						vec(k) = nuDensMatVec(m)%re(i,j)
+						vec(k+1) = nuDensMatVec(m)%im(i,j)
+						k=k+2
+					end do
+				end do
+			end if
+		end do
+	end subroutine densMat_2_vec
+
+	subroutine vec_2_densMat(vec)
+		real(dL), dimension(:), intent(in) :: vec
+		integer :: i,j,k,m
+
+		k=1
+		do m=1, Ny
+			do i=1, flavorNumber
+				nuDensMatVec(m)%re(i,i) = vec(k+i-1)
+				nuDensMatVec(m)%im(i,i) = 0.d0
+			end do
+			k=k+flavorNumber
+			if (has_offdiagonal()) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						nuDensMatVec(m)%re(i,j) = vec(k)
+						nuDensMatVec(m)%im(i,j) = vec(k+1)
+						nuDensMatVec(m)%re(j,i) = vec(k)
+						nuDensMatVec(m)%im(j,i) = -vec(k+1)
+						k=k+2
+					end do
+				end do
+			end if
+			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
+			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
+			do i=1, flavorNumber
+				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * feq_arr(m)
+			end do
+		end do
+	end subroutine vec_2_densMat
 end module variables
 
 module fpInterfaces1

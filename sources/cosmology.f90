@@ -526,4 +526,11 @@ module fpCosmology
 			nuDensityEq = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
 		end if
 	end function nuDensityEq
+
+	function Neff_from_rho_z(z)
+		real(dl) :: Neff_from_rho_z
+		real(dl), intent(in) :: z
+
+		Neff_from_rho_z = (zid)**4 * allNuDensity()/photonDensity(z) / 0.875d0
+	end function Neff_from_rho_z
 end module
