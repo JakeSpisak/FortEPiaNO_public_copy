@@ -2496,6 +2496,11 @@ program tests
 		character(len=300) :: tmparg
 		integer :: i, j, iy
 		real(dl), dimension(:,:,:), allocatable :: GLR_vectmp
+		type(cmplxMatNN) :: Heff, comm, collterms
+
+		call allocateCmplxMat(Heff)
+		call allocateCmplxMat(comm)
+		call allocateCmplxMat(collterms)
 
 		ftqed_temperature_corr = .false.
 		allocate(GLR_vectmp(2, flavorNumber, flavorNumber))
@@ -2543,7 +2548,7 @@ program tests
 		do j=1,3
 			res%re(j,j) = res%re(j,j)/fd
 		end do
-		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
+		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0, Heff, comm, collterms)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx A ',2I1)") i,j
@@ -2577,7 +2582,7 @@ program tests
 		do j=1,3
 			res%re(j,j) = res%re(j,j)/fd
 		end do
-		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue1, fakecollintnunu0)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue1, fakecollintnunu0, Heff, comm, collterms)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx B ',2I1)") i,j
@@ -2633,7 +2638,7 @@ program tests
 		do j=1,3
 			res%re(j,j) = res%re(j,j)/fd
 		end do
-		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0, Heff, comm, collterms)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx C ',2I1)") i,j
@@ -2658,7 +2663,7 @@ program tests
 		do j=1,3
 			res%re(j,j) = res%re(j,j)/fd
 		end do
-		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollintnuey, fakecollintnunu0)
+		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollintnuey, fakecollintnunu0, Heff, comm, collterms)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx D ',2I1)") i,j
@@ -2668,6 +2673,9 @@ program tests
 		end do
 		GLR_vec = GLR_vectmp
 		deallocate(GLR_vectmp)
+		call allocateCmplxMat(Heff)
+		call allocateCmplxMat(comm)
+		call allocateCmplxMat(collterms)
 		ftqed_temperature_corr = .true.
 		call printTotalTests
 		call resetTestCounter

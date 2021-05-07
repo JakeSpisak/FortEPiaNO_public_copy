@@ -306,20 +306,18 @@ module fpEquations
 		z_in = cvec(n) + 1.d0
 	end subroutine zin_solver
 
-	pure subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, dme2, sqrtraddens, Fint_nue, Fint_nunu)
+	pure subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, dme2, sqrtraddens, Fint_nue, Fint_nunu, Heff, comm, collterms)
 !		compute rho derivatives for a given momentum y_arr(m), save to a matrix
 		use fpInterfaces2
 		procedure (collision_integrand_nue) :: Fint_nue
 		procedure (collision_integrand_nunu) :: Fint_nunu
-		type(cmplxMatNN), intent(out) :: matrix
 		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: iy
+		type(cmplxMatNN), intent(out) :: matrix
+		type(cmplxMatNN), intent(inout) :: Heff, comm, collterms
 		real(dl) :: y, overallNorm, cf
 		integer :: ix
 		type(coll_args) :: collArgs
-		type(cmplxMatNN) :: tmpmat
-
-		call allocateCmplxMat(tmpmat)
 
 		y = nuDensMatVecFD(iy)%y
 
@@ -331,20 +329,20 @@ module fpEquations
 		collArgs%iy = iy
 
 		overallNorm = overallFactor / sqrtraddens
-		matrix = H_eff(y)
+		Heff = H_eff(y)
 
 		!switch imaginary and real parts because of the "-i" factor
-		call Commutator(matrix%re, nuDensMatVecFD(iy)%re, tmpmat%im)
-		call Commutator(matrix%re, nuDensMatVecFD(iy)%im, tmpmat%re)
+		call Commutator(Heff%re, nuDensMatVecFD(iy)%re, comm%im)
+		call Commutator(Heff%re, nuDensMatVecFD(iy)%im, comm%re)
 
 		!matrix is now redefined
 		cf = x**2/m_e_cub
-		matrix%im = - tmpmat%im * cf
-		matrix%re = tmpmat%re * cf
+		matrix%im = - comm%im * cf
+		matrix%re = comm%re * cf
 
-		tmpmat = get_collision_terms(collArgs, Fint_nue, Fint_nunu)
-		matrix%re = matrix%re + tmpmat%re
-		matrix%im = matrix%im + tmpmat%im
+		collterms = get_collision_terms(collArgs, Fint_nue, Fint_nunu)
+		matrix%re = matrix%re + collterms%re
+		matrix%im = matrix%im + collterms%im
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
@@ -354,15 +352,20 @@ module fpEquations
 		end do
 	end subroutine drhoy_dx_fullMat
 
-	pure subroutine drho_y_dx(x, w, z, m, dme2, sqrtraddens, n, ydot)
+	pure subroutine drho_y_dx(x, w, z, m, dme2, sqrtraddens, n, ydot, Heff, comm, collterms)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
 		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
+		type(cmplxMatNN), intent(inout) :: Heff, comm, collterms
 		integer :: i, j, k
 		type(cmplxMatNN) :: mat
 
-		call drhoy_dx_fullMat(mat, x, w, z, m, dme2, sqrtraddens, coll_nue_int, coll_nunu_int)
+		call drhoy_dx_fullMat(&
+			mat, x, w, z, m, dme2, sqrtraddens, &
+			coll_nue_int, coll_nunu_int, &
+			Heff, comm, collterms &
+		)
 		do i=1, flavorNumber
 			ydot(i) = mat%re(i,i)
 		end do
@@ -419,12 +422,16 @@ module fpEquations
 		sqrtraddens = sqrt(totalRadiationDensity(x, z))
 		call updateMatterDensities(x, z)
 
-		!$omp parallel shared(ydot, x, z, dme2, sqrtraddens, flavNumSqu) private(m, s, tmpvec)
+		!$omp parallel shared(ydot, x, z, dme2, sqrtraddens, flavNumSqu, intermediateSteps) private(m, s, tmpvec)
 		allocate(tmpvec(flavNumSqu))
 		tmpvec = 0
 		!$omp do schedule(static)
 		do m=1, Ny
-			call drho_y_dx(x, w, z, m, dme2, sqrtraddens, flavNumSqu, tmpvec)
+			call drho_y_dx( &
+				x, w, z, m, dme2, sqrtraddens, flavNumSqu, &
+				tmpvec, &
+				intermediateSteps%Heff(m), intermediateSteps%commutator(m), intermediateSteps%collterms(m) &
+			)
 			s=(m-1)*flavNumSqu
 			ydot(s+1:s+flavNumSqu) = tmpvec(:)
 		end do
@@ -437,7 +444,14 @@ module fpEquations
 		call densMat_2_vec(nuDensVec)
 
 		!optionally save all output params
-		call saveIntermediateSteps
+		if (intermediateSteps%output) then
+			intermediateSteps%x = x
+			intermediateSteps%norm = overallFactor / sqrtraddens
+			intermediateSteps%yvec = vars
+			intermediateSteps%ydot = ydot
+			! the other quantities should have been saved previously
+			call saveIntermediateSteps
+		end if
 	end subroutine derivatives
 
 	subroutine solver
