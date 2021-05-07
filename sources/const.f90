@@ -131,6 +131,15 @@ module variables
 		integer :: ix1, ix2, iy
 	end type coll_args
 
+	type derivatives_terms
+		logical :: output
+		real(dl) :: x, norm
+		real(dl), dimension(:), allocatable :: yvec, ydot
+		type(cmplxMatNN), dimension(:), allocatable :: Heff, commutator, collterms
+	end type derivatives_terms
+
+	type(derivatives_terms) :: intermediateSteps
+
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
 	real(dl) :: tot_factor_active_nu, tot_factor_nu
 	logical , dimension(:), allocatable :: sterile

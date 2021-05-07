@@ -437,15 +437,7 @@ module fpEquations
 		call densMat_2_vec(nuDensVec)
 
 		!optionally save all output params
-!        x
-!        z
-!        rho
-!        overallFactor / sqrtraddens
-!        Heff
-!        commutator
-!        collterms
-!        drhodx
-
+		call saveIntermediateSteps
 	end subroutine derivatives
 
 	subroutine solver

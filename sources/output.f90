@@ -153,6 +153,23 @@ module fpOutput
 		firstWrite=.false.
 	end subroutine saveRelevantInfo
 
+	subroutine saveIntermediateSteps
+
+		if (.not.intermediateSteps%output) &
+			return
+
+		!do things
+!        x
+!        yvec
+!        ydot
+!        overallFactor / sqrtraddens
+!        Heff
+!        commutator
+!        collterms
+
+
+	end subroutine saveIntermediateSteps
+
 	subroutine finalresults
 		procedure (nuDensity_integrator), pointer :: nuDensityInt
 		real(dl) :: ndeq, tmp, w, z

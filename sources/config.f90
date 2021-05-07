@@ -180,8 +180,8 @@ module fpConfig
 		if(save_fd .and. trim(outputFolder).ne."")&
 			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)
 		do ix=1, Ny
-			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
-			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
+			call allocateCmplxMat(nuDensMatVec(ix))
+			call allocateCmplxMat(nuDensMatVecFD(ix))
 			nuDensMatVec(ix)%y = y_arr(ix)
 			nuDensMatVecFD(ix)%y = y_arr(ix)
 			nuDensMatVec(ix)%re(:,:) = 0.d0
@@ -205,6 +205,18 @@ module fpConfig
 			close(3154)
 
 		deallocate(diag_el)
+
+		!quantities used to save intermediate steps
+		allocate(intermediateSteps%Heff(Ny))
+		allocate(intermediateSteps%commutator(Ny))
+		allocate(intermediateSteps%collterms(Ny))
+		allocate(intermediateSteps%yvec(ntot))
+		allocate(intermediateSteps%ydot(ntot))
+		do ix=1, Ny
+			call allocateCmplxMat(intermediateSteps%Heff(ix))
+			call allocateCmplxMat(intermediateSteps%commutator(ix))
+			call allocateCmplxMat(intermediateSteps%collterms(ix))
+		end do
 	end subroutine init_matrices
 
 	subroutine init_fermions
@@ -377,6 +389,7 @@ module fpConfig
 		save_number_evolution = read_ini_logical("save_number_evolution", .true.)
 		save_w_evolution = read_ini_logical("save_w_evolution", .true.)
 		save_z_evolution = read_ini_logical("save_z_evolution", .true.)
+		intermediateSteps%output = read_ini_logical("save_intermediate_steps", .false.)
 
 		z_in=1.d0
 		allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
