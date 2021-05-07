@@ -216,54 +216,77 @@ module variables
 	end subroutine allocateCmplxMat
 
 	elemental function has_offdiagonal()
+		!decide if off-diagonal collision terms are present or not
 		logical :: has_offdiagonal
 		has_offdiagonal = .not.(collint_offdiag_damping .and. collint_damping_type.eq.0)
 	end function has_offdiagonal
 
+	pure subroutine matrix_to_vector(mat, k, vec)
+		type(cmplxMatNN), intent(in) :: mat
+		integer, intent(inout) :: k
+		real(dl), dimension(:), intent(out) :: vec
+		integer :: i,j
+
+		do i=1, flavorNumber
+			vec(k+i-1) = mat%re(i,i)
+		end do
+		k=k+flavorNumber
+		if (has_offdiagonal()) then
+			do i=1, flavorNumber-1
+				do j=i+1, flavorNumber
+					vec(k) = mat%re(i,j)
+					vec(k+1) = mat%im(i,j)
+					k=k+2
+				end do
+			end do
+		end if
+	end subroutine matrix_to_vector
+
 	subroutine densMat_2_vec(vec)
-		real(dL), dimension(:), intent(out) :: vec
-		integer :: i,j,k,m
+		!save the real and imaginary elements of the neutrino density matrix
+		!into a 1d vector, with their appropriate order
+		real(dl), dimension(:), intent(out) :: vec
+		integer :: k,m
 
 		k=1
 		do m=1, Ny
-			do i=1, flavorNumber
-				vec(k+i-1) = nuDensMatVec(m)%re(i,i)
-			end do
-			k=k+flavorNumber
-			if (has_offdiagonal()) then
-				do i=1, flavorNumber-1
-					do j=i+1, flavorNumber
-						vec(k) = nuDensMatVec(m)%re(i,j)
-						vec(k+1) = nuDensMatVec(m)%im(i,j)
-						k=k+2
-					end do
-				end do
-			end if
+			call matrix_to_vector(nuDensMatVec(m), k, vec)
 		end do
 	end subroutine densMat_2_vec
 
+	pure subroutine vector_to_matrix(vec, k, mat)
+		real(dl), dimension(:), intent(in) :: vec
+		integer, intent(inout) :: k
+		type(cmplxMatNN), intent(inout) :: mat !must be already allocated!
+		integer :: i,j
+
+		do i=1, flavorNumber
+			mat%re(i,i) = vec(k+i-1)
+			mat%im(i,i) = 0.d0
+		end do
+		k=k+flavorNumber
+		if (has_offdiagonal()) then
+			do i=1, flavorNumber-1
+				do j=i+1, flavorNumber
+					mat%re(i,j) = vec(k)
+					mat%im(i,j) = vec(k+1)
+					mat%re(j,i) = vec(k)
+					mat%im(j,i) = -vec(k+1)
+					k=k+2
+				end do
+			end do
+		end if
+	end subroutine vector_to_matrix
+
 	subroutine vec_2_densMat(vec)
-		real(dL), dimension(:), intent(in) :: vec
+		!save the real and imaginary elements of the neutrino density matrix
+		!from a 1d vector, with their appropriate order, into nuDensMatVec and nuDensMatVecFD
+		real(dl), dimension(:), intent(in) :: vec
 		integer :: i,j,k,m
 
 		k=1
 		do m=1, Ny
-			do i=1, flavorNumber
-				nuDensMatVec(m)%re(i,i) = vec(k+i-1)
-				nuDensMatVec(m)%im(i,i) = 0.d0
-			end do
-			k=k+flavorNumber
-			if (has_offdiagonal()) then
-				do i=1, flavorNumber-1
-					do j=i+1, flavorNumber
-						nuDensMatVec(m)%re(i,j) = vec(k)
-						nuDensMatVec(m)%im(i,j) = vec(k+1)
-						nuDensMatVec(m)%re(j,i) = vec(k)
-						nuDensMatVec(m)%im(j,i) = -vec(k+1)
-						k=k+2
-					end do
-				end do
-			end if
+			call vector_to_matrix(vec, k, nuDensMatVec(m))
 			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
 			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
 			do i=1, flavorNumber

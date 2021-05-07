@@ -271,6 +271,7 @@ program tests
 
 	subroutine do_test_densMat2vec
 		real(dl), dimension(:), allocatable :: vec
+		type(cmplxMatNN) :: mat
 		integer :: i,j,k,m
 		character(len=300) :: tmparg
 
@@ -286,6 +287,7 @@ program tests
 			end do
 		end do
 		call densMat_2_vec(vec)
+		write(*,*)"dm2v"
 		k=1
 		do m=1, Ny
 			do i=1, flavorNumber
@@ -304,6 +306,52 @@ program tests
 				end do
 			end if
 		end do
+		m=12
+		k=13
+		write(*,*)""
+		write(*,*)"m2v"
+		call matrix_to_vector(nuDensMatVec(m), k, vec)
+		k=13
+		do i=1, flavorNumber
+			write(tmparg, "('m2v ',3I3)") k,m,i
+			call assert_double_rel(trim(tmparg)//"re", vec(k+i-1), nuDensMatVec(m)%re(i,i), 1d-7)
+		end do
+		k=k+flavorNumber
+		if (has_offdiagonal()) then
+			do i=1, flavorNumber-1
+				do j=i+1, flavorNumber
+					write(tmparg, "('m2v ',4I3)") k,m,i,j
+					call assert_double_rel(trim(tmparg)//"re", vec(k), nuDensMatVec(m)%re(i,j), 1d-7)
+					call assert_double_rel(trim(tmparg)//"im", vec(k+1), nuDensMatVec(m)%im(i,j), 1d-7)
+					k=k+2
+				end do
+			end do
+		end if
+		k=13
+		call allocateCmplxMat(mat)
+		write(*,*)""
+		write(*,*)"v2m"
+		call vector_to_matrix(vec, k, mat)
+		k=13
+		do i=1, flavorNumber
+			write(tmparg, "('v2m ',3I3)") k,m,i
+			call assert_double_rel(trim(tmparg)//"re", mat%re(i,i), vec(k+i-1), 1d-7)
+			call assert_double_rel(trim(tmparg)//"im", mat%im(i,i), 0.d0, 1d-10)
+		end do
+		k=k+flavorNumber
+		if (has_offdiagonal()) then
+			do i=1, flavorNumber-1
+				do j=i+1, flavorNumber
+					write(tmparg, "('v2m ',4I3)") k,m,i,j
+					call assert_double_rel(trim(tmparg)//"re", mat%re(i,j), vec(k), 1d-7)
+					call assert_double_rel(trim(tmparg)//"im", mat%im(i,j), vec(k+1), 1d-7)
+					write(tmparg, "('v2m ',4I3)") k,m,j,i
+					call assert_double_rel(trim(tmparg)//"re", mat%re(j,i), vec(k), 1d-7)
+					call assert_double_rel(trim(tmparg)//"im", mat%im(j,i), -vec(k+1), 1d-7)
+					k=k+2
+				end do
+			end do
+		end if
 
 		do m=1, Ny
 			nuDensMatVec(m)%re = 0.
@@ -314,6 +362,8 @@ program tests
 		do k=1, ntot
 			vec(k) = 0.1*k
 		end do
+		write(*,*)""
+		write(*,*)"v2dm"
 		call vec_2_densMat(vec)
 		k=1
 		do m=1, Ny

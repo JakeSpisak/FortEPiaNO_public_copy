@@ -306,129 +306,6 @@ module fpEquations
 		z_in = cvec(n) + 1.d0
 	end subroutine zin_solver
 
-	subroutine solver
-		real(dl) :: xstart, xend, xchk, xs
-		integer :: ix, nchk, ix_in
-		character(len=3) :: istchar
-		character(len=100) :: tmpstring
-		real(dl), dimension(:), allocatable :: ychk
-		logical :: chk
-		real(dl) :: rtol
-		integer :: itol, itask, istate, iopt, lrw, liw, jt
-		real(dl), dimension(:), allocatable :: rwork, atol
-		integer, dimension(:), allocatable :: iwork
-		integer,dimension(8) :: values
-		integer, parameter :: timefileu = 8970
-		character(len=*), parameter :: timefilen = '/time.log'
-		integer :: m, i, j, k
-
-		deriv_counter = 0
-
-		call openFile(timefileu, trim(outputFolder)//timefilen,.true.)
-		write(timefileu,*) "starting solver"
-		close(timefileu)
-
-		itol=2
-		rtol=dlsoda_rtol
-		itask=1
-		istate=1
-		iopt=1
-
-		lrw=22+ntot*(ntot+9)
-		liw=20+ntot
-		allocate(atol(ntot), rwork(lrw), iwork(liw))
-		atol = dlsoda_atol_z
-		k = 1
-		do m = 1, Ny
-			do i = 1, flavorNumber
-				atol(k+i-1) = dlsoda_atol_d
-			end do
-			k = k + flavorNumber
-			if (has_offdiagonal()) then
-				do i = 1, flavorNumber-1
-					do j = i+1, flavorNumber
-						atol(k) = dlsoda_atol_o
-						atol(k+1) = dlsoda_atol_o
-						k=k+2
-					end do
-				end do
-			end if
-		end do
-		atol(ntot-1) = dlsoda_atol_z
-		atol(ntot) = dlsoda_atol_z
-		rwork=0.
-		iwork=0
-		iwork(6)=99999999
-		jt=2
-
-		call densMat_2_vec(nuDensVec)
-
-		nuDensVec(ntot-1) = z_in - 1.d0 !neutrino temperature start at same value as photon temperature
-		nuDensVec(ntot) = z_in - 1.d0
-
-		call readCheckpoints(nchk, xchk, ychk, chk)
-
-		if (chk .and. &
-			nchk.eq.ntot) then
-			xstart=xchk
-			nuDensVec=ychk
-			firstWrite=.false.
-			firstPoint=.true.
-			ix_in=1 + int((log10(xchk)-logx_in)/(logx_fin-logx_in)*(Nx-1))
-			write(tmpstring,"('ntot =',I4,' - x =',"//dblfmt//",' (i=',I4,') - w =',"//dblfmt//",' - z =',"//dblfmt//")") &
-				nchk, xchk, ix_in, ychk(ntot-1)+1.d0, ychk(ntot)+1.d0
-			call addToLog("[ckpt] ##### Checkpoint file found. Will start from there. #####")
-			call addToLog(trim(tmpstring))
-		else
-			xstart=x_arr(1)
-			ix_in=1
-			call saveRelevantInfo(xstart, nuDensVec)
-		end if
-
-		do ix=ix_in+1, Nx
-			xs = xstart
-			xend   = x_arr(ix)
-			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") xstart, xend
-			call addToLog("[solver] Start DLSODA..."//trim(tmpstring))
-
-			call date_and_time(VALUES=values)
-			call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
-			write(timefileu, &
-				'("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2,'&
-				//"' - DLSODA x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") &
-				values(3), values(2), values(1), values(5),values(6),values(7), xstart, xend
-			close(timefileu)
-
-			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
-						itol,rtol,atol,itask,istate, &
-						iopt,rwork,lrw,iwork,liw,jacobian,jt)
-
-			if (istate.lt.0) then
-				write(istchar, "(I3)") istate
-				call criticalError('istate='//istchar)
-			end if
-			call writeCheckpoints(ntot, xend, nuDensVec)
-			call saveRelevantInfo(xend, nuDensVec)
-			xstart=xend
-		end do
-		write(tmpstring,"('x_end =',"//dblfmt//",' - w_end =',"//dblfmt//",' - z_end =',"//dblfmt//")") &
-			xend, nuDensVec(ntot-1)+1.d0, nuDensVec(ntot)+1.d0
-
-		call date_and_time(VALUES=values)
-		call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
-		write(timefileu, &
-			'("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2,' &
-			//"' - DLSODA end after ',"//dblfmt//",' derivatives - " &
-			//"xend =',"//dblfmt//",' - w =',"//dblfmt//",' - z =',"//dblfmt//")") &
-			values(3), values(2), values(1), values(5),values(6),values(7), deriv_counter, xend, &
-			nuDensVec(ntot-1)+1.d0, nuDensVec(ntot)+1.d0
-		close(timefileu)
-
-		call deleteCheckpoints
-
-		call addToLog("[solver] Solver ended. "//trim(tmpstring))
-	end subroutine solver
-
 	pure subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, dme2, sqrtraddens, Fint_nue, Fint_nunu)
 !		compute rho derivatives for a given momentum y_arr(m), save to a matrix
 		use fpInterfaces2
@@ -558,7 +435,141 @@ module fpEquations
 		call dz_o_dx(x, w, z, ydot, ntot)
 
 		call densMat_2_vec(nuDensVec)
+
+		!optionally save all output params
+!        x
+!        z
+!        rho
+!        overallFactor / sqrtraddens
+!        Heff
+!        commutator
+!        collterms
+!        drhodx
+
 	end subroutine derivatives
+
+	subroutine solver
+		real(dl) :: xstart, xend, xchk, xs
+		integer :: ix, nchk, ix_in
+		character(len=3) :: istchar
+		character(len=100) :: tmpstring
+		real(dl), dimension(:), allocatable :: ychk
+		logical :: chk
+		real(dl) :: rtol
+		integer :: itol, itask, istate, iopt, lrw, liw, jt
+		real(dl), dimension(:), allocatable :: rwork, atol
+		integer, dimension(:), allocatable :: iwork
+		integer,dimension(8) :: values
+		integer, parameter :: timefileu = 8970
+		character(len=*), parameter :: timefilen = '/time.log'
+		integer :: m, i, j, k
+
+		deriv_counter = 0
+
+		call openFile(timefileu, trim(outputFolder)//timefilen,.true.)
+		write(timefileu,*) "starting solver"
+		close(timefileu)
+
+		itol=2
+		rtol=dlsoda_rtol
+		itask=1
+		istate=1
+		iopt=1
+
+		lrw=22+ntot*(ntot+9)
+		liw=20+ntot
+		allocate(atol(ntot), rwork(lrw), iwork(liw))
+		atol = dlsoda_atol_z
+		k = 1
+		do m = 1, Ny
+			do i = 1, flavorNumber
+				atol(k+i-1) = dlsoda_atol_d
+			end do
+			k = k + flavorNumber
+			if (has_offdiagonal()) then
+				do i = 1, flavorNumber-1
+					do j = i+1, flavorNumber
+						atol(k) = dlsoda_atol_o
+						atol(k+1) = dlsoda_atol_o
+						k=k+2
+					end do
+				end do
+			end if
+		end do
+		atol(ntot-1) = dlsoda_atol_z
+		atol(ntot) = dlsoda_atol_z
+		rwork=0.
+		iwork=0
+		iwork(6)=99999999
+		jt=2
+
+		call densMat_2_vec(nuDensVec)
+
+		nuDensVec(ntot-1) = z_in - 1.d0 !neutrino temperature start at same value as photon temperature
+		nuDensVec(ntot) = z_in - 1.d0
+
+		call readCheckpoints(nchk, xchk, ychk, chk)
+
+		if (chk .and. &
+			nchk.eq.ntot) then
+			xstart=xchk
+			nuDensVec=ychk
+			firstWrite=.false.
+			firstPoint=.true.
+			ix_in=1 + int((log10(xchk)-logx_in)/(logx_fin-logx_in)*(Nx-1))
+			write(tmpstring,"('ntot =',I4,' - x =',"//dblfmt//",' (i=',I4,') - w =',"//dblfmt//",' - z =',"//dblfmt//")") &
+				nchk, xchk, ix_in, ychk(ntot-1)+1.d0, ychk(ntot)+1.d0
+			call addToLog("[ckpt] ##### Checkpoint file found. Will start from there. #####")
+			call addToLog(trim(tmpstring))
+		else
+			xstart=x_arr(1)
+			ix_in=1
+			call saveRelevantInfo(xstart, nuDensVec)
+		end if
+
+		do ix=ix_in+1, Nx
+			xs = xstart
+			xend   = x_arr(ix)
+			write(tmpstring,"('x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") xstart, xend
+			call addToLog("[solver] Start DLSODA..."//trim(tmpstring))
+
+			call date_and_time(VALUES=values)
+			call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
+			write(timefileu, &
+				'("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2,'&
+				//"' - DLSODA x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") &
+				values(3), values(2), values(1), values(5),values(6),values(7), xstart, xend
+			close(timefileu)
+
+			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
+						itol,rtol,atol,itask,istate, &
+						iopt,rwork,lrw,iwork,liw,jacobian,jt)
+
+			if (istate.lt.0) then
+				write(istchar, "(I3)") istate
+				call criticalError('istate='//istchar)
+			end if
+			call writeCheckpoints(ntot, xend, nuDensVec)
+			call saveRelevantInfo(xend, nuDensVec)
+			xstart=xend
+		end do
+		write(tmpstring,"('x_end =',"//dblfmt//",' - w_end =',"//dblfmt//",' - z_end =',"//dblfmt//")") &
+			xend, nuDensVec(ntot-1)+1.d0, nuDensVec(ntot)+1.d0
+
+		call date_and_time(VALUES=values)
+		call openFile(timefileu, trim(outputFolder)//timefilen, .false.)
+		write(timefileu, &
+			'("-- ",I0.2,"/",I0.2,"/",I4," - h",I2,":",I0.2,":",I0.2,' &
+			//"' - DLSODA end after ',"//dblfmt//",' derivatives - " &
+			//"xend =',"//dblfmt//",' - w =',"//dblfmt//",' - z =',"//dblfmt//")") &
+			values(3), values(2), values(1), values(5),values(6),values(7), deriv_counter, xend, &
+			nuDensVec(ntot-1)+1.d0, nuDensVec(ntot)+1.d0
+		close(timefileu)
+
+		call deleteCheckpoints
+
+		call addToLog("[solver] Solver ended. "//trim(tmpstring))
+	end subroutine solver
 
 	subroutine jacobian
 		!optional for dlsoda, needed only for time optimization (would gain a factor ~Ny/5)
