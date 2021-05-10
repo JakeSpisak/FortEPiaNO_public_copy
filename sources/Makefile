@@ -228,6 +228,9 @@ tests: TESTFLAGS = -DDO_TESTS=1
 fortepiano: Makefile $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o
 	$(F90) -o ../bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS) $(TESTFLAGS)
 
+pythonwrapper: Makefile $(OBJ_FILES)
+	f2py -c --fcompiler=$(F90) $(FFLAGS) $(OBJ_FILES)  -m fortepianoWrapper pythonWrapper.f90
+
 tests: Makefile $(OBJ_TESTS) $(BUILD_DIR)/tests.o
 	$(F90) -o ../bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS) $(TESTFLAGS)
 

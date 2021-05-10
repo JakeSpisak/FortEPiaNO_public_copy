@@ -1,9 +1,10 @@
 default: fortepiano
 
-all: fortepiano tests
+all: fortepiano tests pythonwrapper
 
 fortepiano: BUILD_DIR ?= build
 readnodes: BUILD_DIR ?= build
+pythonwrapper: BUILD_DIR ?= build
 preparenodes: BUILD_DIR ?= build
 prepareinterp: BUILD_DIR ?= build
 tests: BUILD_DIR ?= buildtest
@@ -13,6 +14,9 @@ fortepiano: directories
 
 readnodes: directories
 	cd ./sources && make readnodes BUILD_DIR=../$(BUILD_DIR)
+
+pythonwrapper: directories
+	cd ./sources && make pythonwrapper BUILD_DIR=../$(BUILD_DIR)
 
 preparenodes: directories
 	cd ./sources && make preparenodes BUILD_DIR=../$(BUILD_DIR)
