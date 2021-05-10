@@ -40,11 +40,11 @@ module constants
 #define SINSQTHW 0.23121
 #endif
 	!numbers used in the real calculation
-	real(dl), parameter :: m_e = 0.51099895*Mev2eV!eV
-	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
-	real(dl), parameter :: sin2thW_Z = 0.23121
-	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
-	real(dl), parameter :: planck_mass = 1.220890e19*Gev2eV
+	real(dl), parameter :: m_e = 0.51099895d0*Mev2eV!eV
+	real(dl), parameter :: m_mu = 105.6583745d0*Mev2eV!eV
+	real(dl), parameter :: sin2thW_Z = 0.23121d0
+	real(dl), parameter :: m_W = 80.379d0*Gev2eV!eV
+	real(dl), parameter :: planck_mass = 1.220890d19*Gev2eV
 	real(dl), parameter :: m_e_sq = m_e**2
 	real(dl), parameter :: m_e_cub = m_e**3
 	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
@@ -54,7 +54,7 @@ module constants
 	real(dl), parameter :: cos2thW_Z = 1.d0-sin2thW_Z
 #ifdef GLR_ZERO_MOMENTUM
 	!from 10.1016/j.ppnp.2013.03.004
-	real(dl), parameter :: sin2thW = 0.23871
+	real(dl), parameter :: sin2thW = 0.23871d0
 	real(dl), parameter :: gLe = 0.727d0
 	real(dl), parameter :: gLmt = -0.273d0
 	real(dl), parameter :: gRemt = 0.233d0
@@ -72,11 +72,11 @@ module constants
 	integer,  parameter :: maxFlavorNumber = 6
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2020
-	real(dl), parameter :: i_theta12 = 0.307
-	real(dl), parameter :: i_theta13 = 0.0218
-	real(dl), parameter :: i_theta23 = 0.545
-	real(dl), parameter :: i_dm21 = 7.53e-05
-	real(dl), parameter :: i_dm31 = 0.002453+i_dm21
+	real(dl), parameter :: i_theta12 = 0.307d0
+	real(dl), parameter :: i_theta13 = 0.0218d0
+	real(dl), parameter :: i_theta23 = 0.545d0
+	real(dl), parameter :: i_dm21 = 7.53d-05
+	real(dl), parameter :: i_dm31 = 0.002453d0+i_dm21
 
 	real(dl), parameter :: leptDensFactor = -2*SQRT2*G_F*m_e**6/(m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
@@ -86,11 +86,12 @@ module constants
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
 
 	character(len=5), parameter :: dblfmt = "E17.9"
-	character(len=10), parameter :: multidblfmt = "(*("//dblfmt//"))"
+	character(len=14), parameter :: multidblfmt = "(1P, *("//dblfmt//"))"
 end module constants
 
 module variables
 	use precision
+	use constants
 	implicit none
 
 	logical :: timing_tests = .false.
@@ -155,6 +156,7 @@ module variables
 	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec, nuDensMatVecFD
 	real(dl), dimension(:), allocatable :: nuDensVec
 	integer :: ntot
+	integer :: ntotrho
 
 	!technical settings
 	integer :: verbose = 1
@@ -190,10 +192,10 @@ module variables
 	integer :: interp_nx, interp_nz, interp_nxz
 	integer, parameter :: interp_ny = 100
 	logical :: tests_interpolations = .true.
-	real(dl), parameter :: interp_logy_min = -2.
-	real(dl), parameter :: interp_logy_max = 1.5
+	real(dl), parameter :: interp_logy_min = -2.d0
+	real(dl), parameter :: interp_logy_max = 1.5d0
 	real(dl), parameter :: interp_zmin0 = 0.9d0, interp_zmax0 = 1.5d0
-	real(dl), parameter :: very_early_x=0.1*0.5109989461/105.6583745!initial temperature is 10 times the muon mass
+	real(dl), parameter :: very_early_x=0.1d0*m_e/m_mu!initial temperature is 10 times the muon mass
 	real(dl), parameter :: interp_logx_in=log10(very_early_x)
 	real(dl) :: interp_zmin, interp_zmax
 	real(dl), dimension(:), allocatable :: interp_xvec
@@ -251,16 +253,26 @@ module variables
 		end if
 	end subroutine matrix_to_vector
 
-	subroutine densMat_2_vec(vec)
-		!save the real and imaginary elements of the neutrino density matrix
+	subroutine mat_2_vec(mat, N, vec)
+		!save the real and imaginary elements of the input array of cmplxMatNN
 		!into a 1d vector, with their appropriate order
+		type(cmplxMatNN), dimension(:), allocatable, intent(in) :: mat
+		integer, intent(in) :: N
 		real(dl), dimension(:), intent(out) :: vec
 		integer :: k,m
 
 		k=1
-		do m=1, Ny
-			call matrix_to_vector(nuDensMatVec(m), k, vec)
+		do m=1, N
+			call matrix_to_vector(mat(m), k, vec)
 		end do
+	end subroutine mat_2_vec
+
+	subroutine densMat_2_vec(vec)
+		!save the real and imaginary elements of the neutrino density matrix
+		!into a 1d vector, with their appropriate order
+		real(dl), dimension(:), intent(out) :: vec
+
+		call mat_2_vec(nuDensMatVec, Ny, vec)
 	end subroutine densMat_2_vec
 
 	pure subroutine vector_to_matrix(vec, k, mat)

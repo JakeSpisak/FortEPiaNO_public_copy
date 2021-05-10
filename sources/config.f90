@@ -174,7 +174,8 @@ module fpConfig
 
 		!nu density matrix
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
-		ntot = Ny*(flavNumSqu) + 2 !independent elements in nuDensity(y) + w,z
+		ntotrho = Ny*(flavNumSqu) !independent elements in nuDensity(y)
+		ntot = ntotrho + 2 ! + w,z
 
 		allocate(nuDensVec(ntot))
 		if(save_fd .and. trim(outputFolder).ne."")&

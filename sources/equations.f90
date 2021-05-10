@@ -23,8 +23,6 @@ module fpEquations
 	type(bspline_1d) :: dzodx_eq_interp
 #endif
 
-	real(dl) :: deriv_counter
-
 	contains
 
 #ifndef NO_INTERPOLATION
@@ -110,9 +108,9 @@ module fpEquations
 			do ix=1, nx
 				call do_ABweq(ix, elContr0, num, den, numw, denw)
 				A(ix) = num / den
-				B(ix) = 1./(2.d0*PISQ*den)
+				B(ix) = 1.d0/(2.d0*PISQ*den)
 				Aw(ix) = numw / denw
-				Bw(ix) = 1./(2.d0*PISQ*denw)
+				Bw(ix) = 1.d0/(2.d0*PISQ*denw)
 				eq(ix) = num / (den + PISQ/7.5d0*0.875d0*tot_factor_active_nu)
 			end do
 			!$omp end parallel do
@@ -285,7 +283,7 @@ module fpEquations
 		liw=60
 		allocate(atol(n), cvec(n), rwork(lrw), iwork(liw))
 		atol=1d-7
-		rwork=0.
+		rwork=0.d0
 		iwork=0
 		iwork(6)=99999999
 		jt=2
@@ -504,12 +502,13 @@ module fpEquations
 		end do
 		atol(ntot-1) = dlsoda_atol_z
 		atol(ntot) = dlsoda_atol_z
-		rwork=0.
+		rwork=0.d0
 		iwork=0
 		iwork(6)=99999999
 		jt=2
 
 		call densMat_2_vec(nuDensVec)
+		call allocateStoreVars
 
 		nuDensVec(ntot-1) = z_in - 1.d0 !neutrino temperature start at same value as photon temperature
 		nuDensVec(ntot) = z_in - 1.d0
@@ -573,6 +572,7 @@ module fpEquations
 		close(timefileu)
 
 		call deleteCheckpoints
+		call deallocateStoreVars
 
 		call addToLog("[solver] Solver ended. "//trim(tmpstring))
 	end subroutine solver

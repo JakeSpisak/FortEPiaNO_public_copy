@@ -8,6 +8,15 @@ module fpOutput
 	use fpMatter
 	implicit none
 
+	real(dl) :: deriv_counter
+
+	integer :: Nsave
+	logical :: first_store = .true.
+	real(dl), dimension(:), allocatable :: storeX, storeNorm, storeTmp
+	real(dl), dimension(:,:), allocatable :: storeY, storeYdot, storeHeff, storeComm, storeCT
+	character(len=14), parameter :: intermfmt = "(1P, *(E14.6))"
+	integer, parameter :: iu = 8972
+
 	contains
 
 	subroutine nuDens_to_file(u, ix, iy, x, mat, reim, fname)
@@ -43,7 +52,6 @@ module fpOutput
 		real(dl), dimension(maxFlavorNumber) :: nuEnDens
 		integer :: k, i, j, iy
 		real(dl) :: neff, z, w
-		integer, parameter :: iu = 8972
 		character(len=200) :: fname
 		procedure (nuDensity_integrator), pointer :: nuDensityInt, nuNumDensInt
 
@@ -153,21 +161,114 @@ module fpOutput
 		firstWrite=.false.
 	end subroutine saveRelevantInfo
 
+	subroutine allocateStoreVar1D(vec, N)
+		real(dl), dimension(:), allocatable :: vec
+		integer :: N
+		if (.not.allocated(vec)) &
+			allocate(vec(N))
+	end subroutine allocateStoreVar1D
+
+	subroutine allocateStoreVar2D(mat, Nx, Nv)
+		real(dl), dimension(:,:), allocatable :: mat
+		integer :: Nx, Nv
+		if (.not.allocated(mat)) &
+			allocate(mat(Nx, Nv))
+	end subroutine allocateStoreVar2D
+
+	subroutine allocateStoreVars
+		if (Nprintderivs.ge.100) then
+			Nsave = Nprintderivs
+		else
+			Nsave = 100
+		end if
+		call allocateStoreVar1D(storeX, Nsave)
+		call allocateStoreVar1D(storeNorm, Nsave)
+		call allocateStoreVar1D(storeTmp, ntotrho)
+		call allocateStoreVar2D(storeY, Nsave, ntot)
+		call allocateStoreVar2D(storeYdot, Nsave, ntot)
+		call allocateStoreVar2D(storeHeff, Nsave, ntotrho)
+		call allocateStoreVar2D(storeComm, Nsave, ntotrho)
+		call allocateStoreVar2D(storeCT, Nsave, ntotrho)
+	end subroutine allocateStoreVars
+
+	subroutine deallocateStoreVars
+		call intermediateToFiles(int(mod(deriv_counter, 1.d0*Nsave)))
+		if(allocated(storeX))&
+			deallocate(storeX)
+		if(allocated(storeNorm))&
+			deallocate(storeNorm)
+		if(allocated(storeTmp))&
+			deallocate(storeTmp)
+		if(allocated(storeY))&
+			deallocate(storeY)
+		if(allocated(storeYdot))&
+			deallocate(storeYdot)
+		if(allocated(storeHeff))&
+			deallocate(storeHeff)
+		if(allocated(storeComm))&
+			deallocate(storeComm)
+		if(allocated(storeCT))&
+			deallocate(storeCT)
+	end subroutine deallocateStoreVars
+
+	subroutine intermediateToFiles(N)
+		integer :: i, N
+		call openFile(iu, trim(outputFolder)//'/intermXF.dat', first_store)
+		do i=1, N
+			write(iu, intermfmt) storeX(i), storeNorm(i)
+		end do
+		close(iu)
+		call openFile(iu, trim(outputFolder)//'/intermY.dat', first_store)
+		do i=1, N
+			write(iu, intermfmt) storeY(i, :)
+		end do
+		close(iu)
+		call openFile(iu, trim(outputFolder)//'/intermYdot.dat', first_store)
+		do i=1, N
+			write(iu, intermfmt) storeYdot(i, :)
+		end do
+		close(iu)
+		call openFile(iu, trim(outputFolder)//'/intermHeff.dat', first_store)
+		do i=1, N
+			write(iu, intermfmt) storeHeff(i, :)
+		end do
+		close(iu)
+		call openFile(iu, trim(outputFolder)//'/intermComm.dat', first_store)
+		do i=1, N
+			write(iu, intermfmt) storeComm(i, :)
+		end do
+		close(iu)
+		call openFile(iu, trim(outputFolder)//'/intermCT.dat', first_store)
+		do i=1, N
+			write(iu, intermfmt) storeCT(i, :)
+		end do
+		close(iu)
+		first_store=.false.
+	end subroutine intermediateToFiles
+
 	subroutine saveIntermediateSteps
+		integer :: cix
 
 		if (.not.intermediateSteps%output) &
 			return
 
-		!do things
-!        x
-!        yvec
-!        ydot
-!        overallFactor / sqrtraddens
-!        Heff
-!        commutator
-!        collterms
+		cix=mod(deriv_counter, 1.d0*Nsave)+1
 
+		!store things
+		storeX(cix) = intermediateSteps%x
+		storeNorm(cix) = intermediateSteps%norm
+		storeY(cix, :) = intermediateSteps%yvec
+		storeYdot(cix, :) = intermediateSteps%ydot
+		call mat_2_vec(intermediateSteps%Heff, Ny, storeTmp)
+		storeHeff(cix,:) = storeTmp
+		call mat_2_vec(intermediateSteps%commutator, Ny, storeTmp)
+		storeComm(cix,:) = storetmp
+		call mat_2_vec(intermediateSteps%collterms, Ny, storeTmp)
+		storeCT(cix,:) = storeTmp
 
+		if (cix.eq.Nsave) then
+			call intermediateToFiles(Nsave)
+		end if
 	end subroutine saveIntermediateSteps
 
 	subroutine finalresults

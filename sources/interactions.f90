@@ -15,13 +15,13 @@ module fpInteractions
 	elemental function dy_damping_fit(y)
 		real(dl) :: dy_damping_fit
 		real(dl), intent(in) :: y
-		real(dl), parameter :: d0 = 129.875
-		real(dl), parameter :: dinf = 100.999
-		real(dl), parameter :: a0 = 90.7332
-		real(dl), parameter :: a1 = -48.4473
-		real(dl), parameter :: a2 = 20.1219
-		real(dl), parameter :: b1 = -0.529157
-		real(dl), parameter :: b2 = 0.20649
+		real(dl), parameter :: d0 = 129.875d0
+		real(dl), parameter :: dinf = 100.999d0
+		real(dl), parameter :: a0 = 90.7332d0
+		real(dl), parameter :: a1 = -48.4473d0
+		real(dl), parameter :: a2 = 20.1219d0
+		real(dl), parameter :: b1 = -0.529157d0
+		real(dl), parameter :: b2 = 0.20649d0
 		real(dl) :: e101y, e001y, ly
 		e101y = exp(-1.01d0*y)
 		e001y = exp(-0.01d0*y)
