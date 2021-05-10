@@ -18,7 +18,7 @@ SINSQTHW ?=
 # define TESTSPEED=1 to compute the time required for the first 1000 derivatives
 TESTSPEED ?=
 
-F90 ?= ifort
+F90 ?= gfortran
 
 BUILD_DIR ?= ../build
 
