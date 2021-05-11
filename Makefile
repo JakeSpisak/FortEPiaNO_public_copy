@@ -33,7 +33,10 @@ directories:
 clean: 
 	rm -rf build*/
 
-cleanall: clean
+cleanwrapper: clean
+	rm -rf python/fortepianoWrapper*.so sources/fortepianoWrapper*.so
+
+cleanall: clean cleanwrapper
 	rm -rf bin/*
 
 installpython:

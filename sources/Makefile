@@ -33,14 +33,15 @@ endif
 ifeq "$(ifortErr)" "0"
 #ifort
 F90=ifort
-  F90FLAGS=-O3 -fPIC -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -openmp -parallel -par-report1 -no-prec-div
-DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all
-
+  F90FLAGS=-O3 -fPIC -fpp -L/usr/lib -I$(BUILD_DIR)/ -openmp -parallel -par-report1 -no-prec-div
+DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all
+MOD_DIR=-module $(BUILD_DIR)/
 else
 #gfortran
 F90=gfortran
   F90FLAGS=-O3 -fPIC -cpp -L/usr/lib -I$(BUILD_DIR)/ -ffast-math -ffree-line-length-none -fopenmp
 DEBUGFLAGS=-O0 -cpp -L/usr/lib- -I$(BUILD_DIR)/ -p -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
+MOD_DIR=-J$(BUILD_DIR)/
 endif
 
 ifeq ($(BUILD_DIR),../build_debug)
@@ -218,24 +219,26 @@ readnodes:
 	$(F90) -o ../bin/read_gl_nodes read_gl_nodes.f90
 
 preparenodes: $(BUILD_DIR)/prepare_gl_nodes.o
-	$(F90) -o ../bin/prepare_gl_nodes $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_gl_nodes.o $(FFLAGS) $(TESTFLAGS)
+	$(F90) -o ../bin/prepare_gl_nodes $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_gl_nodes.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS)
 
 prepareinterp: $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_interpolations.o
-	$(F90) -o ../bin/prepare_interpolations $(OBJ_FILES) $(BUILD_DIR)/prepare_interpolations.o $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS)
+	$(F90) -o ../bin/prepare_interpolations $(OBJ_FILES) $(BUILD_DIR)/prepare_interpolations.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS) $(INTERPFLAGS)
 
 tests: TESTFLAGS = -DDO_TESTS=1
 
 fortepiano: Makefile $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o
-	$(F90) -o ../bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS) $(TESTFLAGS)
+	$(F90) -o ../bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS)
 
 pythonwrapper: Makefile $(OBJ_FILES)
 	f2py -c --fcompiler=$(F90) --opt='$(FFLAGS)' $(OBJ_FILES) -lgomp -m fortepianoWrapper pythonWrapper.f90
+	python testwrapper.py
+	cp fortepianoWrapper*.so ../python
 
 tests: Makefile $(OBJ_TESTS) $(BUILD_DIR)/tests.o
-	$(F90) -o ../bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS) $(TESTFLAGS)
+	$(F90) -o ../bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS)
 
 $(BUILD_DIR)/%.o: %.f90 Makefile
-	$(F90) $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS) -c $*.f90 -o $(BUILD_DIR)/$*.o
+	$(F90) $(FFLAGS) $(MOD_DIR) $(TESTFLAGS) $(INTERPFLAGS) -c $*.f90 -o $(BUILD_DIR)/$*.o
 
 $(BUILD_DIR)/%.o: %.f Makefile
-	$(F90) $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS) $(stdFlag) -c $*.f -o $(BUILD_DIR)/$*.o
+	$(F90) $(FFLAGS) $(MOD_DIR) $(TESTFLAGS) $(INTERPFLAGS) $(stdFlag) -c $*.f -o $(BUILD_DIR)/$*.o
