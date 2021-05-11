@@ -31,6 +31,7 @@ setup(
         'matplotlib(>3);python_version>"3"',
         "numpy",
         "scipy",
+        "six",
         "python-ternary",
         'mock;python_version<"3"',
         'unittest2;python_version<"3"',

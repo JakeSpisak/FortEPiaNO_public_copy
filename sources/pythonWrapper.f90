@@ -1,10 +1,17 @@
 module fortepianoWrapper
+    use fpversion
     use precision
     use variables
     use fpCosmology
     implicit None
 
     contains
+
+    !general
+    function getVersion()
+        character (len=5) :: getVersion
+        getVersion=version
+    end function getVersion
 
     !functions for const
     subroutine storeNuDensMat(vec)

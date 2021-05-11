@@ -230,7 +230,7 @@ fortepiano: Makefile $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o
 	$(F90) -o ../bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS)
 
 pythonwrapper: Makefile $(OBJ_FILES)
-	f2py -c --fcompiler=$(F90) --opt='$(FFLAGS)' $(OBJ_FILES) -lgomp -m fortepianoWrapper pythonWrapper.f90
+	python -m numpy.f2py -c --fcompiler=$(F90) --opt='$(FFLAGS)' $(OBJ_FILES) -lgomp -m fortepianoWrapper pythonWrapper.f90
 	python testwrapper.py
 	cp fortepianoWrapper*.so ../python
 

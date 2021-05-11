@@ -5,6 +5,7 @@ import shutil
 import sys
 import numpy as np
 import matplotlib
+import six
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -24,6 +25,8 @@ else:
 
 import fortepianoOutput as fpom
 import prepareIni as pim
+from fortepianoWrapper import fortepianowrapper as fpw
+import fortepiano as fp
 
 try:
     FileNotFoundError
@@ -473,12 +476,12 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertTrue(np.isclose(run.x[0], 0.01, rtol=1e-4))
         self.assertTrue(np.isclose(run.x[-1], 35.0, rtol=1e-4))
         self.assertTrue(np.isclose(run.z[0], 1.0288, rtol=1e-4))
-        self.assertTrue(np.isclose(run.Neff, 3.0428, atol=2e-4))
+        self.assertTrue(np.isclose(run.Neff, 3.043, atol=1e-3))
         self.assertTrue(np.isclose(run.wfin, 1.09653, atol=1e-4))
-        self.assertTrue(np.isclose(run.zfin, 1.53582, atol=1e-4))
-        self.assertTrue(np.isclose(run.deltaNeffi[0], 1.01575, atol=1e-4))
-        self.assertTrue(np.isclose(run.deltaNeffi[1], 1.01357, atol=1e-4))
-        self.assertTrue(np.isclose(run.deltaNeffi[2], 1.01347, atol=1e-4))
+        self.assertTrue(np.isclose(run.zfin, 1.53567, atol=2e-4))
+        self.assertTrue(np.isclose(run.deltaNeffi[0], 1.0161, atol=5e-4))
+        self.assertTrue(np.isclose(run.deltaNeffi[1], 1.0139, atol=5e-4))
+        self.assertTrue(np.isclose(run.deltaNeffi[2], 1.0138, atol=5e-4))
         self.assertEqual(len(run.rho), 3)
         self.assertEqual(len(run.rho[0]), 3)
         self.assertEqual(len(run.rho), 3)
@@ -4775,6 +4778,18 @@ class TestPrepareIni(unittest.TestCase):
             + "dlsoda_atol_o = %s\n" % 1e-5,
         ]:
             self.assertIn(c, content)
+
+
+class TestWrapper(unittest.TestCase):
+    """Test the python code for the wrapper and the python-fortran connection"""
+
+    def test_getVersion(self):
+        """test that getVersion returns a string"""
+        self.assertIsInstance(fp.getVersion(), six.string_types)
+        self.assertEqual(
+            fp.getVersion(),
+            fpw.getversion() if six.PY2 else str(fpw.getversion(), "utf-8"),
+        )
 
 
 if __name__ == "__main__":
