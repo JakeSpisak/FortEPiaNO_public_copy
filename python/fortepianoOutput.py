@@ -620,6 +620,55 @@ class FortEPiaNORun:
         except (IOError, OSError):
             self.zdat = np.asarray([[np.nan, np.nan, np.nan]])
 
+    def reshapeVectorToMatrices(self, vec):
+        """Take a Ny*flavorNumber or Ny*flavorNumber**2 vector
+        and reshape it to a multidimensional numpy array,
+        according to the order used by the fortran part of FortEPiaNO.
+        The output array has shape (flavorNumber, flavorNumber, 2, Ny),
+        where the first two dimensions identify the matrix element,
+        the third dimension is for the real or imaginary part
+        and the last dimension correspond to the momentum nodes.
+
+        Parameter:
+            vec: a list or 1D array,
+                for the reshaping to work it must have length
+                Ny*flavorNumber or Ny*flavorNumber**2
+
+        Output:
+            an array with shape (flavorNumber, flavorNumber, 2, Ny)
+        """
+        matrix = np.asarray(
+            [
+                [
+                    [np.zeros(self.Ny), np.zeros(self.Ny)]
+                    for i in range(self.flavorNumber)
+                ]
+                for j in range(self.flavorNumber)
+            ]
+        )
+        n = self.flavorNumber
+        if len(vec) == self.Ny * self.flavorNumber:
+            for i in range(self.flavorNumber):
+                matrix[i, i, 0] = np.array([vec[i + k * n] for k in range(self.Ny)])
+        elif len(vec) == self.Ny * self.flavorNumber ** 2:
+            for i in range(self.flavorNumber):
+                matrix[i, i, 0] = np.array(
+                    [vec[i + k * n ** 2] for k in range(self.Ny)]
+                )
+                for j in range(i + 1, self.flavorNumber):
+                    vix = n + 2 * ((i * (n - 1) - int((i) * (i - 1) / 2)) + j - i - 1)
+                    matrix[i, j, 0] = np.array(
+                        [vec[vix + k * n ** 2] for k in range(self.Ny)]
+                    )
+                    matrix[i, j, 1] = np.array(
+                        [vec[vix + 1 + k * n ** 2] for k in range(self.Ny)]
+                    )
+                    matrix[j, i, 0] = matrix[i, j, 0]
+                    matrix[j, i, 1] = -matrix[i, j, 1]
+        else:
+            raise ValueError("Invalid length of the array")
+        return matrix
+
     def prepareRhoFinal(self):
         """Save the normalized diagonal entries of the final neutrino
         density matrix in mass basis, if not already existing

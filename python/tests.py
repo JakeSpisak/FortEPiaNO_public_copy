@@ -1136,6 +1136,48 @@ class TestFortEPiaNORun(FPTestCase):
                 _l.assert_called_once_with("output/nonexistent/z.dat")
                 self.assertEqualArray(run.zdat, [[1, 2], [3, 4]])
 
+    def test_reshapeVectorToMatrices(self):
+        """test reshapeVectorToMatrices"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        n = 3
+        Ny = 5
+        run.flavorNumber = n
+        run.Ny = Ny
+        with self.assertRaises(ValueError):
+            run.reshapeVectorToMatrices(list(range(10)))
+        a = run.reshapeVectorToMatrices(list(range(Ny * n ** 2)))
+        self.assertIsInstance(a, np.ndarray)
+        self.assertEqualArray(a.shape, (n, n, 2, Ny))
+        for i in range(n):
+            self.assertEqualArray(a[i, i, 0, :], [i + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 1, 0, :], [3 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 1, 1, :], [4 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 2, 0, :], [5 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 2, 1, :], [6 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[1, 2, 0, :], [7 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[1, 2, 1, :], [8 + k * n ** 2 for k in range(Ny)])
+        n = 4
+        Ny = 10
+        run.flavorNumber = n
+        run.Ny = Ny
+        a = run.reshapeVectorToMatrices(list(range(Ny * n ** 2)))
+        self.assertIsInstance(a, np.ndarray)
+        self.assertEqualArray(a.shape, (n, n, 2, Ny))
+        for i in range(n):
+            self.assertEqualArray(a[i, i, 0, :], [i + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 1, 0, :], [4 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 1, 1, :], [5 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 2, 0, :], [6 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 2, 1, :], [7 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 3, 0, :], [8 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[0, 3, 1, :], [9 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[1, 2, 0, :], [10 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[1, 2, 1, :], [11 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[1, 3, 0, :], [12 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[1, 3, 1, :], [13 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[2, 3, 0, :], [14 + k * n ** 2 for k in range(Ny)])
+        self.assertEqualArray(a[2, 3, 1, :], [15 + k * n ** 2 for k in range(Ny)])
+
     def test_prepareRhoFinal(self):
         """test prepareRhoFinal"""
         run = fpom.FortEPiaNORun("output/nonexistent")
