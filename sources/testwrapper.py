@@ -1,7 +1,7 @@
-import six
 from fortepianoWrapper import fortepianowrapper as fp
 
-print(
-    "--->Wrapper for FortEPiaNO v%s compiled and imported correctly!"
-    % (fp.getversion() if six.PY2 else str(fp.getversion(), "utf-8"))
-)
+try:
+    ver = str(fp.getversion(), "utf-8")
+except TypeError:
+    ver = fp.getversion()
+print("--->Wrapper for FortEPiaNO v%s compiled and imported correctly!" % ver)
