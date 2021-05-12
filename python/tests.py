@@ -895,6 +895,26 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.flavorNumber, 3)
         self.assertEqual(run.Ny, 25)
 
+    def test_readIntermediate(self):
+        """test readIntermediate"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        run.folder = "output/nonexistent1"
+        if os.path.exists(run.folder):
+            shutil.rmtree(run.folder)
+        os.mkdir(run.folder)
+        self.assertFalse(hasattr(run, "zCol"))
+        run.readIntermediate()
+        for f in [
+            "intermX",
+            "intermN",
+            "intermY",
+            "intermYdot",
+            "intermHeff",
+            "intermComm",
+            "intermCT",
+        ]:
+            self.assertEqualArray(getattr(run, f), np.nan)
+
     def test_readNeff(self):
         """test readNeff"""
         run = fpom.FortEPiaNORun("output/nonexistent")

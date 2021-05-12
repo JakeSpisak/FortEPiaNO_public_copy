@@ -468,6 +468,37 @@ class FortEPiaNORun:
             print("Cannot read Ny from ini.log. Assume 3")
             self.Ny = 25
 
+    def readIntermediate(self):
+        """Read and store the intermediate quantities from the fortran code"""
+        try:
+            dat = np.loadtxt("%s/intermXN.dat" % self.folder)
+        except (IOError, OSError):
+            self.intermX = np.nan
+            self.intermN = np.nan
+        else:
+            self.intermX = dat[:, 0]
+            self.intermN = dat[:, 1]
+        try:
+            self.intermY = np.loadtxt("%s/intermY.dat" % self.folder)
+        except (IOError, OSError):
+            self.intermY = np.nan
+        try:
+            self.intermYdot = np.loadtxt("%s/intermYdot.dat" % self.folder)
+        except (IOError, OSError):
+            self.intermYdot = np.nan
+        try:
+            self.intermHeff = np.loadtxt("%s/intermHeff.dat" % self.folder)
+        except (IOError, OSError):
+            self.intermHeff = np.nan
+        try:
+            self.intermComm = np.loadtxt("%s/intermComm.dat" % self.folder)
+        except (IOError, OSError):
+            self.intermComm = np.nan
+        try:
+            self.intermCT = np.loadtxt("%s/intermCT.dat" % self.folder)
+        except (IOError, OSError):
+            self.intermCT = np.nan
+
     def readNeff(self):
         """Read the Neff.dat file"""
         try:
