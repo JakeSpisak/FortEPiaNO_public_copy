@@ -449,6 +449,8 @@ class TestFortEPiaNORun(FPTestCase):
         with open("%s/ini.log" % folder) as _ini:
             ini = _ini.read()
         self.assertEqual(run.ini, ini.replace("\n", " "))
+        self.assertEqual(run.flavorNumber, 3)
+        self.assertEqual(run.Ny, 30)
         self.assertEqual(run.zCol, 1)
         fc = np.loadtxt("%s/fd.dat" % folder)
         self.assertEqualArray(run.yv, fc[:, 0])
@@ -890,6 +892,8 @@ class TestFortEPiaNORun(FPTestCase):
         run.readIni()
         self.assertEqual(run.ini, "")
         self.assertEqual(run.zCol, 1)
+        self.assertEqual(run.flavorNumber, 3)
+        self.assertEqual(run.Ny, 25)
 
     def test_readNeff(self):
         """test readNeff"""

@@ -448,6 +448,25 @@ class FortEPiaNORun:
             self.ini = ""
         else:
             self.ini = self.ini.replace("\n", " ")
+        # read flavorNumber
+        search = re.compile("flavorNumber[\s]*=[\s]*([\d]+)")
+        try:
+            self.flavorNumber = int(search.findall(self.ini)[0])
+        except (AttributeError, IndexError):
+            print("Cannot read flavorNumber from ini.log. Assume 3")
+            self.flavorNumber = 3
+        if self.flavorNumber != self.nnu:
+            print(
+                "Warning: using nnu=%s, but FortEPiaNO used flavorNumber=%s"
+                % (self.nnu, self.flavorNumber)
+            )
+        # read Ny
+        search = re.compile("Ny[ ]*=[ ]*([\d]+)")
+        try:
+            self.Ny = int(search.findall(self.ini)[0])
+        except (AttributeError, IndexError):
+            print("Cannot read Ny from ini.log. Assume 3")
+            self.Ny = 25
 
     def readNeff(self):
         """Read the Neff.dat file"""
