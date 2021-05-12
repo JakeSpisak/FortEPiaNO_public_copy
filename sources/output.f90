@@ -192,7 +192,9 @@ module fpOutput
 	end subroutine allocateStoreVars
 
 	subroutine deallocateStoreVars
-		call intermediateToFiles(int(mod(deriv_counter, 1.d0*Nsave)))
+		if (intermediateSteps%output) &
+			call intermediateToFiles(int(mod(deriv_counter, 1.d0*Nsave)))
+
 		if(allocated(storeX))&
 			deallocate(storeX)
 		if(allocated(storeNorm))&
