@@ -470,34 +470,53 @@ class FortEPiaNORun:
 
     def readIntermediate(self):
         """Read and store the intermediate quantities from the fortran code"""
+        # read all the files and check that the number of lines are the same
         try:
-            dat = np.loadtxt("%s/intermXN.dat" % self.folder)
+            dat = np.loadtxt("%s/intermXF.dat" % self.folder)
         except (IOError, OSError):
-            self.intermX = np.nan
-            self.intermN = np.nan
+            self.intermX = np.array([np.nan])
+            self.intermN = np.array([np.nan])
         else:
             self.intermX = dat[:, 0]
             self.intermN = dat[:, 1]
+        for f in ["intermY", "intermYdot", "intermHeff", "intermComm", "intermCT"]:
+            try:
+                setattr(self, f, np.loadtxt("%s/%s.dat" % (self.folder, f)))
+            except (IOError, OSError):
+                setattr(self, f, np.array([np.nan]))
+            assert len(self.intermX) == len(getattr(self, f))
+
         try:
-            self.intermY = np.loadtxt("%s/intermY.dat" % self.folder)
-        except (IOError, OSError):
-            self.intermY = np.nan
-        try:
-            self.intermYdot = np.loadtxt("%s/intermYdot.dat" % self.folder)
-        except (IOError, OSError):
-            self.intermYdot = np.nan
-        try:
-            self.intermHeff = np.loadtxt("%s/intermHeff.dat" % self.folder)
-        except (IOError, OSError):
-            self.intermHeff = np.nan
-        try:
-            self.intermComm = np.loadtxt("%s/intermComm.dat" % self.folder)
-        except (IOError, OSError):
-            self.intermComm = np.nan
-        try:
-            self.intermCT = np.loadtxt("%s/intermCT.dat" % self.folder)
-        except (IOError, OSError):
-            self.intermCT = np.nan
+            self.nonRhoVars = self.intermY.shape[1] - self.intermHeff.shape[1]
+        except IndexError:
+            self.nonRhoVars = 0
+
+        # separate quantities in Y and Ydot
+        for t in ["", "dot"]:
+            for f, ic in [
+                ["intermZ", -1],
+                ["intermW", -2],
+            ]:
+                try:
+                    setattr(self, f + t, getattr(self, "intermY" + t)[:, ic])
+                except IndexError:
+                    setattr(self, f + t, np.array([np.nan]))
+            try:
+                setattr(
+                    self,
+                    "intermRho" + t,
+                    getattr(self, "intermY" + t)[:, : -self.nonRhoVars],
+                )
+            except IndexError:
+                setattr(self, "intermRho" + t, np.array([np.nan]))
+        if len(self.intermX) == 1 and np.isnan(self.intermX[0]):
+            return
+        for f in ["intermRho", "intermRhodot", "intermHeff", "intermComm", "intermCT"]:
+            setattr(
+                self,
+                f,
+                np.array([self.reshapeVectorToMatrices(a) for a in getattr(self, f)]),
+            )
 
     def readNeff(self):
         """Read the Neff.dat file"""

@@ -5,11 +5,11 @@ import shutil
 import sys
 import numpy as np
 import matplotlib
-import six
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+import six
 
 if sys.version_info[0] < 3:
     import unittest2 as unittest
@@ -557,6 +557,46 @@ class TestFortEPiaNORun(FPTestCase):
         # now just do plots in order to see that everything works till the end
         self.runAllPlots(run)
 
+        # check intermediate quantities
+        if not os.path.exists("%s/intermXF.dat" % run.folder):
+            return
+        self.assertFalse(hasattr(run, "intermX"))
+        run.readIntermediate()
+        dat = np.loadtxt("%s/intermXF.dat" % run.folder)
+        self.assertEqualArray(run.intermX, dat[:, 0])
+        for f in [
+            "intermN",
+            "intermY",
+            "intermYdot",
+            "intermZ",
+            "intermZdot",
+            "intermW",
+            "intermWdot",
+            "intermRho",
+            "intermRhodot",
+            "intermHeff",
+            "intermComm",
+            "intermCT",
+        ]:
+            self.assertEqual(len(run.intermX), len(getattr(run, f)))
+        self.assertEqual(run.intermX.shape, run.intermN.shape)
+        nlines = run.intermX.shape[0]
+        self.assertEqual(
+            run.intermY.shape, (nlines, run.flavorNumber ** 2 * run.Ny + run.nonRhoVars)
+        )
+        self.assertEqual(
+            run.intermYdot.shape,
+            (nlines, run.flavorNumber ** 2 * run.Ny + run.nonRhoVars),
+        )
+        for f in ["intermRho", "intermRhodot", "intermHeff", "intermComm", "intermCT"]:
+            self.assertEqual(
+                getattr(run, f).shape,
+                (nlines, run.flavorNumber, run.flavorNumber, 2, run.Ny),
+            )
+        self.assertEqual(
+            run.nonRhoVars, run.intermY.shape[1] - run.flavorNumber ** 2 * run.Ny
+        )
+
     def test_failing(self):
         """test few failing examples with FortEPiaNORun"""
         run = fpom.FortEPiaNORun("output/nonexistent/folder/")
@@ -902,8 +942,12 @@ class TestFortEPiaNORun(FPTestCase):
         if os.path.exists(run.folder):
             shutil.rmtree(run.folder)
         os.mkdir(run.folder)
-        self.assertFalse(hasattr(run, "zCol"))
+        self.assertFalse(hasattr(run, "Ny"))
+        run.Ny = 20
+        run.flavorNumber = 3
+        self.assertFalse(hasattr(run, "intermX"))
         run.readIntermediate()
+        self.assertEqual(run.nonRhoVars, 0)
         for f in [
             "intermX",
             "intermN",
@@ -912,8 +956,14 @@ class TestFortEPiaNORun(FPTestCase):
             "intermHeff",
             "intermComm",
             "intermCT",
+            "intermZ",
+            "intermZdot",
+            "intermW",
+            "intermWdot",
+            "intermRho",
+            "intermRhodot",
         ]:
-            self.assertEqualArray(getattr(run, f), np.nan)
+            self.assertEqualArray(getattr(run, f), [np.nan])
 
     def test_readNeff(self):
         """test readNeff"""
