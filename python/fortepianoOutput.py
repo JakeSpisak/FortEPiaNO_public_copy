@@ -21,6 +21,11 @@ except ImportError:
     print("Cannot import numpy...may raise errors later")
     np = None
 try:
+    import pandas as pd
+except ImportError:
+    print("Cannot import pandas...may raise errors later")
+    pd = None
+try:
     from scipy.interpolate import interp1d
     from scipy.integrate import quad
     from scipy.signal import savgol_filter
@@ -247,6 +252,15 @@ class FortEPiaNORun:
         if plots:
             self.doAllPlots()
 
+    def loadtxt(self, fname, *args, **kwargs):
+        """Read a text file with numpy.loadtxt or pandas.read_csv"""
+        try:
+            return np.array(
+                pd.read_csv(fname, *args, header=None, delimiter="\s+", **kwargs).values
+            )
+        except AttributeError:
+            return np.loadtxt(fname, *args, **kwargs)
+
     def checkZdat(self):
         """Check if zdat has been read from the file or not.
         If it contains np.nan, assume self.zdat was not read from file
@@ -310,7 +324,7 @@ class FortEPiaNORun:
         """
         refIx = 0
         try:
-            self.endens = np.loadtxt("%s/energyDensity.dat" % self.folder)
+            self.endens = self.loadtxt("%s/energyDensity.dat" % self.folder)
         except (IOError, OSError):
             self.endens = np.nan
         else:
@@ -362,7 +376,7 @@ class FortEPiaNORun:
                             )
                         )
         try:
-            self.entropy = np.loadtxt("%s/entropy.dat" % self.folder)
+            self.entropy = self.loadtxt("%s/entropy.dat" % self.folder)
         except (IOError, OSError):
             self.entropy = np.nan
         else:
@@ -379,7 +393,7 @@ class FortEPiaNORun:
                     if self.verbose:
                         print("delta entropy density:\t%f%%" % self.tot_delta_sd)
         try:
-            self.number = np.loadtxt("%s/numberDensity.dat" % self.folder)
+            self.number = self.loadtxt("%s/numberDensity.dat" % self.folder)
         except (IOError, OSError):
             self.number = np.nan
         else:
@@ -430,7 +444,7 @@ class FortEPiaNORun:
     def readFD(self):
         """Read and store the information from fd.dat"""
         try:
-            fdy = np.loadtxt("%s/fd.dat" % self.folder)
+            fdy = self.loadtxt("%s/fd.dat" % self.folder)
         except (IOError, OSError):
             self.yv = np.nan
             self.fd = np.nan
@@ -472,7 +486,7 @@ class FortEPiaNORun:
         """Read and store the intermediate quantities from the fortran code"""
         # read all the files and check that the number of lines are the same
         try:
-            dat = np.loadtxt("%s/intermXF.dat" % self.folder)
+            dat = self.loadtxt("%s/intermXF.dat" % self.folder)
         except (IOError, OSError):
             self.intermX = np.array([np.nan])
             self.intermN = np.array([np.nan])
@@ -481,7 +495,7 @@ class FortEPiaNORun:
             self.intermN = dat[:, 1]
         for f in ["intermY", "intermYdot", "intermHeff", "intermComm", "intermCT"]:
             try:
-                setattr(self, f, np.loadtxt("%s/%s.dat" % (self.folder, f)))
+                setattr(self, f, self.loadtxt("%s/%s.dat" % (self.folder, f)))
             except (IOError, OSError):
                 setattr(self, f, np.array([np.nan]))
             assert len(self.intermX) == len(getattr(self, f))
@@ -521,7 +535,7 @@ class FortEPiaNORun:
     def readNeff(self):
         """Read the Neff.dat file"""
         try:
-            self.Neffdat = np.loadtxt("%s/Neff.dat" % self.folder)
+            self.Neffdat = self.loadtxt("%s/Neff.dat" % self.folder)
         except (IOError, OSError):
             self.Neffdat = np.asarray([[np.nan, np.nan, np.nan]])
 
@@ -541,7 +555,7 @@ class FortEPiaNORun:
         )
         for i in range(self.nnu):
             try:
-                self.rho[i, i, 0] = np.loadtxt(
+                self.rho[i, i, 0] = self.loadtxt(
                     "%s/nuDens_diag%d.dat" % (self.folder, i + 1)
                 )
             except (IOError, OSError):
@@ -549,19 +563,19 @@ class FortEPiaNORun:
             if full:
                 for j in range(i + 1, self.nnu):
                     try:
-                        self.rho[i, j, 0] = np.loadtxt(
+                        self.rho[i, j, 0] = self.loadtxt(
                             "%s/nuDens_nd_%d%d_re.dat" % (self.folder, i + 1, j + 1)
                         )
                     except (IOError, OSError):
                         self.rho[i, j, 0] = np.nan
                     try:
-                        self.rho[i, j, 1] = np.loadtxt(
+                        self.rho[i, j, 1] = self.loadtxt(
                             "%s/nuDens_nd_%d%d_im.dat" % (self.folder, i + 1, j + 1)
                         )
                     except (IOError, OSError):
                         self.rho[i, j, 1] = np.nan
             try:
-                self.rhoM[i, i, 0] = np.loadtxt(
+                self.rhoM[i, i, 0] = self.loadtxt(
                     "%s/nuDens_mass%d.dat" % (self.folder, i + 1)
                 )
             except (IOError, OSError):
@@ -635,7 +649,7 @@ class FortEPiaNORun:
     def readWZ(self):
         """Read the z.dat file"""
         try:
-            self.zdat = np.loadtxt("%s/z.dat" % self.folder)
+            self.zdat = self.loadtxt("%s/z.dat" % self.folder)
         except (IOError, OSError):
             self.zdat = np.asarray([[np.nan, np.nan, np.nan]])
 
@@ -665,23 +679,21 @@ class FortEPiaNORun:
                 for j in range(self.flavorNumber)
             ]
         )
+        if not isinstance(vec, np.ndarray):
+            vec = np.array(vec)
         n = self.flavorNumber
         if len(vec) == self.Ny * self.flavorNumber:
+            vec = vec.reshape(self.Ny, self.flavorNumber)
             for i in range(self.flavorNumber):
-                matrix[i, i, 0] = np.array([vec[i + k * n] for k in range(self.Ny)])
+                matrix[i, i, 0] = vec[:, i]
         elif len(vec) == self.Ny * self.flavorNumber ** 2:
+            vec = vec.reshape(self.Ny, self.flavorNumber ** 2)
             for i in range(self.flavorNumber):
-                matrix[i, i, 0] = np.array(
-                    [vec[i + k * n ** 2] for k in range(self.Ny)]
-                )
+                matrix[i, i, 0] = vec[:, i]
                 for j in range(i + 1, self.flavorNumber):
                     vix = n + 2 * ((i * (n - 1) - int((i) * (i - 1) / 2)) + j - i - 1)
-                    matrix[i, j, 0] = np.array(
-                        [vec[vix + k * n ** 2] for k in range(self.Ny)]
-                    )
-                    matrix[i, j, 1] = np.array(
-                        [vec[vix + 1 + k * n ** 2] for k in range(self.Ny)]
-                    )
+                    matrix[i, j, 0] = vec[:, vix]
+                    matrix[i, j, 1] = vec[:, vix + 1]
                     matrix[j, i, 0] = matrix[i, j, 0]
                     matrix[j, i, 1] = -matrix[i, j, 1]
         else:
@@ -735,7 +747,7 @@ class FortEPiaNORun:
                 os.path.exists("%s/%s_norm.dat" % (self.folder, fm))
                 and os.path.exists("%s/%s_var.dat" % (self.folder, fm))
             ):
-                data = np.loadtxt("%s/%s.dat" % (self.folder, fm))
+                data = self.loadtxt("%s/%s.dat" % (self.folder, fm))
                 # Compute the variation of the neutrino density matrix
                 # with respect to the FermiDirac at temperature w.
                 # To obtain the contributions to Neff, integrate:

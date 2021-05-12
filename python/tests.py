@@ -452,24 +452,24 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.flavorNumber, 3)
         self.assertEqual(run.Ny, 30)
         self.assertEqual(run.zCol, 1)
-        fc = np.loadtxt("%s/fd.dat" % folder)
+        fc = run.loadtxt("%s/fd.dat" % folder)
         self.assertEqualArray(run.yv, fc[:, 0])
         self.assertEqualArray(run.fd, fc[:, 1])
         self.assertEqual(fc.shape[1], 2)
-        fc = np.loadtxt("%s/z.dat" % folder)
+        fc = run.loadtxt("%s/z.dat" % folder)
         Nx = len(fc)
         self.assertEqualArray(run.zdat, fc)
         self.assertEqual(fc.shape[1], 3)
-        fc = np.loadtxt("%s/Neff.dat" % folder)
+        fc = run.loadtxt("%s/Neff.dat" % folder)
         self.assertEqualArray(run.Neffdat, fc)
         self.assertEqual(fc.shape[1], 3)
-        fc = np.loadtxt("%s/energyDensity.dat" % folder)
+        fc = run.loadtxt("%s/energyDensity.dat" % folder)
         self.assertEqualArray(run.endens, fc)
         self.assertEqual(fc.shape[1], 8)
-        fc = np.loadtxt("%s/entropy.dat" % folder)
+        fc = run.loadtxt("%s/entropy.dat" % folder)
         self.assertEqualArray(run.entropy, fc)
         self.assertEqual(fc.shape[1], 8)
-        fc = np.loadtxt("%s/numberDensity.dat" % folder)
+        fc = run.loadtxt("%s/numberDensity.dat" % folder)
         self.assertEqualArray(run.number, fc)
         self.assertEqual(fc.shape[1], 8)
         self.assertTrue(hasattr(run, "resume"))
@@ -489,20 +489,20 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(len(run.rho), 3)
         self.assertEqual(len(run.rho[0]), 3)
         for i in range(run.nnu):
-            fc = np.loadtxt("%s/nuDens_diag%d.dat" % (folder, i + 1))
+            fc = run.loadtxt("%s/nuDens_diag%d.dat" % (folder, i + 1))
             self.assertEqualArray(run.rho[i, i, 0], fc)
             self.assertEqual(run.rho[i, i, 1], None)
-            fc = np.loadtxt("%s/nuDens_mass%d.dat" % (folder, i + 1))
+            fc = run.loadtxt("%s/nuDens_mass%d.dat" % (folder, i + 1))
             self.assertEqualArray(run.rhoM[i, i, 0], fc)
             self.assertEqual(run.rho[i, i, 1], None)
             for j in range(i + 1, run.nnu):
-                fc = np.loadtxt("%s/nuDens_nd_%d%d_re.dat" % (folder, i + 1, j + 1))
+                fc = run.loadtxt("%s/nuDens_nd_%d%d_re.dat" % (folder, i + 1, j + 1))
                 self.assertEqualArray(run.rho[i, j, 0], fc)
-                fc = np.loadtxt("%s/nuDens_nd_%d%d_im.dat" % (folder, i + 1, j + 1))
+                fc = run.loadtxt("%s/nuDens_nd_%d%d_im.dat" % (folder, i + 1, j + 1))
                 self.assertEqualArray(run.rho[i, j, 1], fc)
-        fc = np.loadtxt("%s/rho_final.dat" % folder)
+        fc = run.loadtxt("%s/rho_final.dat" % folder)
         self.assertEqualArray(fc.shape, (len(run.yv), 1 + run.nnu))
-        fc = np.loadtxt("%s/rho_final_mass.dat" % folder)
+        fc = run.loadtxt("%s/rho_final_mass.dat" % folder)
         self.assertEqualArray(fc.shape, (len(run.yv), 1 + run.nnu))
         # test that "deltas" creates the delta_ed and delta_nd attributes
         self.assertFalse(hasattr(run, "delta_ed"))
@@ -562,7 +562,7 @@ class TestFortEPiaNORun(FPTestCase):
             return
         self.assertFalse(hasattr(run, "intermX"))
         run.readIntermediate()
-        dat = np.loadtxt("%s/intermXF.dat" % run.folder)
+        dat = run.loadtxt("%s/intermXF.dat" % run.folder)
         self.assertEqualArray(run.intermX, dat[:, 0])
         for f in [
             "intermN",
@@ -729,6 +729,13 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.nnu, 2)
         self.assertFalse(run.verbose)
 
+    def test_loadtxt(self):
+        """test the loadtxt property"""
+        run = fpom.FortEPiaNORun("output/nonexistent")
+        folder = "output/"
+        for fn in ["%s/fd.dat" % folder, "%s/Neff.dat" % folder]:
+            self.assertEqualArray(run.loadtxt(fn), np.loadtxt(fn))
+
     def test_checkZdat(self):
         """test the checkZdat property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
@@ -823,7 +830,9 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertTrue(np.isnan(run.endens))
         self.assertTrue(np.isnan(run.entropy))
         self.assertTrue(np.isnan(run.number))
-        with patch("numpy.loadtxt", return_value=np.array([0, 0])) as _l:
+        with patch(
+            "fortepianoOutput.FortEPiaNORun.loadtxt", return_value=np.array([0, 0])
+        ) as _l:
             run.readEENDensities(deltas=True)
             _l.assert_any_call("%s/energyDensity.dat" % run.folder)
             _l.assert_any_call("%s/entropy.dat" % run.folder)
@@ -840,11 +849,11 @@ class TestFortEPiaNORun(FPTestCase):
         run.readIni()
         run.readEENDensities()
         self.assertEqualArray(
-            run.endens, np.loadtxt("%s/energyDensity.dat" % run.folder)
+            run.endens, run.loadtxt("%s/energyDensity.dat" % run.folder)
         )
-        self.assertEqualArray(run.entropy, np.loadtxt("%s/entropy.dat" % run.folder))
+        self.assertEqualArray(run.entropy, run.loadtxt("%s/entropy.dat" % run.folder))
         self.assertEqualArray(
-            run.number, np.loadtxt("%s/numberDensity.dat" % run.folder)
+            run.number, run.loadtxt("%s/numberDensity.dat" % run.folder)
         )
         self.assertFalse(hasattr(run, "delta_ed"))
         self.assertFalse(hasattr(run, "tot_delta_ed"))
@@ -853,11 +862,11 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertFalse(hasattr(run, "tot_delta_sd"))
         run.readEENDensities(deltas=True)
         self.assertEqualArray(
-            run.endens, np.loadtxt("%s/energyDensity.dat" % run.folder)
+            run.endens, run.loadtxt("%s/energyDensity.dat" % run.folder)
         )
-        self.assertEqualArray(run.entropy, np.loadtxt("%s/entropy.dat" % run.folder))
+        self.assertEqualArray(run.entropy, run.loadtxt("%s/entropy.dat" % run.folder))
         self.assertEqualArray(
-            run.number, np.loadtxt("%s/numberDensity.dat" % run.folder)
+            run.number, run.loadtxt("%s/numberDensity.dat" % run.folder)
         )
         rx = 0
         self.assertEqualArray(
@@ -910,12 +919,15 @@ class TestFortEPiaNORun(FPTestCase):
         """test readFD"""
         run = fpom.FortEPiaNORun("output/nonexistent")
         for e in [IOError, OSError]:
-            with patch("numpy.loadtxt", side_effect=e) as _l:
+            with patch("fortepianoOutput.FortEPiaNORun.loadtxt", side_effect=e) as _l:
                 run.readFD()
                 _l.assert_called_once_with("output/nonexistent/fd.dat")
                 self.assertTrue(np.isnan(run.fd))
                 self.assertTrue(np.isnan(run.yv))
-        with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+        with patch(
+            "fortepianoOutput.FortEPiaNORun.loadtxt",
+            return_value=np.array([[1, 2], [3, 4]]),
+        ) as _l:
             run.readFD()
             _l.assert_called_once_with("output/nonexistent/fd.dat")
             self.assertEqualArray(run.fd, [2, 4])
@@ -970,7 +982,9 @@ class TestFortEPiaNORun(FPTestCase):
         run = fpom.FortEPiaNORun("output/nonexistent")
         for l in [False]:
             for e in [IOError, OSError]:
-                with patch("numpy.loadtxt", side_effect=e) as _l:
+                with patch(
+                    "fortepianoOutput.FortEPiaNORun.loadtxt", side_effect=e
+                ) as _l:
                     run.readNeff()
                     _l.assert_called_once_with("output/nonexistent/Neff.dat")
                     self.assertEqualArray(
@@ -979,7 +993,10 @@ class TestFortEPiaNORun(FPTestCase):
                         if l
                         else [[np.nan, np.nan, np.nan]],
                     )
-            with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+            with patch(
+                "fortepianoOutput.FortEPiaNORun.loadtxt",
+                return_value=np.array([[1, 2], [3, 4]]),
+            ) as _l:
                 run.readNeff()
                 _l.assert_called_once_with("output/nonexistent/Neff.dat")
                 self.assertEqualArray(run.Neffdat, [[1, 2], [3, 4]])
@@ -1015,11 +1032,11 @@ class TestFortEPiaNORun(FPTestCase):
             if i < 3:
                 self.assertEqualArray(
                     run.rho[i, i, 0],
-                    np.loadtxt("%s/nuDens_diag%d.dat" % (run.folder, i + 1)),
+                    run.loadtxt("%s/nuDens_diag%d.dat" % (run.folder, i + 1)),
                 )
                 self.assertEqualArray(
                     run.rhoM[i, i, 0],
-                    np.loadtxt("%s/nuDens_mass%d.dat" % (run.folder, i + 1)),
+                    run.loadtxt("%s/nuDens_mass%d.dat" % (run.folder, i + 1)),
                 )
             else:
                 self.assertTrue(np.isnan(run.rho[i, i, 0]))
@@ -1036,11 +1053,11 @@ class TestFortEPiaNORun(FPTestCase):
             if i < 3:
                 self.assertEqualArray(
                     run.rho[i, i, 0],
-                    np.loadtxt("%s/nuDens_diag%d.dat" % (run.folder, i + 1)),
+                    run.loadtxt("%s/nuDens_diag%d.dat" % (run.folder, i + 1)),
                 )
                 self.assertEqualArray(
                     run.rhoM[i, i, 0],
-                    np.loadtxt("%s/nuDens_mass%d.dat" % (run.folder, i + 1)),
+                    run.loadtxt("%s/nuDens_mass%d.dat" % (run.folder, i + 1)),
                 )
             else:
                 self.assertTrue(np.isnan(run.rho[i, i, 0]))
@@ -1051,13 +1068,13 @@ class TestFortEPiaNORun(FPTestCase):
                 if i < 3 and j < 3:
                     self.assertEqualArray(
                         run.rho[i, j, 0],
-                        np.loadtxt(
+                        run.loadtxt(
                             "%s/nuDens_nd_%d%d_re.dat" % (run.folder, i + 1, j + 1)
                         ),
                     )
                     self.assertEqualArray(
                         run.rho[i, j, 1],
-                        np.loadtxt(
+                        run.loadtxt(
                             "%s/nuDens_nd_%d%d_im.dat" % (run.folder, i + 1, j + 1)
                         ),
                     )
@@ -1172,7 +1189,9 @@ class TestFortEPiaNORun(FPTestCase):
         run = fpom.FortEPiaNORun("output/nonexistent")
         for l in [False]:
             for e in [IOError, OSError]:
-                with patch("numpy.loadtxt", side_effect=e) as _l:
+                with patch(
+                    "fortepianoOutput.FortEPiaNORun.loadtxt", side_effect=e
+                ) as _l:
                     run.readWZ()
                     _l.assert_called_once_with("output/nonexistent/z.dat")
                     self.assertEqualArray(
@@ -1181,7 +1200,10 @@ class TestFortEPiaNORun(FPTestCase):
                         if l
                         else [[np.nan, np.nan, np.nan]],
                     )
-            with patch("numpy.loadtxt", return_value=np.array([[1, 2], [3, 4]])) as _l:
+            with patch(
+                "fortepianoOutput.FortEPiaNORun.loadtxt",
+                return_value=np.array([[1, 2], [3, 4]]),
+            ) as _l:
                 run.readWZ()
                 _l.assert_called_once_with("output/nonexistent/z.dat")
                 self.assertEqualArray(run.zdat, [[1, 2], [3, 4]])
@@ -1251,7 +1273,7 @@ class TestFortEPiaNORun(FPTestCase):
         run.zfin = 1.5
         for pex in [[True, True, True, True, True, True], [False, False]]:
             with patch("os.path.exists", side_effect=pex) as _p, patch(
-                "numpy.loadtxt"
+                "fortepianoOutput.FortEPiaNORun.loadtxt"
             ) as _l:
                 run.prepareRhoFinal()
                 self.assertEqual(_l.call_count, 0)
@@ -1285,7 +1307,9 @@ class TestFortEPiaNORun(FPTestCase):
         )
         with patch(
             "os.path.exists", side_effect=[True, True, False, True, True, False]
-        ) as _p, patch("numpy.loadtxt", return_value=data) as _l, patch(
+        ) as _p, patch(
+            "fortepianoOutput.FortEPiaNORun.loadtxt", return_value=data
+        ) as _l, patch(
             "numpy.savetxt"
         ) as _s:
             run.prepareRhoFinal()

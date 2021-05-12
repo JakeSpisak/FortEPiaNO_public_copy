@@ -30,6 +30,7 @@ setup(
         'matplotlib(>2,<3);python_version<"3"',
         'matplotlib(>3);python_version>"3"',
         "numpy",
+        "pandas",
         "scipy",
         "six",
         "python-ternary",
