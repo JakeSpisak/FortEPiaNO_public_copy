@@ -533,12 +533,12 @@ module utilities
 					allocate(wv(effective_Ny))
 				yv = tyv(1:effective_Ny)
 				wv = twv(1:effective_Ny)
-				do iy=1, nreal
+				do iy=1, effective_Ny
 					wv(iy) = wv(iy)*exp(yv(iy))
 				end do
 				if (.not.allocated(wv2)) &
-					allocate(wv2(Ny))
-				do iy=1, Ny
+					allocate(wv2(effective_Ny))
+				do iy=1, effective_Ny
 					wv2(iy) = wv(iy) / yv(iy)**alpha
 				end do
 				deallocate(tyv, twv)
