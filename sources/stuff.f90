@@ -26,7 +26,7 @@ module fpStuff
 	subroutine deallocateStuff()
 		integer :: nf
 		nf = flavorNumber
-		deallocate(nuMasses, nuFactor, sterile)
+		deallocate(nuMasses, nuFactor, sterile, Gs)
 		deallocate(mixMat, mixMatInv)
 		deallocate(nuMassesMat, leptonDensities)
 		deallocate(dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu)

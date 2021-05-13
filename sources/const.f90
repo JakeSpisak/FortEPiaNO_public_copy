@@ -149,6 +149,7 @@ module variables
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
+	real(dl), dimension(:), allocatable :: Gs
 	real(dl), dimension(:,:), allocatable :: idMat
 	real(dl), dimension(:), allocatable :: massSplittings
 	real(dl), dimension(:,:), allocatable :: mixingAngles

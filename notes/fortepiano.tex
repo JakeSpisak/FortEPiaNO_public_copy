@@ -153,8 +153,8 @@ Other matrices that we need to define are
 \qquad
 \mathbb{P}_\ell=\text{diag}(P_e, P_\mu, 0, \ldots)\,,
 \qquad
-\mathbb{E}_\nu=S_a\frac{1}{\pi^2}\left(\int \mathrm{d}y y^3\varrho\right) S_a\,
-\quad\mbox{with }S_a=\text{diag}(1,1,1,0,\ldots)\,,
+\mathbb{E}_\nu=G_S\frac{1}{\pi^2}\left(\int \mathrm{d}y y^3\varrho\right) G_S\,
+\quad\mbox{with }G_S=\text{diag}(1,1,1,0,\ldots)\,,
 \end{equation}
 while the interaction matrices used in the collision terms,
 presented in section~\ref{sec:collint}, are
@@ -741,7 +741,7 @@ and therefore the three functions $D_{1, 2, 3}$ can be coded in a more efficient
 not reported here for sake of brevity
 (see e.g.~\cite{Blaschke:2016xxt}).
 
-Finally, the functions that define the phase space factors in the collision terms are \cite{deSalas:2016ztq,Bennett:2020zkv}:
+Finally, the functions that define the phase space factors in the collision terms are \cite{Sigl:1992fn,deSalas:2016ztq,Bennett:2020zkv}:
 \begin{eqnarray}
 F_{\rm sc}^{ab}\left(\varrho^{(1)}, f_e^{(2)}, \varrho^{(3)}, f_e^{(4)}\right)
 &=&
@@ -758,32 +758,35 @@ f_e^{(3)}f_e^{(4)}\left[G^a(1-\varrho^{(2)})G^b(1-\varrho^{(1)})+(1-\varrho^{(1)
 (1-f_e^{(3)})(1-f_e^{(4)})\left[G^a\varrho^{(2)}G^b\varrho^{(1)}+\varrho^{(1)}G^b\varrho^{(2)}G^a\right],
 \label{eq:F_ab_ann}
 \\
+%
+%
+%
 F_{\nu\nu}\left(\varrho^{(1)}, \varrho^{(2)}, \varrho^{(3)}, \varrho^{(4)}\right)
 &=&
-\left(1-\varrho^{(1)}\right)\varrho^{(3)}
-\left[\left(1-\varrho^{(2)}\right)\varrho^{(4)}+\mathrm{Tr}(\cdots)\right]
+\left(1-\varrho^{(1)}\right)G_S\varrho^{(3)}G_S
+\left[\left(1-\varrho^{(2)}\right)G_S\varrho^{(4)}G_S+\mathrm{Tr}(\cdots)\right]
 \nonumber\\
 &-&
-\varrho^{(1)}\left(1-\varrho^{(3)}\right)
-\left[\varrho^{(2)}\left(1-\varrho^{(4)}\right)+\mathrm{Tr}(\cdots)\right]
+\varrho^{(1)}G_S\left(1-\varrho^{(3)}\right)G_S
+\left[\varrho^{(2)}G_S\left(1-\varrho^{(4)}\right)G_S+\mathrm{Tr}(\cdots)\right]
 +\mathrm{h.c.}
 \label{eq:F_nunu}\\
 F_{\nu\bar\nu}\left(\varrho^{(1)}, \varrho^{(2)}, \varrho^{(3)}, \varrho^{(4)}\right)
 &=&
-\left(1-\varrho^{(1)}\right)\left(1-\varrho^{(2)}\right)
-\left[\varrho^{(4)}\varrho^{(3)}+\mathrm{Tr}(\cdots)\right]
+\left(1-\varrho^{(1)}\right)G_S\left(1-\varrho^{(2)}\right)G_S
+\left[\varrho^{(4)}G_S\varrho^{(3)}G_S+\mathrm{Tr}(\cdots)\right]
 \nonumber\\
 &-&
-\varrho^{(1)}\varrho^{(2)}
-\left[\left(1-\varrho^{(4)}\right)\left(1-\varrho^{(3)}\right)+\mathrm{Tr}(\cdots)\right]
+\varrho^{(1)}G_S\varrho^{(2)}G_S
+\left[\left(1-\varrho^{(4)}\right)G_S\left(1-\varrho^{(3)}\right)G_S+\mathrm{Tr}(\cdots)\right]
 \nonumber\\
 &+&
-\left(1-\varrho^{(1)}\right)\varrho^{(3)}
-\left[\varrho^{(4)}\left(1-\varrho^{(2)}\right)+\mathrm{Tr}(\cdots)\right]
+\left(1-\varrho^{(1)}\right)G_S\varrho^{(3)}G_S
+\left[\varrho^{(4)}G_S\left(1-\varrho^{(2)}\right)G_S+\mathrm{Tr}(\cdots)\right]
 \nonumber\\
 &-&
-\varrho^{(1)}\left(1-\varrho^{(3)}\right)
-\left[\left(1-\varrho^{(4)}\right)\varrho^{(2)}+\mathrm{Tr}(\cdots)\right]
+\varrho^{(1)}G_S\left(1-\varrho^{(3)}\right)G_S
+\left[\left(1-\varrho^{(4)}\right)G_S\varrho^{(2)}G_S+\mathrm{Tr}(\cdots)\right]
 % F_{\nu\bar\nu}\left(\varrho^{(1)}, \bar\varrho^{(2)}, \varrho^{(3)}, \bar\varrho^{(4)}\right)
 % &=&
 % \left(1-\varrho^{(1)}\right)\left(1-\bar\varrho^{(2)}\right)

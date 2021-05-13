@@ -471,24 +471,24 @@ module fpInteractions
 			d24r = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				s13r = s13r + n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)
-				s13i = s13i - n1%re(i,k)*n3%im(k,m) - n1%im(i,k)*n3%re(k,m)
-				s24r = s24r + n2%im(m,k)*n4%im(k,j) - n2%re(m,k)*n4%re(k,j)
-				s24i = s24i - n2%re(m,k)*n4%im(k,j) - n2%im(m,k)*n4%re(k,j)
-				d24r = d24r + n2%im(m,k)*n4%im(k,m) - n2%re(m,k)*n4%re(k,m)
+				s13r = s13r + (n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)) * Gs(k)*Gs(m)
+				s13i = s13i - (n1%re(i,k)*n3%im(k,m) + n1%im(i,k)*n3%re(k,m)) * Gs(k)*Gs(m)
+				s24r = s24r + (n2%im(m,k)*n4%im(k,j) - n2%re(m,k)*n4%re(k,j)) * Gs(k)*Gs(j)
+				s24i = s24i - (n2%re(m,k)*n4%im(k,j) + n2%im(m,k)*n4%re(k,j)) * Gs(k)*Gs(j)
+				d24r = d24r + (n2%im(m,k)*n4%im(k,m) - n2%re(m,k)*n4%re(k,m)) * Gs(m)*Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = n3%re(i,m) + s13r
-			t1i(m) = n3%im(i,m) + s13i
-			t3r(m) = n1%re(i,m) + s13r
-			t3i(m) = n1%im(i,m) + s13i
-			t2r(m) = n4%re(m,j) + s24r
-			t2i(m) = n4%im(m,j) + s24i
-			t4r(m) = n2%re(m,j) + s24r
-			t4i(m) = n2%im(m,j) + s24i
+			t1r(m) = n3%re(i,m)*Gs(i)*Gs(m) + s13r
+			t1i(m) = n3%im(i,m)*Gs(i)*Gs(m) + s13i
+			t3r(m) = n1%re(i,m)*Gs(m) + s13r
+			t3i(m) = n1%im(i,m)*Gs(m) + s13i
+			t2r(m) = n4%re(m,j)*Gs(m)*Gs(j) + s24r
+			t2i(m) = n4%im(m,j)*Gs(m)*Gs(j) + s24i
+			t4r(m) = n2%re(m,j)*Gs(j) + s24r
+			t4i(m) = n2%im(m,j)*Gs(j) + s24i
 			!compute Tr()
-			tr2 = tr2 + n4%re(m,m) + d24r
-			tr4 = tr4 + n2%re(m,m) + d24r
+			tr2 = tr2 + n4%re(m,m)*Gs(m) + d24r
+			tr4 = tr4 + n2%re(m,m)*Gs(m) + d24r
 		end do
 	end subroutine F_nu_sc_1324
 
@@ -561,6 +561,10 @@ module fpInteractions
 		!offdiagonal elements vanish here
 		if (i.ne.j) &
 			return
+
+		if (sterile(i)) & !take into account Gs matrix (it's diagonal, no need to do more than this)
+			return
+
 		allocate(t2r(flavorNumber), t4r(flavorNumber))
 		do k=1, flavorNumber
 			s24r = n2%re(k, k)*n4%re(k, k)
@@ -595,7 +599,7 @@ module fpInteractions
 
 	!pair
 #ifdef FULL_F_NU
-	pure subroutine F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+	pure subroutine F_nu_pa_1243(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
 		!...
 		!first line: sAr -> 12, sB->34
 		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
@@ -615,26 +619,26 @@ module fpInteractions
 			sBd = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				sAr = sAr + n1%re(i,k)*n2%re(k,m) - n1%im(i,k)*n2%im(k,m)
-				sAi = sAi + n1%im(i,k)*n2%re(k,m) + n1%re(i,k)*n2%im(k,m)
-				sBr = sBr + n4%re(m,k)*n3%re(k,j) - n4%im(m,k)*n3%im(k,j)
-				sBi = sBi + n4%im(m,k)*n3%re(k,j) + n4%re(m,k)*n3%im(k,j)
-				sBd = sBd + n4%re(m,k)*n3%re(k,m) - n4%im(m,k)*n3%im(k,m)
+				sAr = sAr + (n1%re(i,k)*n2%re(k,m) - n1%im(i,k)*n2%im(k,m)) * Gs(k)*Gs(m)
+				sAi = sAi + (n1%im(i,k)*n2%re(k,m) + n1%re(i,k)*n2%im(k,m)) * Gs(k)*Gs(m)
+				sBr = sBr + (n4%re(m,k)*n3%re(k,j) - n4%im(m,k)*n3%im(k,j)) * Gs(k)*Gs(j)
+				sBi = sBi + (n4%im(m,k)*n3%re(k,j) + n4%re(m,k)*n3%im(k,j)) * Gs(k)*Gs(j)
+				sBd = sBd + (n4%re(m,k)*n3%re(k,m) - n4%im(m,k)*n3%im(k,m)) * Gs(m)*Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = sAr + idMat(i,m) - n1%re(i,m) - n2%re(i,m)
-			t1i(m) = sAi - n1%im(i,m) - n2%im(i,m)
+			t1r(m) = sAr + (idMat(i,m)*Gs(i) - n1%re(i,m) - n2%re(i,m)*Gs(i)) * Gs(m)
+			t1i(m) = sAi - (n1%im(i,m) + n2%im(i,m)*Gs(i)) * Gs(m)
 			t3r(m) = sAr
 			t3i(m) = sAi
 			t2r(m) = sBr
 			t2i(m) = sBi
-			t4r(m) = sBr + idMat(m,j) - n4%re(m,j) - n3%re(m,j)
-			t4i(m) = sBi - n4%im(m,j) - n3%im(m,j)
+			t4r(m) = sBr + (idMat(m,j)*Gs(m) - n4%re(m,j) - n3%re(m,j)*Gs(m)) * Gs(j)
+			t4i(m) = sBi - (n4%im(m,j) + n3%im(m,j)*Gs(m)) * Gs(j)
 			!compute Tr()
 			tr2 = tr2 + sBd
-			tr4 = tr4 + sBd + idMat(m,m) - n4%re(m,m) - n3%re(m,m)
+			tr4 = tr4 + sBd + (idMat(m,m) - n4%re(m,m) - n3%re(m,m))*Gs(m)
 		end do
-	end subroutine F_nu_pa_1234
+	end subroutine F_nu_pa_1243
 
 	pure subroutine F_nu_pa_1342(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
 		!...
@@ -656,24 +660,24 @@ module fpInteractions
 			sBd = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				sAr = sAr + n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)
-				sAi = sAi - n1%re(i,k)*n3%im(k,m) - n1%im(i,k)*n3%re(k,m)
-				sBr = sBr + n4%im(m,k)*n2%im(k,j) - n4%re(m,k)*n2%re(k,j)
-				sBi = sBi - n4%re(m,k)*n2%im(k,j) - n4%im(m,k)*n2%re(k,j)
-				sBd = sBd + n4%im(m,k)*n2%im(k,m) - n4%re(m,k)*n2%re(k,m)
+				sAr = sAr + (n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)) * Gs(k)*Gs(m)
+				sAi = sAi - (n1%re(i,k)*n3%im(k,m) + n1%im(i,k)*n3%re(k,m)) * Gs(k)*Gs(m)
+				sBr = sBr + (n4%im(m,k)*n2%im(k,j) - n4%re(m,k)*n2%re(k,j)) * Gs(k)*Gs(j)
+				sBi = sBi - (n4%re(m,k)*n2%im(k,j) + n4%im(m,k)*n2%re(k,j)) * Gs(k)*Gs(j)
+				sBd = sBd + (n4%im(m,k)*n2%im(k,m) - n4%re(m,k)*n2%re(k,m)) * Gs(m)*Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = n3%re(i,m) + sAr
-			t1i(m) = n3%im(i,m) + sAi
-			t3r(m) = n1%re(i,m) + sAr
-			t3i(m) = n1%im(i,m) + sAi
-			t2r(m) = n4%re(m,j) + sBr
-			t2i(m) = n4%im(m,j) + sBi
-			t4r(m) = n2%re(m,j) + sBr
-			t4i(m) = n2%im(m,j) + sBi
+			t1r(m) = n3%re(i,m)*Gs(i)*Gs(m) + sAr
+			t1i(m) = n3%im(i,m)*Gs(i)*Gs(m) + sAi
+			t3r(m) = n1%re(i,m)*Gs(m) + sAr
+			t3i(m) = n1%im(i,m)*Gs(m) + sAi
+			t2r(m) = n4%re(m,j)*Gs(m)*Gs(j) + sBr
+			t2i(m) = n4%im(m,j)*Gs(m)*Gs(j) + sBi
+			t4r(m) = n2%re(m,j)*Gs(j) + sBr
+			t4i(m) = n2%im(m,j)*Gs(j) + sBi
 			!compute Tr()
-			tr2 = tr2 + n4%re(m,m) + sBd
-			tr4 = tr4 + n2%re(m,m) + sBd
+			tr2 = tr2 + n4%re(m,m)*Gs(m) + sBd
+			tr4 = tr4 + n2%re(m,m)*Gs(m) + sBd
 		end do
 	end subroutine F_nu_pa_1342
 
@@ -695,7 +699,7 @@ module fpInteractions
 		allocate(t2i(flavorNumber), t4i(flavorNumber)) !t?r(m) -> t?r(m,j)
 
 		!first line: sAr -> 12, sB->34
-		call F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		call F_nu_pa_1243(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
 		F_nu_pa_re_prod = F_nu_pa_re_prod &
 			+ t1r(j) * tr2 + sum(t1r(:)*t2r(:) - t1i(:)*t2i(:)) &
 			- (t3r(j) * tr4 + sum(t3r(:)*t4r(:) - t3i(:)*t4i(:)))
@@ -732,7 +736,7 @@ module fpInteractions
 		allocate(t2i(flavorNumber), t4i(flavorNumber)) !t?r(m) -> t?r(m,j)
 
 		!first line: sAr -> 12, sB->34
-		call F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		call F_nu_pa_1243(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
 		F_nu_pa_im_prod = F_nu_pa_im_prod &
 			+ t1i(j) * tr2 + sum(t1r(:)*t2i(:) + t1i(:)*t2r(:)) &
 			- (t3i(j) * tr4 + sum(t3r(:)*t4i(:) + t3i(:)*t4r(:)))
@@ -773,6 +777,9 @@ module fpInteractions
 		!only consider diagonal rho, it's easier because all the products involve diagonal matrices only
 		!offdiagonal elements vanish here
 		if (i.ne.j) &
+			return
+
+		if (sterile(i)) & !take into account Gs matrix (it's diagonal, no need to do more than this)
 			return
 
 		allocate(t2r(flavorNumber), t4r(flavorNumber))

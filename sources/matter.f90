@@ -38,10 +38,10 @@ module fpMatter
 		nuDensities%re = 0.d0
 		nuDensities%im = 0.d0
 		do ix=1, flavorNumber
-			if (.not.sterile(ix)) then
+			if (.not.sterile(ix)) then !this implements the Gs matrix, without computing the integral
 				nuDensities%re(ix, ix) = nuDensities%re(ix, ix) + nuDensityInt(ix, ix)
 				do iy=ix+1, flavorNumber
-					if (.not.sterile(iy)) then
+					if (.not.sterile(iy)) then !this implements the Gs matrix, without computing the integral
 						nuDensities%re(ix, iy) = nuDensities%re(ix, iy) + nuDensityInt(ix, iy)
 						nuDensities%im(ix, iy) = nuDensities%im(ix, iy) + nuDensityInt(ix, iy, .false.)
 					end if

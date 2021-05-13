@@ -18,7 +18,7 @@ module fpConfig
 	subroutine allocateStuff()
 		integer :: nf, ix
 		nf = flavorNumber
-		allocate(nuMasses(nf), nuFactor(nf), sterile(nf))
+		allocate(nuMasses(nf), nuFactor(nf), sterile(nf), Gs(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		call allocateCmplxMat(nuDensities)
@@ -419,6 +419,11 @@ module fpConfig
 			else
 				sterile(ix) = read_ini_logical(trim(tmparg), .true.)
 			end if
+			if(sterile(ix)) then
+				Gs(ix) = 0.d0
+			else
+				Gs(ix) = 1.d0
+			endif
 		end do
 		if (any(sterile) .and. .not.collint_d_no_nunu) &
 			call criticalError("Diagonal neutrino-neutrino collision terms do not work with sterile neutrinos yet.")
