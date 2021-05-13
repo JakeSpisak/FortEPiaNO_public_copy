@@ -262,7 +262,7 @@ module fpOutput
 		if (.not.intermediateSteps%output) &
 			return
 
-		cix=mod(deriv_counter, 1.d0*Nsave)+1
+		cix=mod(deriv_counter-1, 1.d0*Nsave)+1
 
 		!store things
 		storeX(cix) = intermediateSteps%x
