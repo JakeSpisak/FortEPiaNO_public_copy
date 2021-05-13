@@ -277,7 +277,7 @@ program tests
 
 		call printTestBlockName("densMat_2_vec and vec_2_densMat")
 
-		allocate(vec(Ny))
+		allocate(vec(ntot))
 		do m=1, Ny
 			do i=1, flavorNumber
 				do j=1, flavorNumber
@@ -292,15 +292,15 @@ program tests
 		do m=1, Ny
 			do i=1, flavorNumber
 				write(tmparg, "('dm2v ',3I3)") k,m,i
-				call assert_double_rel(trim(tmparg)//"re", vec(k+i-1), nuDensMatVec(m)%re(i,i), 1d-7)
+				call assert_double(trim(tmparg)//"re", vec(k+i-1), nuDensMatVec(m)%re(i,i), 1d-7)
 			end do
 			k=k+flavorNumber
 			if (has_offdiagonal()) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						write(tmparg, "('dm2v ',4I3)") k,m,i,j
-						call assert_double_rel(trim(tmparg)//"re", vec(k), nuDensMatVec(m)%re(i,j), 1d-7)
-						call assert_double_rel(trim(tmparg)//"im", vec(k+1), nuDensMatVec(m)%im(i,j), 1d-7)
+						call assert_double(trim(tmparg)//"re", vec(k), nuDensMatVec(m)%re(i,j), 1d-7)
+						call assert_double(trim(tmparg)//"im", vec(k+1), nuDensMatVec(m)%im(i,j), 1d-7)
 						k=k+2
 					end do
 				end do
@@ -314,15 +314,15 @@ program tests
 		k=13
 		do i=1, flavorNumber
 			write(tmparg, "('m2v ',3I3)") k,m,i
-			call assert_double_rel(trim(tmparg)//"re", vec(k+i-1), nuDensMatVec(m)%re(i,i), 1d-7)
+			call assert_double(trim(tmparg)//"re", vec(k+i-1), nuDensMatVec(m)%re(i,i), 1d-7)
 		end do
 		k=k+flavorNumber
 		if (has_offdiagonal()) then
 			do i=1, flavorNumber-1
 				do j=i+1, flavorNumber
 					write(tmparg, "('m2v ',4I3)") k,m,i,j
-					call assert_double_rel(trim(tmparg)//"re", vec(k), nuDensMatVec(m)%re(i,j), 1d-7)
-					call assert_double_rel(trim(tmparg)//"im", vec(k+1), nuDensMatVec(m)%im(i,j), 1d-7)
+					call assert_double(trim(tmparg)//"re", vec(k), nuDensMatVec(m)%re(i,j), 1d-7)
+					call assert_double(trim(tmparg)//"im", vec(k+1), nuDensMatVec(m)%im(i,j), 1d-7)
 					k=k+2
 				end do
 			end do
@@ -335,19 +335,19 @@ program tests
 		k=13
 		do i=1, flavorNumber
 			write(tmparg, "('v2m ',3I3)") k,m,i
-			call assert_double_rel(trim(tmparg)//"re", mat%re(i,i), vec(k+i-1), 1d-7)
-			call assert_double_rel(trim(tmparg)//"im", mat%im(i,i), 0.d0, 1d-10)
+			call assert_double(trim(tmparg)//"re", mat%re(i,i), vec(k+i-1), 1d-7)
+			call assert_double(trim(tmparg)//"im", mat%im(i,i), 0.d0, 1d-10)
 		end do
 		k=k+flavorNumber
 		if (has_offdiagonal()) then
 			do i=1, flavorNumber-1
 				do j=i+1, flavorNumber
 					write(tmparg, "('v2m ',4I3)") k,m,i,j
-					call assert_double_rel(trim(tmparg)//"re", mat%re(i,j), vec(k), 1d-7)
-					call assert_double_rel(trim(tmparg)//"im", mat%im(i,j), vec(k+1), 1d-7)
+					call assert_double(trim(tmparg)//"re", mat%re(i,j), vec(k), 1d-7)
+					call assert_double(trim(tmparg)//"im", mat%im(i,j), vec(k+1), 1d-7)
 					write(tmparg, "('v2m ',4I3)") k,m,j,i
-					call assert_double_rel(trim(tmparg)//"re", mat%re(j,i), vec(k), 1d-7)
-					call assert_double_rel(trim(tmparg)//"im", mat%im(j,i), -vec(k+1), 1d-7)
+					call assert_double(trim(tmparg)//"re", mat%re(j,i), vec(k), 1d-7)
+					call assert_double(trim(tmparg)//"im", mat%im(j,i), -vec(k+1), 1d-7)
 					k=k+2
 				end do
 			end do
@@ -369,25 +369,25 @@ program tests
 		do m=1, Ny
 			do i=1, flavorNumber
 				write(tmparg, "('dm2v ',3I3)") k,m,i
-				call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(i,i), vec(k+i-1), 1d-7)
-				call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(i,i), 0.d0, 1d-10)
-				call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(i,i), (1.d0 + vec(k+i-1)) * feq_arr(m), 1d-7)
-				call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(i,i), 0.d0, 1d-10)
+				call assert_double(trim(tmparg)//"re", nuDensMatVec(m)%re(i,i), vec(k+i-1), 1d-7)
+				call assert_double(trim(tmparg)//"im", nuDensMatVec(m)%im(i,i), 0.d0, 1d-10)
+				call assert_double(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(i,i), (1.d0 + vec(k+i-1)) * feq_arr(m), 1d-7)
+				call assert_double(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(i,i), 0.d0, 1d-10)
 			end do
 			k=k+flavorNumber
 			if (has_offdiagonal()) then
 				do i=1, flavorNumber-1
 					do j=i+1, flavorNumber
 						write(tmparg, "('dm2v ',4I3)") k,m,i,j
-						call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(i,j), vec(k), 1d-7)
-						call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(i,j), vec(k+1), 1d-7)
-						call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(i,j), vec(k), 1d-7)
-						call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(i,j), vec(k+1), 1d-7)
+						call assert_double(trim(tmparg)//"re", nuDensMatVec(m)%re(i,j), vec(k), 1d-7)
+						call assert_double(trim(tmparg)//"im", nuDensMatVec(m)%im(i,j), vec(k+1), 1d-7)
+						call assert_double(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(i,j), vec(k), 1d-7)
+						call assert_double(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(i,j), vec(k+1), 1d-7)
 						write(tmparg, "('dm2v ',4I3)") k,m,j,i
-						call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(j,i), vec(k), 1d-7)
-						call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(j,i), -vec(k+1), 1d-7)
-						call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(j,i), vec(k), 1d-7)
-						call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(j,i), -vec(k+1), 1d-7)
+						call assert_double(trim(tmparg)//"re", nuDensMatVec(m)%re(j,i), vec(k), 1d-7)
+						call assert_double(trim(tmparg)//"im", nuDensMatVec(m)%im(j,i), -vec(k+1), 1d-7)
+						call assert_double(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(j,i), vec(k), 1d-7)
+						call assert_double(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(j,i), -vec(k+1), 1d-7)
 						k=k+2
 					end do
 				end do
@@ -2300,9 +2300,11 @@ program tests
 		real(dl), dimension(3) :: tmparrS, tmparrA
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
 		character(len=300) :: tmparg
-		type(cmplxMatNN) :: cts
+		type(cmplxMatNN) :: cts, ctsNe, ctsNn
 
 		call allocateCmplxMat(cts)
+		call allocateCmplxMat(ctsNe)
+		call allocateCmplxMat(ctsNn)
 
 		x = 0.75d0
 		iy1 = 7 !1.22151515151515
@@ -2331,9 +2333,9 @@ program tests
 		close(fv)
 		tmparrA(:) = (/1d-4,1d-4,1d-4/)
 		tmparrS(:) = (/1d-4,1d-4,1d-4/)
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(:,:) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(:,:) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms fake x22 ',2I1)") i,j
@@ -2351,9 +2353,9 @@ program tests
 		close(fv)
 		collint_damping_type = 0
 		collint_offdiag_damping = .true.
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(:,:) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(:,:) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms fake x22 zero off diagonal ',2I1)") i,j
@@ -2372,9 +2374,9 @@ program tests
 		collint_damping_type = 2
 		collint_diagonal_zero = .true.
 		collint_offdiag_damping = .false.
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(:,:) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(:,:) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms zd ',2I1)") i,j
@@ -2420,9 +2422,9 @@ program tests
 		close(fv)
 		tmparrA(:) = (/2d-4,5d-4,5d-4/)
 		tmparrS(:) = (/1d-5,1d-5,1d-5/)
-		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(:,:) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(:,:) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('collision_terms real diag ',2I1)") i,j
@@ -2476,9 +2478,9 @@ program tests
 !		close(fv)
 !		tmparrA(:) = (/0.08d0, 0.05d0, 0.05d0/)
 !		tmparrS(:) = (/0.00001d0, 0.00001d0, 0.00001d0/)
-!		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
-!		cts%re(:,:) = cts%re(:,:) * overallFactor
-!		cts%im(:,:) = cts%im(:,:) * overallFactor
+!		call get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0, ctsNe, ctsNn)
+!		cts%re(:,:) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+!		cts%im(:,:) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 !		do i=1, flavorNumber
 !			do j=1, flavorNumber
 !				write(tmparg,"('collision_terms real diag ',2I1)") i,j
@@ -2496,11 +2498,14 @@ program tests
 		character(len=300) :: tmparg
 		integer :: i, j, iy
 		real(dl), dimension(:,:,:), allocatable :: GLR_vectmp
-		type(cmplxMatNN) :: Heff, comm, collterms
+		type(cmplxMatNN) :: Heff, comm, colltermsNue, colltermsNunu, ctsNe, ctsNn
 
 		call allocateCmplxMat(Heff)
 		call allocateCmplxMat(comm)
-		call allocateCmplxMat(collterms)
+		call allocateCmplxMat(colltermsNue)
+		call allocateCmplxMat(colltermsNunu)
+		call allocateCmplxMat(ctsNe)
+		call allocateCmplxMat(ctsNn)
 
 		ftqed_temperature_corr = .false.
 		allocate(GLR_vectmp(2, flavorNumber, flavorNumber))
@@ -2548,7 +2553,7 @@ program tests
 		do j=1,3
 			res%re(j,j) = res%re(j,j)/fd
 		end do
-		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0, Heff, comm, collterms)
+		call drhoy_dx_fullMat(outp, x, 1.d0, z, iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0, Heff, comm, colltermsNue, colltermsNunu)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx A ',2I1)") i,j
@@ -2582,7 +2587,7 @@ program tests
 		do j=1,3
 			res%re(j,j) = res%re(j,j)/fd
 		end do
-		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue1, fakecollintnunu0, Heff, comm, collterms)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue1, fakecollintnunu0, Heff, comm, colltermsNue, colltermsNunu)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx B ',2I1)") i,j
@@ -2638,7 +2643,7 @@ program tests
 		do j=1,3
 			res%re(j,j) = res%re(j,j)/fd
 		end do
-		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0, Heff, comm, collterms)
+		call drhoy_dx_fullMat(outp,x,1.d0, z,iy, dme2, sqrtraddens, fakecollintnue0, fakecollintnunu0, Heff, comm, colltermsNue, colltermsNunu)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx C ',2I1)") i,j
@@ -2663,7 +2668,7 @@ program tests
 		do j=1,3
 			res%re(j,j) = res%re(j,j)/fd
 		end do
-		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollintnuey, fakecollintnunu0, Heff, comm, collterms)
+		call drhoy_dx_fullMat(outp,x,1.d0,z,iy, dme2, sqrtraddens, fakecollintnuey, fakecollintnunu0, Heff, comm, colltermsNue, colltermsNunu)
 		do i=1, flavorNumber
 			do j=1, flavorNumber
 				write(tmparg,"('drho/dx D ',2I1)") i,j
@@ -2673,9 +2678,10 @@ program tests
 		end do
 		GLR_vec = GLR_vectmp
 		deallocate(GLR_vectmp)
-		call allocateCmplxMat(Heff)
-		call allocateCmplxMat(comm)
-		call allocateCmplxMat(collterms)
+		call deallocateCmplxMat(Heff)
+		call deallocateCmplxMat(comm)
+		call deallocateCmplxMat(colltermsNue)
+		call deallocateCmplxMat(colltermsNunu)
 		ftqed_temperature_corr = .true.
 		call printTotalTests
 		call resetTestCounter
@@ -2689,9 +2695,13 @@ program tests
 		real(dl), dimension(3) :: tmparrS, tmparrA
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
 		character(len=300) :: tmparg
-		type(cmplxMatNN) :: cts
+		type(cmplxMatNN) :: cts, ctsNe, ctsNn
 
+		flavorNumber=4
 		call allocateCmplxMat(cts)
+		call allocateCmplxMat(ctsNe)
+		call allocateCmplxMat(ctsNn)
+		flavorNumber=3
 
 		collint_damping_type = 2
 		collint_diagonal_zero = .false.
@@ -2740,9 +2750,9 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(1:flavorNumber,1:flavorNumber) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(1:flavorNumber,1:flavorNumber) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 2+1 ',2I1)") i,j
@@ -2766,9 +2776,9 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(1:flavorNumber,1:flavorNumber) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(1:flavorNumber,1:flavorNumber) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 3+0 ',2I1)") i,j
@@ -2796,9 +2806,9 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(1:flavorNumber,1:flavorNumber) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(1:flavorNumber,1:flavorNumber) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 1+1 ',2I1)") i,j
@@ -2822,9 +2832,9 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(1:flavorNumber,1:flavorNumber) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(1:flavorNumber,1:flavorNumber) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 2+0 ',2I1)") i,j
@@ -2872,9 +2882,9 @@ program tests
 		tmpmatB = tmpmatB * z**4
 		tmparrA(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
 		tmparrS(:) = (/0.0001d0, 0.0001d0, 0.0001d0/)
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
-		cts%re(:,:) = cts%re(:,:) * overallFactor
-		cts%im(:,:) = cts%im(:,:) * overallFactor
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(1:flavorNumber,1:flavorNumber) = (ctsNe%re(:,:)+ctsNn%re(:,:)) * overallFactor
+		cts%im(1:flavorNumber,1:flavorNumber) = (ctsNe%im(:,:)+ctsNn%im(:,:)) * overallFactor
 		do i=1, flavorNumber
 			do j=i+1, flavorNumber
 				write(tmparg,"('damping term 3+1 ',2I1)") i,j
@@ -3346,9 +3356,11 @@ program tests
 		real(dl), dimension(3, 3) :: tmpmatA, tmpmatB
 		real(dl), dimension(12) :: errv
 		character(len=300) :: tmparg
-		type(cmplxMatNN) :: cts
+		type(cmplxMatNN) :: cts, ctsNe, ctsNn
 
 		call allocateCmplxMat(cts)
+		call allocateCmplxMat(ctsNe)
+		call allocateCmplxMat(ctsNn)
 
 		call printTestBlockName("damping factors a la Bennett:2020zkv")
 
@@ -3371,6 +3383,7 @@ program tests
 		deallocate(y_arr)
 		allocate(y_arr(Ny))
 		y_arr = linspace(y_min, y_max, Ny)
+		call finish_y_arrays()
 		errv=(/1d-3,1d-3,2d-3,1d-3,1d-3,1d-3,1d-3,1d-3,3d-3,1d-3,1d-3,2d-3/)
 		open(unit=fu, file="test_outputs/damping_bennett_sv.dat", status="old")
 		open(unit=fv, file="test_outputs/damping_bennett_dy.dat", status="old")
@@ -3441,7 +3454,9 @@ program tests
 			nuDensMatVecFD(iy)%im(3,:) = (/-0.003d0, 0.002d0, 0.d0/)
 		end do
 
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(:,:) = ctsNe%re(:,:)+ctsNn%re(:,:)
+		cts%im(:,:) = ctsNe%im(:,:)+ctsNn%im(:,:)
 		res1 = integrate_collint_nue_NC(fakecollintnuey, collArgs, F_ab_ann_re, F_ab_sc_re) &
 			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
@@ -3472,7 +3487,9 @@ program tests
 		collArgs%z = z
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
-		cts = get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0)
+		call get_collision_terms(collArgs, fakecollintnuey, fakecollintnunu0, ctsNe, ctsNn)
+		cts%re(:,:) = ctsNe%re(:,:)+ctsNn%re(:,:)
+		cts%im(:,:) = ctsNe%im(:,:)+ctsNn%im(:,:)
 		res1 = integrate_collint_nue_NC(fakecollintnuey, collArgs, F_ab_ann_re, F_ab_sc_re) &
 			* collTermFactor/(y1**2 * x**4)
 !		call printMat(cts%re)
@@ -3730,7 +3747,7 @@ program tests
 		real(dl) :: y2, y3, y4, fsc, fpa, res1, res2, ey
 		real(dl), dimension(3, 3) :: ndr, ndi, er, ei
 		type(coll_args) :: collArgs
-		type(cmplxMatNN) :: n4, cts
+		type(cmplxMatNN) :: n4, cts, ctsNe, ctsNn
 		real(dl), dimension(2) :: pi2_vec
 		character(len=300) :: tmparg
 
@@ -4061,6 +4078,8 @@ program tests
 		!now test that get_collision_terms does what expected
 		write(*,*)""
 		call allocateCmplxMat(cts)
+		call allocateCmplxMat(ctsNe)
+		call allocateCmplxMat(ctsNn)
 		collArgs%ix1 = 1
 		collArgs%ix2 = 1
 		collArgs%x = 0.05d0
@@ -4073,9 +4092,9 @@ program tests
 		collArgs%y1 = y_arr(iy1)
 
 		res1 = integrate_collint_nunu_NC(fakecollintnunu1, collArgs, F_nu_sc_re, F_nu_pa_re)
-		cts = get_collision_terms(collArgs, fakecollintnue0, fakecollintnunu1)
-		cts%re(:,:) = cts%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
-		cts%im(:,:) = cts%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		call get_collision_terms(collArgs, fakecollintnue1, fakecollintnunu1, ctsNe, ctsNn)
+		cts%re(:,:) = ctsNn%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		cts%im(:,:) = ctsNn%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
 #ifdef FULL_F_NU
 		ndr = res1/4.d0
 		ndi(1,:) = (/    0.d0,  res1/4., res1/4./)
@@ -4099,21 +4118,34 @@ program tests
 
 		res1 = integrate_collint_nunu_NC(fakecollintnunu1, collArgs, F_nu_sc_re, F_nu_pa_re)
 		res2 = integrate_collint_nue_NC(fakecollintnue1, collArgs, F_ab_sc_re, F_ab_ann_re)
-		cts = get_collision_terms(collArgs, fakecollintnue1, fakecollintnunu1)
-		cts%re(:,:) = cts%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
-		cts%im(:,:) = cts%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
-#ifdef FULL_F_NU
-		ndr = res1/4.d0 + res2
-		ndi(1,:) = (/         0.d0,  res1/4.+res2, res1/4.+res2/)
-		ndi(2,:) = (/-res1/4.-res2,          0.d0, res1/4.+res2/)
-		ndi(3,:) = (/-res1/4.-res2, -res1/4.-res2,         0.d0/)
-#else
-		ndr(1,:) = (/res1/4. + res2,            res2,           res2/)
-		ndr(2,:) = (/          res2,  res1/4. + res2,           res2/)
-		ndr(3,:) = (/          res2,            res2, res1/4. + res2/)
-		ndi(1,:) = (/ 0.d0, +res2, res2/)
+		call get_collision_terms(collArgs, fakecollintnue1, fakecollintnunu1, ctsNe, ctsNn)
+		cts%re(:,:) = ctsNe%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		cts%im(:,:) = ctsNe%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		ndr = res2
+		ndi(1,:) = (/ 0.d0,  res2, res2/)
 		ndi(2,:) = (/-res2,  0.d0, res2/)
 		ndi(3,:) = (/-res2, -res2, 0.d0/)
+		er = 1d-7
+		ei = 1d-7
+		do i=1, flavorNumber
+			do j=1, flavorNumber
+				write(tmparg,"('collision_terms nunu B ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", cts%re(i,j), ndr(i,j), 1d-7, er(i,j))
+				call assert_double_rel_safe(trim(tmparg)//"im", cts%im(i,j), ndi(i,j), 1d-7, ei(i,j))
+			end do
+		end do
+		cts%re(:,:) = ctsNn%re(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+		cts%im(:,:) = ctsNn%im(:,:) * collArgs%y1**2 * collArgs%x**4 / collTermFactor
+#ifdef FULL_F_NU
+		ndr = res1/4.d0
+		ndi(1,:) = (/    0.d0,  res1/4., res1/4./)
+		ndi(2,:) = (/-res1/4.,     0.d0, res1/4./)
+		ndi(3,:) = (/-res1/4., -res1/4.,    0.d0/)
+#else
+		ndr(1,:) = (/res1/4.,     0.d0,    0.d0/)
+		ndr(2,:) = (/ 0.d0  ,  res1/4.,    0.d0/)
+		ndr(3,:) = (/ 0.d0  ,     0.d0, res1/4./)
+		ndi = 0.d0
 #endif
 		er = 1d-7
 		ei = 1d-7
@@ -4154,16 +4186,14 @@ program tests
 		collArgs%iy = iy1
 		collArgs%y1 = y_arr(iy1)
 		collArgs%x = 0.06d0
-		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
-		call printMat(cts%re)
-		cts = get_collision_terms(collArgs, fakecollintnue0, coll_nunu_int)
-		call printMat(cts%re)
+		call get_collision_terms(collArgs, coll_nue_int, coll_nunu_int, ctsNe, ctsNn)
+		call printMat(ctsNe%re)
+		call printMat(ctsNn%re)
 
 		collArgs%x = 0.1d0
-		cts = get_collision_terms(collArgs, coll_nue_int, fakecollintnunu0)
-		call printMat(cts%re)
-		cts = get_collision_terms(collArgs, fakecollintnue0, coll_nunu_int)
-		call printMat(cts%re)
+		call get_collision_terms(collArgs, coll_nue_int, coll_nunu_int, ctsNe, ctsNn)
+		call printMat(ctsNe%re)
+		call printMat(ctsNn%re)
 
 		call printTotalTests
 		call resetTestCounter

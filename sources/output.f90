@@ -13,7 +13,7 @@ module fpOutput
 	integer :: Nsave
 	logical :: first_store = .true.
 	real(dl), dimension(:), allocatable :: storeX, storeNorm, storeTmp
-	real(dl), dimension(:,:), allocatable :: storeY, storeYdot, storeHeff, storeComm, storeCT
+	real(dl), dimension(:,:), allocatable :: storeY, storeYdot, storeHeff, storeComm, storeCTNue, storeCTNunu
 	character(len=14), parameter :: intermfmt = "(1P, *(E14.6))"
 	integer, parameter :: iu = 8972
 
@@ -188,7 +188,8 @@ module fpOutput
 		call allocateStoreVar2D(storeYdot, Nsave, ntot)
 		call allocateStoreVar2D(storeHeff, Nsave, ntotrho)
 		call allocateStoreVar2D(storeComm, Nsave, ntotrho)
-		call allocateStoreVar2D(storeCT, Nsave, ntotrho)
+		call allocateStoreVar2D(storeCTNue, Nsave, ntotrho)
+		call allocateStoreVar2D(storeCTNunu, Nsave, ntotrho)
 	end subroutine allocateStoreVars
 
 	subroutine deallocateStoreVars
@@ -209,8 +210,10 @@ module fpOutput
 			deallocate(storeHeff)
 		if(allocated(storeComm))&
 			deallocate(storeComm)
-		if(allocated(storeCT))&
-			deallocate(storeCT)
+		if(allocated(storeCTNue))&
+			deallocate(storeCTNue)
+		if(allocated(storeCTNunu))&
+			deallocate(storeCTNunu)
 	end subroutine deallocateStoreVars
 
 	subroutine intermediateToFiles(N)
@@ -240,9 +243,14 @@ module fpOutput
 			write(iu, intermfmt) storeComm(i, :)
 		end do
 		close(iu)
-		call openFile(iu, trim(outputFolder)//'/intermCT.dat', first_store)
+		call openFile(iu, trim(outputFolder)//'/intermCTNue.dat', first_store)
 		do i=1, N
-			write(iu, intermfmt) storeCT(i, :)
+			write(iu, intermfmt) storeCTNue(i, :)
+		end do
+		close(iu)
+		call openFile(iu, trim(outputFolder)//'/intermCTNunu.dat', first_store)
+		do i=1, N
+			write(iu, intermfmt) storeCTNunu(i, :)
 		end do
 		close(iu)
 		first_store=.false.
@@ -265,8 +273,10 @@ module fpOutput
 		storeHeff(cix,:) = storeTmp
 		call mat_2_vec(intermediateSteps%commutator, Ny, storeTmp)
 		storeComm(cix,:) = storetmp
-		call mat_2_vec(intermediateSteps%collterms, Ny, storeTmp)
-		storeCT(cix,:) = storeTmp
+		call mat_2_vec(intermediateSteps%colltermsNue(:), Ny, storeTmp)
+		storeCTNue(cix,:) = storeTmp
+		call mat_2_vec(intermediateSteps%colltermsNunu(:), Ny, storeTmp)
+		storeCTNunu(cix,:) = storeTmp
 
 		if (cix.eq.Nsave) then
 			call intermediateToFiles(Nsave)

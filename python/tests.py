@@ -576,7 +576,8 @@ class TestFortEPiaNORun(FPTestCase):
             "intermRhodot",
             "intermHeff",
             "intermComm",
-            "intermCT",
+            "intermCTNue",
+            "intermCTNunu",
         ]:
             self.assertEqual(len(run.intermX), len(getattr(run, f)))
         self.assertEqual(run.intermX.shape, run.intermN.shape)
@@ -588,7 +589,14 @@ class TestFortEPiaNORun(FPTestCase):
             run.intermYdot.shape,
             (nlines, run.flavorNumber ** 2 * run.Ny + run.nonRhoVars),
         )
-        for f in ["intermRho", "intermRhodot", "intermHeff", "intermComm", "intermCT"]:
+        for f in [
+            "intermRho",
+            "intermRhodot",
+            "intermHeff",
+            "intermComm",
+            "intermCTNue",
+            "intermCTNunu",
+        ]:
             self.assertEqual(
                 getattr(run, f).shape,
                 (nlines, run.flavorNumber, run.flavorNumber, 2, run.Ny),
@@ -967,7 +975,8 @@ class TestFortEPiaNORun(FPTestCase):
             "intermYdot",
             "intermHeff",
             "intermComm",
-            "intermCT",
+            "intermCTNue",
+            "intermCTNunu",
             "intermZ",
             "intermZdot",
             "intermW",

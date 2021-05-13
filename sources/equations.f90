@@ -304,15 +304,18 @@ module fpEquations
 		z_in = cvec(n) + 1.d0
 	end subroutine zin_solver
 
-	pure subroutine drhoy_dx_fullMat(matrix, x, w, z, iy, dme2, sqrtraddens, Fint_nue, Fint_nunu, Heff, comm, collterms)
+	pure subroutine drhoy_dx_fullMat( &
+		matrix, x, w, z, iy, dme2, sqrtraddens, Fint_nue, Fint_nunu, &
+		Heff, comm, colltermsNue, colltermsNunu &
+	)
 !		compute rho derivatives for a given momentum y_arr(m), save to a matrix
 		use fpInterfaces2
-		procedure (collision_integrand_nue) :: Fint_nue
-		procedure (collision_integrand_nunu) :: Fint_nunu
+		type(cmplxMatNN), intent(out) :: matrix
 		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: iy
-		type(cmplxMatNN), intent(out) :: matrix
-		type(cmplxMatNN), intent(inout) :: Heff, comm, collterms
+		procedure (collision_integrand_nue) :: Fint_nue
+		procedure (collision_integrand_nunu) :: Fint_nunu
+		type(cmplxMatNN), intent(inout) :: Heff, comm, colltermsNue, colltermsNunu
 		real(dl) :: y, overallNorm, cf
 		integer :: ix
 		type(coll_args) :: collArgs
@@ -338,9 +341,9 @@ module fpEquations
 		matrix%im = - comm%im * cf
 		matrix%re = comm%re * cf
 
-		collterms = get_collision_terms(collArgs, Fint_nue, Fint_nunu)
-		matrix%re = matrix%re + collterms%re
-		matrix%im = matrix%im + collterms%im
+		call get_collision_terms(collArgs, Fint_nue, Fint_nunu, colltermsNue, colltermsNunu)
+		matrix%re = matrix%re + colltermsNue%re + colltermsNunu%re
+		matrix%im = matrix%im + colltermsNue%im + colltermsNunu%im
 
 		matrix%re = matrix%re * overallNorm
 		matrix%im = matrix%im * overallNorm
@@ -350,19 +353,22 @@ module fpEquations
 		end do
 	end subroutine drhoy_dx_fullMat
 
-	pure subroutine drho_y_dx(x, w, z, m, dme2, sqrtraddens, n, ydot, Heff, comm, collterms)
+	pure subroutine drho_y_dx( &
+		x, w, z, m, dme2, sqrtraddens, n, ydot, &
+		Heff, comm, colltermsNue, colltermsNunu &
+	)
 !		compute rho derivatives for a given momentum y_arr(m), save to ydot
 		real(dl), intent(in) :: x, w, z, dme2, sqrtraddens
 		integer, intent(in) :: m, n
 		real(dl), dimension(n), intent(out) :: ydot
-		type(cmplxMatNN), intent(inout) :: Heff, comm, collterms
+		type(cmplxMatNN), intent(inout) :: Heff, comm, colltermsNue, colltermsNunu
 		integer :: i, j, k
 		type(cmplxMatNN) :: mat
 
 		call drhoy_dx_fullMat(&
 			mat, x, w, z, m, dme2, sqrtraddens, &
 			coll_nue_int, coll_nunu_int, &
-			Heff, comm, collterms &
+			Heff, comm, colltermsNue, colltermsNunu &
 		)
 		do i=1, flavorNumber
 			ydot(i) = mat%re(i,i)
@@ -428,7 +434,8 @@ module fpEquations
 			call drho_y_dx( &
 				x, w, z, m, dme2, sqrtraddens, flavNumSqu, &
 				tmpvec, &
-				intermediateSteps%Heff(m), intermediateSteps%commutator(m), intermediateSteps%collterms(m) &
+				intermediateSteps%Heff(m), intermediateSteps%commutator(m), &
+				intermediateSteps%colltermsNue(m), intermediateSteps%colltermsNunu(m) &
 			)
 			s=(m-1)*flavNumSqu
 			ydot(s+1:s+flavNumSqu) = tmpvec(:)

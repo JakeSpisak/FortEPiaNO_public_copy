@@ -1282,22 +1282,23 @@ module fpInteractions
 		deallocate(fy2_arr)
 	end function integrate_collint_nunu_GL
 
-	pure function get_collision_terms(collArgsIn, Fint_nue, Fint_nunu)
+	pure subroutine get_collision_terms(collArgsIn, Fint_nue, Fint_nunu, CTNue, CTNunu)
 		use fpInterfaces2
 		use fpInterfaces3
 		implicit None
+		type(coll_args), intent(in) :: collArgsIn
 		procedure (collision_integrand_nue) :: Fint_nue
 		procedure (collision_integrand_nunu) :: Fint_nunu
-		type(cmplxMatNN) :: get_collision_terms
+		type(cmplxMatNN), intent(out) :: CTNue, CTNunu
 		procedure (collision_integrator_nue), pointer :: integrator_nue
 		procedure (collision_integrator_nunu), pointer :: integrator_nunu
 		real(dl) :: x, w, z, y1, cf, dampfact
 		integer :: iy1
-		type(coll_args), intent(in) :: collArgsIn
 		type(coll_args) :: collArgs
 		integer :: i, j
 
-		call allocateCmplxMat(get_collision_terms)
+		call allocateCmplxMat(CTNue)
+		call allocateCmplxMat(CTNunu)
 
 		collArgs=collArgsIn
 
@@ -1307,12 +1308,16 @@ module fpInteractions
 		y1 = collArgs%y1
 		iy1 = collArgs%iy
 
-		get_collision_terms%y = y1
-		get_collision_terms%x = x
-		get_collision_terms%z = z
-
-		get_collision_terms%re = 0.d0
-		get_collision_terms%im = 0.d0
+		CTNue%y = y1
+		CTNue%x = x
+		CTNue%z = z
+		CTNue%re = 0.d0
+		CTNue%im = 0.d0
+		CTNunu%y = y1
+		CTNunu%x = x
+		CTNunu%z = z
+		CTNunu%re = 0.d0
+		CTNunu%im = 0.d0
 
 		if (.not. has_offdiagonal() .and. collint_diagonal_zero) then
 			return
@@ -1332,10 +1337,10 @@ module fpInteractions
 			if (.not.sterile(i)) then
 				if (.not. collint_diagonal_zero) then
 					if (.not.collint_d_no_nue) &
-						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
+						CTNue%re(i,i) = CTNue%re(i,i) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_re, F_ab_sc_re)
 					if (.not.collint_d_no_nunu) &
-						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
+						CTNunu%re(i,i) = CTNunu%re(i,i) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
 				end if
 			end if
@@ -1350,16 +1355,16 @@ module fpInteractions
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
 					if (.not.collint_od_no_nue) then
-						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
+						CTNue%re(i,j) = CTNue%re(i,j) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_re, F_ab_sc_re)
-						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
+						CTNue%im(i,j) = CTNue%im(i,j) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_im, F_ab_sc_im)
 					end if
 #ifdef FULL_F_NU
 					if (.not.collint_od_no_nunu) then
-						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
+						CTNunu%re(i,j) = CTNunu%re(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
-						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
+						CTNunu%im(i,j) = CTNunu%im(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_im, F_nu_pa_im)/4.d0
 					end if
 #endif
@@ -1367,34 +1372,41 @@ module fpInteractions
 #ifndef DO_TESTS
 #ifndef FULL_F_NU
 				do j=i+1, flavorNumber
-					get_collision_terms%re(i,j) = &
-						get_collision_terms%re(i,j) &
+					CTNunu%re(i,j) = &
+						CTNunu%re(i,j) &
 						- dampTermMatrixCoeffNunu(i,j) * dampfact * nuDensMatVecFD(iy1)%re(i,j)
-					get_collision_terms%im(i,j) = &
-						get_collision_terms%im(i,j) &
+					CTNunu%im(i,j) = &
+						CTNunu%im(i,j) &
 						- dampTermMatrixCoeffNunu(i,j) * dampfact * nuDensMatVecFD(iy1)%im(i,j)
 				end do
 #endif
 #endif
 			else if (collint_damping_type.eq.2 .or. collint_damping_type.eq.1) then
 				do j=i+1, flavorNumber
-					get_collision_terms%re(i,j) = &
-						- (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
-						* dampfact * nuDensMatVecFD(iy1)%re(i,j)
-					get_collision_terms%im(i,j) = &
-						- (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
-						* dampfact * nuDensMatVecFD(iy1)%im(i,j)
+					CTNue%re(i,j) = &
+						- dampTermMatrixCoeffNue(i,j) * dampfact * nuDensMatVecFD(iy1)%re(i,j)
+					CTNue%im(i,j) = &
+						- dampTermMatrixCoeffNue(i,j) * dampfact * nuDensMatVecFD(iy1)%im(i,j)
+					CTNunu%re(i,j) = &
+						- dampTermMatrixCoeffNunu(i,j) * dampfact * nuDensMatVecFD(iy1)%re(i,j)
+					CTNunu%im(i,j) = &
+						- dampTermMatrixCoeffNunu(i,j) * dampfact * nuDensMatVecFD(iy1)%im(i,j)
 				end do
 			end if
 			!fill other half of the matrix:
 			do j=i+1, flavorNumber
-				get_collision_terms%re(j,i) = get_collision_terms%re(i,j)
-				get_collision_terms%im(j,i) = - get_collision_terms%im(i,j)
+				CTNue%re(j,i) = CTNue%re(i,j)
+				CTNue%im(j,i) = - CTNue%im(i,j)
+				CTNunu%re(j,i) = CTNunu%re(i,j)
+				CTNunu%im(j,i) = - CTNunu%im(i,j)
 			end do
 		end do
 		!fix coefficients:
 		cf = (y1*y1*x**4)
-		get_collision_terms%re(:,:) = get_collision_terms%re(:,:) * collTermFactor / cf
-		get_collision_terms%im(:,:) = get_collision_terms%im(:,:) * collTermFactor / cf
-	end function get_collision_terms
+		CTNue%re(:,:) = CTNue%re(:,:) * collTermFactor / cf
+		CTNue%im(:,:) = CTNue%im(:,:) * collTermFactor / cf
+		CTNunu%re(:,:) = CTNunu%re(:,:) * collTermFactor / cf
+		CTNunu%im(:,:) = CTNunu%im(:,:) * collTermFactor / cf
+	end subroutine get_collision_terms
+
 end module

@@ -210,13 +210,15 @@ module fpConfig
 		!quantities used to save intermediate steps
 		allocate(intermediateSteps%Heff(Ny))
 		allocate(intermediateSteps%commutator(Ny))
-		allocate(intermediateSteps%collterms(Ny))
+		allocate(intermediateSteps%colltermsNue(Ny))
+		allocate(intermediateSteps%colltermsNunu(Ny))
 		allocate(intermediateSteps%yvec(ntot))
 		allocate(intermediateSteps%ydot(ntot))
 		do ix=1, Ny
 			call allocateCmplxMat(intermediateSteps%Heff(ix))
 			call allocateCmplxMat(intermediateSteps%commutator(ix))
-			call allocateCmplxMat(intermediateSteps%collterms(ix))
+			call allocateCmplxMat(intermediateSteps%colltermsNue(ix))
+			call allocateCmplxMat(intermediateSteps%colltermsNunu(ix))
 		end do
 	end subroutine init_matrices
 

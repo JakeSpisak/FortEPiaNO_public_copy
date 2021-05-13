@@ -136,7 +136,7 @@ module variables
 		logical :: output
 		real(dl) :: x, norm
 		real(dl), dimension(:), allocatable :: yvec, ydot
-		type(cmplxMatNN), dimension(:), allocatable :: Heff, commutator, collterms
+		type(cmplxMatNN), dimension(:), allocatable :: Heff, commutator, colltermsNue, colltermsNunu
 	end type derivatives_terms
 
 	type(derivatives_terms) :: intermediateSteps
@@ -256,7 +256,7 @@ module variables
 	subroutine mat_2_vec(mat, N, vec)
 		!save the real and imaginary elements of the input array of cmplxMatNN
 		!into a 1d vector, with their appropriate order
-		type(cmplxMatNN), dimension(:), allocatable, intent(in) :: mat
+		type(cmplxMatNN), dimension(:), intent(in) :: mat
 		integer, intent(in) :: N
 		real(dl), dimension(:), intent(out) :: vec
 		integer :: k,m

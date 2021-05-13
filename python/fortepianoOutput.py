@@ -493,7 +493,14 @@ class FortEPiaNORun:
         else:
             self.intermX = dat[:, 0]
             self.intermN = dat[:, 1]
-        for f in ["intermY", "intermYdot", "intermHeff", "intermComm", "intermCT"]:
+        for f in [
+            "intermY",
+            "intermYdot",
+            "intermHeff",
+            "intermComm",
+            "intermCTNue",
+            "intermCTNunu",
+        ]:
             try:
                 setattr(self, f, self.loadtxt("%s/%s.dat" % (self.folder, f)))
             except (IOError, OSError):
@@ -525,7 +532,14 @@ class FortEPiaNORun:
                 setattr(self, "intermRho" + t, np.array([np.nan]))
         if len(self.intermX) == 1 and np.isnan(self.intermX[0]):
             return
-        for f in ["intermRho", "intermRhodot", "intermHeff", "intermComm", "intermCT"]:
+        for f in [
+            "intermRho",
+            "intermRhodot",
+            "intermHeff",
+            "intermComm",
+            "intermCTNue",
+            "intermCTNunu",
+        ]:
             setattr(
                 self,
                 f,
