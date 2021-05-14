@@ -471,24 +471,24 @@ module fpInteractions
 			d24r = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				s13r = s13r + (n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)) * Gs(k)*Gs(m)
-				s13i = s13i - (n1%re(i,k)*n3%im(k,m) + n1%im(i,k)*n3%re(k,m)) * Gs(k)*Gs(m)
-				s24r = s24r + (n2%im(m,k)*n4%im(k,j) - n2%re(m,k)*n4%re(k,j)) * Gs(k)*Gs(j)
-				s24i = s24i - (n2%re(m,k)*n4%im(k,j) + n2%im(m,k)*n4%re(k,j)) * Gs(k)*Gs(j)
-				d24r = d24r + (n2%im(m,k)*n4%im(k,m) - n2%re(m,k)*n4%re(k,m)) * Gs(m)*Gs(k)
+				s13r = s13r + (n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)) * Gs(k)
+				s13i = s13i - (n1%re(i,k)*n3%im(k,m) + n1%im(i,k)*n3%re(k,m)) * Gs(k)
+				s24r = s24r + (n2%im(m,k)*n4%im(k,j) - n2%re(m,k)*n4%re(k,j)) * Gs(k)
+				s24i = s24i - (n2%re(m,k)*n4%im(k,j) + n2%im(m,k)*n4%re(k,j)) * Gs(k)
+				d24r = d24r + (n2%im(m,k)*n4%im(k,m) - n2%re(m,k)*n4%re(k,m)) * Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = n3%re(i,m)*Gs(i)*Gs(m) + s13r
-			t1i(m) = n3%im(i,m)*Gs(i)*Gs(m) + s13i
-			t3r(m) = n1%re(i,m)*Gs(m) + s13r
-			t3i(m) = n1%im(i,m)*Gs(m) + s13i
-			t2r(m) = n4%re(m,j)*Gs(m)*Gs(j) + s24r
-			t2i(m) = n4%im(m,j)*Gs(m)*Gs(j) + s24i
-			t4r(m) = n2%re(m,j)*Gs(j) + s24r
-			t4i(m) = n2%im(m,j)*Gs(j) + s24i
+			t1r(m) = (n3%re(i,m)*Gs(i) + s13r) * Gs(m)
+			t1i(m) = (n3%im(i,m)*Gs(i) + s13i) * Gs(m)
+			t3r(m) = (n1%re(i,m) + s13r) * Gs(m)
+			t3i(m) = (n1%im(i,m) + s13i) * Gs(m)
+			t2r(m) = (n4%re(m,j)*Gs(m) + s24r) * Gs(j)
+			t2i(m) = (n4%im(m,j)*Gs(m) + s24i) * Gs(j)
+			t4r(m) = (n2%re(m,j) + s24r) * Gs(j)
+			t4i(m) = (n2%im(m,j) + s24i) * Gs(j)
 			!compute Tr()
-			tr2 = tr2 + n4%re(m,m)*Gs(m) + d24r
-			tr4 = tr4 + n2%re(m,m)*Gs(m) + d24r
+			tr2 = tr2 + (n4%re(m,m) + d24r) * Gs(m)
+			tr4 = tr4 + (n2%re(m,m) + d24r) * Gs(m)
 		end do
 	end subroutine F_nu_sc_1324
 
@@ -567,9 +567,9 @@ module fpInteractions
 
 		allocate(t2r(flavorNumber), t4r(flavorNumber))
 		do k=1, flavorNumber
-			s24r = Gs(k)*n2%re(k, k)*n4%re(k, k)
-			t2r(k) = Gs(k)*n4%re(k, k) - s24r
-			t4r(k) = Gs(k)*n2%re(k, k) - s24r
+			s24r = n2%re(k, k)*n4%re(k, k)
+			t2r(k) = Gs(k) * (n4%re(k, k) - s24r)
+			t4r(k) = Gs(k) * (n2%re(k, k) - s24r)
 		end do
 		s13r = n1%re(i, i) * n3%re(i, i)
 		F_nu_sc_re = &
@@ -619,24 +619,24 @@ module fpInteractions
 			sBd = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				sAr = sAr + (n1%re(i,k)*n2%re(k,m) - n1%im(i,k)*n2%im(k,m)) * Gs(k)*Gs(m)
-				sAi = sAi + (n1%im(i,k)*n2%re(k,m) + n1%re(i,k)*n2%im(k,m)) * Gs(k)*Gs(m)
-				sBr = sBr + (n4%re(m,k)*n3%re(k,j) - n4%im(m,k)*n3%im(k,j)) * Gs(k)*Gs(j)
-				sBi = sBi + (n4%im(m,k)*n3%re(k,j) + n4%re(m,k)*n3%im(k,j)) * Gs(k)*Gs(j)
-				sBd = sBd + (n4%re(m,k)*n3%re(k,m) - n4%im(m,k)*n3%im(k,m)) * Gs(m)*Gs(k)
+				sAr = sAr + (n1%re(i,k)*n2%re(k,m) - n1%im(i,k)*n2%im(k,m)) * Gs(k)
+				sAi = sAi + (n1%im(i,k)*n2%re(k,m) + n1%re(i,k)*n2%im(k,m)) * Gs(k)
+				sBr = sBr + (n4%re(m,k)*n3%re(k,j) - n4%im(m,k)*n3%im(k,j)) * Gs(k)
+				sBi = sBi + (n4%im(m,k)*n3%re(k,j) + n4%re(m,k)*n3%im(k,j)) * Gs(k)
+				sBd = sBd + (n4%re(m,k)*n3%re(k,m) - n4%im(m,k)*n3%im(k,m)) * Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = sAr + (idMat(i,m)*Gs(i) - n1%re(i,m) - n2%re(i,m)*Gs(i)) * Gs(m)
-			t1i(m) = sAi - (n1%im(i,m) + n2%im(i,m)*Gs(i)) * Gs(m)
-			t3r(m) = sAr
-			t3i(m) = sAi
-			t2r(m) = sBr
-			t2i(m) = sBi
-			t4r(m) = sBr + (idMat(m,j)*Gs(m) - n4%re(m,j) - n3%re(m,j)*Gs(m)) * Gs(j)
-			t4i(m) = sBi - (n4%im(m,j) + n3%im(m,j)*Gs(m)) * Gs(j)
+			t1r(m) = (sAr + idMat(i,m)*Gs(i) - n1%re(i,m) - n2%re(i,m)*Gs(i)) * Gs(m)
+			t1i(m) = (sAi - n1%im(i,m) - n2%im(i,m)*Gs(i)) * Gs(m)
+			t3r(m) = sAr * Gs(m)
+			t3i(m) = sAi * Gs(m)
+			t2r(m) = sBr * Gs(j)
+			t2i(m) = sBi * Gs(j)
+			t4r(m) = (sBr + idMat(m,j)*Gs(m) - n4%re(m,j) - n3%re(m,j)*Gs(m)) * Gs(j)
+			t4i(m) = (sBi - n4%im(m,j) - n3%im(m,j)*Gs(m)) * Gs(j)
 			!compute Tr()
-			tr2 = tr2 + sBd
-			tr4 = tr4 + sBd + (idMat(m,m) - n4%re(m,m) - n3%re(m,m))*Gs(m)
+			tr2 = tr2 + sBd * Gs(m)
+			tr4 = tr4 + (sBd + idMat(m,m) - n4%re(m,m) - n3%re(m,m))*Gs(m)
 		end do
 	end subroutine F_nu_pa_1243
 
@@ -660,24 +660,24 @@ module fpInteractions
 			sBd = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				sAr = sAr + (n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)) * Gs(k)*Gs(m)
-				sAi = sAi - (n1%re(i,k)*n3%im(k,m) + n1%im(i,k)*n3%re(k,m)) * Gs(k)*Gs(m)
-				sBr = sBr + (n4%im(m,k)*n2%im(k,j) - n4%re(m,k)*n2%re(k,j)) * Gs(k)*Gs(j)
-				sBi = sBi - (n4%re(m,k)*n2%im(k,j) + n4%im(m,k)*n2%re(k,j)) * Gs(k)*Gs(j)
-				sBd = sBd + (n4%im(m,k)*n2%im(k,m) - n4%re(m,k)*n2%re(k,m)) * Gs(m)*Gs(k)
+				sAr = sAr + (n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)) * Gs(k)
+				sAi = sAi - (n1%re(i,k)*n3%im(k,m) + n1%im(i,k)*n3%re(k,m)) * Gs(k)
+				sBr = sBr + (n4%im(m,k)*n2%im(k,j) - n4%re(m,k)*n2%re(k,j)) * Gs(k)
+				sBi = sBi - (n4%re(m,k)*n2%im(k,j) + n4%im(m,k)*n2%re(k,j)) * Gs(k)
+				sBd = sBd + (n4%im(m,k)*n2%im(k,m) - n4%re(m,k)*n2%re(k,m)) * Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = n3%re(i,m)*Gs(i)*Gs(m) + sAr
-			t1i(m) = n3%im(i,m)*Gs(i)*Gs(m) + sAi
-			t3r(m) = n1%re(i,m)*Gs(m) + sAr
-			t3i(m) = n1%im(i,m)*Gs(m) + sAi
-			t2r(m) = n4%re(m,j)*Gs(m)*Gs(j) + sBr
-			t2i(m) = n4%im(m,j)*Gs(m)*Gs(j) + sBi
-			t4r(m) = n2%re(m,j)*Gs(j) + sBr
-			t4i(m) = n2%im(m,j)*Gs(j) + sBi
+			t1r(m) = (n3%re(i,m)*Gs(i) + sAr) * Gs(m)
+			t1i(m) = (n3%im(i,m)*Gs(i) + sAi) * Gs(m)
+			t3r(m) = (n1%re(i,m) + sAr) * Gs(m)
+			t3i(m) = (n1%im(i,m) + sAi) * Gs(m)
+			t2r(m) = (n4%re(m,j)*Gs(m) + sBr) * Gs(j)
+			t2i(m) = (n4%im(m,j)*Gs(m) + sBi) * Gs(j)
+			t4r(m) = (n2%re(m,j) + sBr) * Gs(j)
+			t4i(m) = (n2%im(m,j) + sBi) * Gs(j)
 			!compute Tr()
-			tr2 = tr2 + n4%re(m,m)*Gs(m) + sBd
-			tr4 = tr4 + n2%re(m,m)*Gs(m) + sBd
+			tr2 = tr2 + (n4%re(m,m) + sBd) * Gs(m)
+			tr4 = tr4 + (n2%re(m,m) + sBd) * Gs(m)
 		end do
 	end subroutine F_nu_pa_1342
 
@@ -795,9 +795,9 @@ module fpInteractions
 			- sAr * (t4r(i) + sum(t4r))
 		!second line: sAr -> 13, sBr->24
 		do k=1, flavorNumber
-			sBr = Gs(k)*n4%re(k, k)*n2%re(k, k)
-			t2r(k) = Gs(k)*n4%re(k, k) - sBr
-			t4r(k) = Gs(k)*n2%re(k, k) - sBr
+			sBr = n4%re(k, k)*n2%re(k, k)
+			t2r(k) = Gs(k) * (n4%re(k, k) - sBr)
+			t4r(k) = Gs(k) * (n2%re(k, k) - sBr)
 		end do
 		sAr = n1%re(i, i) * n3%re(i, i)
 		F_nu_pa_re = F_nu_pa_re &
