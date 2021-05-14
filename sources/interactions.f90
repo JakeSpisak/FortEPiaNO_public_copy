@@ -567,9 +567,9 @@ module fpInteractions
 
 		allocate(t2r(flavorNumber), t4r(flavorNumber))
 		do k=1, flavorNumber
-			s24r = n2%re(k, k)*n4%re(k, k)
-			t2r(k) = n4%re(k, k) - s24r
-			t4r(k) = n2%re(k, k) - s24r
+			s24r = Gs(k)*n2%re(k, k)*n4%re(k, k)
+			t2r(k) = Gs(k)*n4%re(k, k) - s24r
+			t4r(k) = Gs(k)*n2%re(k, k) - s24r
 		end do
 		s13r = n1%re(i, i) * n3%re(i, i)
 		F_nu_sc_re = &
@@ -785,9 +785,9 @@ module fpInteractions
 		allocate(t2r(flavorNumber), t4r(flavorNumber))
 		!first line: sAr -> 12, sBr->34
 		do k=1, flavorNumber
-			sBr = n4%re(k, k)*n3%re(k, k)
+			sBr = Gs(k)*n4%re(k, k)*n3%re(k, k)
 			t2r(k) = sBr
-			t4r(k) = sBr + 1.d0 - n4%re(k, k) - n3%re(k, k)
+			t4r(k) = sBr + Gs(k)*(1.d0 - n4%re(k, k) - n3%re(k, k))
 		end do
 		sAr = n1%re(i, i) * n2%re(i, i)
 		F_nu_pa_re = F_nu_pa_re &
@@ -795,9 +795,9 @@ module fpInteractions
 			- sAr * (t4r(i) + sum(t4r))
 		!second line: sAr -> 13, sBr->24
 		do k=1, flavorNumber
-			sBr = n4%re(k, k)*n2%re(k, k)
-			t2r(k) = n4%re(k, k) - sBr
-			t4r(k) = n2%re(k, k) - sBr
+			sBr = Gs(k)*n4%re(k, k)*n2%re(k, k)
+			t2r(k) = Gs(k)*n4%re(k, k) - sBr
+			t4r(k) = Gs(k)*n2%re(k, k) - sBr
 		end do
 		sAr = n1%re(i, i) * n3%re(i, i)
 		F_nu_pa_re = F_nu_pa_re &

@@ -119,6 +119,7 @@ program tests
 		do ix=1, flavorNumber
 			nuFactor(ix) = 1.d0
 			sterile(ix) = .false.
+			Gs(ix) = 1.d0
 		end do
 		tot_factor_active_nu = 3.0
 		tot_factor_nu = 0.d0
@@ -3627,6 +3628,103 @@ program tests
 			end do
 		end do
 
+		Gs(3)=0.d0
+		sterile(3)=.true.
+#ifdef FULL_F_NU
+		open(unit=fu, file="test_outputs/Fnunu_m1_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m1_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m1%re(j,:)
+			read (fv, *) m1%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m2_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m2_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m2%re(j,:)
+			read (fv, *) m2%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m3_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m3_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m3%re(j,:)
+			read (fv, *) m3%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_m4_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_m4_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) m4%re(j,:)
+			read (fv, *) m4%im(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_sc_full_Gs_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_sc_full_Gs_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fsr(j,:)
+			read (fv, *) Fsi(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_pa_full_Gs_re.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_pa_full_Gs_im.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fpr(j,:)
+			read (fv, *) Fpi(j,:)
+		end do
+		close(fu)
+		close(fv)
+#else
+		open(unit=fu, file="test_outputs/Fnunu_d1.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_d2.dat", status="old")
+		do j=1, 3
+			read (fu, *) m1%re(j,:)
+			read (fv, *) m2%re(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_d3.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_d4.dat", status="old")
+		do j=1, 3
+			read (fu, *) m3%re(j,:)
+			read (fv, *) m4%re(j,:)
+		end do
+		close(fu)
+		close(fv)
+		open(unit=fu, file="test_outputs/Fnunu_sc_diag_Gs.dat", status="old")
+		open(unit=fv, file="test_outputs/Fnunu_pa_diag_Gs.dat", status="old")
+		do j=1, 3
+			read (fu, *) Fsr(j,:)
+			read (fv, *) Fpr(j,:)
+		end do
+		close(fu)
+		close(fv)
+		m1%im = 0.d0
+		m2%im = 0.d0
+		m3%im = 0.d0
+		m4%im = 0.d0
+		Fsi=0.d0
+		Fpi=0.d0
+#endif
+		do i=1, 3
+			do j=i,3
+				write(tmparg,"('F_nu_sc Gs ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", F_nu_sc_re(m1, m2, m3, m4, i, j), Fsr(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", F_nu_sc_im(m1, m2, m3, m4, i, j), Fsi(i,j), 1d-7, 1d-4)
+
+				write(tmparg,"('F_nu_pa Gs ',2I1)") i,j
+				call assert_double_rel_safe(trim(tmparg)//"re", F_nu_pa_re(m1, m2, m3, m4, i, j), Fpr(i,j), 1d-7, 1d-4)
+				call assert_double_rel_safe(trim(tmparg)//"im", F_nu_pa_im(m1, m2, m3, m4, i, j), Fpi(i,j), 1d-7, 1d-4)
+			end do
+		end do
+
+		Gs(3)=1.d0
+		sterile(3)=.false.
 		call deallocateCmplxMat(m1)
 		call deallocateCmplxMat(m2)
 		call deallocateCmplxMat(m3)
