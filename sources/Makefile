@@ -7,8 +7,8 @@ FULL_F_AB ?=
 FULL_F_NU ?=
 # define NO_INTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
 NO_INTERPOLATION ?=
-# set NO_MUONS=1 to disable muon contributions
-NO_MUONS ?=
+# set DO_MUONS=1 to enable muon contributions
+DO_MUONS ?=
 # set NO_NUE_ANNIHILATION=1 to disable contribution to collision integrals from nunu<->e+e- annihilation processes
 NO_NUE_ANNIHILATION ?=
 # set RHO_OFFDIAG_INTERP_DIV_FD=1 to interpolate all the entries of the neutrino density matrix after dividing by a Fermi-Dirac distribution (by default, this is done only for diagonal entries)
@@ -62,8 +62,8 @@ endif
 ifeq ($(NO_INTERPOLATION), 1)
 	FFLAGS += -DNO_INTERPOLATION=1
 endif
-ifeq ($(NO_MUONS), 1)
-	FFLAGS += -DNO_MUONS=1
+ifeq ($(DO_MUONS), 1)
+	FFLAGS += -DDO_MUONS=1
 endif
 ifeq ($(NO_NUE_ANNIHILATION), 1)
 	FFLAGS += -DNO_NUE_ANNIHILATION=1

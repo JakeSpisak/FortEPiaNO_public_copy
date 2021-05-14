@@ -27,10 +27,10 @@ module fpCosmology
 		procedure :: pressure => nonRelativistic_pressure !interpolated pressure
 	end type nonRelativistic_fermion
 
-#ifdef NO_MUONS
-	integer, parameter :: fermions_number = 1
-#else
+#ifdef DO_MUONS
 	integer, parameter :: fermions_number = 2
+#else
+	integer, parameter :: fermions_number = 1
 #endif
 	type(nonRelativistic_fermion), dimension(fermions_number), target :: fermions
 	!define these only for easier reference in updateMatterDensities, output and tests:

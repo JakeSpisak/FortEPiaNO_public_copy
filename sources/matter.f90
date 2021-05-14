@@ -27,7 +27,7 @@ module fpMatter
 			electrons%energyDensity(x, z, ftqed_e_mth_leptondens) &
 			+ electrons%pressure(x, z, ftqed_e_mth_leptondens) &
 		)
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 		if (flavorNumber.gt.2) &
 			leptonDensities(2,2) = ldf * ( &
 				muons%energyDensity(x, z, .false.) &

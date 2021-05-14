@@ -45,7 +45,7 @@ module fpEquations
 		end do
 		numw = g12(1) + elContr0(1)
 		denw = PISQ/7.5d0 + g12(2) + elContr0(2)
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 		do j=2, fermions_number
 			fContr = fermions(j)%dzodx_terms(xoz)
 			numw = numw + fContr(1)
@@ -74,8 +74,8 @@ module fpEquations
 		if (ftqed_log_term) then
 			call criticalError("log term FTQED corrections not supported when interpolating")
 		end if
-#ifdef NO_MUONS
-		write(tmpstr, "(A,'ftqed_nm_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_ord3
+#ifdef DO_MUONS
+		write(tmpstr, "(A,'ftqed_wm_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_ord3
 #else
 		write(tmpstr, "(A,'ftqed_',L,'_',L,'.dat')") trim(get_interpolation_folder()), ftqed_temperature_corr, ftqed_ord3
 #endif
@@ -203,7 +203,7 @@ module fpEquations
 		end do
 		numw = g12(1) + elContr0(1)
 		denw = PISQ/7.5d0 + g12(2) + elContr0(2)
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 		do j=2, fermions_number
 			fContr = fermions(j)%dzodx_terms(xoz)
 			numw = numw + fContr(1)

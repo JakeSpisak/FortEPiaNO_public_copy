@@ -107,7 +107,7 @@ module fpOutput
 			write(iu, multidblfmt) x, z, &
 				photonDensity(z), &
 				electrons%energyDensity(x, z, .false.), &
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 				muons%energyDensity(x, z, .false.), &
 #else
 				0.d0, &
@@ -118,7 +118,7 @@ module fpOutput
 			write(iu, multidblfmt) x, z, &
 				photonEntropy(z), &
 				electrons%entropy(x, z), &
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 				muons%entropy(x, z), &
 #else
 				0.d0, &
@@ -134,7 +134,7 @@ module fpOutput
 			write(iu, multidblfmt) x, z, &
 				photonNumberDensity(z), &
 				electrons%numberDensity(x, z, .false.), &
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 				muons%numberDensity(x, z, .false.), &
 #else
 				0.d0, &

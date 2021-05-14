@@ -228,7 +228,7 @@ module fpConfig
 #endif
 		call fermions(1)%initialize("electrons", .true., 1.d0, 1d3)
 		electrons => fermions(1)
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 		call fermions(2)%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
 		muons => fermions(2)
 #endif
@@ -287,8 +287,8 @@ module fpConfig
 #ifdef NO_INTERPOLATION
 		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
 #endif
-#ifdef NO_MUONS
-		call addToLog("[precompiler] Compiled without contributions from muons")
+#ifdef DO_MUONS
+		call addToLog("[precompiler] Compiled with contributions from muons")
 #endif
 #ifdef NO_NUE_ANNIHILATION
 		call addToLog("[precompiler] Compiled without contributions from nunu<->ee annihilation to collision integrals")

@@ -507,8 +507,8 @@ program tests
 		end do
 		!A
 		call updateMatterDensities(0.076d0, 1.32d0)
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/leptmatA_nm.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/leptmatA_wm.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/leptmatA.dat", status="old")
 #endif
@@ -534,8 +534,8 @@ program tests
 		end do
 		call updateMatterDensities(0.0176d0, 1.d0)
 		write(*,*)""
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/leptmatB_nm.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/leptmatB_wm.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/leptmatB.dat", status="old")
 #endif
@@ -659,7 +659,7 @@ program tests
 		end do
 		close(fu)
 
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 		n=7
 		ve1=1d-6
 		ve1(7)=2e-6
@@ -851,8 +851,8 @@ program tests
 		end do
 		n=4
 		ve1=1d-5
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/radDens_nm.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/radDens_wm.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/radDens.dat", status="old")
 #endif
@@ -981,7 +981,7 @@ program tests
 			call assert_double("elContr test "//trim(tmparg)//"b", res(2), r2, 1d-7)
 		end do
 		close(fu)
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 		open(unit=fu, file="test_outputs/jkg_mucontr.dat", status="old")
 		do ix=1,2
 			read (fu, *) x,r1,r2
@@ -1047,8 +1047,8 @@ program tests
 		ftqed_ord3 = .false.
 
 #ifndef NO_INTERPOLATION
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/jkg_ab_nm.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/jkg_ab_wm.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/jkg_ab.dat", status="old")
 #endif
@@ -1086,8 +1086,8 @@ program tests
 		call printTestBlockName("dz/dx functions")
 
 #ifndef NO_INTERPOLATION
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/dzodx_g_nm.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/dzodx_g_wm.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
 #endif
@@ -1101,9 +1101,9 @@ program tests
 		close(fu)
 #endif
 
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/dzodx_g_nm.dat", status="old")
-		open(unit=fv, file="test_outputs/dzodx_n_nm.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/dzodx_g_wm.dat", status="old")
+		open(unit=fv, file="test_outputs/dzodx_n_wm.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
 		open(unit=fv, file="test_outputs/dzodx_n.dat", status="old")
@@ -2538,9 +2538,9 @@ program tests
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/drhodx_A_nm_re.dat", status="old")
-		open(unit=fv, file="test_outputs/drhodx_A_nm_im.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/drhodx_A_wm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_A_wm_im.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/drhodx_A_re.dat", status="old")
 		open(unit=fv, file="test_outputs/drhodx_A_im.dat", status="old")
@@ -2572,9 +2572,9 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/drhodx_B_nm_re.dat", status="old")
-		open(unit=fv, file="test_outputs/drhodx_B_nm_im.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/drhodx_B_wm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_B_wm_im.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/drhodx_B_re.dat", status="old")
 		open(unit=fv, file="test_outputs/drhodx_B_im.dat", status="old")
@@ -2628,9 +2628,9 @@ program tests
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/drhodx_C_nm_re.dat", status="old")
-		open(unit=fv, file="test_outputs/drhodx_C_nm_im.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/drhodx_C_wm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_C_wm_im.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/drhodx_C_re.dat", status="old")
 		open(unit=fv, file="test_outputs/drhodx_C_im.dat", status="old")
@@ -2653,9 +2653,9 @@ program tests
 			end do
 		end do
 
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/drhodx_D_nm_re.dat", status="old")
-		open(unit=fv, file="test_outputs/drhodx_D_nm_im.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/drhodx_D_wm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_D_wm_im.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/drhodx_D_re.dat", status="old")
 		open(unit=fv, file="test_outputs/drhodx_D_im.dat", status="old")
@@ -3150,9 +3150,9 @@ program tests
 		do ix=1, Ny
 			feq_arr(ix) = fermiDirac(y_arr(ix))
 		end do
-#ifdef NO_MUONS
-		open(unit=fu, file="test_outputs/dzodx_g_A_nm.dat", status="old")
-		open(unit=fv, file="test_outputs/dzodx_n_A_nm.dat", status="old")
+#ifdef DO_MUONS
+		open(unit=fu, file="test_outputs/dzodx_g_A_wm.dat", status="old")
+		open(unit=fv, file="test_outputs/dzodx_n_A_wm.dat", status="old")
 #else
 		open(unit=fu, file="test_outputs/dzodx_g_A.dat", status="old")
 		open(unit=fv, file="test_outputs/dzodx_n_A.dat", status="old")
@@ -3178,14 +3178,14 @@ program tests
 		x_in=0.05d0
 		z_in=0.d0
 		call zin_solver
-#ifdef NO_MUONS
+#ifndef DO_MUONS
 		call assert_double("z_in test 1", z_in-1.d0, 3d-5, 3d-6)
 #else
 		call assert_double("z_in test 1", z_in-1.d0, 0.09788d0, 1d-4)
 #endif
 		x_in=1d-3
 		call zin_solver
-#ifdef NO_MUONS
+#ifndef DO_MUONS
 		call assert_double("z_in test 2", z_in-1.d0, 3d-8, 3d-9)
 #else
 		call assert_double("z_in test 2", z_in-1.d0, 0.29017d-03, 1d-4)
