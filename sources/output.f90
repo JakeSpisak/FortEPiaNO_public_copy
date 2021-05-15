@@ -109,8 +109,6 @@ module fpOutput
 				electrons%energyDensity(x, z, .false.), &
 #ifdef DO_MUONS
 				muons%energyDensity(x, z, .false.), &
-#else
-				0.d0, &
 #endif
 				nuEnDens(1:flavorNumber)
 			close(iu)
@@ -120,8 +118,6 @@ module fpOutput
 				electrons%entropy(x, z), &
 #ifdef DO_MUONS
 				muons%entropy(x, z), &
-#else
-				0.d0, &
 #endif
 				nuEnDens(1:flavorNumber)*four_thirds/w
 			close(iu)
@@ -136,8 +132,6 @@ module fpOutput
 				electrons%numberDensity(x, z, .false.), &
 #ifdef DO_MUONS
 				muons%numberDensity(x, z, .false.), &
-#else
-				0.d0, &
 #endif
 				nuEnDens(1:flavorNumber)
 			close(iu)
@@ -158,8 +152,28 @@ module fpOutput
 				x, neff/zid**4, neff
 			close(iu)
 		end if
+		if (firstWrite) &
+			call ens_header
 		firstWrite=.false.
 	end subroutine saveRelevantInfo
+
+	subroutine ens_header
+		integer :: k
+		character(len=200) :: tmpstr
+
+		if (save_energy_entropy_evolution .or. save_number_evolution) then
+			call openFile(iu, trim(outputFolder)//'/ens_header.dat', firstWrite)
+			write(tmpstr, "('nu (1 to ', I1, ')')") flavorNumber
+			write(iu, "(*(A17))") "x", "z", &
+				"photon", &
+				"electron", &
+#ifdef DO_MUONS
+				"muon", &
+#endif
+				trim(tmpstr)
+			close(iu)
+		end if
+	end subroutine
 
 	subroutine allocateStoreVar1D(vec, N)
 		real(dl), dimension(:), allocatable :: vec
