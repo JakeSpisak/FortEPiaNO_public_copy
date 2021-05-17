@@ -673,7 +673,7 @@ class FortEPiaNORun:
                 except IOError:
                     print("Cannot write the converted neutrino density matrices!")
 
-    def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False, mass=False):
+    def interpolateRhoIJ(self, i1, i2, y, ri=0, yexp=0, mass=False):
         """Interpolate any entry of the density matrix at a given y,
         and return its value for all the saved x points.
         Repeated points with the same f(x, y) at different x
@@ -685,7 +685,7 @@ class FortEPiaNORun:
             y: the y value at which to interpolate
             ri (default 0): it 0, use real part, if 1 the imaginary one
                 (only for off-diagonal entries of the density matrix)
-            y2 (default False): if True, multiply the output by y**2
+            yexp (default 0): if >0, multiply the output by y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
 
@@ -703,7 +703,7 @@ class FortEPiaNORun:
         prevy = 0
         for i, x in enumerate(rho[i1, i2, ri][:, 0]):
             fy = interp1d(self.yv, rho[i1, i2, ri][i, 1:])
-            cy = fy(y) * (y ** 2 if y2 else 1.0)
+            cy = fy(y) * (y ** yexp if yexp > 0 else 1.0)
             if cy != prevy:
                 prevy = cy
                 yv.append(prevy)
@@ -713,7 +713,7 @@ class FortEPiaNORun:
             yv.append(cy)
         return np.asarray(xv), np.asarray(yv)
 
-    def interpolateRhoIJ_x(self, i1, i2, x, ri=0, y2=False, mass=False):
+    def interpolateRhoIJ_x(self, i1, i2, x, ri=0, yexp=0, mass=False):
         """Interpolate any entry of the density matrix at a given x,
         and return its value for all the y grid points
 
@@ -723,7 +723,7 @@ class FortEPiaNORun:
             x: the x value at which to interpolate
             ri (default 0): it 0, use real part, if 1 the imaginary one
                 (only for off-diagonal entries of the density matrix)
-            y2 (default False): if True, multiply the output by y**2
+            yexp (default 0): if >0, multiply the output by y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
 
@@ -740,7 +740,7 @@ class FortEPiaNORun:
         for i, y in enumerate(self.yv):
             fx = interp1d(
                 rho[i1, i2, ri][:, 0],
-                rho[i1, i2, ri][:, i + 1] * (y ** 2 if y2 else 1.0),
+                rho[i1, i2, ri][:, i + 1] * (y ** yexp if yexp > 0 else 1.0),
             )
             ov.append(fx(x))
         return self.yv, np.asarray(ov)
@@ -1090,7 +1090,7 @@ class FortEPiaNORun:
         ri=0,
         ls="-",
         lc="k",
-        y2=False,
+        yexp=0,
         lab=None,
         mass=False,
         divide_fd=False,
@@ -1108,8 +1108,8 @@ class FortEPiaNORun:
                 (only for off-diagonal entries of the density matrix)
             ls (default "-"): the line style
             lc (default "k"): the line color
-            y2 (default False): if True,
-                multiply the diagonal elements times y**2
+            yexp (default 0): if >0,
+                multiply the diagonal elements times y**yexp
             lab (default None): if not None, the line label
             mass (default False): if True, use the density matrix
                 in the mass basis
@@ -1139,7 +1139,11 @@ class FortEPiaNORun:
             if lab is None
             else lab
         )
-        fyv = self.yv ** 2 * rho[i1, i2, ri][-1, 1:] if y2 else rho[i1, i2, ri][-1, 1:]
+        fyv = (
+            (self.yv ** yexp * rho[i1, i2, ri][-1, 1:])
+            if yexp > 0
+            else rho[i1, i2, ri][-1, 1:]
+        )
         plt.plot(
             self.yv,
             fyv / ((self.fd / self.yv ** 2) if divide_fd else 1.0),
@@ -1148,7 +1152,10 @@ class FortEPiaNORun:
             label=label,
         )
         plt.xlabel("$y$")
-        plt.ylabel(r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$" % ("y^2" if y2 else ""))
+        plt.ylabel(
+            r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$"
+            % ("y^{%d}" % yexp if yexp > 0 else "")
+        )
 
     def plotRhoX(
         self,
@@ -1159,7 +1166,7 @@ class FortEPiaNORun:
         ls="-",
         lc="k",
         lab="",
-        y2=False,
+        yexp=0,
         mass=False,
         divide_by=1.0,
         divide_fd=False,
@@ -1178,8 +1185,8 @@ class FortEPiaNORun:
             ls (default "-"): the line style
             lc (default "k"): the line color
             lab (default ""): if not empty, it will be used as line label
-            y2 (default False): if True,
-                multiply the diagonal elements times y**2
+            yexp (default 0): if >0,
+                multiply the diagonal elements times y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
             divide_by (default 1.0): divide the rho values by the given
@@ -1192,7 +1199,7 @@ class FortEPiaNORun:
         if ri not in [0, 1]:
             ri = 0
         try:
-            interp = self.interpolateRhoIJ_x(i1, i2, x, ri, y2=y2, mass=mass)
+            interp = self.interpolateRhoIJ_x(i1, i2, x, ri, yexp=yexp, mass=mass)
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
@@ -1208,10 +1215,10 @@ class FortEPiaNORun:
             else lab,
         )
         plt.xlabel("$y$")
-        plt.ylabel(r"$%s\rho_{\alpha\beta}(y)$" % ("y^2" if y2 else ""))
+        plt.ylabel(r"$%s\rho_{\alpha\beta}(y)$" % ("y^{%d}" % yexp if yexp > 0 else ""))
 
     def plotRhoDiagY(
-        self, inu, y, ls, lc="k", lab=None, y2=False, mass=False, divide_by=1.0
+        self, inu, y, ls, lc="k", lab=None, yexp=0, mass=False, divide_by=1.0
     ):
         """Plot one diagonal element of the density matrix at a given y
         as a function of x
@@ -1222,8 +1229,8 @@ class FortEPiaNORun:
             ls: the line style
             lc (default "k"): the line color
             lab (default None): if not None, the line label
-            y2 (default False): if True,
-                multiply the diagonal elements times y**2
+            yexp (default 0): if >0,
+                multiply the diagonal elements times y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
             divide_by (default 1.0): divide the rho values by the given
@@ -1237,16 +1244,16 @@ class FortEPiaNORun:
         label = lab if lab is not None else r"%s $\alpha$=%d" % (self.label, inu + 1)
         plt.plot(
             x,
-            np.asarray(yv) * (y ** 2 if y2 else 1.0) / divide_by,
+            np.asarray(yv) * (y ** yexp if yexp > 0 else 1.0) / divide_by,
             label=label,
             ls=ls,
             c=lc,
         )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$%s\rho_{\alpha\alpha}$" % ("y^2" if y2 else ""))
+        plt.ylabel(r"$%s\rho_{\alpha\alpha}$" % ("y^{%d}" % yexp if yexp > 0 else ""))
 
-    def plotdRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False, mass=False):
+    def plotdRhoDiagY(self, inu, y, ls, lc="k", lab=None, yexp=0, mass=False):
         """Plot the x derivative (np.gradient)
         of one diagonal element of the density matrix at a given y
         as a function of x
@@ -1257,8 +1264,8 @@ class FortEPiaNORun:
             ls: the line style
             lc (default "k"): the line color
             lab (default None): if not None, the line label
-            y2 (default False): if True,
-                multiply the diagonal elements times y**2
+            yexp (default 0): if >0,
+                multiply the diagonal elements times y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
@@ -1270,14 +1277,16 @@ class FortEPiaNORun:
         label = lab if lab is not None else r"%s $\alpha$=%d" % (self.label, inu + 1)
         plt.plot(
             x,
-            np.gradient(np.asarray(yv) * (y ** 2 if y2 else 1.0), x),
+            np.gradient(np.asarray(yv) * (y ** yexp if yexp > 0 else 1.0), x),
             label=label,
             ls=ls,
             c=lc,
         )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$d%s\rho_{\alpha\alpha}/dx$" % ("y^2" if y2 else ""))
+        plt.ylabel(
+            r"$d%s\rho_{\alpha\alpha}/dx$" % ("y^{%d}" % yexp if yexp > 0 else "")
+        )
 
     def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
         """Plot one off-diagonal element of the density matrix
@@ -1934,11 +1943,11 @@ class FortEPiaNORun:
         )
 
         for i in range(self.nnu):
-            self.plotRhoFin(i, ls=styles[i], lc=colors[i], y2=True)
+            self.plotRhoFin(i, ls=styles[i], lc=colors[i], yexp=2)
         finalizePlot("%s/rhofin_diag.pdf" % self.folder, xscale="linear", yscale="log")
 
         for i in range(self.nnu):
-            self.plotRhoFin(i, ls=styles[i], lc=colors[i], y2=True, mass=True)
+            self.plotRhoFin(i, ls=styles[i], lc=colors[i], yexp=2, mass=True)
         finalizePlot(
             "%s/rhofin_mass_diag.pdf" % self.folder, xscale="linear", yscale="log"
         )

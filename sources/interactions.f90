@@ -84,12 +84,8 @@ module fpInteractions
 			nunu_numu_nutau = 1.d0
 			nue_nue_nux = 2.d0*sin2thW**2 + 0.25d0
 			nue_numu_nutau = 2.d0*sin2thW**2 - sin2thW + 0.25d0
-			nunu_nue_nus = 0.d0!check
-			nunu_nux_nus = 0.d0!check
-			nue_nue_nus = 3.d0*sin2thW**2 + 1.d0*sin2thW + 0.25d0!check
-			nue_nux_nus = 3.d0*sin2thW**2 - 1.d0*sin2thW + 0.25d0!check
 			if (any(sterile)) &
-				call criticalError("Error: damping terms not yet implemented with sterile neutrinos.")
+				call criticalError("Error: Bennett:2020zkv damping terms not yet implemented with sterile neutrinos.")
 		end if
 		if (flavorNumber .ge. 2) then
 			if (sterile(2)) then

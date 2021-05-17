@@ -1,4 +1,5 @@
 program tests
+	use fpversion
 	use precision
 	use variables
 	use fpConfig
@@ -13,15 +14,17 @@ program tests
 	integer, parameter :: fu = 89237, fv = 89238, fw = 89239
 	character(len=1), dimension(2), parameter :: chLR=(/'L','R'/)
 
+	write(*,*) "This is FortEPiaNO version "//version
+
 	call openLogFile
 #ifdef GLR_ZERO_MOMENTUM
-    call criticalError("Tests will fail if they were compiled with GLR_ZERO_MOMENTUM=1")
+	call criticalError("Tests will fail if they were compiled with GLR_ZERO_MOMENTUM=1")
 #endif
 #ifdef NO_NUE_ANNIHILATION
-    call criticalError("Tests will fail if they were compiled with NO_NUE_ANNIHILATION=1")
+	call criticalError("Tests will fail if they were compiled with NO_NUE_ANNIHILATION=1")
 #endif
 #ifdef SINSQTHW
-    call criticalError("Tests will fail if they were compiled with any non-standard SINSQTHW")
+	call criticalError("Tests will fail if they were compiled with any non-standard SINSQTHW")
 #endif
 
 	write(*,*) ""
@@ -33,6 +36,7 @@ program tests
 
 	call do_basic_tests
 	call do_test_NC_integrals
+	call do_test_densMat2vec
 	call do_test_commutator
 	call do_test_JKG
 	call do_test_dme2
@@ -265,6 +269,86 @@ program tests
 		call resetTestCounter
 	end subroutine do_test_NC_integrals
 
+	subroutine do_test_densMat2vec
+		real(dl), dimension(:), allocatable :: vec
+		integer :: i,j,k,m
+		character(len=300) :: tmparg
+
+		call printTestBlockName("densMat_2_vec and vec_2_densMat")
+
+		allocate(vec(Ny))
+		do m=1, Ny
+			do i=1, flavorNumber
+				do j=1, flavorNumber
+					nuDensMatVec(m)%re(i, j) = 1.d0*i + 3.d0*j + 10.*m
+					nuDensMatVec(m)%im(i, j) = -(1.d0*i + 3.d0*j + 10.*m)
+				end do
+			end do
+		end do
+		call densMat_2_vec(vec)
+		k=1
+		do m=1, Ny
+			do i=1, flavorNumber
+				write(tmparg, "('dm2v ',3I3)") k,m,i
+				call assert_double_rel(trim(tmparg)//"re", vec(k+i-1), nuDensMatVec(m)%re(i,i), 1d-7)
+			end do
+			k=k+flavorNumber
+			if (has_offdiagonal()) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						write(tmparg, "('dm2v ',4I3)") k,m,i,j
+						call assert_double_rel(trim(tmparg)//"re", vec(k), nuDensMatVec(m)%re(i,j), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im", vec(k+1), nuDensMatVec(m)%im(i,j), 1d-7)
+						k=k+2
+					end do
+				end do
+			end if
+		end do
+
+		do m=1, Ny
+			nuDensMatVec(m)%re = 0.
+			nuDensMatVec(m)%im = 0.
+			nuDensMatVecFD(m)%re = 0.
+			nuDensMatVecFD(m)%im = 0.
+		end do
+		do k=1, ntot
+			vec(k) = 0.1*k
+		end do
+		call vec_2_densMat(vec)
+		k=1
+		do m=1, Ny
+			do i=1, flavorNumber
+				write(tmparg, "('dm2v ',3I3)") k,m,i
+				call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(i,i), vec(k+i-1), 1d-7)
+				call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(i,i), 0.d0, 1d-10)
+				call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(i,i), (1.d0 + vec(k+i-1)) * feq_arr(m), 1d-7)
+				call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(i,i), 0.d0, 1d-10)
+			end do
+			k=k+flavorNumber
+			if (has_offdiagonal()) then
+				do i=1, flavorNumber-1
+					do j=i+1, flavorNumber
+						write(tmparg, "('dm2v ',4I3)") k,m,i,j
+						call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(i,j), vec(k), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(i,j), vec(k+1), 1d-7)
+						call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(i,j), vec(k), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(i,j), vec(k+1), 1d-7)
+						write(tmparg, "('dm2v ',4I3)") k,m,j,i
+						call assert_double_rel(trim(tmparg)//"re", nuDensMatVec(m)%re(j,i), vec(k), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im", nuDensMatVec(m)%im(j,i), -vec(k+1), 1d-7)
+						call assert_double_rel(trim(tmparg)//"re FD", nuDensMatVecFD(m)%re(j,i), vec(k), 1d-7)
+						call assert_double_rel(trim(tmparg)//"im FD", nuDensMatVecFD(m)%im(j,i), -vec(k+1), 1d-7)
+						k=k+2
+					end do
+				end do
+			end if
+		end do
+
+		deallocate(vec)
+		call printTotalTests
+		call resetTestCounter
+	end subroutine do_test_densMat2vec
+
 	subroutine do_test_commutator
 		real(dl), dimension(:,:), allocatable :: m1, m2, m3, res
 		integer :: i,j
@@ -372,7 +456,11 @@ program tests
 		end do
 		!A
 		call updateMatterDensities(0.076d0, 1.32d0)
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/leptmatA_nm.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/leptmatA.dat", status="old")
+#endif
 		do i=1, 3
 			read (fu, *) m(i,:)
 		end do
@@ -395,7 +483,11 @@ program tests
 		end do
 		call updateMatterDensities(0.0176d0, 1.d0)
 		write(*,*)""
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/leptmatB_nm.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/leptmatB.dat", status="old")
+#endif
 		do i=1, 3
 			read (fu, *) m(i,:)
 		end do
@@ -516,6 +608,7 @@ program tests
 		end do
 		close(fu)
 
+#ifndef NO_MUONS
 		n=7
 		ve1=1d-6
 		ve1(7)=2e-6
@@ -553,6 +646,7 @@ program tests
 			call assert_double_rel_safe("muNumDens test "//trim(tmpstr), muons%numberDensity(x, z, .false.), r, 1d-20, ve1(i))
 		end do
 		close(fu)
+#endif
 
 		n=5
 		ve1=1d-7
@@ -706,7 +800,11 @@ program tests
 		end do
 		n=4
 		ve1=1d-5
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/radDens_nm.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/radDens.dat", status="old")
+#endif
 		do i=1, n
 			read (fu, *) x, z, r
 			write(tmpstr, "(I1)") i
@@ -832,6 +930,7 @@ program tests
 			call assert_double("elContr test "//trim(tmparg)//"b", res(2), r2, 1d-7)
 		end do
 		close(fu)
+#ifndef NO_MUONS
 		open(unit=fu, file="test_outputs/jkg_mucontr.dat", status="old")
 		do ix=1,2
 			read (fu, *) x,r1,r2
@@ -841,6 +940,7 @@ program tests
 			call assert_double_rel_safe("elContr test "//trim(tmparg)//"b", res(2), r2, 1d-15,1d-7)
 		end do
 		close(fu)
+#endif
 
 		zs = (/1., 10., 1.5, 0.1/)
 		open(unit=fu, file="test_outputs/jkg_g12_o2.dat", status="old")
@@ -896,7 +996,11 @@ program tests
 		ftqed_ord3 = .false.
 
 #ifndef NO_INTERPOLATION
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/jkg_ab_nm.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/jkg_ab.dat", status="old")
+#endif
 		do ix=1,3
 			read (fu, *) x,r1,r2
 			res = dzodxcoef_interp_func(x)
@@ -931,7 +1035,11 @@ program tests
 		call printTestBlockName("dz/dx functions")
 
 #ifndef NO_INTERPOLATION
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/dzodx_g_nm.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
+#endif
 		v1=(/8d-3,7d-6,6d-6/)
 		do ix=1,3
 			read (fu, *) x,z,r
@@ -942,8 +1050,13 @@ program tests
 		close(fu)
 #endif
 
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/dzodx_g_nm.dat", status="old")
+		open(unit=fv, file="test_outputs/dzodx_n_nm.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/dzodx_g.dat", status="old")
 		open(unit=fv, file="test_outputs/dzodx_n.dat", status="old")
+#endif
 		v1=(/5d-5,6d-6,6d-6/)
 		do ix=1,3
 			read (fu, *) x,z,r
@@ -2496,8 +2609,13 @@ program tests
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/drhodx_A_nm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_A_nm_im.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/drhodx_A_re.dat", status="old")
 		open(unit=fv, file="test_outputs/drhodx_A_im.dat", status="old")
+#endif
 		do j=1, 3
 			read (fu, *) res%re(j,:)
 			read (fv, *) res%im(j,:)
@@ -2525,8 +2643,13 @@ program tests
 		end do
 
 		fd = fermiDirac(y_arr(iy))
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/drhodx_B_nm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_B_nm_im.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/drhodx_B_re.dat", status="old")
 		open(unit=fv, file="test_outputs/drhodx_B_im.dat", status="old")
+#endif
 		do j=1, 3
 			read (fu, *) res%re(j,:)
 			read (fv, *) res%im(j,:)
@@ -2576,8 +2699,13 @@ program tests
 		sqrtraddens = sqrt(totalRadiationDensity(x,z))
 
 		fd = fermiDirac(y_arr(iy))
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/drhodx_C_nm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_C_nm_im.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/drhodx_C_re.dat", status="old")
 		open(unit=fv, file="test_outputs/drhodx_C_im.dat", status="old")
+#endif
 		do j=1, 3
 			read (fu, *) res%re(j,:)
 			read (fv, *) res%im(j,:)
@@ -2596,8 +2724,13 @@ program tests
 			end do
 		end do
 
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/drhodx_D_nm_re.dat", status="old")
+		open(unit=fv, file="test_outputs/drhodx_D_nm_im.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/drhodx_D_re.dat", status="old")
 		open(unit=fv, file="test_outputs/drhodx_D_im.dat", status="old")
+#endif
 		do j=1, 3
 			read (fu, *) res%re(j,:)
 			read (fv, *) res%im(j,:)
@@ -3080,8 +3213,13 @@ program tests
 		do ix=1, Ny
 			feq_arr(ix) = fermiDirac(y_arr(ix))
 		end do
+#ifdef NO_MUONS
+		open(unit=fu, file="test_outputs/dzodx_g_A_nm.dat", status="old")
+		open(unit=fv, file="test_outputs/dzodx_n_A_nm.dat", status="old")
+#else
 		open(unit=fu, file="test_outputs/dzodx_g_A.dat", status="old")
 		open(unit=fv, file="test_outputs/dzodx_n_A.dat", status="old")
+#endif
 		ve1=(/5d-5,6d-6,6d-6,0.d0,0.d0,0.d0,0.d0,0.d0,0.d0/)
 		do ix=1,3
 			read (fu, *) x,z,r
@@ -3103,10 +3241,18 @@ program tests
 		x_in=0.05d0
 		z_in=0.d0
 		call zin_solver
+#ifdef NO_MUONS
+		call assert_double("z_in test 1", z_in-1.d0, 3d-5, 3d-6)
+#else
 		call assert_double("z_in test 1", z_in-1.d0, 0.09788d0, 1d-4)
+#endif
 		x_in=1d-3
 		call zin_solver
+#ifdef NO_MUONS
+		call assert_double("z_in test 2", z_in-1.d0, 3d-8, 3d-9)
+#else
 		call assert_double("z_in test 2", z_in-1.d0, 0.29017d-03, 1d-4)
+#endif
 		call printTotalTests
 		call resetTestCounter
 	end subroutine do_test_zin
