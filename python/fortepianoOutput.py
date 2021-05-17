@@ -45,6 +45,7 @@ markers = [".", "+", "x", "^", "*", "h", "D"]
 
 PISQD15 = np.pi ** 2 / 15.0
 ELECTRONMASS_MEV = 0.51099895
+muonLabel = r"$\mu$"
 
 
 def finalizePlot(
@@ -236,6 +237,7 @@ class FortEPiaNORun:
         self.label = label
         self.verbose = verbose
         self.nnu = nnu
+        self.ens_header = []
         if not os.path.exists(folder):
             if verbose:
                 print("non-existing folder: %s" % folder)
@@ -244,6 +246,7 @@ class FortEPiaNORun:
         self.readFD()
         self.readWZ()
         self.readNeff()
+        self.readHeaders()
         self.readEENDensities(deltas)
         self.readResume()
         self.readNuDensMatrix(full)
@@ -280,6 +283,61 @@ class FortEPiaNORun:
     def z(self):
         """return z"""
         return self.zdat[:, 1] if self.checkZdat() else np.nan
+
+    @property
+    def zCol(self):
+        """return the column index for z in the energy density file"""
+        try:
+            return self.ens_header.index("z")
+        except ValueError:
+            if self.verbose:
+                print("z not in header file!")
+            return 1
+
+    @property
+    def phCol(self):
+        """return the column index for photons in the energy density file"""
+        try:
+            return self.ens_header.index("photon")
+        except ValueError:
+            if self.verbose:
+                print("photon not in header file!")
+            return self.zCol + 1
+
+    @property
+    def eCol(self):
+        """return the column index for electrons in the energy density file"""
+        try:
+            return self.ens_header.index("electron")
+        except ValueError:
+            if self.verbose:
+                print("electron not in header file!")
+            return self.zCol + 2
+
+    @property
+    def muCol(self):
+        """return the column index for muons in the energy density file"""
+        try:
+            return self.ens_header.index("muon")
+        except ValueError:
+            if self.verbose:
+                print("muon not in header file!")
+            return self.eCol + 1
+
+    @property
+    def nu1Col(self):
+        """return the column index for nu1 in the energy density file"""
+        try:
+            return self.ens_header.index("nu1")
+        except ValueError:
+            if self.verbose:
+                print("nu1 not in header file!")
+            return self.zCol + 3
+
+    @property
+    def hasMuon(self):
+        """return the column index for muons in the energy density file"""
+        return "muon" in self.ens_header
 
     @property
     def Tgamma(self):
@@ -336,28 +394,24 @@ class FortEPiaNORun:
                 if deltas:
                     self.delta_ed = [
                         (
-                            self.endens[-1, self.zCol + 4 + i]
-                            - self.endens[refIx, self.zCol + 4 + i]
+                            self.endens[-1, self.nu1Col + i]
+                            - self.endens[refIx, self.nu1Col + i]
                         )
-                        / self.endens[refIx, self.zCol + 4 + i]
+                        / self.endens[refIx, self.nu1Col + i]
                         * 100
                         for i in range(self.nnu)
                     ]
                     self.tot_delta_ed = (
                         (
                             np.sum(
-                                self.endens[
-                                    -1, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.endens[-1, self.nu1Col : self.nu1Col + self.nnu]
                             )
                             - np.sum(
-                                self.endens[
-                                    refIx, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.endens[refIx, self.nu1Col : self.nu1Col + self.nnu]
                             )
                         )
                         / np.sum(
-                            self.endens[refIx, self.zCol + 4 : self.zCol + 4 + self.nnu]
+                            self.endens[refIx, self.nu1Col : self.nu1Col + self.nnu]
                         )
                         * 100
                     )
@@ -386,9 +440,7 @@ class FortEPiaNORun:
                 pass
             else:
                 if deltas:
-                    ds = np.asarray(
-                        [np.sum(cl[self.zCol + 1 :]) for cl in self.entropy]
-                    )
+                    ds = np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy])
                     self.tot_delta_sd = (ds[-1] - ds[refIx]) / ds[refIx] * 100
                     if self.verbose:
                         print("delta entropy density:\t%f%%" % self.tot_delta_sd)
@@ -405,28 +457,24 @@ class FortEPiaNORun:
                 if deltas:
                     self.delta_nd = [
                         (
-                            self.number[-1, self.zCol + 4 + i]
-                            - self.number[refIx, self.zCol + 4 + i]
+                            self.number[-1, self.nu1Col + i]
+                            - self.number[refIx, self.nu1Col + i]
                         )
-                        / self.number[refIx, self.zCol + 4 + i]
+                        / self.number[refIx, self.nu1Col + i]
                         * 100
                         for i in range(self.nnu)
                     ]
                     self.tot_delta_nd = (
                         (
                             np.sum(
-                                self.number[
-                                    -1, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.number[-1, self.nu1Col : self.nu1Col + self.nnu]
                             )
                             - np.sum(
-                                self.number[
-                                    refIx, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.number[refIx, self.nu1Col : self.nu1Col + self.nnu]
                             )
                         )
                         / np.sum(
-                            self.number[refIx, self.zCol + 4 : self.zCol + 4 + self.nnu]
+                            self.number[refIx, self.nu1Col : self.nu1Col + self.nnu]
                         )
                         * 100
                     )
@@ -452,9 +500,28 @@ class FortEPiaNORun:
             self.yv = fdy[:, 0]
             self.fd = fdy[:, 1]
 
+    def readHeaders(self):
+        """Read and store the information from the header files"""
+        try:
+            with open("%s/ens_header.dat" % self.folder) as _f:
+                head = _f.read()
+        except (IOError, OSError):
+            print("Cannot read header. Assume the standard one")
+            self.ens_header = "x z photon electron nu1 nu2 nu3".split()
+        else:
+            search = re.compile("nu \(1 to ([\d])\)")
+            try:
+                maxnu = int(search.findall(head)[0])
+            except (AttributeError, IndexError):
+                print("Cannot read number of neutrinos from header. Assume 3")
+                maxnu = 3
+            self.ens_header = head.replace(
+                "nu (1 to %d)" % maxnu,
+                " ".join(["nu%d" % (i + 1) for i in range(maxnu)]),
+            ).split()
+
     def readIni(self):
         """Read and store the content of the ini.log file"""
-        self.zCol = 1
         try:
             with open("%s/ini.log" % self.folder) as _ini:
                 self.ini = _ini.read()
@@ -1749,7 +1816,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -1806,9 +1873,11 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         plt.plot(
             self.endens[:, 0],
-            np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.endens]),
+            np.asarray([np.sum(cl[self.phCol :]) for cl in self.endens]),
             label="total" if alllabels is None else alllabels,
             c="k",
             ls="-" if not allstyles else allstyles,
@@ -1820,7 +1889,7 @@ class FortEPiaNORun:
             try:
                 plt.plot(
                     self.endens[:, 0],
-                    self.endens[:, self.zCol + 1 + ix],
+                    self.endens[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1831,18 +1900,18 @@ class FortEPiaNORun:
         if gamma_e:
             plt.plot(
                 self.endens[:, 0],
-                self.endens[:, self.zCol + 1] + self.endens[:, self.zCol + 2],
+                self.endens[:, self.phCol] + self.endens[:, self.eCol],
                 label=r"$\gamma+e$" if alllabels is None else alllabels,
                 c=gec,
                 ls=ges if not allstyles else allstyles,
                 lw=lw,
             )
-        if gamma_e_mu:
+        if gamma_e_mu and self.hasMuon:
             plt.plot(
                 self.endens[:, 0],
-                self.endens[:, self.zCol + 1]
-                + self.endens[:, self.zCol + 2]
-                + self.endens[:, self.zCol + 3],
+                self.endens[:, self.phCol]
+                + self.endens[:, self.eCol]
+                + self.endens[:, self.muCol],
                 label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
                 c=gemc,
                 ls=gems if not allstyles else allstyles,
@@ -1862,7 +1931,7 @@ class FortEPiaNORun:
             ls (default "-"): the line style
             lab (default None): if not None, the line label
         """
-        ds = np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.entropy])
+        ds = np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy])
         plt.plot(
             self.entropy[:, 0],
             (ds / ds[0] - 1.0) * 100.0,
@@ -1885,7 +1954,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -1942,9 +2011,11 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         plt.plot(
             self.entropy[:, 0],
-            np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.entropy]),
+            np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy]),
             label="total" if alllabels is None else alllabels,
             c="k",
             ls="-" if not allstyles else allstyles,
@@ -1956,7 +2027,7 @@ class FortEPiaNORun:
             try:
                 plt.plot(
                     self.entropy[:, 0],
-                    self.entropy[:, self.zCol + 1 + ix],
+                    self.entropy[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1967,18 +2038,18 @@ class FortEPiaNORun:
         if gamma_e:
             plt.plot(
                 self.entropy[:, 0],
-                self.entropy[:, self.zCol + 1] + self.entropy[:, self.zCol + 2],
+                self.entropy[:, self.phCol] + self.entropy[:, self.eCol],
                 label=r"$\gamma+e$" if alllabels is None else alllabels,
                 c=gec,
                 ls=ges if not allstyles else allstyles,
                 lw=lw,
             )
-        if gamma_e_mu:
+        if gamma_e_mu and self.hasMuon:
             plt.plot(
                 self.entropy[:, 0],
-                self.entropy[:, self.zCol + 1]
-                + self.entropy[:, self.zCol + 2]
-                + self.entropy[:, self.zCol + 3],
+                self.entropy[:, self.phCol]
+                + self.entropy[:, self.eCol]
+                + self.entropy[:, self.muCol],
                 label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
                 c=gemc,
                 ls=gems if not allstyles else allstyles,
@@ -1990,7 +2061,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -2034,13 +2105,15 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         for ix, lab in enumerate(labels):
             if skip[ix]:
                 continue
             try:
                 plt.plot(
                     self.number[:, 0],
-                    self.number[:, self.zCol + 1 + ix],
+                    self.number[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
