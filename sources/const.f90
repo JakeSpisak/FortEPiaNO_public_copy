@@ -1,6 +1,6 @@
 module fpversion
 implicit none
-character (len=5) :: version = "1.0.0"
+character (len=5) :: version = "1.1.0"
 end module
 
 module Precision
