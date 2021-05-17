@@ -1,6 +1,6 @@
 # [FortEPiaNO](https://bitbucket.org/ahep_cosmo/fortepiano_public/)
 FORTran-Evolved PrImordiAl Neutrino Oscillations  
-by S. Gariazzo (gariazzo@ific.uv.es) and P.F. de Salas (pablo.fernandez@fysik.su.se)
+by S. Gariazzo (gariazzo@ific.uv.es), P.F. de Salas (pablo.fernandez@fysik.su.se) and S. Pastor (pastor@ific.uv.es)
 
 FortEPiaNO is a Fortran code to compute the evolution of neutrino oscillations in the early universe.  
 The code is written to flexible, it can work with two to six neutrinos (active or sterile).  
@@ -9,14 +9,15 @@ At the moment, no lepton asymmetries nor non-standard interactions are implement
 If you use this code for scientific publications, please cite the papers:  
 **Thermalisation of sterile neutrinos in the early Universe in the 3+1 scheme with full mixing matrix**  
 _S. Gariazzo, P.F. de Salas, S. Pastor_  
-JCAP 07 (2019) 014.  
+[JCAP 07 (2019) 014](https://doi.org/10.1088/1475-7516/2019/07/014).  
 [arxiv:1905.11290](https://arxiv.org/abs/1905.11290),  
 see also on [INSPIRE](https://inspirehep.net/record/1736955).  
 
 and
 
-**Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED**  
-_J.J. Bennett and others_
+**Towards a precision calculation of the effective number of neutrinos Neff in the Standard Model. Part II. Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED**  
+_J.J. Bennett and others_  
+[JCAP 04 (2021) 073](https://doi.org/10.1088/1475-7516/2021/04/073).  
 [arxiv:2012.02726](https://arxiv.org/abs/2012.02726),  
 see also on [INSPIRE](https://inspirehep.net/record/1835091).  
 
@@ -35,14 +36,18 @@ see also on [INSPIRE](https://inspirehep.net/record/1835091).
       primaryClass   = "astro-ph.CO",
       SLACcitation   = "%%CITATION = ARXIV:1905.11290;%%"
 }
-@Article{Bennett:2020zkv,
-        author = "Bennett, Jack J. and others",
-         title = "{Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED}",
-          year = "2020",
- archiveprefix = "arXiv",
-  primaryclass = "hep-ph",
-        eprint = "2012.02726",
-  reportnumber = "CPPC-2020-10",
+@article{Bennett:2020zkv,
+    author = "Bennett, Jack J. and Buldgen, Gilles and De Salas, Pablo F. and Drewes, Marco and Gariazzo, Stefano and Pastor, Sergio and Wong, Yvonne Y. Y.",
+    title = "{Towards a precision calculation of the effective number of neutrinos Neff in the Standard Model. Part II. Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED}",
+    eprint = "2012.02726",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-ph",
+    reportNumber = "CPPC-2020-10",
+    doi = "10.1088/1475-7516/2021/04/073",
+    journal = "JCAP",
+    volume = "04",
+    pages = "073",
+    year = "2021"
 }
 ```
 
@@ -75,17 +80,15 @@ Additional commands for the makefile include:
 Moreover, some parts of the code can be enabled or disabled using precompilation flags.
 For example (add the option to the `make` command):
 
+* `DO_MUONS=1` enables the contribution of muons to the energy budget of the universe.
 * `GLR_ZERO_MOMENTUM=1` uses the `G_L` and `G_R` values at zero-momentum transfer from [https://doi.org/10.1016/j.ppnp.2013.03.004](https://doi.org/10.1016/j.ppnp.2013.03.004) instead of the default ones.
 * `FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.
 * `FULL_F_NU=1` allows to use the full matrix product in the F_nu phase space functions that compute nunu scattering and pair annihilation. If not used, only diagonal elements of the neutrino density matrix will be used.
 * `LOW_REHEATING=1` enables calculations for the low-reheating model;
-* `NO_MUONS=1` disables the contribution of muons to the energy budget of the universe.
 * `NO_NUE_ANNIHILATION=1` disables the contribution from neutrino to electron annihilation processes to collision integrals.
 * `RHO_OFFDIAG_INTERP_DIV_FD=1` enables to interpolate all the entries of the neutrino density matrix after dividing by a Fermi-Dirac distribution (by default, this is done only for diagonal entries).
 * `SINSQTHW=x` to set a custom value equal to `x` for the weak mixing angle (for example SINSQTHW=0.23).
 
-
-**WARNING**: the test suite will not work if the flag `NO_MUONS=1` is activated, or even if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
 
 ### 1.2.Interpolations
 The code, in the default compilation setup, is designed to avoid computing several integrals at each step and to use an interpolation instead.
@@ -105,6 +108,8 @@ Tool that will help to generate an ini file, using default values for the non-sp
 Use `python python/prepareIni.py -h` to get a list of accepted arguments and their description.  
 Currently accepts only up to 4 neutrinos (3 active + 1 sterile).
 
+It can also be used inside a different python script, by importing the relevant functions (`setParser`, `getIniValues`, `writeIni`). See the notes for a simple example.
+
 ### 2.2.`fortepianoOutput.py`
 Functions to read the output files generated by the fortran code and generate plots.
 It can be used importing the main class `FortEPiaNORun`, for example:
@@ -113,7 +118,7 @@ from fortepianoOutput import FortEPiaNORun
 run = FortEPiaNORun("output/folder/", nnu=4, plots=True)
 ```
 
-For possible plotting functions include:
+Possible plotting functions include:
 
 * `plotFD`: plot the Fermi-Dirac distribution computed in the current momentum grid;
 * `plotZ`: plot the evolution of the photon temperature `z` as a function of `x`;
@@ -121,12 +126,13 @@ For possible plotting functions include:
 * `plotZoverW`: plot the evolution of the ratio `z/w` as a function of `x`;
 * `plotDeltaZ`: plot the relative difference of the evolution of the photon temperature `z` as a function of `x`, with respect to some other given run;
 * `plotRhoDiagY`, `plotRhoOffDiagY`: plot the evolution of an element (diagonal or off-diagonal) of the neutrino density matrix at a fixed momentum `y`;
-* `plotdRhoOffDiagY`: plot a numerical estimate of the `x` derivative of an (off-diagonal) element of the neutrino density matrix at a fixed momentum `y`;
+* `plotdRhoDiagY` and `plotdRhoOffDiagY`: plot a numerical estimate of the `x` derivative of a (diagonal or off-diagonal) element of the neutrino density matrix at a fixed momentum `y`;
 * `plotRhoFin`: plot the momentum-dependence of the requested element of the neutrino density matrix at the final `x`;
 * `plotRhoX`: plot the momentum-dependence of the requested element of the neutrino density matrix, at a given `x`;
 * `plotNeff`: plot the evolution of the effective number of neutrinos, which is correctly normalized only at very early times or today;
 * `plotEnergyDensity`: plot the evolution of the energy density of the different components and their sum;
 * `plotEntropy`: plot the evolution of the entropy density of the different components and their sum;
+* `plotDeltaEntropy`: plot the evolution of the non-conservation of the total entropy density.
 * `plotNumberDensity`: plot the evolution of the number density of the different components and their sum;
 * `plotPArthENoPE`: plot quantities relevant for the BBN calculations performed by PArthENoPE;
 * `doAllPlots`: it will create a series of pdf plots in the output folder, calling
@@ -134,6 +140,10 @@ For possible plotting functions include:
 for flavor and mass eigenstates if available.
 
 Additionally, the function `integrateRho_yn` provides a fast way to compute the integral of `y^n f(y)`, interpolating over the final energy density that was computed by `FortEPiaNO`.
+
+This script can also be used as a stand-alone command, useful to
+produce complementary output files and some summary plots.  
+For its usage, see `python python/fortepianoOutput.py -h`.
 
 ### 2.3.`tests.py`
 Testing tools to verify that everything works in the python part, from reading the output folder to plotting.
@@ -150,6 +160,7 @@ Should you need to edit the source codes, this is more or less the content of ea
 * `fortepiano.f90`: main program;
 * `ftqed.f90`: functions and utilities to compute finite-temperature QED corrections;
 * `interactions.f90`: functions that define the neutrino interactions and the collision terms;
+* `matter.f90`: functions for the matter potential terms and rotation to the mass basis;
 * `tests.f90`: numerical tests for the software.
 
 Auxiliary files, which in principle you should not need to edit:
@@ -161,6 +172,7 @@ Auxiliary files, which in principle you should not need to edit:
 * `linear_interpolation_module.f90`: linear interpolation utilities;
 * `matrix_utils.f90`: utilities for creating and manipulating matrices;
 * `odepack*`: DLSODA and related utilities;
+* `output`: store and print output of the code;
 * `stuff.f90`: old functions that were used in previous versions of the code and now enter only the tests;
 * `test_utils.f90`: assertion functions and test counts;
 * `utilities.f90`: utilities for integration, interpolation, checkpointing, log file manipulation, time measurements.
@@ -178,4 +190,4 @@ The scripts are:
 
 
 ## 4.Acknowledgments
-This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Skłodowska-Curie grant agreement No 796941.
+This software is part of a project that has received funding from the European Union's Horizon 2020 research and innovation programme, under the Marie Skłodowska-Curie grant agreement No 796941 (project ENCORE) and 754496 (project FELLINI).

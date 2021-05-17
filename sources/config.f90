@@ -18,7 +18,7 @@ module fpConfig
 	subroutine allocateStuff()
 		integer :: nf, ix
 		nf = flavorNumber
-		allocate(nuMasses(nf), nuFactor(nf), sterile(nf))
+		allocate(nuMasses(nf), nuFactor(nf), sterile(nf), Gs(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		call allocateCmplxMat(nuDensities)
@@ -174,10 +174,15 @@ module fpConfig
 
 		!nu density matrix
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
-		ntot = Ny*(flavNumSqu) + 2 !independent elements in nuDensity(y) + w,z
-
+		ntotrho = Ny*(flavNumSqu) !independent elements in nuDensity(y)
+		ntot = ntotrho + 2 ! + w,z
+		ixw = ntotrho+1
+		ixz = ntotrho+2
 #ifdef LOW_REHEATING
 		ntot=ntot+1
+		ixphi = ntotrho+1
+		ixw = ixw+1
+		ixz = ixz+1
 #endif
 
 		allocate(nuDensVec(ntot))
@@ -186,8 +191,8 @@ module fpConfig
 		if(save_fd .and. trim(outputFolder).ne."")&
 			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)
 		do ix=1, Ny
-			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
-			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
+			call allocateCmplxMat(nuDensMatVec(ix))
+			call allocateCmplxMat(nuDensMatVecFD(ix))
 			nuDensMatVec(ix)%y = y_arr(ix)
 			nuDensMatVecFD(ix)%y = y_arr(ix)
 			nuDensMatVec(ix)%re(:,:) = 0.d0
@@ -221,6 +226,20 @@ module fpConfig
 			close(3978)
 
 		deallocate(diag_el)
+
+		!quantities used to save intermediate steps
+		allocate(intermediateSteps%Heff(Ny))
+		allocate(intermediateSteps%commutator(Ny))
+		allocate(intermediateSteps%colltermsNue(Ny))
+		allocate(intermediateSteps%colltermsNunu(Ny))
+		allocate(intermediateSteps%yvec(ntot))
+		allocate(intermediateSteps%ydot(ntot))
+		do ix=1, Ny
+			call allocateCmplxMat(intermediateSteps%Heff(ix))
+			call allocateCmplxMat(intermediateSteps%commutator(ix))
+			call allocateCmplxMat(intermediateSteps%colltermsNue(ix))
+			call allocateCmplxMat(intermediateSteps%colltermsNunu(ix))
+		end do
 	end subroutine init_matrices
 
 	subroutine init_fermions
@@ -229,7 +248,7 @@ module fpConfig
 #endif
 		call fermions(1)%initialize("electrons", .true., 1.d0, 1d3)
 		electrons => fermions(1)
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 		call fermions(2)%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
 		muons => fermions(2)
 #endif
@@ -307,8 +326,8 @@ module fpConfig
 #ifdef NO_INTERPOLATION
 		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
 #endif
-#ifdef NO_MUONS
-		call addToLog("[precompiler] Compiled without contributions from muons")
+#ifdef DO_MUONS
+		call addToLog("[precompiler] Compiled with contributions from muons")
 #endif
 #ifdef NO_NUE_ANNIHILATION
 		call addToLog("[precompiler] Compiled without contributions from nunu<->ee annihilation to collision integrals")
@@ -426,6 +445,7 @@ module fpConfig
 		save_number_evolution = read_ini_logical("save_number_evolution", .true.)
 		save_w_evolution = read_ini_logical("save_w_evolution", .true.)
 		save_z_evolution = read_ini_logical("save_z_evolution", .true.)
+		intermediateSteps%output = read_ini_logical("save_intermediate_steps", .false.)
 
 		z_in=1.d0
 		allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
@@ -452,6 +472,11 @@ module fpConfig
 			else
 				sterile(ix) = read_ini_logical(trim(tmparg), .true.)
 			end if
+			if(sterile(ix)) then
+				Gs(ix) = 0.d0
+			else
+				Gs(ix) = 1.d0
+			endif
 		end do
 		tot_factor_active_nu = 0.d0
 		tot_factor_nu = 0.d0

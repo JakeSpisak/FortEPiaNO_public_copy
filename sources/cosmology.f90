@@ -27,10 +27,10 @@ module fpCosmology
 		procedure :: pressure => nonRelativistic_pressure !interpolated pressure
 	end type nonRelativistic_fermion
 
-#ifdef NO_MUONS
-	integer, parameter :: fermions_number = 1
-#else
+#ifdef DO_MUONS
 	integer, parameter :: fermions_number = 2
+#else
+	integer, parameter :: fermions_number = 1
 #endif
 	type(nonRelativistic_fermion), dimension(fermions_number), target :: fermions
 	!define these only for easier reference in updateMatterDensities, output and tests:
@@ -125,8 +125,8 @@ module fpCosmology
 			nredf = nredf / PISQD2
 			!the factor is given by g = 2(elicity) * 2(f+\bar f)
 		end if
-        if (abs(nredf) .lt. 1d-99) &
-            nredf = 0.0d0
+		if (abs(nredf) .lt. 1d-99) &
+			nredf = 0.0d0
 	end function nonRelativistic_numberDensity_full
 
 	pure function nonRelativistic_energyDensity_full(cls, x, z, elTherMass) result (nredf)!fermion + antifermion
@@ -161,8 +161,8 @@ module fpCosmology
 			call cls%enDensNoThMassInterp%evaluate(x, z, ed)
 		end if
 #endif
-        if (abs(ed) .lt. 1d-99) &
-            ed = 0.0d0
+		if (abs(ed) .lt. 1d-99) &
+			ed = 0.0d0
 	end function nonRelativistic_energyDensity
 
 	pure function integrate_uX_Ek_nonRel(x, z, mf, elTherMass, n)
@@ -217,8 +217,8 @@ module fpCosmology
 		else
 			entropy = 0.d0
 		end if
-        if (abs(entropy) .lt. 1d-99) &
-            entropy = 0.0d0
+		if (abs(entropy) .lt. 1d-99) &
+			entropy = 0.0d0
 	end function nonRelativistic_entropy
 
 	subroutine nonRelativistic_initialize(cls, fermionName, isElectron, mass_factor, xcut)
@@ -526,4 +526,11 @@ module fpCosmology
 			nuDensityEq = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
 		end if
 	end function nuDensityEq
+
+	function Neff_from_rho_z(z)
+		real(dl) :: Neff_from_rho_z
+		real(dl), intent(in) :: z
+
+		Neff_from_rho_z = (zid)**4 * allNuDensity()/photonDensity(z) / 0.875d0
+	end function Neff_from_rho_z
 end module

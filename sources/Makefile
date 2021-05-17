@@ -9,8 +9,8 @@ FULL_F_NU ?=
 LOW_REHEATING ?=
 # define NO_INTERPOLATION=1 to use the full expressions instead of interpolations for the energy densities and electromagnetic corrections
 NO_INTERPOLATION ?=
-# set NO_MUONS=1 to disable muon contributions
-NO_MUONS ?=
+# set DO_MUONS=1 to enable muon contributions
+DO_MUONS ?=
 # set NO_NUE_ANNIHILATION=1 to disable contribution to collision integrals from nunu<->e+e- annihilation processes
 NO_NUE_ANNIHILATION ?=
 # set RHO_OFFDIAG_INTERP_DIV_FD=1 to interpolate all the entries of the neutrino density matrix after dividing by a Fermi-Dirac distribution (by default, this is done only for diagonal entries)
@@ -20,7 +20,7 @@ SINSQTHW ?=
 # define TESTSPEED=1 to compute the time required for the first 1000 derivatives
 TESTSPEED ?=
 
-F90 ?= ifort
+F90 ?= gfortran
 
 BUILD_DIR ?= ../build
 
@@ -35,14 +35,15 @@ endif
 ifeq "$(ifortErr)" "0"
 #ifort
 F90=ifort
-  F90FLAGS=-O3 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -openmp -parallel -par-report1 -no-prec-div
-DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -module $(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all
-
+  F90FLAGS=-O3 -fPIC -fpp -L/usr/lib -I$(BUILD_DIR)/ -openmp -parallel -par-report1 -no-prec-div
+DEBUGFLAGS=-O0 -fpp -L/usr/lib -I$(BUILD_DIR)/ -p -g -traceback -openmp -fpe0 -check all
+MOD_DIR=-module $(BUILD_DIR)/
 else
 #gfortran
 F90=gfortran
-  F90FLAGS=-O3 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -ffast-math -ffree-line-length-none -fopenmp
-DEBUGFLAGS=-O0 -cpp -L/usr/lib -J$(BUILD_DIR)/ -I$(BUILD_DIR)/ -p -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
+  F90FLAGS=-O3 -fPIC -cpp -L/usr/lib -I$(BUILD_DIR)/ -ffast-math -ffree-line-length-none -fopenmp
+DEBUGFLAGS=-O0 -cpp -L/usr/lib- -I$(BUILD_DIR)/ -p -g -fbacktrace -ffast-math -ffree-line-length-none -fopenmp -fcheck=all
+MOD_DIR=-J$(BUILD_DIR)/
 endif
 
 ifeq ($(BUILD_DIR),../build_debug)
@@ -66,8 +67,8 @@ endif
 ifeq ($(NO_INTERPOLATION), 1)
 	FFLAGS += -DNO_INTERPOLATION=1
 endif
-ifeq ($(NO_MUONS), 1)
-	FFLAGS += -DNO_MUONS=1
+ifeq ($(DO_MUONS), 1)
+	FFLAGS += -DDO_MUONS=1
 endif
 ifeq ($(NO_NUE_ANNIHILATION), 1)
 	FFLAGS += -DNO_NUE_ANNIHILATION=1
@@ -110,6 +111,8 @@ OBJ_FILES=$(BUILD_DIR)/const.o \
 	$(BUILD_DIR)/ftqed.o \
 	$(BUILD_DIR)/interactions.o \
 	$(BUILD_DIR)/cosmology.o \
+	$(BUILD_DIR)/matter.o \
+	$(BUILD_DIR)/output.o \
 	$(BUILD_DIR)/equations.o \
 	$(BUILD_DIR)/heigensystem.o \
 	$(BUILD_DIR)/odepack.o \
@@ -177,8 +180,20 @@ $(BUILD_DIR)/equations.o: \
 	$(BUILD_DIR)/test_utils.o \
 	$(BUILD_DIR)/heigensystem.o \
 	$(BUILD_DIR)/ftqed.o \
+	$(BUILD_DIR)/matter.o \
+	$(BUILD_DIR)/output.o \
 	$(BUILD_DIR)/bspline_module.o \
 	$(BUILD_DIR)/linear_interpolation_module.o
+$(BUILD_DIR)/matter.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/cosmology.o \
+	$(BUILD_DIR)/heigensystem.o
+$(BUILD_DIR)/output.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/cosmology.o \
+	$(BUILD_DIR)/matter.o \
+	$(BUILD_DIR)/utilities.o
 $(BUILD_DIR)/stuff.o: \
 	$(BUILD_DIR)/const.o \
 	$(BUILD_DIR)/errors.o \
@@ -209,21 +224,26 @@ readnodes:
 	$(F90) -o ../bin/read_gl_nodes read_gl_nodes.f90
 
 preparenodes: $(BUILD_DIR)/prepare_gl_nodes.o
-	$(F90) -o ../bin/prepare_gl_nodes $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_gl_nodes.o $(FFLAGS) $(TESTFLAGS)
+	$(F90) -o ../bin/prepare_gl_nodes $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_gl_nodes.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS)
 
 prepareinterp: $(PREP_NODES_OBJ) $(BUILD_DIR)/prepare_interpolations.o
-	$(F90) -o ../bin/prepare_interpolations $(OBJ_FILES) $(BUILD_DIR)/prepare_interpolations.o $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS)
+	$(F90) -o ../bin/prepare_interpolations $(OBJ_FILES) $(BUILD_DIR)/prepare_interpolations.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS) $(INTERPFLAGS)
 
 tests: TESTFLAGS = -DDO_TESTS=1
 
 fortepiano: Makefile $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o
-	$(F90) -o ../bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS) $(TESTFLAGS)
+	$(F90) -o ../bin/$(EXECNAME) $(OBJ_FILES) $(BUILD_DIR)/fortepiano.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS)
+
+pythonwrapper: Makefile $(OBJ_FILES)
+	python -m numpy.f2py -c --fcompiler=$(F90) --opt='$(FFLAGS)' $(OBJ_FILES) -lgomp -m fortepianoWrapper pythonWrapper.f90
+	python testwrapper.py
+	cp fortepianoWrapper*.so ../python
 
 tests: Makefile $(OBJ_TESTS) $(BUILD_DIR)/tests.o
-	$(F90) -o ../bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS) $(TESTFLAGS)
+	$(F90) -o ../bin/tests $(OBJ_TESTS) $(BUILD_DIR)/tests.o $(FFLAGS) $(MOD_DIR) $(TESTFLAGS)
 
 $(BUILD_DIR)/%.o: %.f90 Makefile
-	$(F90) $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS) -c $*.f90 -o $(BUILD_DIR)/$*.o
+	$(F90) $(FFLAGS) $(MOD_DIR) $(TESTFLAGS) $(INTERPFLAGS) -c $*.f90 -o $(BUILD_DIR)/$*.o
 
 $(BUILD_DIR)/%.o: %.f Makefile
-	$(F90) $(FFLAGS) $(TESTFLAGS) $(INTERPFLAGS) $(stdFlag) -c $*.f -o $(BUILD_DIR)/$*.o
+	$(F90) $(FFLAGS) $(MOD_DIR) $(TESTFLAGS) $(INTERPFLAGS) $(stdFlag) -c $*.f -o $(BUILD_DIR)/$*.o

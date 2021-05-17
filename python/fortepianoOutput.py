@@ -21,6 +21,11 @@ except ImportError:
     print("Cannot import numpy...may raise errors later")
     np = None
 try:
+    import pandas as pd
+except ImportError:
+    print("Cannot import pandas...may raise errors later")
+    pd = None
+try:
     from scipy.interpolate import interp1d
     from scipy.integrate import quad
     from scipy.signal import savgol_filter
@@ -39,7 +44,8 @@ styles = ["-", "--", ":", "-."] * 2
 markers = [".", "+", "x", "^", "*", "h", "D"]
 
 PISQD15 = np.pi ** 2 / 15.0
-ELECTRONMASS_MEV = 0.5109989461
+ELECTRONMASS_MEV = 0.51099895
+muonLabel = r"$\mu$"
 
 
 def finalizePlot(
@@ -52,6 +58,7 @@ def finalizePlot(
     yscale=None,
     xlim=None,
     ylim=None,
+    inTicks=True,
     legcol=1,
     legend=True,
     x_T=False,
@@ -84,7 +91,7 @@ def finalizePlot(
     """
     plt.title(title)
     ax = plt.gca()
-    if not Neff_axes:
+    if not Neff_axes and inTicks:
         ax.tick_params(
             "both",
             which="both",
@@ -232,6 +239,7 @@ class FortEPiaNORun:
         self.nnu = nnu
         self.hasBBN = False
         self.lowReheating = False
+        self.ens_header = []
         if not os.path.exists(folder):
             if verbose:
                 print("non-existing folder: %s" % folder)
@@ -240,6 +248,7 @@ class FortEPiaNORun:
         self.readFD()
         self.readWZ()
         self.readNeff()
+        self.readHeaders()
         self.readEENDensities(deltas)
         self.readResume()
         self.readNuDensMatrix(full)
@@ -248,6 +257,15 @@ class FortEPiaNORun:
         self.printTableLine()
         if plots:
             self.doAllPlots()
+
+    def loadtxt(self, fname, *args, **kwargs):
+        """Read a text file with numpy.loadtxt or pandas.read_csv"""
+        try:
+            return np.array(
+                pd.read_csv(fname, *args, header=None, delimiter="\s+", **kwargs).values
+            )
+        except AttributeError:
+            return np.loadtxt(fname, *args, **kwargs)
 
     def checkZdat(self):
         """Check if zdat has been read from the file or not.
@@ -272,6 +290,61 @@ class FortEPiaNORun:
             if self.checkZdat()
             else self.bbn[:, 1]
         )
+
+    @property
+    def zCol(self):
+        """return the column index for z in the energy density file"""
+        try:
+            return self.ens_header.index("z")
+        except ValueError:
+            if self.verbose:
+                print("z not in header file!")
+            return 1
+
+    @property
+    def phCol(self):
+        """return the column index for photons in the energy density file"""
+        try:
+            return self.ens_header.index("photon")
+        except ValueError:
+            if self.verbose:
+                print("photon not in header file!")
+            return self.zCol + 1
+
+    @property
+    def eCol(self):
+        """return the column index for electrons in the energy density file"""
+        try:
+            return self.ens_header.index("electron")
+        except ValueError:
+            if self.verbose:
+                print("electron not in header file!")
+            return self.zCol + 2
+
+    @property
+    def muCol(self):
+        """return the column index for muons in the energy density file"""
+        try:
+            return self.ens_header.index("muon")
+        except ValueError:
+            if self.verbose:
+                print("muon not in header file!")
+            return self.eCol + 1
+
+    @property
+    def nu1Col(self):
+        """return the column index for nu1 in the energy density file"""
+        try:
+            return self.ens_header.index("nu1")
+        except ValueError:
+            if self.verbose:
+                print("nu1 not in header file!")
+            return self.zCol + 3
+
+    @property
+    def hasMuon(self):
+        """return the column index for muons in the energy density file"""
+        return "muon" in self.ens_header
 
     @property
     def Tgamma(self):
@@ -326,7 +399,7 @@ class FortEPiaNORun:
         """
         refIx = 1 if self.lowReheating else 0
         try:
-            self.endens = np.loadtxt("%s/energyDensity.dat" % self.folder)
+            self.endens = self.loadtxt("%s/energyDensity.dat" % self.folder)
         except (IOError, OSError):
             self.endens = np.nan
         else:
@@ -338,28 +411,24 @@ class FortEPiaNORun:
                 if deltas:
                     self.delta_ed = [
                         (
-                            self.endens[-1, self.zCol + 4 + i]
-                            - self.endens[refIx, self.zCol + 4 + i]
+                            self.endens[-1, self.nu1Col + i]
+                            - self.endens[refIx, self.nu1Col + i]
                         )
-                        / self.endens[refIx, self.zCol + 4 + i]
+                        / self.endens[refIx, self.nu1Col + i]
                         * 100
                         for i in range(self.nnu)
                     ]
                     self.tot_delta_ed = (
                         (
                             np.sum(
-                                self.endens[
-                                    -1, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.endens[-1, self.nu1Col : self.nu1Col + self.nnu]
                             )
                             - np.sum(
-                                self.endens[
-                                    refIx, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.endens[refIx, self.nu1Col : self.nu1Col + self.nnu]
                             )
                         )
                         / np.sum(
-                            self.endens[refIx, self.zCol + 4 : self.zCol + 4 + self.nnu]
+                            self.endens[refIx, self.nu1Col : self.nu1Col + self.nnu]
                         )
                         * 100
                     )
@@ -378,11 +447,22 @@ class FortEPiaNORun:
                             )
                         )
         try:
-            self.entropy = np.loadtxt("%s/entropy.dat" % self.folder)
+            self.entropy = self.loadtxt("%s/entropy.dat" % self.folder)
         except (IOError, OSError):
             self.entropy = np.nan
+        else:
+            try:
+                self.entropy[:, :]
+            except IndexError:
+                pass
+            else:
+                if deltas:
+                    ds = np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy])
+                    self.tot_delta_sd = (ds[-1] - ds[refIx]) / ds[refIx] * 100
+                    if self.verbose:
+                        print("delta entropy density:\t%f%%" % self.tot_delta_sd)
         try:
-            self.number = np.loadtxt("%s/numberDensity.dat" % self.folder)
+            self.number = self.loadtxt("%s/numberDensity.dat" % self.folder)
         except (IOError, OSError):
             self.number = np.nan
         else:
@@ -394,28 +474,24 @@ class FortEPiaNORun:
                 if deltas:
                     self.delta_nd = [
                         (
-                            self.number[-1, self.zCol + 4 + i]
-                            - self.number[refIx, self.zCol + 4 + i]
+                            self.number[-1, self.nu1Col + i]
+                            - self.number[refIx, self.nu1Col + i]
                         )
-                        / self.number[refIx, self.zCol + 4 + i]
+                        / self.number[refIx, self.nu1Col + i]
                         * 100
                         for i in range(self.nnu)
                     ]
                     self.tot_delta_nd = (
                         (
                             np.sum(
-                                self.number[
-                                    -1, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.number[-1, self.nu1Col : self.nu1Col + self.nnu]
                             )
                             - np.sum(
-                                self.number[
-                                    refIx, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.number[refIx, self.nu1Col : self.nu1Col + self.nnu]
                             )
                         )
                         / np.sum(
-                            self.number[refIx, self.zCol + 4 : self.zCol + 4 + self.nnu]
+                            self.number[refIx, self.nu1Col : self.nu1Col + self.nnu]
                         )
                         * 100
                     )
@@ -433,7 +509,7 @@ class FortEPiaNORun:
     def readFD(self):
         """Read and store the information from fd.dat"""
         try:
-            fdy = np.loadtxt("%s/fd.dat" % self.folder)
+            fdy = self.loadtxt("%s/fd.dat" % self.folder)
         except (IOError, OSError):
             self.yv = np.nan
             self.fd = np.nan
@@ -441,11 +517,30 @@ class FortEPiaNORun:
             self.yv = fdy[:, 0]
             self.fd = fdy[:, 1]
 
+    def readHeaders(self):
+        """Read and store the information from the header files"""
+        try:
+            with open("%s/ens_header.dat" % self.folder) as _f:
+                head = _f.read()
+        except (IOError, OSError):
+            print("Cannot read header. Assume the standard one")
+            self.ens_header = "x z photon electron nu1 nu2 nu3".split()
+        else:
+            search = re.compile("nu \(1 to ([\d])\)")
+            try:
+                maxnu = int(search.findall(head)[0])
+            except (AttributeError, IndexError):
+                print("Cannot read number of neutrinos from header. Assume 3")
+                maxnu = 3
+            self.ens_header = head.replace(
+                "nu (1 to %d)" % maxnu,
+                " ".join(["nu%d" % (i + 1) for i in range(maxnu)]),
+            ).split()
+
     def readIni(self):
         """Read and store the content of the ini.log file,
         and check if the reheating temperature is present
         """
-        self.zCol = 1
         self.Trhini = None
         try:
             with open("%s/ini.log" % self.folder) as _ini:
@@ -464,11 +559,94 @@ class FortEPiaNORun:
                 if self.Trhini > 0:
                     self.lowReheating = True
                     self.zCol = 2
+        # read flavorNumber
+        search = re.compile("flavorNumber[\s]*=[\s]*([\d]+)")
+        try:
+            self.flavorNumber = int(search.findall(self.ini)[0])
+        except (AttributeError, IndexError):
+            print("Cannot read flavorNumber from ini.log. Assume 3")
+            self.flavorNumber = 3
+        if self.flavorNumber != self.nnu:
+            print(
+                "Warning: using nnu=%s, but FortEPiaNO used flavorNumber=%s"
+                % (self.nnu, self.flavorNumber)
+            )
+        # read Ny
+        search = re.compile("Ny[ ]*=[ ]*([\d]+)")
+        try:
+            self.Ny = int(search.findall(self.ini)[0])
+        except (AttributeError, IndexError):
+            print("Cannot read Ny from ini.log. Assume 3")
+            self.Ny = 25
+
+    def readIntermediate(self):
+        """Read and store the intermediate quantities from the fortran code"""
+        # read all the files and check that the number of lines are the same
+        try:
+            dat = self.loadtxt("%s/intermXF.dat" % self.folder)
+        except (IOError, OSError):
+            self.intermX = np.array([np.nan])
+            self.intermN = np.array([np.nan])
+        else:
+            self.intermX = dat[:, 0]
+            self.intermN = dat[:, 1]
+        for f in [
+            "intermY",
+            "intermYdot",
+            "intermHeff",
+            "intermComm",
+            "intermCTNue",
+            "intermCTNunu",
+        ]:
+            try:
+                setattr(self, f, self.loadtxt("%s/%s.dat" % (self.folder, f)))
+            except (IOError, OSError):
+                setattr(self, f, np.array([np.nan]))
+            assert len(self.intermX) == len(getattr(self, f))
+
+        try:
+            self.nonRhoVars = self.intermY.shape[1] - self.intermHeff.shape[1]
+        except IndexError:
+            self.nonRhoVars = 0
+
+        # separate quantities in Y and Ydot
+        for t in ["", "dot"]:
+            for f, ic in [
+                ["intermZ", -1],
+                ["intermW", -2],
+            ]:
+                try:
+                    setattr(self, f + t, getattr(self, "intermY" + t)[:, ic])
+                except IndexError:
+                    setattr(self, f + t, np.array([np.nan]))
+            try:
+                setattr(
+                    self,
+                    "intermRho" + t,
+                    getattr(self, "intermY" + t)[:, : -self.nonRhoVars],
+                )
+            except IndexError:
+                setattr(self, "intermRho" + t, np.array([np.nan]))
+        if len(self.intermX) == 1 and np.isnan(self.intermX[0]):
+            return
+        for f in [
+            "intermRho",
+            "intermRhodot",
+            "intermHeff",
+            "intermComm",
+            "intermCTNue",
+            "intermCTNunu",
+        ]:
+            setattr(
+                self,
+                f,
+                np.array([self.reshapeVectorToMatrices(a) for a in getattr(self, f)]),
+            )
 
     def readNeff(self):
         """Read the Neff.dat file"""
         try:
-            self.Neffdat = np.loadtxt("%s/Neff.dat" % self.folder)
+            self.Neffdat = self.loadtxt("%s/Neff.dat" % self.folder)
         except (IOError, OSError):
             self.Neffdat = np.asarray(
                 [[np.nan, np.nan, np.nan, np.nan]]
@@ -492,7 +670,7 @@ class FortEPiaNORun:
         )
         for i in range(self.nnu):
             try:
-                self.rho[i, i, 0] = np.loadtxt(
+                self.rho[i, i, 0] = self.loadtxt(
                     "%s/nuDens_diag%d.dat" % (self.folder, i + 1)
                 )
             except (IOError, OSError):
@@ -500,19 +678,19 @@ class FortEPiaNORun:
             if full:
                 for j in range(i + 1, self.nnu):
                     try:
-                        self.rho[i, j, 0] = np.loadtxt(
+                        self.rho[i, j, 0] = self.loadtxt(
                             "%s/nuDens_nd_%d%d_re.dat" % (self.folder, i + 1, j + 1)
                         )
                     except (IOError, OSError):
                         self.rho[i, j, 0] = np.nan
                     try:
-                        self.rho[i, j, 1] = np.loadtxt(
+                        self.rho[i, j, 1] = self.loadtxt(
                             "%s/nuDens_nd_%d%d_im.dat" % (self.folder, i + 1, j + 1)
                         )
                     except (IOError, OSError):
                         self.rho[i, j, 1] = np.nan
             try:
-                self.rhoM[i, i, 0] = np.loadtxt(
+                self.rhoM[i, i, 0] = self.loadtxt(
                     "%s/nuDens_mass%d.dat" % (self.folder, i + 1)
                 )
             except (IOError, OSError):
@@ -550,19 +728,6 @@ class FortEPiaNORun:
                 )
             except (AttributeError, ValueError):
                 self.zfin = np.nan
-            if self.lowReheating:
-                try:
-                    self.Trh = float(
-                        re.search("Trh[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
-                    )
-                except (AttributeError, ValueError):
-                    self.Trh = np.nan
-                else:
-                    if not np.isclose(float(self.Trh), float(self.Trhini)):
-                        raise ValueError(
-                            "Trh from ini.log (%s) and from resume.dat (%s) differ."
-                            % (self.Trh, self.Trhini)
-                        )
             self.deltaNeffi = np.array([np.nan for i in range(self.nnu)])
             if re.search("deltaNeff_([\d]+)[ ]*=[ ]*([-\d.]*)", self.resume):
                 search = re.compile("deltaNeff_([\d]+)[ ]*=[ ]*([-\d.]*)")
@@ -599,13 +764,60 @@ class FortEPiaNORun:
     def readWZ(self):
         """Read the z.dat file"""
         try:
-            self.zdat = np.loadtxt("%s/z.dat" % self.folder)
+            self.zdat = self.loadtxt("%s/z.dat" % self.folder)
         except (IOError, OSError):
             self.zdat = np.asarray(
                 [[np.nan, np.nan, np.nan, np.nan]]
                 if self.lowReheating
                 else [[np.nan, np.nan, np.nan]]
             )
+
+    def reshapeVectorToMatrices(self, vec):
+        """Take a Ny*flavorNumber or Ny*flavorNumber**2 vector
+        and reshape it to a multidimensional numpy array,
+        according to the order used by the fortran part of FortEPiaNO.
+        The output array has shape (flavorNumber, flavorNumber, 2, Ny),
+        where the first two dimensions identify the matrix element,
+        the third dimension is for the real or imaginary part
+        and the last dimension correspond to the momentum nodes.
+
+        Parameter:
+            vec: a list or 1D array,
+                for the reshaping to work it must have length
+                Ny*flavorNumber or Ny*flavorNumber**2
+
+        Output:
+            an array with shape (flavorNumber, flavorNumber, 2, Ny)
+        """
+        matrix = np.asarray(
+            [
+                [
+                    [np.zeros(self.Ny), np.zeros(self.Ny)]
+                    for i in range(self.flavorNumber)
+                ]
+                for j in range(self.flavorNumber)
+            ]
+        )
+        if not isinstance(vec, np.ndarray):
+            vec = np.array(vec)
+        n = self.flavorNumber
+        if len(vec) == self.Ny * self.flavorNumber:
+            vec = vec.reshape(self.Ny, self.flavorNumber)
+            for i in range(self.flavorNumber):
+                matrix[i, i, 0] = vec[:, i]
+        elif len(vec) == self.Ny * self.flavorNumber ** 2:
+            vec = vec.reshape(self.Ny, self.flavorNumber ** 2)
+            for i in range(self.flavorNumber):
+                matrix[i, i, 0] = vec[:, i]
+                for j in range(i + 1, self.flavorNumber):
+                    vix = n + 2 * ((i * (n - 1) - int((i) * (i - 1) / 2)) + j - i - 1)
+                    matrix[i, j, 0] = vec[:, vix]
+                    matrix[i, j, 1] = vec[:, vix + 1]
+                    matrix[j, i, 0] = matrix[i, j, 0]
+                    matrix[j, i, 1] = -matrix[i, j, 1]
+        else:
+            raise ValueError("Invalid length of the array")
+        return matrix
 
     def prepareBBN(self):
         """Read BBN files and prepare output for PArthENoPE"""
@@ -744,7 +956,7 @@ class FortEPiaNORun:
                 os.path.exists("%s/%s_norm.dat" % (self.folder, fm))
                 and os.path.exists("%s/%s_var.dat" % (self.folder, fm))
             ):
-                data = np.loadtxt("%s/%s.dat" % (self.folder, fm))
+                data = self.loadtxt("%s/%s.dat" % (self.folder, fm))
                 # Compute the variation of the neutrino density matrix
                 # with respect to the FermiDirac at temperature w.
                 # To obtain the contributions to Neff, integrate:
@@ -800,7 +1012,7 @@ class FortEPiaNORun:
                 except IOError:
                     print("Cannot write the converted neutrino density matrices!")
 
-    def interpolateRhoIJ(self, i1, i2, y, ri=0, y2=False, mass=False):
+    def interpolateRhoIJ(self, i1, i2, y, ri=0, yexp=0, mass=False):
         """Interpolate any entry of the density matrix at a given y,
         and return its value for all the saved x points.
         Repeated points with the same f(x, y) at different x
@@ -812,7 +1024,7 @@ class FortEPiaNORun:
             y: the y value at which to interpolate
             ri (default 0): it 0, use real part, if 1 the imaginary one
                 (only for off-diagonal entries of the density matrix)
-            y2 (default False): if True, multiply the output by y**2
+            yexp (default 0): if >0, multiply the output by y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
 
@@ -830,7 +1042,7 @@ class FortEPiaNORun:
         prevy = 0
         for i, x in enumerate(rho[i1, i2, ri][:, 0]):
             fy = interp1d(self.yv, rho[i1, i2, ri][i, 1:])
-            cy = fy(y) * (y ** 2 if y2 else 1.0)
+            cy = fy(y) * (y ** yexp if yexp > 0 else 1.0)
             if cy != prevy:
                 prevy = cy
                 yv.append(prevy)
@@ -840,7 +1052,7 @@ class FortEPiaNORun:
             yv.append(cy)
         return np.asarray(xv), np.asarray(yv)
 
-    def interpolateRhoIJ_x(self, i1, i2, x, ri=0, y2=False, mass=False):
+    def interpolateRhoIJ_x(self, i1, i2, x, ri=0, yexp=0, mass=False):
         """Interpolate any entry of the density matrix at a given x,
         and return its value for all the y grid points
 
@@ -850,7 +1062,7 @@ class FortEPiaNORun:
             x: the x value at which to interpolate
             ri (default 0): it 0, use real part, if 1 the imaginary one
                 (only for off-diagonal entries of the density matrix)
-            y2 (default False): if True, multiply the output by y**2
+            yexp (default 0): if >0, multiply the output by y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
 
@@ -867,7 +1079,7 @@ class FortEPiaNORun:
         for i, y in enumerate(self.yv):
             fx = interp1d(
                 rho[i1, i2, ri][:, 0],
-                rho[i1, i2, ri][:, i + 1] * (y ** 2 if y2 else 1.0),
+                rho[i1, i2, ri][:, i + 1] * (y ** yexp if yexp > 0 else 1.0),
             )
             ov.append(fx(x))
         return self.yv, np.asarray(ov)
@@ -1039,7 +1251,7 @@ class FortEPiaNORun:
         plt.xlabel("$x$")
         plt.ylabel(r"$z-z_{\rm ref}$")
 
-    def plotRhoDiag(self, inu, iy, ls, lc="k", mass=False):
+    def plotRhoDiag(self, inu, iy, ls, lc="k", lab=None, mass=False):
         """Plot one diagonal element of the density matrix
         at a given point (index iy) in the momentum grid,
         as a function of x
@@ -1049,6 +1261,8 @@ class FortEPiaNORun:
             iy: the index of the requested momentum in the momentum grid
             ls: the line style
             lc (default "k"): the line color
+            lab (default None): if not None, the custom value
+                for the line label
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
@@ -1067,7 +1281,7 @@ class FortEPiaNORun:
             return
         plt.plot(
             *stripRepeated(rho[inu, inu, 0], 0, iy),
-            label=r"%s $\alpha$=%d" % (self.label, inu + 1),
+            label=r"%s $\alpha$=%d" % (self.label, inu + 1) if lab is None else lab,
             ls=ls,
             c=lc
         )
@@ -1209,7 +1423,16 @@ class FortEPiaNORun:
         plt.ylabel(r"$d\rho_{\alpha\beta}/dx$")
 
     def plotRhoFin(
-        self, i1, i2=None, ri=0, ls="-", lc="k", y2=False, lab=None, mass=False
+        self,
+        i1,
+        i2=None,
+        ri=0,
+        ls="-",
+        lc="k",
+        yexp=0,
+        lab=None,
+        mass=False,
+        divide_fd=False,
     ):
         """Plot the y dependence of an element of the density matrix
         at the final x
@@ -1224,11 +1447,13 @@ class FortEPiaNORun:
                 (only for off-diagonal entries of the density matrix)
             ls (default "-"): the line style
             lc (default "k"): the line color
-            y2 (default False): if True,
-                multiply the diagonal elements times y**2
+            yexp (default 0): if >0,
+                multiply the diagonal elements times y**yexp
             lab (default None): if not None, the line label
             mass (default False): if True, use the density matrix
                 in the mass basis
+            divide_fd (default False): if True,
+                divide by the Fermi Dirac (self.fd/self.yv**2)
         """
         if i2 is None:
             i2 = i1
@@ -1253,10 +1478,23 @@ class FortEPiaNORun:
             if lab is None
             else lab
         )
-        fyv = self.yv ** 2 * rho[i1, i2, ri][-1, 1:] if y2 else rho[i1, i2, ri][-1, 1:]
-        plt.plot(self.yv, fyv, ls=ls, c=lc, label=label)
+        fyv = (
+            (self.yv ** yexp * rho[i1, i2, ri][-1, 1:])
+            if yexp > 0
+            else rho[i1, i2, ri][-1, 1:]
+        )
+        plt.plot(
+            self.yv,
+            fyv / ((self.fd / self.yv ** 2) if divide_fd else 1.0),
+            ls=ls,
+            c=lc,
+            label=label,
+        )
         plt.xlabel("$y$")
-        plt.ylabel(r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$" % ("y^2" if y2 else ""))
+        plt.ylabel(
+            r"$%s\rho_{\alpha\beta}^{\rm fin}(y)$"
+            % ("y^{%d}" % yexp if yexp > 0 else "")
+        )
 
     def plotRhoX(
         self,
@@ -1267,7 +1505,7 @@ class FortEPiaNORun:
         ls="-",
         lc="k",
         lab="",
-        y2=False,
+        yexp=0,
         mass=False,
         divide_by=1.0,
         divide_fd=False,
@@ -1286,28 +1524,28 @@ class FortEPiaNORun:
             ls (default "-"): the line style
             lc (default "k"): the line color
             lab (default ""): if not empty, it will be used as line label
-            y2 (default False): if True,
-                multiply the diagonal elements times y**2
+            yexp (default 0): if >0,
+                multiply the diagonal elements times y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
             divide_by (default 1.0): divide the rho values by the given
                 float or array
             divide_fd (default False): if True,
-                divide by self.fd
+                divide by the Fermi Dirac (self.fd/self.yv**2)
         """
         if i2 is None:
             i2 = i1
         if ri not in [0, 1]:
             ri = 0
         try:
-            interp = self.interpolateRhoIJ_x(i1, i2, x, ri, y2=y2, mass=mass)
+            interp = self.interpolateRhoIJ_x(i1, i2, x, ri, yexp=yexp, mass=mass)
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
         xv, yv = interp
         plt.plot(
             xv,
-            yv / divide_by / (self.fd if divide_fd else 1.0),
+            yv / divide_by / ((self.fd / self.yv ** 2) if divide_fd else 1.0),
             ls=ls,
             c=lc,
             label=r"%s $\alpha\beta$=%d%d %s x=%f"
@@ -1316,10 +1554,10 @@ class FortEPiaNORun:
             else lab,
         )
         plt.xlabel("$y$")
-        plt.ylabel(r"$%s\rho_{\alpha\beta}(y)$" % ("y^2" if y2 else ""))
+        plt.ylabel(r"$%s\rho_{\alpha\beta}(y)$" % ("y^{%d}" % yexp if yexp > 0 else ""))
 
     def plotRhoDiagY(
-        self, inu, y, ls, lc="k", lab=None, y2=False, mass=False, divide_by=1.0
+        self, inu, y, ls, lc="k", lab=None, yexp=0, mass=False, divide_by=1.0
     ):
         """Plot one diagonal element of the density matrix at a given y
         as a function of x
@@ -1330,8 +1568,8 @@ class FortEPiaNORun:
             ls: the line style
             lc (default "k"): the line color
             lab (default None): if not None, the line label
-            y2 (default False): if True,
-                multiply the diagonal elements times y**2
+            yexp (default 0): if >0,
+                multiply the diagonal elements times y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
             divide_by (default 1.0): divide the rho values by the given
@@ -1345,16 +1583,16 @@ class FortEPiaNORun:
         label = lab if lab is not None else r"%s $\alpha$=%d" % (self.label, inu + 1)
         plt.plot(
             x,
-            np.asarray(yv) * (y ** 2 if y2 else 1.0) / divide_by,
+            np.asarray(yv) * (y ** yexp if yexp > 0 else 1.0) / divide_by,
             label=label,
             ls=ls,
             c=lc,
         )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$%s\rho_{\alpha\alpha}$" % ("y^2" if y2 else ""))
+        plt.ylabel(r"$%s\rho_{\alpha\alpha}$" % ("y^{%d}" % yexp if yexp > 0 else ""))
 
-    def plotdRhoDiagY(self, inu, y, ls, lc="k", lab=None, y2=False, mass=False):
+    def plotdRhoDiagY(self, inu, y, ls, lc="k", lab=None, yexp=0, mass=False):
         """Plot the x derivative (np.gradient)
         of one diagonal element of the density matrix at a given y
         as a function of x
@@ -1365,8 +1603,8 @@ class FortEPiaNORun:
             ls: the line style
             lc (default "k"): the line color
             lab (default None): if not None, the line label
-            y2 (default False): if True,
-                multiply the diagonal elements times y**2
+            yexp (default 0): if >0,
+                multiply the diagonal elements times y**yexp
             mass (default False): if True, use the density matrix
                 in the mass basis
         """
@@ -1378,14 +1616,16 @@ class FortEPiaNORun:
         label = lab if lab is not None else r"%s $\alpha$=%d" % (self.label, inu + 1)
         plt.plot(
             x,
-            np.gradient(np.asarray(yv) * (y ** 2 if y2 else 1.0), x),
+            np.gradient(np.asarray(yv) * (y ** yexp if yexp > 0 else 1.0), x),
             label=label,
             ls=ls,
             c=lc,
         )
         plt.xscale("log")
         plt.xlabel("$x$")
-        plt.ylabel(r"$d%s\rho_{\alpha\alpha}/dx$" % ("y^2" if y2 else ""))
+        plt.ylabel(
+            r"$d%s\rho_{\alpha\alpha}/dx$" % ("y^{%d}" % yexp if yexp > 0 else "")
+        )
 
     def plotRhoOffDiagY(self, i1, i2, y, lc="k", ls="-", im=True, lab=None, mass=False):
         """Plot one off-diagonal element of the density matrix
@@ -1635,6 +1875,98 @@ class FortEPiaNORun:
             ax1.set_ylabel(r"$N_{\rm eff}^{\rm now}$")
             ax1.set_ylim(np.asarray(nefflims) * (11.0 / 4) ** (4.0 / 3))
 
+    def plotNeffAtAllX(
+        self,
+        lc="k",
+        ls="-",
+        lab=None,
+        endensx=0,
+        endensgamma=2,
+        endensnu0=5,
+    ):
+        """Plot the evolution of Neff as a function of x, computing Neff
+        at each moment using rho_nu, rho_gamma, z, w.
+        May not give perfectly correct results due to numerical
+        instability in the calculation of z/w.
+
+        Parameters:
+            lc (default "k"): the line color
+            ls (default "-"): the line style
+            lab (default None): if not None, the line label
+            endensx (default 0): index of
+                the x column in self.endens
+            endensgamma (default 2): index of
+                the photon energy density column in self.endens
+            endensnu0 (default 5): index of
+                the first neutrino energy density column in self.endens
+        """
+        try:
+            rhogammas = self.endens[:, (endensx, endensgamma)][:, :]
+        except (AttributeError, TypeError, IndexError):
+            print(traceback.format_exc())
+            try:
+                self.zdat[:, (0, self.zCol)][:]
+            except (AttributeError, TypeError):
+                print(traceback.format_exc())
+                return
+            rhogammas = np.array(
+                [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zCol)]]
+            )
+        try:
+            rns = np.sum(self.endens[:, endensnu0 : endensnu0 + self.nnu][:, :], axis=1)
+            xs = self.endens[:, endensx][:]
+            rhonus = np.array(list(zip(xs, rns)))
+        except (AttributeError, TypeError, IndexError):
+            print(traceback.format_exc())
+            try:
+                [self.rho[inu, inu, 0][:] for inu in range(self.nnu)]
+            except (AttributeError, TypeError):
+                print(traceback.format_exc())
+                return
+            rhonus = np.array(
+                [
+                    [
+                        x,
+                        np.sum(
+                            [
+                                self.integrateRho_yn(inu, 3, ix=ix)
+                                for inu in range(self.nnu)
+                            ]
+                        ),
+                    ]
+                    for ix, [x, z] in enumerate(self.zdat[:, (0, self.zCol)])
+                ]
+            )
+        try:
+            zs = self.zdat[:, (0, self.zCol)][:]
+            ws = self.zdat[:, self.zCol + 1]
+        except (AttributeError, TypeError, IndexError):
+            print(traceback.format_exc())
+            return
+        frhonu = interp1d(*stripRepeated(rhonus, 0, 1))
+        frhoga = interp1d(*stripRepeated(rhogammas, 0, 1))
+        zs[:, 1] = zs[:, 1] / ws[:]
+        fzow = interp1d(*stripRepeated(zs, 0, 1))
+        data = np.asarray(
+            [
+                [
+                    x,
+                    8.0 / 7.0 * frhonu(x) / frhoga(x) * fzow(x) ** 4.0,
+                ]
+                for x in rhogammas[:, 0]
+            ]
+        )
+        plt.plot(
+            data[:, 0],
+            data[:, 1],
+            ls=ls,
+            c=lc,
+            label=self.label if lab is None else lab,
+        )
+        plt.xscale("log")
+        plt.xlabel(r"$x$")
+        plt.ylabel(r"$N_{\rm eff}$")
+
     def plotEnergyDensity(
         self,
         gamma_e=True,
@@ -1646,7 +1978,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -1703,9 +2035,11 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         plt.plot(
             self.endens[:, 0],
-            np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.endens]),
+            np.asarray([np.sum(cl[self.phCol :]) for cl in self.endens]),
             label="total" if alllabels is None else alllabels,
             c="k",
             ls="-" if not allstyles else allstyles,
@@ -1723,7 +2057,7 @@ class FortEPiaNORun:
             try:
                 plt.plot(
                     self.endens[:, 0],
-                    self.endens[:, self.zCol + 1 + ix],
+                    self.endens[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1734,23 +2068,48 @@ class FortEPiaNORun:
         if gamma_e:
             plt.plot(
                 self.endens[:, 0],
-                self.endens[:, self.zCol + 1] + self.endens[:, self.zCol + 2],
+                self.endens[:, self.phCol] + self.endens[:, self.eCol],
                 label=r"$\gamma+e$" if alllabels is None else alllabels,
                 c=gec,
                 ls=ges if not allstyles else allstyles,
                 lw=lw,
             )
-        if gamma_e_mu:
+        if gamma_e_mu and self.hasMuon:
             plt.plot(
                 self.endens[:, 0],
-                self.endens[:, self.zCol + 1]
-                + self.endens[:, self.zCol + 2]
-                + self.endens[:, self.zCol + 3],
+                self.endens[:, self.phCol]
+                + self.endens[:, self.eCol]
+                + self.endens[:, self.muCol],
                 label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
                 c=gemc,
                 ls=gems if not allstyles else allstyles,
                 lw=lw,
             )
+
+    def plotDeltaEntropy(
+        self,
+        lc="k",
+        ls="-",
+        lab=None,
+    ):
+        """Plot the variation in total entropy as a function of x
+
+        Parameters:
+            lc (default "k"): the line color
+            ls (default "-"): the line style
+            lab (default None): if not None, the line label
+        """
+        ds = np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy])
+        plt.plot(
+            self.entropy[:, 0],
+            (ds / ds[0] - 1.0) * 100.0,
+            c=lc,
+            ls=ls,
+            label=self.label if lab is None else lab,
+        )
+        plt.xscale("log")
+        plt.xlabel("$x$")
+        plt.ylabel(r"$\delta s_{\rm tot}$ [%]")
 
     def plotEntropy(
         self,
@@ -1763,7 +2122,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -1820,9 +2179,11 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         plt.plot(
             self.entropy[:, 0],
-            np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.entropy]),
+            np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy]),
             label="total" if alllabels is None else alllabels,
             c="k",
             ls="-" if not allstyles else allstyles,
@@ -1834,7 +2195,7 @@ class FortEPiaNORun:
             try:
                 plt.plot(
                     self.entropy[:, 0],
-                    self.entropy[:, self.zCol + 1 + ix],
+                    self.entropy[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1845,18 +2206,18 @@ class FortEPiaNORun:
         if gamma_e:
             plt.plot(
                 self.entropy[:, 0],
-                self.entropy[:, self.zCol + 1] + self.entropy[:, self.zCol + 2],
+                self.entropy[:, self.phCol] + self.entropy[:, self.eCol],
                 label=r"$\gamma+e$" if alllabels is None else alllabels,
                 c=gec,
                 ls=ges if not allstyles else allstyles,
                 lw=lw,
             )
-        if gamma_e_mu:
+        if gamma_e_mu and self.hasMuon:
             plt.plot(
                 self.entropy[:, 0],
-                self.entropy[:, self.zCol + 1]
-                + self.entropy[:, self.zCol + 2]
-                + self.entropy[:, self.zCol + 3],
+                self.entropy[:, self.phCol]
+                + self.entropy[:, self.eCol]
+                + self.entropy[:, self.muCol],
                 label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
                 c=gemc,
                 ls=gems if not allstyles else allstyles,
@@ -1868,7 +2229,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -1912,13 +2273,15 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         for ix, lab in enumerate(labels):
             if skip[ix]:
                 continue
             try:
                 plt.plot(
                     self.number[:, 0],
-                    self.number[:, self.zCol + 1 + ix],
+                    self.number[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1991,11 +2354,11 @@ class FortEPiaNORun:
         )
 
         for i in range(self.nnu):
-            self.plotRhoFin(i, ls=styles[i], lc=colors[i], y2=True)
+            self.plotRhoFin(i, ls=styles[i], lc=colors[i], yexp=2)
         finalizePlot("%s/rhofin_diag.pdf" % self.folder, xscale="linear", yscale="log")
 
         for i in range(self.nnu):
-            self.plotRhoFin(i, ls=styles[i], lc=colors[i], y2=True, mass=True)
+            self.plotRhoFin(i, ls=styles[i], lc=colors[i], yexp=2, mass=True)
         finalizePlot(
             "%s/rhofin_mass_diag.pdf" % self.folder, xscale="linear", yscale="log"
         )

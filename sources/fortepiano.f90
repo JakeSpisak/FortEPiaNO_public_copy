@@ -1,9 +1,13 @@
 program fortepiano
+	use fpversion
 	use precision
 	use fpConfig
 	use fpErrors
 	use fpEquations
+	use fpoutput
 	implicit none
+
+	write(*,*) "This is FortEPiaNO version "//version
 
 	call initConfig
 

@@ -3,6 +3,7 @@ OLD
 OUT
 *.pyc
 *.o
+*.so
 *.mod
 *.a
 *.ini
@@ -20,3 +21,4 @@ grids/
 .tox*/
 GL_nodes/
 interpolations/
+!test_outputs/*.dat

@@ -153,10 +153,10 @@ Other matrices that we need to define are
 \qquad
 \mathbb{P}_\ell=\text{diag}(P_e, P_\mu, 0, \ldots)\,,
 \qquad
-\mathbb{E}_\nu=S_a\frac{1}{\pi^2}\left(\int \mathrm{d}y y^3\varrho\right) S_a\,
-\quad\mbox{with }S_a=\text{diag}(1,1,1,0,\ldots)\,,
+\mathbb{E}_\nu=G_S\frac{1}{\pi^2}\left(\int \mathrm{d}y y^3\varrho\right) G_S\,
+\quad\mbox{with }G_S=\text{diag}(1,1,1,0,\ldots)\,,
 \end{equation}
-while the interaction matrices used in the the collision terms,
+while the interaction matrices used in the collision terms,
 presented in section~\ref{sec:collint}, are
 \begin{equation}
 \label{eq:gLR}
@@ -741,7 +741,7 @@ and therefore the three functions $D_{1, 2, 3}$ can be coded in a more efficient
 not reported here for sake of brevity
 (see e.g.~\cite{Blaschke:2016xxt}).
 
-Finally, the functions that define the phase space factors in the collision terms are \cite{deSalas:2016ztq,Bennett:2020zkv}:
+Finally, the functions that define the phase space factors in the collision terms are \cite{Sigl:1992fn,deSalas:2016ztq,Bennett:2020zkv}:
 \begin{eqnarray}
 F_{\rm sc}^{ab}\left(\varrho^{(1)}, f_e^{(2)}, \varrho^{(3)}, f_e^{(4)}\right)
 &=&
@@ -758,32 +758,35 @@ f_e^{(3)}f_e^{(4)}\left[G^a(1-\varrho^{(2)})G^b(1-\varrho^{(1)})+(1-\varrho^{(1)
 (1-f_e^{(3)})(1-f_e^{(4)})\left[G^a\varrho^{(2)}G^b\varrho^{(1)}+\varrho^{(1)}G^b\varrho^{(2)}G^a\right],
 \label{eq:F_ab_ann}
 \\
+%
+%
+%
 F_{\nu\nu}\left(\varrho^{(1)}, \varrho^{(2)}, \varrho^{(3)}, \varrho^{(4)}\right)
 &=&
-\left(1-\varrho^{(1)}\right)\varrho^{(3)}
-\left[\left(1-\varrho^{(2)}\right)\varrho^{(4)}+\mathrm{Tr}(\cdots)\right]
+\left(1-\varrho^{(1)}\right)G_S\varrho^{(3)}G_S
+\left[\left(1-\varrho^{(2)}\right)G_S\varrho^{(4)}G_S+\mathrm{Tr}(\cdots)\right]
 \nonumber\\
 &-&
-\varrho^{(1)}\left(1-\varrho^{(3)}\right)
-\left[\varrho^{(2)}\left(1-\varrho^{(4)}\right)+\mathrm{Tr}(\cdots)\right]
+\varrho^{(1)}G_S\left(1-\varrho^{(3)}\right)G_S
+\left[\varrho^{(2)}G_S\left(1-\varrho^{(4)}\right)G_S+\mathrm{Tr}(\cdots)\right]
 +\mathrm{h.c.}
 \label{eq:F_nunu}\\
 F_{\nu\bar\nu}\left(\varrho^{(1)}, \varrho^{(2)}, \varrho^{(3)}, \varrho^{(4)}\right)
 &=&
-\left(1-\varrho^{(1)}\right)\left(1-\varrho^{(2)}\right)
-\left[\varrho^{(4)}\varrho^{(3)}+\mathrm{Tr}(\cdots)\right]
+\left(1-\varrho^{(1)}\right)G_S\left(1-\varrho^{(2)}\right)G_S
+\left[\varrho^{(4)}G_S\varrho^{(3)}G_S+\mathrm{Tr}(\cdots)\right]
 \nonumber\\
 &-&
-\varrho^{(1)}\varrho^{(2)}
-\left[\left(1-\varrho^{(4)}\right)\left(1-\varrho^{(3)}\right)+\mathrm{Tr}(\cdots)\right]
+\varrho^{(1)}G_S\varrho^{(2)}G_S
+\left[\left(1-\varrho^{(4)}\right)G_S\left(1-\varrho^{(3)}\right)G_S+\mathrm{Tr}(\cdots)\right]
 \nonumber\\
 &+&
-\left(1-\varrho^{(1)}\right)\varrho^{(3)}
-\left[\varrho^{(4)}\left(1-\varrho^{(2)}\right)+\mathrm{Tr}(\cdots)\right]
+\left(1-\varrho^{(1)}\right)G_S\varrho^{(3)}G_S
+\left[\varrho^{(4)}G_S\left(1-\varrho^{(2)}\right)G_S+\mathrm{Tr}(\cdots)\right]
 \nonumber\\
 &-&
-\varrho^{(1)}\left(1-\varrho^{(3)}\right)
-\left[\left(1-\varrho^{(4)}\right)\varrho^{(2)}+\mathrm{Tr}(\cdots)\right]
+\varrho^{(1)}G_S\left(1-\varrho^{(3)}\right)G_S
+\left[\left(1-\varrho^{(4)}\right)G_S\varrho^{(2)}G_S+\mathrm{Tr}(\cdots)\right]
 % F_{\nu\bar\nu}\left(\varrho^{(1)}, \bar\varrho^{(2)}, \varrho^{(3)}, \bar\varrho^{(4)}\right)
 % &=&
 % \left(1-\varrho^{(1)}\right)\left(1-\bar\varrho^{(2)}\right)
@@ -1470,6 +1473,9 @@ save the evolution of the energy density and entropy density of all fluids as a 
 \item \texttt{save\_fd}: save the grid of momenta $y_i$ and the initial Fermi-Dirac distribution
 $f_{\rm FD}(y_i)$.
 %
+\item \texttt{save\_intermediate\_steps}:
+save the variables, their derivatives and the contributions from the different terms at all steps of the calculation (the output may take a lot of disk space).
+%
 \item \texttt{save\_Neff}: save the evolution of the effective number \Neff\ as a function of $x$.
 %
 \item \texttt{save\_nuDens\_evolution}:
@@ -1593,7 +1599,7 @@ as off-diagonal ones are typically much smaller.
 \item \texttt{NO\_INTERPOLATION}: do not interpolate electron/muon energy densities and FTQED corrections
 (enabled by default to save time). Incompatible with the use of logarithmic FTQED corrections.
 %
-\item \texttt{NO\_MUONS}: disable muon contributions to total energy density and matter potentials.
+\item \texttt{DO\_MUONS}: enable muon contributions to total energy density and matter potentials.
 %
 \item \texttt{NO\_NUE\_ANNIHILATION}: disable contribution from $\nu\bar\nu\leftrightarrow e^+e^-$ processes to collision integrals.
 %
@@ -1644,8 +1650,9 @@ writeIni(pargs.inifile, values)
 \paragraph{fortepianoOutput.py}~\\
 This script contains useful functions to read the output files, process them and produce plots.
 Depending on the content of the selected output folder and on the passed options,
-the script will generate additional files in teh same output folder
-(for example, those for running \texttt{PArthENoPE}) and prepare some standard plots.
+the script will generate additional files in the same output folder
+(for example, those for running \texttt{PArthENoPE})
+and prepare some standard plots.
 As in the previous case, you can use the functions in two ways:
 via command line~%
 \footnote{
@@ -1700,9 +1707,7 @@ plus additional ones to define the ranges over which you want to interpolate: \t
 
 
 \acknowledgments
-We thank J.J.~Bennett and G.~Buldgen for helping spotting
-some issue in the treatment of finite temperature corrections
-and for support in implementing the higher order correction terms,
+We thank J.J.~Bennett, G.~Buldgen, M.~Drewes and Y.Y.Y.~Wong for their collaboration,
 J.~Froustey, C.~Pitrou and M.C.~Volpe for carefully checking our equations and results,
 and M.~Escudero~Abenza for useful comments and suggestions.
 
