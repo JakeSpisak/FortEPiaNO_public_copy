@@ -9,15 +9,15 @@ At the moment, no lepton asymmetries nor non-standard interactions are implement
 If you use this code for scientific publications, please cite the papers:  
 **Thermalisation of sterile neutrinos in the early Universe in the 3+1 scheme with full mixing matrix**  
 _S. Gariazzo, P.F. de Salas, S. Pastor_  
-JCAP 07 (2019) 014.  
+[JCAP 07 (2019) 014](https://doi.org/10.1088/1475-7516/2019/07/014).  
 [arxiv:1905.11290](https://arxiv.org/abs/1905.11290),  
 see also on [INSPIRE](https://inspirehep.net/record/1736955).  
 
 and
 
-**Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED**  
+**Towards a precision calculation of the effective number of neutrinos Neff in the Standard Model. Part II. Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED**  
 _J.J. Bennett and others_  
-To appear in JCAP.  
+[JCAP 04 (2021) 073](https://doi.org/10.1088/1475-7516/2021/04/073).  
 [arxiv:2012.02726](https://arxiv.org/abs/2012.02726),  
 see also on [INSPIRE](https://inspirehep.net/record/1835091).  
 
@@ -36,14 +36,18 @@ see also on [INSPIRE](https://inspirehep.net/record/1835091).
       primaryClass   = "astro-ph.CO",
       SLACcitation   = "%%CITATION = ARXIV:1905.11290;%%"
 }
-@Article{Bennett:2020zkv,
-        author = "Bennett, Jack J. and others",
-         title = "{Towards a precision calculation of $N_{\mathrm{eff}}$ in the Standard Model II: Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED}",
-          year = "2020",
- archiveprefix = "arXiv",
-  primaryclass = "hep-ph",
-        eprint = "2012.02726",
-  reportnumber = "CPPC-2020-10",
+@article{Bennett:2020zkv,
+    author = "Bennett, Jack J. and Buldgen, Gilles and De Salas, Pablo F. and Drewes, Marco and Gariazzo, Stefano and Pastor, Sergio and Wong, Yvonne Y. Y.",
+    title = "{Towards a precision calculation of the effective number of neutrinos Neff in the Standard Model. Part II. Neutrino decoupling in the presence of flavour oscillations and finite-temperature QED}",
+    eprint = "2012.02726",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-ph",
+    reportNumber = "CPPC-2020-10",
+    doi = "10.1088/1475-7516/2021/04/073",
+    journal = "JCAP",
+    volume = "04",
+    pages = "073",
+    year = "2021"
 }
 ```
 
