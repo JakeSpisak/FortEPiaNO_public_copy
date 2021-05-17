@@ -240,6 +240,7 @@ class FortEPiaNORun:
         self.hasBBN = False
         self.lowReheating = False
         self.ens_header = []
+        self.z_header = []
         if not os.path.exists(folder):
             if verbose:
                 print("non-existing folder: %s" % folder)
@@ -283,16 +284,22 @@ class FortEPiaNORun:
         return self.zdat[:, 0] if self.checkZdat() else self.bbn[:, 0]
 
     @property
-    def z(self):
-        """return z"""
-        return (
-            self.zdat[:, 2 if self.lowReheating else 1]
-            if self.checkZdat()
-            else self.bbn[:, 1]
-        )
+    def zColZ(self):
+        """return the column index for z in the energy density file"""
+        try:
+            return self.z_header.index("z")
+        except ValueError:
+            if self.verbose:
+                print("z not in header file!")
+            return 2 if self.lowReheating else 1
 
     @property
-    def zCol(self):
+    def z(self):
+        """return z"""
+        return self.zdat[:, self.zColZ] if self.checkZdat() else self.bbn[:, 1]
+
+    @property
+    def zColD(self):
         """return the column index for z in the energy density file"""
         try:
             return self.ens_header.index("z")
@@ -309,7 +316,7 @@ class FortEPiaNORun:
         except ValueError:
             if self.verbose:
                 print("photon not in header file!")
-            return self.zCol + 1
+            return self.zColD + 1
 
     @property
     def eCol(self):
@@ -319,7 +326,7 @@ class FortEPiaNORun:
         except ValueError:
             if self.verbose:
                 print("electron not in header file!")
-            return self.zCol + 2
+            return self.zColD + 2
 
     @property
     def muCol(self):
@@ -339,7 +346,7 @@ class FortEPiaNORun:
         except ValueError:
             if self.verbose:
                 print("nu1 not in header file!")
-            return self.zCol + 3
+            return self.zColD + 3
 
     @property
     def hasMuon(self):
@@ -536,6 +543,14 @@ class FortEPiaNORun:
                 "nu (1 to %d)" % maxnu,
                 " ".join(["nu%d" % (i + 1) for i in range(maxnu)]),
             ).split()
+        try:
+            with open("%s/z_header.dat" % self.folder) as _f:
+                head = _f.read()
+        except (IOError, OSError):
+            print("Cannot read header. Assume the standard one")
+            self.z_header = "x z w".split()
+        else:
+            self.z_header = head.split()
 
     def readIni(self):
         """Read and store the content of the ini.log file,
@@ -558,7 +573,6 @@ class FortEPiaNORun:
             else:
                 if self.Trhini > 0:
                     self.lowReheating = True
-                    self.zCol = 2
         # read flavorNumber
         search = re.compile("flavorNumber[\s]*=[\s]*([\d]+)")
         try:
@@ -728,6 +742,19 @@ class FortEPiaNORun:
                 )
             except (AttributeError, ValueError):
                 self.zfin = np.nan
+            if self.lowReheating:
+                try:
+                    self.Trh = float(
+                        re.search("Trh[ ]*=[ ]*([-\d.]*)", self.resume).group(1)
+                    )
+                except (AttributeError, ValueError):
+                    self.Trh = np.nan
+                else:
+                    if not np.isclose(float(self.Trh), float(self.Trhini)):
+                        raise ValueError(
+                            "Trh from ini.log (%s) and from resume.dat (%s) differ."
+                            % (self.Trh, self.Trhini)
+                        )
             self.deltaNeffi = np.array([np.nan for i in range(self.nnu)])
             if re.search("deltaNeff_([\d]+)[ ]*=[ ]*([-\d.]*)", self.resume):
                 search = re.compile("deltaNeff_([\d]+)[ ]*=[ ]*([-\d.]*)")
@@ -838,9 +865,7 @@ class FortEPiaNORun:
                 xvec = self.bbn[:, 0]
                 if self.checkZdat():
                     assert np.allclose(xvec, self.zdat[:, 0])
-                    assert np.allclose(
-                        self.bbn[:, 1], self.zdat[:, 2 if self.lowReheating else 1]
-                    )
+                    assert np.allclose(self.bbn[:, 1], self.zdat[:, self.zColZ])
             except (TypeError, IndexError):
                 print("Error in the structure of the BBN.dat file: cannot find columns")
                 self.hasBBN = False
@@ -849,7 +874,7 @@ class FortEPiaNORun:
                 self.summedrhos = np.loadtxt("%s/rho_tot.dat" % folder)
                 x99 = 0.0
                 try:
-                    rho_tot = self.summedrhos[:, 2 if self.lowReheating else 1]
+                    rho_tot = self.summedrhos[:, self.zColZ]
                     rho_rad = self.summedrhos[:, 1]
                 except (TypeError, IndexError):
                     print("Error in the structure of rho_tot.dat: cannot find columns")
@@ -1777,12 +1802,12 @@ class FortEPiaNORun:
             except (AttributeError, TypeError):
                 print(traceback.format_exc())
                 try:
-                    self.zdat[:, (0, self.zCol)][:]
+                    self.zdat[:, (0, self.zColZ)][:]
                 except (AttributeError, TypeError):
                     print(traceback.format_exc())
                     return
                 rhogammas = np.array(
-                    [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zCol)]]
+                    [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zColZ)]]
                 )
             try:
                 rns = np.sum(
@@ -1808,7 +1833,7 @@ class FortEPiaNORun:
                                 ]
                             ),
                         ]
-                        for ix, [x, z] in enumerate(self.zdat[:, (0, self.zCol)])
+                        for ix, [x, z] in enumerate(self.zdat[:, (0, self.zColZ)])
                     ]
                 )
             frhonu = interp1d(*stripRepeated(rhonus, 0, 1))
@@ -1859,7 +1884,7 @@ class FortEPiaNORun:
             *stripRepeated(
                 data,
                 1 if self.lowReheating and useT else 0,
-                2 if self.lowReheating else 1,
+                self.zColZ,
             ),
             ls=ls,
             c=lc,
@@ -1905,12 +1930,12 @@ class FortEPiaNORun:
         except (AttributeError, TypeError, IndexError):
             print(traceback.format_exc())
             try:
-                self.zdat[:, (0, self.zCol)][:]
+                self.zdat[:, (0, self.zColZ)][:]
             except (AttributeError, TypeError):
                 print(traceback.format_exc())
                 return
             rhogammas = np.array(
-                [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zCol)]]
+                [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zColZ)]]
             )
         try:
             rns = np.sum(self.endens[:, endensnu0 : endensnu0 + self.nnu][:, :], axis=1)
@@ -1934,12 +1959,12 @@ class FortEPiaNORun:
                             ]
                         ),
                     ]
-                    for ix, [x, z] in enumerate(self.zdat[:, (0, self.zCol)])
+                    for ix, [x, z] in enumerate(self.zdat[:, (0, self.zColZ)])
                 ]
             )
         try:
-            zs = self.zdat[:, (0, self.zCol)][:]
-            ws = self.zdat[:, self.zCol + 1]
+            zs = self.zdat[:, (0, self.zColZ)][:]
+            ws = self.zdat[:, self.zColZ + 1]
         except (AttributeError, TypeError, IndexError):
             print(traceback.format_exc())
             return

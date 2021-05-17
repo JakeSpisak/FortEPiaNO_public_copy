@@ -484,10 +484,14 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(fc.shape[1], len(run.ens_header))
         fc = run.loadtxt("%s/entropy.dat" % folder)
         self.assertEqualArray(run.entropy, fc)
-        self.assertEqual(fc.shape[1], len(run.ens_header) - (1 if run.lowReheating else 0))
+        self.assertEqual(
+            fc.shape[1], len(run.ens_header) - (1 if run.lowReheating else 0)
+        )
         fc = run.loadtxt("%s/numberDensity.dat" % folder)
         self.assertEqualArray(run.number, fc)
-        self.assertEqual(fc.shape[1], len(run.ens_header) - (1 if run.lowReheating else 0))
+        self.assertEqual(
+            fc.shape[1], len(run.ens_header) - (1 if run.lowReheating else 0)
+        )
         self.assertTrue(hasattr(run, "resume"))
         self.assertTrue(run.hasResume)
         self.assertIsInstance(run.deltaNeffi, np.ndarray)
@@ -507,10 +511,16 @@ class TestFortEPiaNORun(FPTestCase):
         else:
             self.assertTrue(np.isclose(run.x[0], 0.01, rtol=1e-4))
             self.assertTrue(np.isclose(run.x[-1], 35.0, rtol=1e-4))
-            self.assertTrue(np.isclose(run.z[0], 1.0288 if run.hasMuon else 1.0, rtol=1e-4))
+            self.assertTrue(
+                np.isclose(run.z[0], 1.0288 if run.hasMuon else 1.0, rtol=1e-4)
+            )
             self.assertTrue(np.isclose(run.Neff, 3.043, atol=1e-3))
-            self.assertTrue(np.isclose(run.wfin, 1.09653 if run.hasMuon else 0.9982, atol=1e-4))
-            self.assertTrue(np.isclose(run.zfin,  1.53567 if run.hasMuon else 1.3980, atol=2e-4))
+            self.assertTrue(
+                np.isclose(run.wfin, 1.09653 if run.hasMuon else 0.9982, atol=1e-4)
+            )
+            self.assertTrue(
+                np.isclose(run.zfin, 1.53567 if run.hasMuon else 1.3980, atol=2e-4)
+            )
             self.assertTrue(np.isclose(run.deltaNeffi[0], 1.0161, atol=5e-4))
             self.assertTrue(np.isclose(run.deltaNeffi[1], 1.0139, atol=5e-4))
             self.assertTrue(np.isclose(run.deltaNeffi[2], 1.0138, atol=5e-4))
@@ -623,7 +633,7 @@ class TestFortEPiaNORun(FPTestCase):
                 * 100
             ),
         )
-        ds = np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy])
+        ds = np.asarray([np.sum(cl[run.zColD + 1 :]) for cl in run.entropy])
         self.assertEqual(
             run.tot_delta_sd,
             (ds[-1] - ds[rx]) / ds[rx] * 100,
@@ -807,7 +817,8 @@ class TestFortEPiaNORun(FPTestCase):
     def test_x(self):
         """test the x property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
-        self.assertTrue(np.isnan(run.x))
+        with self.assertRaises(AttributeError):
+            run.x
         run.zdat = np.array(
             [
                 [11.0, 12.0, 13.0, 14.0],
@@ -831,10 +842,8 @@ class TestFortEPiaNORun(FPTestCase):
     def test_z(self):
         """test the z property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
-        #with self.assertRaises(AttributeError):
-            #run.z
-        self.assertTrue(np.isnan(run.z))
-        run.lowReheating = False
+        with self.assertRaises(AttributeError):
+            run.z
         run.zdat = np.array(
             [
                 [11.0, 12.0, 13.0, 14.0],
@@ -842,6 +851,7 @@ class TestFortEPiaNORun(FPTestCase):
                 [13.4, 14.5, 15.6, 16.7],
             ]
         )
+        run.z_header = ["x", "z", "w"]
         self.assertEqualArray(run.z, run.zdat[:, 1])
         with patch("fortepianoOutput.FortEPiaNORun.checkZdat", return_value=False):
             with self.assertRaises(AttributeError):
@@ -854,53 +864,53 @@ class TestFortEPiaNORun(FPTestCase):
                 ]
             )
             self.assertEqualArray(run.z, run.bbn[:, 1])
-        run.lowReheating = True
+        run.z_header = ["x", "t", "z", "w"]
         self.assertEqualArray(run.z, run.zdat[:, 2])
         with patch("fortepianoOutput.FortEPiaNORun.checkZdat", return_value=False):
             self.assertEqualArray(run.z, run.bbn[:, 1])
 
-    def test_zCol(self):
-        """test the zCol property"""
+    def test_zColD(self):
+        """test the zColD property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
-        self.assertEqual(run.zCol, 1)
+        self.assertEqual(run.zColD, 1)
         run.ens_header = ["x", "y"]
-        self.assertEqual(run.zCol, 1)
+        self.assertEqual(run.zColD, 1)
         run.ens_header = ["x", "y", "z"]
-        self.assertEqual(run.zCol, 2)
+        self.assertEqual(run.zColD, 2)
 
     def test_phCol(self):
         """test the phCol property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
-        self.assertEqual(run.phCol, run.zCol + 1)
+        self.assertEqual(run.phCol, run.zColD + 1)
         run.ens_header = ["x", "y", "z"]
-        self.assertEqual(run.phCol, run.zCol + 1)
+        self.assertEqual(run.phCol, run.zColD + 1)
         run.ens_header = ["x", "y", "photon", "z"]
         self.assertEqual(run.phCol, 2)
 
     def test_eCol(self):
         """test the eCol property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
-        self.assertEqual(run.eCol, run.zCol + 2)
+        self.assertEqual(run.eCol, run.zColD + 2)
         run.ens_header = ["x", "y", "z"]
-        self.assertEqual(run.eCol, run.zCol + 2)
+        self.assertEqual(run.eCol, run.zColD + 2)
         run.ens_header = ["x", "y", "electron", "z"]
         self.assertEqual(run.eCol, 2)
 
     def test_muCol(self):
         """test the muCol property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
-        self.assertEqual(run.muCol, run.zCol + 3)
+        self.assertEqual(run.muCol, run.zColD + 3)
         run.ens_header = ["x", "y", "z"]
-        self.assertEqual(run.muCol, run.zCol + 3)
+        self.assertEqual(run.muCol, run.zColD + 3)
         run.ens_header = ["x", "y", "muon", "z"]
         self.assertEqual(run.muCol, 2)
 
     def test_nu1Col(self):
         """test the nu1Col property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
-        self.assertEqual(run.nu1Col, run.zCol + 3)
+        self.assertEqual(run.nu1Col, run.zColD + 3)
         run.ens_header = ["x", "y", "z"]
-        self.assertEqual(run.nu1Col, run.zCol + 3)
+        self.assertEqual(run.nu1Col, run.zColD + 3)
         run.ens_header = ["x", "y", "nu1", "z"]
         self.assertEqual(run.nu1Col, 2)
 
@@ -916,7 +926,7 @@ class TestFortEPiaNORun(FPTestCase):
     def test_Tgamma(self):
         """test the Tgamma property"""
         run = fpom.FortEPiaNORun("output/nonexistent")
-        run.lowReheating = False
+        run.z_header = ["x", "z", "w"]
         run.zdat = np.array(
             [
                 [11.0, 12.0, 13.0, 14.0],
@@ -927,7 +937,7 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqualArray(
             run.Tgamma, run.zdat[:, 1] * fpom.ELECTRONMASS_MEV / run.zdat[:, 0]
         )
-        run.lowReheating = True
+        run.z_header = ["x", "t", "z", "w"]
         self.assertEqualArray(
             run.Tgamma, run.zdat[:, 2] * fpom.ELECTRONMASS_MEV / run.zdat[:, 0]
         )
@@ -1112,7 +1122,7 @@ class TestFortEPiaNORun(FPTestCase):
                 * 100
             ),
         )
-        ds = np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy])
+        ds = np.asarray([np.sum(cl[run.zColD + 1 :]) for cl in run.entropy])
         self.assertEqual(
             run.tot_delta_sd,
             (ds[-1] - ds[rx]) / ds[rx] * 100,
@@ -1144,16 +1154,23 @@ class TestFortEPiaNORun(FPTestCase):
             shutil.rmtree(run.folder)
         os.mkdir(run.folder)
         del run.ens_header
+        del run.z_header
         hn = "output/nonexistent1/ens_header.dat"
+        zn = "output/nonexistent1/z_header.dat"
         self.assertFalse(os.path.exists(hn))
+        self.assertFalse(os.path.exists(zn))
         run.readHeaders()
         self.assertEqual(
             run.ens_header, ["x", "z", "photon", "electron", "nu1", "nu2", "nu3"]
         )
+        self.assertEqual(run.z_header, ["x", "z", "w"])
         with open(hn, "w") as _f:
             _f.write("a b c d")
+        with open(zn, "w") as _f:
+            _f.write("a b c")
         run.readHeaders()
         self.assertEqual(run.ens_header, ["a", "b", "c", "d"])
+        self.assertEqual(run.z_header, ["a", "b", "c"])
         with open(hn, "w") as _f:
             _f.write("a nu (1 to 4) c d")
         run.readHeaders()
@@ -1176,28 +1193,24 @@ class TestFortEPiaNORun(FPTestCase):
         self.assertEqual(run.ini, "")
         self.assertEqual(run.flavorNumber, 3)
         self.assertEqual(run.Ny, 25)
-        self.assertEqual(run.zCol, 1)
         self.assertEqual(run.Trhini, None)
         self.assertFalse(run.lowReheating)
         with open("%s/ini.log" % run.folder, "w") as _i:
             _i.write("abcd")
         run.readIni()
         self.assertEqual(run.ini, "abcd")
-        self.assertEqual(run.zCol, 1)
         self.assertEqual(run.Trhini, None)
         self.assertFalse(run.lowReheating)
         with open("%s/ini.log" % run.folder, "w") as _i:
             _i.write("abcTrh = -1.2E+01def")
         run.readIni()
         self.assertEqual(run.ini, "abcTrh = -1.2E+01def")
-        self.assertEqual(run.zCol, 1)
         self.assertEqual(run.Trhini, -12.0)
         self.assertFalse(run.lowReheating)
         with open("%s/ini.log" % run.folder, "w") as _i:
             _i.write("abcTrh = 1.2E-1def")
         run.readIni()
         self.assertEqual(run.ini, "abcTrh = 1.2E-1def")
-        self.assertEqual(run.zCol, 2)
         self.assertEqual(run.Trhini, 0.12)
         self.assertTrue(run.lowReheating)
 
@@ -3153,8 +3166,8 @@ class TestFortEPiaNORun(FPTestCase):
         # test with low reheating
         run = fpom.FortEPiaNORun("output/nonexistent")
         run.nnu = 2
-        run.zCol = 2
         run.lowReheating = True
+        run.z_header = ["x", "t", "z", "w"]
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotNeff()
             run.Neffdat = np.array([[np.nan, np.nan, np.nan], [np.nan, np.nan, np.nan]])
@@ -3262,7 +3275,7 @@ class TestFortEPiaNORun(FPTestCase):
             _plt.assert_called_once()
             self.assertEqualArray(
                 _plt.call_args[0],
-                fpom.stripRepeated(data, 0, 1),
+                fpom.stripRepeated(data, 0, 2),
             )
             self.assertEqual(
                 _plt.call_args[1],
@@ -3294,7 +3307,7 @@ class TestFortEPiaNORun(FPTestCase):
             _plt.assert_called_once()
             self.assertEqualArray(
                 _plt.call_args[0],
-                fpom.stripRepeated(data, 0, 1),
+                fpom.stripRepeated(data, 0, 2),
             )
             self.assertEqual(_sv.call_count, 0)
             self.assertEqual(_int.call_count, 0)
@@ -3336,8 +3349,8 @@ class TestFortEPiaNORun(FPTestCase):
         rns = np.sum(run.endens[:, endensnu0 : endensnu0 + run.nnu][:, :], axis=1)
         xs = run.endens[:, endensx][:]
         rhonus = np.array(list(zip(xs, rns)))
-        zs = run.zdat[:, (0, run.zCol)][:]
-        ws = run.zdat[:, run.zCol + 1]
+        zs = run.zdat[:, (0, run.zColD)][:]
+        ws = run.zdat[:, run.zColD + 1]
         frhonu = interp1d(*fpom.stripRepeated(rhonus, 0, 1))
         frhoga = interp1d(*fpom.stripRepeated(rhogammas, 0, 1))
         zs[:, 1] = zs[:, 1] / ws[:]
@@ -3400,7 +3413,7 @@ class TestFortEPiaNORun(FPTestCase):
         run.nnu = 3
         run.yv = self.explanatory.yv
         rhogammas = np.array(
-            [[x, fpom.PISQD15 * z ** 4] for x, z in run.zdat[:, (0, run.zCol)]]
+            [[x, fpom.PISQD15 * z ** 4] for x, z in run.zdat[:, (0, run.zColD)]]
         )
         rhonus = np.array(
             [
@@ -3408,7 +3421,7 @@ class TestFortEPiaNORun(FPTestCase):
                     x,
                     np.sum([1.3 for inu in range(run.nnu)]),
                 ]
-                for ix, [x, z] in enumerate(run.zdat[:, (0, run.zCol)])
+                for ix, [x, z] in enumerate(run.zdat[:, (0, run.zColD)])
             ]
         )
         frhonu = interp1d(*fpom.stripRepeated(rhonus, 0, 1))
@@ -3510,7 +3523,7 @@ class TestFortEPiaNORun(FPTestCase):
             if run.lowReheating:
                 self.assertEqualArray(
                     _plt.call_args_list[2 + ix][0],
-                    [run.endens[:, 0], run.endens[:, run.zCol + 2 + ix]],
+                    [run.endens[:, 0], run.endens[:, run.zColD + 2 + ix]],
                 )
                 self.assertEqual(
                     _plt.call_args_list[2 + ix][1],
@@ -3780,7 +3793,7 @@ class TestFortEPiaNORun(FPTestCase):
         run.plotDeltaEntropy()
         run.plotDeltaEntropy()
         run = self.explanatory
-        ds = np.asarray([np.sum(cl[run.zCol + 1 :]) for cl in run.entropy])
+        ds = np.asarray([np.sum(cl[run.zColD + 1 :]) for cl in run.entropy])
         with patch("matplotlib.pyplot.plot") as _plt, patch(
             "matplotlib.pyplot.xscale"
         ) as _xs, patch("matplotlib.pyplot.yscale") as _ys, patch(
