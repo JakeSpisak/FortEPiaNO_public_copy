@@ -121,6 +121,11 @@ def setParser():
         + "[O(e^2), O(e^2)+O(e^3) - default, O(e^2)+ln, O(e^2)+O(e^3)ln, or none]",
     )
     parser.add_argument(
+        "--ftqed_e_mth_ld",
+        action="store_true",
+        help="use electron mass corrections through the delta m_e^2 in the calculation of lepton densities",
+    )
+    parser.add_argument(
         "--ordering",
         choices=["NO", "IO"],
         default="NO",
@@ -272,6 +277,12 @@ def setParser():
         help="enable saving the y grid and the corresponding Fermi-Dirac to fd.dat",
     )
     parser.add_argument(
+        "--save_intermediate",
+        action="store_true",
+        help="enable saving many of the quantities that are computed by the code at intermediate steps. "
+        + " Warning: the output will take a lot of space",
+    )
+    parser.add_argument(
         "--save_Neff", action="store_true", help="enable saving the evolution of Neff"
     )
     parser.add_argument(
@@ -283,6 +294,11 @@ def setParser():
         "--save_number",
         action="store_true",
         help="enable saving the evolution of the number density for each component",
+    )
+    parser.add_argument(
+        "--save_w",
+        action="store_true",
+        help="enable saving the evolution of the neutrino temperature w",
     )
     parser.add_argument(
         "--save_z",
@@ -441,11 +457,14 @@ def getIniValues(args):
         "collint_d_no_nunu",
         "collint_od_no_nue",
         "collint_od_no_nunu",
+        "ftqed_e_mth_ld",
         "save_energy_entropy",
         "save_fd",
+        "save_intermediate",
         "save_Neff",
         "save_nuDens",
         "save_number",
+        "save_w",
         "save_z",
         "save_BBN",
     ]:
@@ -492,6 +511,7 @@ collint_od_no_nunu = {collint_od_no_nunu:}
 ftqed_temperature_corr = {ftqed_temperature_corr:}
 ftqed_ord3 = {ftqed_ord3:}
 ftqed_log_term = {ftqed_log_term:}
+ftqed_e_mth_leptondens = {ftqed_e_mth_ld:}
 
 Nx = {Nx:}
 x_in = {x_in:}
@@ -509,9 +529,11 @@ save_fd = {save_fd:}
 save_Neff = {save_Neff:}
 save_nuDens_evolution = {save_nuDens:}
 save_z_evolution = {save_z:}
+save_w_evolution = {save_w:}
 save_energy_entropy_evolution = {save_energy_entropy:}
 save_BBN = {save_BBN:}
 save_number_evolution = {save_number:}
+save_intermediate_steps = {save_intermediate:}
 
 {dlsoda_atol:}
 dlsoda_rtol = {dlsoda_rtol:}
