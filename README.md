@@ -169,10 +169,11 @@ Auxiliary files, which in principle you should not need to edit:
 * `errors.f90`: error and log management;
 * `heigensystem.f90`: complex matrix diagonalization;
 * `iniFile.f90`: functions to read the input file;
+* `input.f90`: read the configuration parameters from the ini file;
 * `linear_interpolation_module.f90`: linear interpolation utilities;
 * `matrix_utils.f90`: utilities for creating and manipulating matrices;
 * `odepack*`: DLSODA and related utilities;
-* `output`: store and print output of the code;
+* `output.f90`: store and print output of the code;
 * `stuff.f90`: old functions that were used in previous versions of the code and now enter only the tests;
 * `test_utils.f90`: assertion functions and test counts;
 * `utilities.f90`: utilities for integration, interpolation, checkpointing, log file manipulation, time measurements.

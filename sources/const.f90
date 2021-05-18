@@ -101,6 +101,7 @@ module variables
 	logical :: firstPoint = .false.
 	logical :: checkpoint = .false.
 	logical :: force_replace = .false.
+	integer :: num_threads
 
 	integer :: collint_damping_type
 	logical :: collint_offdiag_damping
@@ -158,6 +159,7 @@ module variables
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	type(cmplxMatNN) :: nuDensities
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu
+	logical, dimension(:,:), allocatable :: dampingSetZero
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
 	real(dl), dimension(:), allocatable :: Gs

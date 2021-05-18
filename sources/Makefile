@@ -105,6 +105,7 @@ OBJ_FILES=$(BUILD_DIR)/const.o \
 	$(BUILD_DIR)/errors.o \
 	$(BUILD_DIR)/config.o \
 	$(BUILD_DIR)/iniFile.o \
+	$(BUILD_DIR)/input.o \
 	$(BUILD_DIR)/utilities.o \
 	$(BUILD_DIR)/matrix_utils.o \
 	$(BUILD_DIR)/test_utils.o \
@@ -154,7 +155,12 @@ $(BUILD_DIR)/config.o: \
 	$(BUILD_DIR)/iniFile.o \
 	$(BUILD_DIR)/matrix_utils.o \
 	$(BUILD_DIR)/errors.o \
+	$(BUILD_DIR)/input.o \
 	$(BUILD_DIR)/equations.o
+$(BUILD_DIR)/input.o: \
+	$(BUILD_DIR)/const.o \
+	$(BUILD_DIR)/iniFile.o \
+	$(BUILD_DIR)/errors.o
 $(BUILD_DIR)/interactions.o: \
 	$(BUILD_DIR)/const.o \
 	$(BUILD_DIR)/errors.o \
