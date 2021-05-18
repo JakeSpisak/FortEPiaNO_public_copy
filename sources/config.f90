@@ -16,7 +16,10 @@ module fpConfig
 
 	contains
 
-	subroutine initialOperations
+	subroutine initialOperations(logname)
+		character(len=*), intent(in) :: logname
+
+		logFile = logname
 		call openLogFile
 
 #ifdef FULL_F_AB
@@ -37,13 +40,23 @@ module fpConfig
 #ifdef TESTSPEED
 		call addToLog("[precompiler] Will execute speed test")
 #endif
+	end subroutine initialOperations
+
+	subroutine endConfig
+		call ini_file_close()
+		call rename(trim(logFile), trim(outputFolder)//'/ini.log')
+		call addToLog("[config] Read configuration from ini file: complete.")
+	end subroutine endConfig
+
+	subroutine checkIniFile(ininame)
+		character(len=*), intent(in) :: ininame
 
 		if(num_args.eq.0) &
 			call criticalError("You are not passing a configuration file, please provide one.")
 
-		call addToLog("[config] reading additional configuration from "//trim(args(1)))
-		call ini_file_open(trim(args(1)), trim(args(1))//".log")
-	end subroutine initialOperations
+		call addToLog("[config] reading additional configuration from "//trim(ininame))
+		call ini_file_open(trim(ininame), trim(ininame)//".log")
+	end subroutine checkIniFile
 
 	subroutine checkOutputFolder
 		logical :: file_exist
@@ -65,6 +78,13 @@ module fpConfig
 
 	subroutine allocateStuff()
 		integer :: nf, ix
+
+		if (has_offdiagonal()) then
+			flavNumSqu = flavorNumber**2
+		else
+			flavNumSqu = flavorNumber
+		end if
+
 		nf = flavorNumber
 		allocate(nuMasses(nf), nuFactor(nf), sterile(nf), Gs(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
@@ -327,7 +347,6 @@ module fpConfig
 		end do
 	end subroutine
 
-#ifdef LOW_REHEATING
 	subroutine init_lowReheating(x_in, Trh)
 		real(dl), intent(in) :: x_in, Trh
 
@@ -344,7 +363,6 @@ module fpConfig
 		GammaPhi = (Trh/0.7)**2/sec2eV
 		write(*,*) 'Initial GammaPhi: ', GammaPhi
 	end subroutine init_lowReheating
-#endif
 
 	subroutine setInterp
 		allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
@@ -385,7 +403,6 @@ module fpConfig
 		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
 	end subroutine setXYVectors
 
-#ifdef LOW_REHEATING
 	subroutine setLowReheating
 		if (Trh .le. 0.d0) then
 			call criticalError("Invalid reheating temperature: must be positive. Do not compile LOW_REHEATING to use the code without low-reheating")
@@ -393,7 +410,6 @@ module fpConfig
 		!compute other quantities
 		call init_lowReheating(x_in, Trh)
 	end subroutine setLowReheating
-#endif
 
 	subroutine setNuProperties
 		integer :: ix
@@ -426,10 +442,10 @@ module fpConfig
 	end subroutine setNuProperties
 
 	subroutine initConfig()
-		integer :: ix, iy, num_threads
-		logical :: file_exist
+		character(len=300) :: logname
 
 		if (verbose>0) write(*,*) '[config] init configuration'
+		logname = ""
 		num_args = command_argument_count()
 
 		allocate(args(num_args))
@@ -437,9 +453,10 @@ module fpConfig
 			call get_command_argument(ixa,args(ixa))
 		end do
 		if(num_args.gt.1) then
-			logFile = trim(args(2))
+			logname = trim(args(2))
 		end if
-		call initialOperations
+		call initialOperations(logname)
+		call checkIniFile(args(1))
 
 		call readBasicParams
 		call checkOutputFolder
@@ -465,11 +482,6 @@ module fpConfig
 
 		call readOutputConfig
 
-		if (has_offdiagonal()) then
-			flavNumSqu = flavorNumber**2
-		else
-			flavNumSqu = flavorNumber
-		end if
 		call allocateStuff
 
 		call readCollint
@@ -489,8 +501,6 @@ module fpConfig
 		call setMassMatrix
 		call init_matrices
 
-		call ini_file_close()
-		call rename(trim(args(1))//".log", trim(outputFolder)//'/ini.log')
-		call addToLog("[config] Read configuration from ini file: complete.")
+		call endConfig
 	end subroutine initconfig
 end module fpConfig

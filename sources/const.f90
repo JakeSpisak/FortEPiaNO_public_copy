@@ -122,14 +122,13 @@ module variables
 	logical :: giveSinSq
 	integer :: flavorNumber, flavNumSqu
 
-#ifdef LOW_REHEATING
+	!for low reheating
 	real(dl) :: Trh
 	real(dl) :: GammaPhi
 	real(dl) :: rhoPhi_in
 	integer :: ixphi
 	real(dl), parameter :: t0 = 1.d-3 !sec
 	real(dl), parameter :: x0 = 1.d-2
-#endif
 
 	!complex matrix, it will host the neutrino density matrix.
 	!Intended to have the relative shape correction with respect to the FD in the diagonal

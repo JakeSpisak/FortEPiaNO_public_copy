@@ -64,13 +64,13 @@ default_osc_ster = {
 }
 
 
-def setParser():
+def setParser(prog="prepareIni.py"):
     """Prepare the parser for reading the command line arguments
 
     Output:
         the parser
     """
-    parser = argparse.ArgumentParser(prog="prepareIni.py")
+    parser = argparse.ArgumentParser(prog=prog)
     parser.add_argument(
         "inifile",
         metavar="inifilename",
@@ -404,9 +404,11 @@ def getIniValues(args):
         "Trh",
     ]:
         values[p] = getattr(args, p)
+    values["factors_v"] = values["factors"]
     values["factors"] = "\n".join(
         ["nuFactor%d = %f" % (i + 1, f) for i, f in enumerate(values["factors"])]
     )
+    values["sterile_v"] = values["sterile"]
     values["sterile"] = "\n".join(
         [
             "sterile%d = %s" % (i + 1, "T" if f else "F")

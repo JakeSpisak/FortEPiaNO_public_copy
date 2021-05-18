@@ -5198,6 +5198,8 @@ class TestPrepareIni(unittest.TestCase):
                 "verbose": "vb",
                 "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
                 "sterile": "sterile1 = F\nsterile2 = T",
+                "factors_v": [2, 1],
+                "sterile_v": [False, True],
                 "collint_diagonal_zero": "F",
                 "collint_offdiag_damping": "T",
                 "collint_damping_type": 1,
@@ -5283,6 +5285,8 @@ class TestPrepareIni(unittest.TestCase):
                 "verbose": "vb",
                 "factors": "nuFactor1 = %f\nnuFactor2 = %f" % (2, 1),
                 "sterile": "sterile1 = F\nsterile2 = T",
+                "factors_v": [2, 1],
+                "sterile_v": [False, True],
                 "collint_diagonal_zero": "T",
                 "collint_offdiag_damping": "F",
                 "collint_damping_type": 0,
@@ -5489,10 +5493,10 @@ class TestWrapper(unittest.TestCase):
 
     def test_getVersion(self):
         """test that getVersion returns a string"""
-        self.assertIsInstance(fp.getVersion(), six.string_types)
+        self.assertIsInstance(fp.get_version(), six.string_types)
         self.assertEqual(
-            fp.getVersion(),
-            fpw.getversion() if six.PY2 else str(fpw.getversion(), "utf-8"),
+            fp.get_version(),
+            fpw.get_version() if six.PY2 else str(fpw.get_version(), "utf-8"),
         )
 
 
