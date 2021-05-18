@@ -530,7 +530,8 @@ class FortEPiaNORun:
             with open("%s/ens_header.dat" % self.folder) as _f:
                 head = _f.read()
         except (IOError, OSError):
-            print("Cannot read header. Assume the standard one")
+            if os.path.exists("%s/energyDensity.dat" % self.folder):
+                print("Cannot read ens_header. Assume the standard one")
             self.ens_header = "x z photon electron nu1 nu2 nu3".split()
         else:
             search = re.compile("nu \(1 to ([\d])\)")
@@ -547,7 +548,8 @@ class FortEPiaNORun:
             with open("%s/z_header.dat" % self.folder) as _f:
                 head = _f.read()
         except (IOError, OSError):
-            print("Cannot read header. Assume the standard one")
+            if os.path.exists("%s/z.dat" % self.folder):
+                print("Cannot read z_header. Assume the standard one")
             self.z_header = "x z w".split()
         else:
             self.z_header = head.split()
