@@ -3992,7 +3992,6 @@ class TestFortEPiaNORun(FPTestCase):
             r"a$\nu_\tau$",
             r"a$\nu_s$",
         ]
-        print(run.number.shape, "\n\n\n\n\n\n\n\n\n\n\n\n")
         with patch("matplotlib.pyplot.plot") as _plt:
             run.plotNumberDensity(
                 labels=labels,
