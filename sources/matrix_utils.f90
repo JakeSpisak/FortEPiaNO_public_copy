@@ -221,14 +221,14 @@ module fpMatrices
 
 	pure subroutine Commutator(mat1, mat2, outmat)
 		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
-		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
+		real(dl), dimension(:,:), allocatable, intent(inout) :: outMat
 
 		call CommAntiComm(mat1, mat2, outmat, -1)
 	end subroutine Commutator
 
 	pure subroutine AntiCommutator(mat1, mat2, outmat)
 		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
-		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
+		real(dl), dimension(:,:), allocatable, intent(inout) :: outMat
 
 		call CommAntiComm(mat1, mat2, outmat, 1)
 	end subroutine AntiCommutator
@@ -236,7 +236,7 @@ module fpMatrices
 	pure subroutine CommAntiComm(mat1, mat2, outmat, s)
 		!use the sign s to switch between commutator and anticommutator
 		real(dl), dimension(:,:), allocatable, intent(in) :: mat1, mat2
-		real(dl), dimension(:,:), allocatable, intent(out) :: outMat
+		real(dl), dimension(:,:), allocatable, intent(inout) :: outMat
 		integer, intent(in) :: s
 		integer, dimension(2) :: size1
 		integer :: d
@@ -244,7 +244,8 @@ module fpMatrices
 		size1=shape(mat1)
 		d = size1(1)
 
-		allocate(outMat(d,d))
+		if (.not. allocated(outMat)) &
+			allocate(outMat(d,d))
 		outMat = matmul(mat1, mat2) + s * matmul(mat2, mat1)
 	end subroutine CommAntiComm
 

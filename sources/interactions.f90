@@ -15,13 +15,13 @@ module fpInteractions
 	elemental function dy_damping_fit(y)
 		real(dl) :: dy_damping_fit
 		real(dl), intent(in) :: y
-		real(dl), parameter :: d0 = 129.875
-		real(dl), parameter :: dinf = 100.999
-		real(dl), parameter :: a0 = 90.7332
-		real(dl), parameter :: a1 = -48.4473
-		real(dl), parameter :: a2 = 20.1219
-		real(dl), parameter :: b1 = -0.529157
-		real(dl), parameter :: b2 = 0.20649
+		real(dl), parameter :: d0 = 129.875d0
+		real(dl), parameter :: dinf = 100.999d0
+		real(dl), parameter :: a0 = 90.7332d0
+		real(dl), parameter :: a1 = -48.4473d0
+		real(dl), parameter :: a2 = 20.1219d0
+		real(dl), parameter :: b1 = -0.529157d0
+		real(dl), parameter :: b2 = 0.20649d0
 		real(dl) :: e101y, e001y, ly
 		e101y = exp(-1.01d0*y)
 		e001y = exp(-0.01d0*y)
@@ -84,6 +84,10 @@ module fpInteractions
 			nunu_numu_nutau = 1.d0
 			nue_nue_nux = 2.d0*sin2thW**2 + 0.25d0
 			nue_numu_nutau = 2.d0*sin2thW**2 - sin2thW + 0.25d0
+			nunu_nue_nus = 0.5d0!check
+			nunu_nux_nus = 0.5d0!check
+			nue_nue_nus = 3.d0*sin2thW**2 + 1.d0*sin2thW + 0.25d0!check
+			nue_nux_nus = 3.d0*sin2thW**2 - 1.d0*sin2thW + 0.25d0!check
 			if (any(sterile)) &
 				call criticalError("Error: Bennett:2020zkv damping terms not yet implemented with sterile neutrinos.")
 		end if
@@ -471,24 +475,24 @@ module fpInteractions
 			d24r = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				s13r = s13r + n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)
-				s13i = s13i - n1%re(i,k)*n3%im(k,m) - n1%im(i,k)*n3%re(k,m)
-				s24r = s24r + n2%im(m,k)*n4%im(k,j) - n2%re(m,k)*n4%re(k,j)
-				s24i = s24i - n2%re(m,k)*n4%im(k,j) - n2%im(m,k)*n4%re(k,j)
-				d24r = d24r + n2%im(m,k)*n4%im(k,m) - n2%re(m,k)*n4%re(k,m)
+				s13r = s13r + (n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)) * Gs(k)
+				s13i = s13i - (n1%re(i,k)*n3%im(k,m) + n1%im(i,k)*n3%re(k,m)) * Gs(k)
+				s24r = s24r + (n2%im(m,k)*n4%im(k,j) - n2%re(m,k)*n4%re(k,j)) * Gs(k)
+				s24i = s24i - (n2%re(m,k)*n4%im(k,j) + n2%im(m,k)*n4%re(k,j)) * Gs(k)
+				d24r = d24r + (n2%im(m,k)*n4%im(k,m) - n2%re(m,k)*n4%re(k,m)) * Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = n3%re(i,m) + s13r
-			t1i(m) = n3%im(i,m) + s13i
-			t3r(m) = n1%re(i,m) + s13r
-			t3i(m) = n1%im(i,m) + s13i
-			t2r(m) = n4%re(m,j) + s24r
-			t2i(m) = n4%im(m,j) + s24i
-			t4r(m) = n2%re(m,j) + s24r
-			t4i(m) = n2%im(m,j) + s24i
+			t1r(m) = (n3%re(i,m)*Gs(i) + s13r) * Gs(m)
+			t1i(m) = (n3%im(i,m)*Gs(i) + s13i) * Gs(m)
+			t3r(m) = (n1%re(i,m) + s13r) * Gs(m)
+			t3i(m) = (n1%im(i,m) + s13i) * Gs(m)
+			t2r(m) = (n4%re(m,j)*Gs(m) + s24r) * Gs(j)
+			t2i(m) = (n4%im(m,j)*Gs(m) + s24i) * Gs(j)
+			t4r(m) = (n2%re(m,j) + s24r) * Gs(j)
+			t4i(m) = (n2%im(m,j) + s24i) * Gs(j)
 			!compute Tr()
-			tr2 = tr2 + n4%re(m,m) + d24r
-			tr4 = tr4 + n2%re(m,m) + d24r
+			tr2 = tr2 + (n4%re(m,m) + d24r) * Gs(m)
+			tr4 = tr4 + (n2%re(m,m) + d24r) * Gs(m)
 		end do
 	end subroutine F_nu_sc_1324
 
@@ -561,11 +565,15 @@ module fpInteractions
 		!offdiagonal elements vanish here
 		if (i.ne.j) &
 			return
+
+		if (sterile(i)) & !take into account Gs matrix (it's diagonal, no need to do more than this)
+			return
+
 		allocate(t2r(flavorNumber), t4r(flavorNumber))
 		do k=1, flavorNumber
 			s24r = n2%re(k, k)*n4%re(k, k)
-			t2r(k) = n4%re(k, k) - s24r
-			t4r(k) = n2%re(k, k) - s24r
+			t2r(k) = Gs(k) * (n4%re(k, k) - s24r)
+			t4r(k) = Gs(k) * (n2%re(k, k) - s24r)
 		end do
 		s13r = n1%re(i, i) * n3%re(i, i)
 		F_nu_sc_re = &
@@ -595,7 +603,7 @@ module fpInteractions
 
 	!pair
 #ifdef FULL_F_NU
-	pure subroutine F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+	pure subroutine F_nu_pa_1243(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
 		!...
 		!first line: sAr -> 12, sB->34
 		type(cmplxMatNN), intent(in) :: n1, n2, n3, n4
@@ -615,26 +623,26 @@ module fpInteractions
 			sBd = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				sAr = sAr + n1%re(i,k)*n2%re(k,m) - n1%im(i,k)*n2%im(k,m)
-				sAi = sAi + n1%im(i,k)*n2%re(k,m) + n1%re(i,k)*n2%im(k,m)
-				sBr = sBr + n4%re(m,k)*n3%re(k,j) - n4%im(m,k)*n3%im(k,j)
-				sBi = sBi + n4%im(m,k)*n3%re(k,j) + n4%re(m,k)*n3%im(k,j)
-				sBd = sBd + n4%re(m,k)*n3%re(k,m) - n4%im(m,k)*n3%im(k,m)
+				sAr = sAr + (n1%re(i,k)*n2%re(k,m) - n1%im(i,k)*n2%im(k,m)) * Gs(k)
+				sAi = sAi + (n1%im(i,k)*n2%re(k,m) + n1%re(i,k)*n2%im(k,m)) * Gs(k)
+				sBr = sBr + (n4%re(m,k)*n3%re(k,j) - n4%im(m,k)*n3%im(k,j)) * Gs(k)
+				sBi = sBi + (n4%im(m,k)*n3%re(k,j) + n4%re(m,k)*n3%im(k,j)) * Gs(k)
+				sBd = sBd + (n4%re(m,k)*n3%re(k,m) - n4%im(m,k)*n3%im(k,m)) * Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = sAr + idMat(i,m) - n1%re(i,m) - n2%re(i,m)
-			t1i(m) = sAi - n1%im(i,m) - n2%im(i,m)
-			t3r(m) = sAr
-			t3i(m) = sAi
-			t2r(m) = sBr
-			t2i(m) = sBi
-			t4r(m) = sBr + idMat(m,j) - n4%re(m,j) - n3%re(m,j)
-			t4i(m) = sBi - n4%im(m,j) - n3%im(m,j)
+			t1r(m) = (sAr + idMat(i,m)*Gs(i) - n1%re(i,m) - n2%re(i,m)*Gs(i)) * Gs(m)
+			t1i(m) = (sAi - n1%im(i,m) - n2%im(i,m)*Gs(i)) * Gs(m)
+			t3r(m) = sAr * Gs(m)
+			t3i(m) = sAi * Gs(m)
+			t2r(m) = sBr * Gs(j)
+			t2i(m) = sBi * Gs(j)
+			t4r(m) = (sBr + idMat(m,j)*Gs(m) - n4%re(m,j) - n3%re(m,j)*Gs(m)) * Gs(j)
+			t4i(m) = (sBi - n4%im(m,j) - n3%im(m,j)*Gs(m)) * Gs(j)
 			!compute Tr()
-			tr2 = tr2 + sBd
-			tr4 = tr4 + sBd + idMat(m,m) - n4%re(m,m) - n3%re(m,m)
+			tr2 = tr2 + sBd * Gs(m)
+			tr4 = tr4 + (sBd + idMat(m,m) - n4%re(m,m) - n3%re(m,m))*Gs(m)
 		end do
-	end subroutine F_nu_pa_1234
+	end subroutine F_nu_pa_1243
 
 	pure subroutine F_nu_pa_1342(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
 		!...
@@ -656,24 +664,24 @@ module fpInteractions
 			sBd = 0.d0
 			!compute some terms that are repeated in terms 1/3 and 2/4, to save time
 			do k=1, flavorNumber
-				sAr = sAr + n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)
-				sAi = sAi - n1%re(i,k)*n3%im(k,m) - n1%im(i,k)*n3%re(k,m)
-				sBr = sBr + n4%im(m,k)*n2%im(k,j) - n4%re(m,k)*n2%re(k,j)
-				sBi = sBi - n4%re(m,k)*n2%im(k,j) - n4%im(m,k)*n2%re(k,j)
-				sBd = sBd + n4%im(m,k)*n2%im(k,m) - n4%re(m,k)*n2%re(k,m)
+				sAr = sAr + (n1%im(i,k)*n3%im(k,m) - n1%re(i,k)*n3%re(k,m)) * Gs(k)
+				sAi = sAi - (n1%re(i,k)*n3%im(k,m) + n1%im(i,k)*n3%re(k,m)) * Gs(k)
+				sBr = sBr + (n4%im(m,k)*n2%im(k,j) - n4%re(m,k)*n2%re(k,j)) * Gs(k)
+				sBi = sBi - (n4%re(m,k)*n2%im(k,j) + n4%im(m,k)*n2%re(k,j)) * Gs(k)
+				sBd = sBd + (n4%im(m,k)*n2%im(k,m) - n4%re(m,k)*n2%re(k,m)) * Gs(k)
 			end do
 			!compute the products of two matrices
-			t1r(m) = n3%re(i,m) + sAr
-			t1i(m) = n3%im(i,m) + sAi
-			t3r(m) = n1%re(i,m) + sAr
-			t3i(m) = n1%im(i,m) + sAi
-			t2r(m) = n4%re(m,j) + sBr
-			t2i(m) = n4%im(m,j) + sBi
-			t4r(m) = n2%re(m,j) + sBr
-			t4i(m) = n2%im(m,j) + sBi
+			t1r(m) = (n3%re(i,m)*Gs(i) + sAr) * Gs(m)
+			t1i(m) = (n3%im(i,m)*Gs(i) + sAi) * Gs(m)
+			t3r(m) = (n1%re(i,m) + sAr) * Gs(m)
+			t3i(m) = (n1%im(i,m) + sAi) * Gs(m)
+			t2r(m) = (n4%re(m,j)*Gs(m) + sBr) * Gs(j)
+			t2i(m) = (n4%im(m,j)*Gs(m) + sBi) * Gs(j)
+			t4r(m) = (n2%re(m,j) + sBr) * Gs(j)
+			t4i(m) = (n2%im(m,j) + sBi) * Gs(j)
 			!compute Tr()
-			tr2 = tr2 + n4%re(m,m) + sBd
-			tr4 = tr4 + n2%re(m,m) + sBd
+			tr2 = tr2 + (n4%re(m,m) + sBd) * Gs(m)
+			tr4 = tr4 + (n2%re(m,m) + sBd) * Gs(m)
 		end do
 	end subroutine F_nu_pa_1342
 
@@ -695,7 +703,7 @@ module fpInteractions
 		allocate(t2i(flavorNumber), t4i(flavorNumber)) !t?r(m) -> t?r(m,j)
 
 		!first line: sAr -> 12, sB->34
-		call F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		call F_nu_pa_1243(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
 		F_nu_pa_re_prod = F_nu_pa_re_prod &
 			+ t1r(j) * tr2 + sum(t1r(:)*t2r(:) - t1i(:)*t2i(:)) &
 			- (t3r(j) * tr4 + sum(t3r(:)*t4r(:) - t3i(:)*t4i(:)))
@@ -732,7 +740,7 @@ module fpInteractions
 		allocate(t2i(flavorNumber), t4i(flavorNumber)) !t?r(m) -> t?r(m,j)
 
 		!first line: sAr -> 12, sB->34
-		call F_nu_pa_1234(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
+		call F_nu_pa_1243(n1, n2, n3, n4, i, j, t1r, t2r, t3r, t4r, t1i, t2i, t3i, t4i, tr2, tr4)
 		F_nu_pa_im_prod = F_nu_pa_im_prod &
 			+ t1i(j) * tr2 + sum(t1r(:)*t2i(:) + t1i(:)*t2r(:)) &
 			- (t3i(j) * tr4 + sum(t3r(:)*t4i(:) + t3i(:)*t4r(:)))
@@ -775,12 +783,15 @@ module fpInteractions
 		if (i.ne.j) &
 			return
 
+		if (sterile(i)) & !take into account Gs matrix (it's diagonal, no need to do more than this)
+			return
+
 		allocate(t2r(flavorNumber), t4r(flavorNumber))
 		!first line: sAr -> 12, sBr->34
 		do k=1, flavorNumber
-			sBr = n4%re(k, k)*n3%re(k, k)
+			sBr = Gs(k)*n4%re(k, k)*n3%re(k, k)
 			t2r(k) = sBr
-			t4r(k) = sBr + 1.d0 - n4%re(k, k) - n3%re(k, k)
+			t4r(k) = sBr + Gs(k)*(1.d0 - n4%re(k, k) - n3%re(k, k))
 		end do
 		sAr = n1%re(i, i) * n2%re(i, i)
 		F_nu_pa_re = F_nu_pa_re &
@@ -789,8 +800,8 @@ module fpInteractions
 		!second line: sAr -> 13, sBr->24
 		do k=1, flavorNumber
 			sBr = n4%re(k, k)*n2%re(k, k)
-			t2r(k) = n4%re(k, k) - sBr
-			t4r(k) = n2%re(k, k) - sBr
+			t2r(k) = Gs(k) * (n4%re(k, k) - sBr)
+			t4r(k) = Gs(k) * (n2%re(k, k) - sBr)
 		end do
 		sAr = n1%re(i, i) * n3%re(i, i)
 		F_nu_pa_re = F_nu_pa_re &
@@ -1282,22 +1293,23 @@ module fpInteractions
 		deallocate(fy2_arr)
 	end function integrate_collint_nunu_GL
 
-	pure function get_collision_terms(collArgsIn, Fint_nue, Fint_nunu)
+	pure subroutine get_collision_terms(collArgsIn, Fint_nue, Fint_nunu, CTNue, CTNunu)
 		use fpInterfaces2
 		use fpInterfaces3
 		implicit None
+		type(coll_args), intent(in) :: collArgsIn
 		procedure (collision_integrand_nue) :: Fint_nue
 		procedure (collision_integrand_nunu) :: Fint_nunu
-		type(cmplxMatNN) :: get_collision_terms
+		type(cmplxMatNN), intent(out) :: CTNue, CTNunu
 		procedure (collision_integrator_nue), pointer :: integrator_nue
 		procedure (collision_integrator_nunu), pointer :: integrator_nunu
 		real(dl) :: x, w, z, y1, cf, dampfact
 		integer :: iy1
-		type(coll_args), intent(in) :: collArgsIn
 		type(coll_args) :: collArgs
 		integer :: i, j
 
-		call allocateCmplxMat(get_collision_terms)
+		call allocateCmplxMat(CTNue)
+		call allocateCmplxMat(CTNunu)
 
 		collArgs=collArgsIn
 
@@ -1307,12 +1319,16 @@ module fpInteractions
 		y1 = collArgs%y1
 		iy1 = collArgs%iy
 
-		get_collision_terms%y = y1
-		get_collision_terms%x = x
-		get_collision_terms%z = z
-
-		get_collision_terms%re = 0.d0
-		get_collision_terms%im = 0.d0
+		CTNue%y = y1
+		CTNue%x = x
+		CTNue%z = z
+		CTNue%re = 0.d0
+		CTNue%im = 0.d0
+		CTNunu%y = y1
+		CTNunu%x = x
+		CTNunu%z = z
+		CTNunu%re = 0.d0
+		CTNunu%im = 0.d0
 
 		if (.not. has_offdiagonal() .and. collint_diagonal_zero) then
 			return
@@ -1332,10 +1348,10 @@ module fpInteractions
 			if (.not.sterile(i)) then
 				if (.not. collint_diagonal_zero) then
 					if (.not.collint_d_no_nue) &
-						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
+						CTNue%re(i,i) = CTNue%re(i,i) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_re, F_ab_sc_re)
 					if (.not.collint_d_no_nunu) &
-						get_collision_terms%re(i,i) = get_collision_terms%re(i,i) &
+						CTNunu%re(i,i) = CTNunu%re(i,i) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
 				end if
 			end if
@@ -1350,16 +1366,16 @@ module fpInteractions
 				do j=i+1, flavorNumber
 					collArgs%ix2 = j
 					if (.not.collint_od_no_nue) then
-						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
+						CTNue%re(i,j) = CTNue%re(i,j) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_re, F_ab_sc_re)
-						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
+						CTNue%im(i,j) = CTNue%im(i,j) &
 							+ integrator_nue(Fint_nue, collArgs, F_ab_ann_im, F_ab_sc_im)
 					end if
 #ifdef FULL_F_NU
 					if (.not.collint_od_no_nunu) then
-						get_collision_terms%re(i,j) = get_collision_terms%re(i,j) &
+						CTNunu%re(i,j) = CTNunu%re(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_re, F_nu_pa_re)/4.d0
-						get_collision_terms%im(i,j) = get_collision_terms%im(i,j) &
+						CTNunu%im(i,j) = CTNunu%im(i,j) &
 							+ integrator_nunu(Fint_nunu, collArgs, F_nu_sc_im, F_nu_pa_im)/4.d0
 					end if
 #endif
@@ -1367,34 +1383,41 @@ module fpInteractions
 #ifndef DO_TESTS
 #ifndef FULL_F_NU
 				do j=i+1, flavorNumber
-					get_collision_terms%re(i,j) = &
-						get_collision_terms%re(i,j) &
+					CTNunu%re(i,j) = &
+						CTNunu%re(i,j) &
 						- dampTermMatrixCoeffNunu(i,j) * dampfact * nuDensMatVecFD(iy1)%re(i,j)
-					get_collision_terms%im(i,j) = &
-						get_collision_terms%im(i,j) &
+					CTNunu%im(i,j) = &
+						CTNunu%im(i,j) &
 						- dampTermMatrixCoeffNunu(i,j) * dampfact * nuDensMatVecFD(iy1)%im(i,j)
 				end do
 #endif
 #endif
 			else if (collint_damping_type.eq.2 .or. collint_damping_type.eq.1) then
 				do j=i+1, flavorNumber
-					get_collision_terms%re(i,j) = &
-						- (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
-						* dampfact * nuDensMatVecFD(iy1)%re(i,j)
-					get_collision_terms%im(i,j) = &
-						- (dampTermMatrixCoeffNue(i,j)+dampTermMatrixCoeffNunu(i,j)) &
-						* dampfact * nuDensMatVecFD(iy1)%im(i,j)
+					CTNue%re(i,j) = &
+						- dampTermMatrixCoeffNue(i,j) * dampfact * nuDensMatVecFD(iy1)%re(i,j)
+					CTNue%im(i,j) = &
+						- dampTermMatrixCoeffNue(i,j) * dampfact * nuDensMatVecFD(iy1)%im(i,j)
+					CTNunu%re(i,j) = &
+						- dampTermMatrixCoeffNunu(i,j) * dampfact * nuDensMatVecFD(iy1)%re(i,j)
+					CTNunu%im(i,j) = &
+						- dampTermMatrixCoeffNunu(i,j) * dampfact * nuDensMatVecFD(iy1)%im(i,j)
 				end do
 			end if
 			!fill other half of the matrix:
 			do j=i+1, flavorNumber
-				get_collision_terms%re(j,i) = get_collision_terms%re(i,j)
-				get_collision_terms%im(j,i) = - get_collision_terms%im(i,j)
+				CTNue%re(j,i) = CTNue%re(i,j)
+				CTNue%im(j,i) = - CTNue%im(i,j)
+				CTNunu%re(j,i) = CTNunu%re(i,j)
+				CTNunu%im(j,i) = - CTNunu%im(i,j)
 			end do
 		end do
 		!fix coefficients:
 		cf = (y1*y1*x**4)
-		get_collision_terms%re(:,:) = get_collision_terms%re(:,:) * collTermFactor / cf
-		get_collision_terms%im(:,:) = get_collision_terms%im(:,:) * collTermFactor / cf
-	end function get_collision_terms
+		CTNue%re(:,:) = CTNue%re(:,:) * collTermFactor / cf
+		CTNue%im(:,:) = CTNue%im(:,:) * collTermFactor / cf
+		CTNunu%re(:,:) = CTNunu%re(:,:) * collTermFactor / cf
+		CTNunu%im(:,:) = CTNunu%im(:,:) * collTermFactor / cf
+	end subroutine get_collision_terms
+
 end module

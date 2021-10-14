@@ -26,10 +26,11 @@ module fpStuff
 	subroutine deallocateStuff()
 		integer :: nf
 		nf = flavorNumber
-		deallocate(nuMasses, nuFactor, sterile)
+		deallocate(nuMasses, nuFactor, sterile, Gs)
 		deallocate(mixMat, mixMatInv)
 		deallocate(nuMassesMat, leptonDensities)
 		deallocate(dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu)
+		deallocate(dampingSetZero)
 		deallocate(GL_mat, GR_mat, GLR_vec)
 		deallocate(mixingAngles, massSplittings)
 		deallocate(nsi_epsilon)
@@ -44,7 +45,7 @@ module fpStuff
 		end if
 	end subroutine deallocateCmplxMat
 
-    SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
+	SUBROUTINE D01GCF(N,F,REGION,NPTS,VK,NRAND,ITRANS,RES,ERRr,IFAIL,obj)
 !use omp_lib!SG
 !C     MARK 10 RELEASE. NAG COPYRIGHT 1982.
 !C     MARK 11.5(F77) REVISED. (SEPT 1985.)

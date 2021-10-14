@@ -30,6 +30,7 @@ module constants
 	real(dl), parameter :: PISQD15=PISQ/15.d0
 	real(dl), parameter :: PICub = PI*PI*PI
 	real(dl), parameter :: Gev2eV = 1.d9, Mev2eV = 1.d6
+	real(dl), parameter :: sec2eV = 1.519d21/Mev2ev
 	real(dl), parameter :: zetaOfThree = 1.20205690315959428540d0
 	real(dl), parameter :: zetaOfThreex2DPISQ = zetaOfThree * 2.d0 / PISQ
 
@@ -40,11 +41,11 @@ module constants
 #define SINSQTHW 0.23121
 #endif
 	!numbers used in the real calculation
-	real(dl), parameter :: m_e = 0.51099895*Mev2eV!eV
-	real(dl), parameter :: m_mu = 105.6583745*Mev2eV!eV
-	real(dl), parameter :: sin2thW_Z = 0.23121
-	real(dl), parameter :: m_W = 80.379*Gev2eV!eV
-	real(dl), parameter :: planck_mass = 1.220890e19*Gev2eV
+	real(dl), parameter :: m_e = 0.51099895d0*Mev2eV!eV
+	real(dl), parameter :: m_mu = 105.6583745d0*Mev2eV!eV
+	real(dl), parameter :: sin2thW_Z = 0.23121d0
+	real(dl), parameter :: m_W = 80.379d0*Gev2eV!eV
+	real(dl), parameter :: planck_mass = 1.220890d19*Gev2eV
 	real(dl), parameter :: m_e_sq = m_e**2
 	real(dl), parameter :: m_e_cub = m_e**3
 	real(dl), parameter :: m_mu_o_m_e = m_mu/m_e
@@ -54,7 +55,7 @@ module constants
 	real(dl), parameter :: cos2thW_Z = 1.d0-sin2thW_Z
 #ifdef GLR_ZERO_MOMENTUM
 	!from 10.1016/j.ppnp.2013.03.004
-	real(dl), parameter :: sin2thW = 0.23871
+	real(dl), parameter :: sin2thW = 0.23871d0
 	real(dl), parameter :: gLe = 0.727d0
 	real(dl), parameter :: gLmt = -0.273d0
 	real(dl), parameter :: gRemt = 0.233d0
@@ -72,11 +73,11 @@ module constants
 	integer,  parameter :: maxFlavorNumber = 6
 	integer,  parameter :: i_flavorNumber = 3
 	!from PDG 2020
-	real(dl), parameter :: i_theta12 = 0.307
-	real(dl), parameter :: i_theta13 = 0.0218
-	real(dl), parameter :: i_theta23 = 0.545
-	real(dl), parameter :: i_dm21 = 7.53e-05
-	real(dl), parameter :: i_dm31 = 0.002453+i_dm21
+	real(dl), parameter :: i_theta12 = 0.307d0
+	real(dl), parameter :: i_theta13 = 0.0218d0
+	real(dl), parameter :: i_theta23 = 0.545d0
+	real(dl), parameter :: i_dm21 = 7.53d-05
+	real(dl), parameter :: i_dm31 = 0.002453d0+i_dm21
 
 	real(dl), parameter :: leptDensFactor = -2*SQRT2*G_F*m_e**6/(m_W**2)
 	real(dl), parameter :: collTermFactor = G_Fsq/(8.d0*PICub) * m_e_cub
@@ -86,11 +87,12 @@ module constants
 	real(dl), parameter :: zid = (11.d0/4.d0)**(1.d0/3.d0)
 
 	character(len=5), parameter :: dblfmt = "E17.9"
-	character(len=10), parameter :: multidblfmt = "(*("//dblfmt//"))"
+	character(len=14), parameter :: multidblfmt = "(1P, *("//dblfmt//"))"
 end module constants
 
 module variables
 	use precision
+	use constants
 	implicit none
 
 	logical :: timing_tests = .false.
@@ -99,6 +101,7 @@ module variables
 	logical :: firstPoint = .false.
 	logical :: checkpoint = .false.
 	logical :: force_replace = .false.
+	integer :: num_threads
 
 	integer :: collint_damping_type
 	logical :: collint_offdiag_damping
@@ -110,6 +113,7 @@ module variables
 	logical :: ftqed_log_term
 	logical :: ftqed_ord3
 	logical :: ftqed_e_mth_leptondens
+	logical :: save_BBN
 	logical :: save_fd, save_Neff, save_nuDens_evolution, save_w_evolution, save_z_evolution
 	logical :: save_energy_entropy_evolution
 	logical :: save_number_evolution
@@ -131,15 +135,26 @@ module variables
 		integer :: ix1, ix2, iy
 	end type coll_args
 
+	type derivatives_terms
+		logical :: output
+		real(dl) :: x, norm
+		real(dl), dimension(:), allocatable :: yvec, ydot
+		type(cmplxMatNN), dimension(:), allocatable :: Heff, commutator, colltermsNue, colltermsNunu
+	end type derivatives_terms
+
+	type(derivatives_terms) :: intermediateSteps
+
 	real(dl), dimension(:), allocatable :: nuMasses, nuFactor
 	real(dl) :: tot_factor_active_nu, tot_factor_nu
 	logical , dimension(:), allocatable :: sterile
 	real(dl), dimension(:,:), allocatable :: mixMat, mixMatInv, nuMassesMat, leptonDensities
 	type(cmplxMatNN) :: nuDensities
 	real(dl), dimension(:,:), allocatable :: dampTermMatrixCoeffNue, dampTermMatrixCoeffNunu
+	logical, dimension(:,:), allocatable :: dampingSetZero
 	real(dl), dimension(:,:), allocatable :: GL_mat, GR_mat
 	real(dl), dimension(:,:), allocatable :: nsi_epsilon
 	real(dl), dimension(:,:,:), allocatable :: GLR_vec
+	real(dl), dimension(:), allocatable :: Gs
 	real(dl), dimension(:,:), allocatable :: idMat
 	real(dl), dimension(:), allocatable :: massSplittings
 	real(dl), dimension(:,:), allocatable :: mixingAngles
@@ -147,6 +162,8 @@ module variables
 	type(cmplxMatNN), dimension(:), allocatable :: nuDensMatVec, nuDensMatVecFD
 	real(dl), dimension(:), allocatable :: nuDensVec
 	integer :: ntot
+	integer :: ntotrho
+	integer :: ixw, ixz
 
 	!technical settings
 	integer :: verbose = 1
@@ -154,6 +171,7 @@ module variables
 	logical :: use_gauss_laguerre
 	integer :: Nx, Ny
 	real(dl) :: x_in, x_fin, y_min, y_max, z_in, logx_in, logx_fin
+	real(dl) :: t_in
 	real(dl), dimension(:), allocatable :: x_arr, y_arr
 	real(dl), dimension(:), allocatable :: feq_arr
 	real(dl), dimension(:), allocatable :: y_gl, w_gl, w_gl_arr, w_gl_arr2
@@ -182,10 +200,10 @@ module variables
 	integer :: interp_nx, interp_nz, interp_nxz
 	integer, parameter :: interp_ny = 100
 	logical :: tests_interpolations = .true.
-	real(dl), parameter :: interp_logy_min = -2.
-	real(dl), parameter :: interp_logy_max = 1.5
+	real(dl), parameter :: interp_logy_min = -2.d0
+	real(dl), parameter :: interp_logy_max = 1.5d0
 	real(dl), parameter :: interp_zmin0 = 0.9d0, interp_zmax0 = 1.5d0
-	real(dl), parameter :: very_early_x=0.1*0.5109989461/105.6583745!initial temperature is 10 times the muon mass
+	real(dl), parameter :: very_early_x=0.1d0*m_e/m_mu!initial temperature is 10 times the muon mass
 	real(dl), parameter :: interp_logx_in=log10(very_early_x)
 	real(dl) :: interp_zmin, interp_zmax
 	real(dl), dimension(:), allocatable :: interp_xvec
@@ -217,9 +235,94 @@ module variables
 	end subroutine allocateCmplxMat
 
 	elemental function has_offdiagonal()
+		!decide if off-diagonal collision terms are present or not
 		logical :: has_offdiagonal
 		has_offdiagonal = .not.(collint_offdiag_damping .and. collint_damping_type.eq.0)
 	end function has_offdiagonal
+
+	pure subroutine matrix_to_vector(mat, k, vec)
+		type(cmplxMatNN), intent(in) :: mat
+		integer, intent(inout) :: k
+		real(dl), dimension(:), intent(out) :: vec
+		integer :: i,j
+
+		do i=1, flavorNumber
+			vec(k+i-1) = mat%re(i,i)
+		end do
+		k=k+flavorNumber
+		if (has_offdiagonal()) then
+			do i=1, flavorNumber-1
+				do j=i+1, flavorNumber
+					vec(k) = mat%re(i,j)
+					vec(k+1) = mat%im(i,j)
+					k=k+2
+				end do
+			end do
+		end if
+	end subroutine matrix_to_vector
+
+	subroutine mat_2_vec(mat, N, vec)
+		!save the real and imaginary elements of the input array of cmplxMatNN
+		!into a 1d vector, with their appropriate order
+		type(cmplxMatNN), dimension(:), intent(in) :: mat
+		integer, intent(in) :: N
+		real(dl), dimension(:), intent(out) :: vec
+		integer :: k,m
+
+		k=1
+		do m=1, N
+			call matrix_to_vector(mat(m), k, vec)
+		end do
+	end subroutine mat_2_vec
+
+	subroutine densMat_2_vec(vec)
+		!save the real and imaginary elements of the neutrino density matrix
+		!into a 1d vector, with their appropriate order
+		real(dl), dimension(:), intent(out) :: vec
+
+		call mat_2_vec(nuDensMatVec, Ny, vec)
+	end subroutine densMat_2_vec
+
+	pure subroutine vector_to_matrix(vec, k, mat)
+		real(dl), dimension(:), intent(in) :: vec
+		integer, intent(inout) :: k
+		type(cmplxMatNN), intent(inout) :: mat !must be already allocated!
+		integer :: i,j
+
+		do i=1, flavorNumber
+			mat%re(i,i) = vec(k+i-1)
+			mat%im(i,i) = 0.d0
+		end do
+		k=k+flavorNumber
+		if (has_offdiagonal()) then
+			do i=1, flavorNumber-1
+				do j=i+1, flavorNumber
+					mat%re(i,j) = vec(k)
+					mat%im(i,j) = vec(k+1)
+					mat%re(j,i) = vec(k)
+					mat%im(j,i) = -vec(k+1)
+					k=k+2
+				end do
+			end do
+		end if
+	end subroutine vector_to_matrix
+
+	subroutine vec_2_densMat(vec)
+		!save the real and imaginary elements of the neutrino density matrix
+		!from a 1d vector, with their appropriate order, into nuDensMatVec and nuDensMatVecFD
+		real(dl), dimension(:), intent(in) :: vec
+		integer :: i,j,k,m
+
+		k=1
+		do m=1, Ny
+			call vector_to_matrix(vec, k, nuDensMatVec(m))
+			nuDensMatVecFD(m)%re = nuDensMatVec(m)%re
+			nuDensMatVecFD(m)%im = nuDensMatVec(m)%im
+			do i=1, flavorNumber
+				nuDensMatVecFD(m)%re(i,i) = (1.d0 + nuDensMatVec(m)%re(i,i)) * feq_arr(m)
+			end do
+		end do
+	end subroutine vec_2_densMat
 end module variables
 
 module fpInterfaces1

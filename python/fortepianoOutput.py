@@ -21,6 +21,11 @@ except ImportError:
     print("Cannot import numpy...may raise errors later")
     np = None
 try:
+    import pandas as pd
+except ImportError:
+    print("Cannot import pandas...may raise errors later")
+    pd = None
+try:
     from scipy.interpolate import interp1d
     from scipy.integrate import quad
     from scipy.signal import savgol_filter
@@ -40,6 +45,7 @@ markers = [".", "+", "x", "^", "*", "h", "D"]
 
 PISQD15 = np.pi ** 2 / 15.0
 ELECTRONMASS_MEV = 0.51099895
+muonLabel = r"$\mu$"
 
 
 def finalizePlot(
@@ -231,6 +237,9 @@ class FortEPiaNORun:
         self.label = label
         self.verbose = verbose
         self.nnu = nnu
+        self.hasBBN = False
+        self.ens_header = []
+        self.z_header = []
         if not os.path.exists(folder):
             if verbose:
                 print("non-existing folder: %s" % folder)
@@ -239,13 +248,24 @@ class FortEPiaNORun:
         self.readFD()
         self.readWZ()
         self.readNeff()
+        self.readHeaders()
         self.readEENDensities(deltas)
         self.readResume()
         self.readNuDensMatrix(full)
+        self.prepareBBN()
         self.prepareRhoFinal()
         self.printTableLine()
         if plots:
             self.doAllPlots()
+
+    def loadtxt(self, fname, *args, **kwargs):
+        """Read a text file with numpy.loadtxt or pandas.read_csv"""
+        try:
+            return np.array(
+                pd.read_csv(fname, *args, header=None, delimiter="\s+", **kwargs).values
+            )
+        except AttributeError:
+            return np.loadtxt(fname, *args, **kwargs)
 
     def checkZdat(self):
         """Check if zdat has been read from the file or not.
@@ -260,12 +280,77 @@ class FortEPiaNORun:
     @property
     def x(self):
         """return x"""
-        return self.zdat[:, 0] if self.checkZdat() else np.nan
+        return self.zdat[:, 0] if self.checkZdat() else self.bbn[:, 0]
+
+    @property
+    def zColZ(self):
+        """return the column index for z in the energy density file"""
+        try:
+            return self.z_header.index("z")
+        except ValueError:
+            if self.verbose:
+                print("z not in header file!")
+            return 1
 
     @property
     def z(self):
         """return z"""
-        return self.zdat[:, 1] if self.checkZdat() else np.nan
+        return self.zdat[:, self.zColZ] if self.checkZdat() else self.bbn[:, 1]
+
+    @property
+    def zColD(self):
+        """return the column index for z in the energy density file"""
+        try:
+            return self.ens_header.index("z")
+        except ValueError:
+            if self.verbose:
+                print("z not in header file!")
+            return 1
+
+    @property
+    def phCol(self):
+        """return the column index for photons in the energy density file"""
+        try:
+            return self.ens_header.index("photon")
+        except ValueError:
+            if self.verbose:
+                print("photon not in header file!")
+            return self.zColD + 1
+
+    @property
+    def eCol(self):
+        """return the column index for electrons in the energy density file"""
+        try:
+            return self.ens_header.index("electron")
+        except ValueError:
+            if self.verbose:
+                print("electron not in header file!")
+            return self.zColD + 2
+
+    @property
+    def muCol(self):
+        """return the column index for muons in the energy density file"""
+        try:
+            return self.ens_header.index("muon")
+        except ValueError:
+            if self.verbose:
+                print("muon not in header file!")
+            return self.eCol + 1
+
+    @property
+    def nu1Col(self):
+        """return the column index for nu1 in the energy density file"""
+        try:
+            return self.ens_header.index("nu1")
+        except ValueError:
+            if self.verbose:
+                print("nu1 not in header file!")
+            return self.zColD + 3
+
+    @property
+    def hasMuon(self):
+        """return the column index for muons in the energy density file"""
+        return "muon" in self.ens_header
 
     @property
     def Tgamma(self):
@@ -280,25 +365,35 @@ class FortEPiaNORun:
     @property
     def rhonu(self):
         """return rhonu (total neutrino energy density)"""
-        return np.nan
+        return self.bbn[:, 3] if self.hasBBN else np.nan
 
     @property
     def drhonu_dx(self):
         """return drhonu/dx"""
-        return np.nan
+        return np.gradient(self.rhonu, self.x) if self.hasBBN else np.nan
 
     @property
     def drhonu_dx_savgol(self):
         """return a filtered version of drhonu/dx"""
-        return np.nan
+        return (
+            savgol_filter(np.clip(self.drhonu_dx, 1e-10, None), 51, 1)
+            if self.hasBBN
+            else np.nan
+        )
 
     @property
     def N_func(self):
-        return np.nan
+        """return the N function used in PArthENoPE"""
+        return self.x * self.drhonu_dx / self.z ** 4 if self.hasBBN else np.nan
 
     @property
     def N_savgol(self):
-        return np.nan
+        """return a filtered version of the N function used in PArthENoPE"""
+        return (
+            savgol_filter(np.clip(self.N_func, 1e-11, None), 75, 1)
+            if self.hasBBN
+            else np.nan
+        )
 
     def readEENDensities(self, deltas=False):
         """Read energy, entropy and number density,
@@ -310,7 +405,7 @@ class FortEPiaNORun:
         """
         refIx = 0
         try:
-            self.endens = np.loadtxt("%s/energyDensity.dat" % self.folder)
+            self.endens = self.loadtxt("%s/energyDensity.dat" % self.folder)
         except (IOError, OSError):
             self.endens = np.nan
         else:
@@ -322,28 +417,24 @@ class FortEPiaNORun:
                 if deltas:
                     self.delta_ed = [
                         (
-                            self.endens[-1, self.zCol + 4 + i]
-                            - self.endens[refIx, self.zCol + 4 + i]
+                            self.endens[-1, self.nu1Col + i]
+                            - self.endens[refIx, self.nu1Col + i]
                         )
-                        / self.endens[refIx, self.zCol + 4 + i]
+                        / self.endens[refIx, self.nu1Col + i]
                         * 100
                         for i in range(self.nnu)
                     ]
                     self.tot_delta_ed = (
                         (
                             np.sum(
-                                self.endens[
-                                    -1, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.endens[-1, self.nu1Col : self.nu1Col + self.nnu]
                             )
                             - np.sum(
-                                self.endens[
-                                    refIx, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.endens[refIx, self.nu1Col : self.nu1Col + self.nnu]
                             )
                         )
                         / np.sum(
-                            self.endens[refIx, self.zCol + 4 : self.zCol + 4 + self.nnu]
+                            self.endens[refIx, self.nu1Col : self.nu1Col + self.nnu]
                         )
                         * 100
                     )
@@ -362,7 +453,7 @@ class FortEPiaNORun:
                             )
                         )
         try:
-            self.entropy = np.loadtxt("%s/entropy.dat" % self.folder)
+            self.entropy = self.loadtxt("%s/entropy.dat" % self.folder)
         except (IOError, OSError):
             self.entropy = np.nan
         else:
@@ -372,14 +463,12 @@ class FortEPiaNORun:
                 pass
             else:
                 if deltas:
-                    ds = np.asarray(
-                        [np.sum(cl[self.zCol + 1 :]) for cl in self.entropy]
-                    )
+                    ds = np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy])
                     self.tot_delta_sd = (ds[-1] - ds[refIx]) / ds[refIx] * 100
                     if self.verbose:
                         print("delta entropy density:\t%f%%" % self.tot_delta_sd)
         try:
-            self.number = np.loadtxt("%s/numberDensity.dat" % self.folder)
+            self.number = self.loadtxt("%s/numberDensity.dat" % self.folder)
         except (IOError, OSError):
             self.number = np.nan
         else:
@@ -391,28 +480,24 @@ class FortEPiaNORun:
                 if deltas:
                     self.delta_nd = [
                         (
-                            self.number[-1, self.zCol + 4 + i]
-                            - self.number[refIx, self.zCol + 4 + i]
+                            self.number[-1, self.nu1Col + i]
+                            - self.number[refIx, self.nu1Col + i]
                         )
-                        / self.number[refIx, self.zCol + 4 + i]
+                        / self.number[refIx, self.nu1Col + i]
                         * 100
                         for i in range(self.nnu)
                     ]
                     self.tot_delta_nd = (
                         (
                             np.sum(
-                                self.number[
-                                    -1, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.number[-1, self.nu1Col : self.nu1Col + self.nnu]
                             )
                             - np.sum(
-                                self.number[
-                                    refIx, self.zCol + 4 : self.zCol + 4 + self.nnu
-                                ]
+                                self.number[refIx, self.nu1Col : self.nu1Col + self.nnu]
                             )
                         )
                         / np.sum(
-                            self.number[refIx, self.zCol + 4 : self.zCol + 4 + self.nnu]
+                            self.number[refIx, self.nu1Col : self.nu1Col + self.nnu]
                         )
                         * 100
                     )
@@ -430,7 +515,7 @@ class FortEPiaNORun:
     def readFD(self):
         """Read and store the information from fd.dat"""
         try:
-            fdy = np.loadtxt("%s/fd.dat" % self.folder)
+            fdy = self.loadtxt("%s/fd.dat" % self.folder)
         except (IOError, OSError):
             self.yv = np.nan
             self.fd = np.nan
@@ -438,9 +523,38 @@ class FortEPiaNORun:
             self.yv = fdy[:, 0]
             self.fd = fdy[:, 1]
 
+    def readHeaders(self):
+        """Read and store the information from the header files"""
+        try:
+            with open("%s/ens_header.dat" % self.folder) as _f:
+                head = _f.read()
+        except (IOError, OSError):
+            if os.path.exists("%s/energyDensity.dat" % self.folder):
+                print("Cannot read ens_header. Assume the standard one")
+            self.ens_header = "x z photon electron nu1 nu2 nu3".split()
+        else:
+            search = re.compile("nu \(1 to ([\d])\)")
+            try:
+                maxnu = int(search.findall(head)[0])
+            except (AttributeError, IndexError):
+                print("Cannot read number of neutrinos from header. Assume 3")
+                maxnu = 3
+            self.ens_header = head.replace(
+                "nu (1 to %d)" % maxnu,
+                " ".join(["nu%d" % (i + 1) for i in range(maxnu)]),
+            ).split()
+        try:
+            with open("%s/z_header.dat" % self.folder) as _f:
+                head = _f.read()
+        except (IOError, OSError):
+            if os.path.exists("%s/z.dat" % self.folder):
+                print("Cannot read z_header. Assume the standard one")
+            self.z_header = "x z w".split()
+        else:
+            self.z_header = head.split()
+
     def readIni(self):
         """Read and store the content of the ini.log file"""
-        self.zCol = 1
         try:
             with open("%s/ini.log" % self.folder) as _ini:
                 self.ini = _ini.read()
@@ -448,11 +562,94 @@ class FortEPiaNORun:
             self.ini = ""
         else:
             self.ini = self.ini.replace("\n", " ")
+        # read flavorNumber
+        search = re.compile("flavorNumber[\s]*=[\s]*([\d]+)")
+        try:
+            self.flavorNumber = int(search.findall(self.ini)[0])
+        except (AttributeError, IndexError):
+            print("Cannot read flavorNumber from ini.log. Assume 3")
+            self.flavorNumber = 3
+        if self.flavorNumber != self.nnu:
+            print(
+                "Warning: using nnu=%s, but FortEPiaNO used flavorNumber=%s"
+                % (self.nnu, self.flavorNumber)
+            )
+        # read Ny
+        search = re.compile("Ny[ ]*=[ ]*([\d]+)")
+        try:
+            self.Ny = int(search.findall(self.ini)[0])
+        except (AttributeError, IndexError):
+            print("Cannot read Ny from ini.log. Assume 3")
+            self.Ny = 25
+
+    def readIntermediate(self):
+        """Read and store the intermediate quantities from the fortran code"""
+        # read all the files and check that the number of lines are the same
+        try:
+            dat = self.loadtxt("%s/intermXF.dat" % self.folder)
+        except (IOError, OSError):
+            self.intermX = np.array([np.nan])
+            self.intermN = np.array([np.nan])
+        else:
+            self.intermX = dat[:, 0]
+            self.intermN = dat[:, 1]
+        for f in [
+            "intermY",
+            "intermYdot",
+            "intermHeff",
+            "intermComm",
+            "intermCTNue",
+            "intermCTNunu",
+        ]:
+            try:
+                setattr(self, f, self.loadtxt("%s/%s.dat" % (self.folder, f)))
+            except (IOError, OSError):
+                setattr(self, f, np.array([np.nan]))
+            assert len(self.intermX) == len(getattr(self, f))
+
+        try:
+            self.nonRhoVars = self.intermY.shape[1] - self.intermHeff.shape[1]
+        except IndexError:
+            self.nonRhoVars = 0
+
+        # separate quantities in Y and Ydot
+        for t in ["", "dot"]:
+            for f, ic in [
+                ["intermZ", -1],
+                ["intermW", -2],
+            ]:
+                try:
+                    setattr(self, f + t, getattr(self, "intermY" + t)[:, ic])
+                except IndexError:
+                    setattr(self, f + t, np.array([np.nan]))
+            try:
+                setattr(
+                    self,
+                    "intermRho" + t,
+                    getattr(self, "intermY" + t)[:, : -self.nonRhoVars],
+                )
+            except IndexError:
+                setattr(self, "intermRho" + t, np.array([np.nan]))
+        if len(self.intermX) == 1 and np.isnan(self.intermX[0]):
+            return
+        for f in [
+            "intermRho",
+            "intermRhodot",
+            "intermHeff",
+            "intermComm",
+            "intermCTNue",
+            "intermCTNunu",
+        ]:
+            setattr(
+                self,
+                f,
+                np.array([self.reshapeVectorToMatrices(a) for a in getattr(self, f)]),
+            )
 
     def readNeff(self):
         """Read the Neff.dat file"""
         try:
-            self.Neffdat = np.loadtxt("%s/Neff.dat" % self.folder)
+            self.Neffdat = self.loadtxt("%s/Neff.dat" % self.folder)
         except (IOError, OSError):
             self.Neffdat = np.asarray([[np.nan, np.nan, np.nan]])
 
@@ -472,7 +669,7 @@ class FortEPiaNORun:
         )
         for i in range(self.nnu):
             try:
-                self.rho[i, i, 0] = np.loadtxt(
+                self.rho[i, i, 0] = self.loadtxt(
                     "%s/nuDens_diag%d.dat" % (self.folder, i + 1)
                 )
             except (IOError, OSError):
@@ -480,19 +677,19 @@ class FortEPiaNORun:
             if full:
                 for j in range(i + 1, self.nnu):
                     try:
-                        self.rho[i, j, 0] = np.loadtxt(
+                        self.rho[i, j, 0] = self.loadtxt(
                             "%s/nuDens_nd_%d%d_re.dat" % (self.folder, i + 1, j + 1)
                         )
                     except (IOError, OSError):
                         self.rho[i, j, 0] = np.nan
                     try:
-                        self.rho[i, j, 1] = np.loadtxt(
+                        self.rho[i, j, 1] = self.loadtxt(
                             "%s/nuDens_nd_%d%d_im.dat" % (self.folder, i + 1, j + 1)
                         )
                     except (IOError, OSError):
                         self.rho[i, j, 1] = np.nan
             try:
-                self.rhoM[i, i, 0] = np.loadtxt(
+                self.rhoM[i, i, 0] = self.loadtxt(
                     "%s/nuDens_mass%d.dat" % (self.folder, i + 1)
                 )
             except (IOError, OSError):
@@ -566,9 +763,144 @@ class FortEPiaNORun:
     def readWZ(self):
         """Read the z.dat file"""
         try:
-            self.zdat = np.loadtxt("%s/z.dat" % self.folder)
+            self.zdat = self.loadtxt("%s/z.dat" % self.folder)
         except (IOError, OSError):
             self.zdat = np.asarray([[np.nan, np.nan, np.nan]])
+
+    def reshapeVectorToMatrices(self, vec):
+        """Take a Ny*flavorNumber or Ny*flavorNumber**2 vector
+        and reshape it to a multidimensional numpy array,
+        according to the order used by the fortran part of FortEPiaNO.
+        The output array has shape (flavorNumber, flavorNumber, 2, Ny),
+        where the first two dimensions identify the matrix element,
+        the third dimension is for the real or imaginary part
+        and the last dimension correspond to the momentum nodes.
+
+        Parameter:
+            vec: a list or 1D array,
+                for the reshaping to work it must have length
+                Ny*flavorNumber or Ny*flavorNumber**2
+
+        Output:
+            an array with shape (flavorNumber, flavorNumber, 2, Ny)
+        """
+        matrix = np.asarray(
+            [
+                [
+                    [np.zeros(self.Ny), np.zeros(self.Ny)]
+                    for i in range(self.flavorNumber)
+                ]
+                for j in range(self.flavorNumber)
+            ]
+        )
+        if not isinstance(vec, np.ndarray):
+            vec = np.array(vec)
+        n = self.flavorNumber
+        if len(vec) == self.Ny * self.flavorNumber:
+            vec = vec.reshape(self.Ny, self.flavorNumber)
+            for i in range(self.flavorNumber):
+                matrix[i, i, 0] = vec[:, i]
+        elif len(vec) == self.Ny * self.flavorNumber ** 2:
+            vec = vec.reshape(self.Ny, self.flavorNumber ** 2)
+            for i in range(self.flavorNumber):
+                matrix[i, i, 0] = vec[:, i]
+                for j in range(i + 1, self.flavorNumber):
+                    vix = n + 2 * ((i * (n - 1) - int((i) * (i - 1) / 2)) + j - i - 1)
+                    matrix[i, j, 0] = vec[:, vix]
+                    matrix[i, j, 1] = vec[:, vix + 1]
+                    matrix[j, i, 0] = matrix[i, j, 0]
+                    matrix[j, i, 1] = -matrix[i, j, 1]
+        else:
+            raise ValueError("Invalid length of the array")
+        return matrix
+
+    def prepareBBN(self):
+        """Read BBN files and prepare output for PArthENoPE"""
+        folder = self.folder
+        if (
+            os.path.exists("%s/BBN.dat" % folder)
+            and os.path.exists("%s/nuDens_diag1_BBN.dat" % folder)
+            and os.path.exists("%s/rho_tot.dat" % folder)
+            and os.path.exists("%s/y_grid.dat" % folder)
+        ):
+            self.hasBBN = True
+            # read main quantities and prepare N function
+            self.bbn = np.loadtxt("%s/BBN.dat" % folder)
+            if np.isnan(self.yv).any():
+                self.yv = np.loadtxt("%s/y_grid.dat" % folder)
+            try:
+                self.bbn[:, 3]
+                xvec = self.bbn[:, 0]
+                if self.checkZdat():
+                    assert np.allclose(xvec, self.zdat[:, 0])
+                    assert np.allclose(self.bbn[:, 1], self.zdat[:, self.zColZ])
+            except (TypeError, IndexError):
+                print("Error in the structure of the BBN.dat file: cannot find columns")
+                self.hasBBN = False
+            else:
+                # read x values at which (rho_rad >= 0.99 rho_tot) for the first time
+                self.summedrhos = np.loadtxt("%s/rho_tot.dat" % folder)
+                x99 = 0.0
+                try:
+                    rho_tot = self.summedrhos[:, self.zColZ]
+                    rho_rad = self.summedrhos[:, 1]
+                except (TypeError, IndexError):
+                    print("Error in the structure of rho_tot.dat: cannot find columns")
+                    self.hasBBN = False
+                else:
+                    x99 = next(
+                        x for x, t, r in zip(xvec, rho_tot, rho_rad) if r >= 0.99 * t
+                    )
+                    self.filter99 = np.where(xvec >= x99)
+                    self.parthenope = np.c_[
+                        self.bbn[self.filter99],
+                        np.clip(self.drhonu_dx_savgol[self.filter99], 1e-16, None),
+                        rho_rad[self.filter99],
+                        rho_tot[self.filter99],
+                    ]
+                    self.parthenope_cols = [
+                        "x",
+                        "z",
+                        "w",
+                        "rhobarnu",
+                        "drhobarnu_dx",
+                        "rho_rad",
+                        "rho_tot",
+                    ]
+                    try:
+                        data = np.loadtxt("%s/nuDens_diag1_BBN.dat" % folder)
+                        data[:, 2:][self.filter99]
+                    except (IndexError, TypeError):
+                        print(
+                            "Error in the structure of nuDens_diag1_BBN.dat: cannot find columns"
+                        )
+                    else:
+                        if not (
+                            os.path.exists("%s/parthenope.dat" % folder)
+                            and os.path.exists("%s/parthenope_yi.dat" % folder)
+                            and os.path.exists("%s/parthenope_rhoee.dat" % folder)
+                        ):
+                            try:
+                                np.savetxt(
+                                    "%s/parthenope.dat" % folder,
+                                    self.parthenope,
+                                    fmt="%15.7e",
+                                    header="".join(
+                                        ["%16s" % s for s in self.parthenope_cols]
+                                    )[3:],
+                                )
+                                np.savetxt(
+                                    "%s/parthenope_yi.dat" % folder,
+                                    self.yv,
+                                    fmt="%15.7e",
+                                )
+                                np.savetxt(
+                                    "%s/parthenope_rhoee.dat" % folder,
+                                    data[:, 2:][self.filter99],
+                                    fmt="%15.7e",
+                                )
+                            except IOError:
+                                print("Cannot write the outputs for PArtENoPE!")
 
     def prepareRhoFinal(self):
         """Save the normalized diagonal entries of the final neutrino
@@ -617,7 +949,7 @@ class FortEPiaNORun:
                 os.path.exists("%s/%s_norm.dat" % (self.folder, fm))
                 and os.path.exists("%s/%s_var.dat" % (self.folder, fm))
             ):
-                data = np.loadtxt("%s/%s.dat" % (self.folder, fm))
+                data = self.loadtxt("%s/%s.dat" % (self.folder, fm))
                 # Compute the variation of the neutrino density matrix
                 # with respect to the FermiDirac at temperature w.
                 # To obtain the contributions to Neff, integrate:
@@ -1434,12 +1766,12 @@ class FortEPiaNORun:
             except (AttributeError, TypeError):
                 print(traceback.format_exc())
                 try:
-                    self.zdat[:, (0, self.zCol)][:]
+                    self.zdat[:, (0, self.zColZ)][:]
                 except (AttributeError, TypeError):
                     print(traceback.format_exc())
                     return
                 rhogammas = np.array(
-                    [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zCol)]]
+                    [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zColZ)]]
                 )
             try:
                 rns = np.sum(
@@ -1465,7 +1797,7 @@ class FortEPiaNORun:
                                 ]
                             ),
                         ]
-                        for ix, [x, z] in enumerate(self.zdat[:, (0, self.zCol)])
+                        for ix, [x, z] in enumerate(self.zdat[:, (0, self.zColZ)])
                     ]
                 )
             frhonu = interp1d(*stripRepeated(rhonus, 0, 1))
@@ -1486,7 +1818,7 @@ class FortEPiaNORun:
             *stripRepeated(
                 data,
                 0,
-                1,
+                self.zColZ,
             ),
             ls=ls,
             c=lc,
@@ -1532,12 +1864,12 @@ class FortEPiaNORun:
         except (AttributeError, TypeError, IndexError):
             print(traceback.format_exc())
             try:
-                self.zdat[:, (0, self.zCol)][:]
+                self.zdat[:, (0, self.zColZ)][:]
             except (AttributeError, TypeError):
                 print(traceback.format_exc())
                 return
             rhogammas = np.array(
-                [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zCol)]]
+                [[x, PISQD15 * z ** 4] for x, z in self.zdat[:, (0, self.zColZ)]]
             )
         try:
             rns = np.sum(self.endens[:, endensnu0 : endensnu0 + self.nnu][:, :], axis=1)
@@ -1561,12 +1893,12 @@ class FortEPiaNORun:
                             ]
                         ),
                     ]
-                    for ix, [x, z] in enumerate(self.zdat[:, (0, self.zCol)])
+                    for ix, [x, z] in enumerate(self.zdat[:, (0, self.zColZ)])
                 ]
             )
         try:
-            zs = self.zdat[:, (0, self.zCol)][:]
-            ws = self.zdat[:, self.zCol + 1]
+            zs = self.zdat[:, (0, self.zColZ)][:]
+            ws = self.zdat[:, self.zColZ + 1]
         except (AttributeError, TypeError, IndexError):
             print(traceback.format_exc())
             return
@@ -1605,7 +1937,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -1662,9 +1994,11 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         plt.plot(
             self.endens[:, 0],
-            np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.endens]),
+            np.asarray([np.sum(cl[self.phCol :]) for cl in self.endens]),
             label="total" if alllabels is None else alllabels,
             c="k",
             ls="-" if not allstyles else allstyles,
@@ -1676,7 +2010,7 @@ class FortEPiaNORun:
             try:
                 plt.plot(
                     self.endens[:, 0],
-                    self.endens[:, self.zCol + 1 + ix],
+                    self.endens[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1687,18 +2021,18 @@ class FortEPiaNORun:
         if gamma_e:
             plt.plot(
                 self.endens[:, 0],
-                self.endens[:, self.zCol + 1] + self.endens[:, self.zCol + 2],
+                self.endens[:, self.phCol] + self.endens[:, self.eCol],
                 label=r"$\gamma+e$" if alllabels is None else alllabels,
                 c=gec,
                 ls=ges if not allstyles else allstyles,
                 lw=lw,
             )
-        if gamma_e_mu:
+        if gamma_e_mu and self.hasMuon:
             plt.plot(
                 self.endens[:, 0],
-                self.endens[:, self.zCol + 1]
-                + self.endens[:, self.zCol + 2]
-                + self.endens[:, self.zCol + 3],
+                self.endens[:, self.phCol]
+                + self.endens[:, self.eCol]
+                + self.endens[:, self.muCol],
                 label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
                 c=gemc,
                 ls=gems if not allstyles else allstyles,
@@ -1718,7 +2052,7 @@ class FortEPiaNORun:
             ls (default "-"): the line style
             lab (default None): if not None, the line label
         """
-        ds = np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.entropy])
+        ds = np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy])
         plt.plot(
             self.entropy[:, 0],
             (ds / ds[0] - 1.0) * 100.0,
@@ -1741,7 +2075,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -1798,9 +2132,11 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         plt.plot(
             self.entropy[:, 0],
-            np.asarray([np.sum(cl[self.zCol + 1 :]) for cl in self.entropy]),
+            np.asarray([np.sum(cl[self.phCol :]) for cl in self.entropy]),
             label="total" if alllabels is None else alllabels,
             c="k",
             ls="-" if not allstyles else allstyles,
@@ -1812,7 +2148,7 @@ class FortEPiaNORun:
             try:
                 plt.plot(
                     self.entropy[:, 0],
-                    self.entropy[:, self.zCol + 1 + ix],
+                    self.entropy[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1823,18 +2159,18 @@ class FortEPiaNORun:
         if gamma_e:
             plt.plot(
                 self.entropy[:, 0],
-                self.entropy[:, self.zCol + 1] + self.entropy[:, self.zCol + 2],
+                self.entropy[:, self.phCol] + self.entropy[:, self.eCol],
                 label=r"$\gamma+e$" if alllabels is None else alllabels,
                 c=gec,
                 ls=ges if not allstyles else allstyles,
                 lw=lw,
             )
-        if gamma_e_mu:
+        if gamma_e_mu and self.hasMuon:
             plt.plot(
                 self.entropy[:, 0],
-                self.entropy[:, self.zCol + 1]
-                + self.entropy[:, self.zCol + 2]
-                + self.entropy[:, self.zCol + 3],
+                self.entropy[:, self.phCol]
+                + self.entropy[:, self.eCol]
+                + self.entropy[:, self.muCol],
                 label=r"$\gamma+e+\mu$" if alllabels is None else alllabels,
                 c=gemc,
                 ls=gems if not allstyles else allstyles,
@@ -1846,7 +2182,7 @@ class FortEPiaNORun:
         labels=[
             r"$\gamma$",
             "$e$",
-            r"$\mu$",
+            muonLabel,
             r"$\nu_e$",
             r"$\nu_\mu$",
             r"$\nu_\tau$",
@@ -1890,13 +2226,15 @@ class FortEPiaNORun:
         except (AttributeError, TypeError):
             print(traceback.format_exc())
             return
+        if not self.hasMuon and muonLabel in labels:
+            del labels[labels.index(muonLabel)]
         for ix, lab in enumerate(labels):
             if skip[ix]:
                 continue
             try:
                 plt.plot(
                     self.number[:, 0],
-                    self.number[:, self.zCol + 1 + ix],
+                    self.number[:, self.phCol + ix],
                     label=lab if alllabels is None else alllabels,
                     c=colors[ix],
                     ls=styles[ix] if not allstyles else allstyles,
@@ -1904,6 +2242,30 @@ class FortEPiaNORun:
                 )
             except IndexError:
                 pass
+
+    def plotPArthENoPE(self, x="x", y="drhonu_dx", filter99=True, **kwargs):
+        """Plot quantities that are employed in the PArthENoPE code for BBN
+
+        Parameters:
+            x (default "x"): the name of the quantity to plot in the x axis
+            y (default "drhonu_dx"): the name of the quantity to plot in the y axis
+            filter99 (default True): apply the filter to consider only
+                points for which rho_rad > 0.99 rho_tot
+            **kwargs: parameters to be passed to plt.plot
+        """
+        if not self.hasBBN:
+            return
+        allowed_x = ["x", "z", "Tgamma"]
+        allowed_y = ["rhonu", "drhonu_dx", "drhonu_dx_savgol", "N_func", "N_savgol"]
+        for f, a in [[x, allowed_x], [y, allowed_y]]:
+            if f not in a:
+                raise AttributeError(
+                    "Cannot plot the requested quantity '%s'. " % f
+                    + "Allowed ones are: %s" % a
+                )
+        xv = getattr(self, x)[self.filter99] if filter99 else getattr(self, x)
+        yv = getattr(self, y)[self.filter99] if filter99 else getattr(self, y)
+        plt.plot(xv, yv, **kwargs)
 
     def doAllPlots(self, yref=5.0, color="k"):
         """Produce a series of plots for the given simulation

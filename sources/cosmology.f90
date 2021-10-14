@@ -27,10 +27,10 @@ module fpCosmology
 		procedure :: pressure => nonRelativistic_pressure !interpolated pressure
 	end type nonRelativistic_fermion
 
-#ifdef NO_MUONS
-	integer, parameter :: fermions_number = 1
-#else
+#ifdef DO_MUONS
 	integer, parameter :: fermions_number = 2
+#else
+	integer, parameter :: fermions_number = 1
 #endif
 	type(nonRelativistic_fermion), dimension(fermions_number), target :: fermions
 	!define these only for easier reference in updateMatterDensities, output and tests:
@@ -526,4 +526,11 @@ module fpCosmology
 			nuDensityEq = integral_NC_1d(Ny, dy_arr, fy_arr) / PISQ
 		end if
 	end function nuDensityEq
+
+	function Neff_from_rho_z(z)
+		real(dl) :: Neff_from_rho_z
+		real(dl), intent(in) :: z
+
+		Neff_from_rho_z = (zid)**4 * allNuDensity()/photonDensity(z) / 0.875d0
+	end function Neff_from_rho_z
 end module

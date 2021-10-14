@@ -3,6 +3,7 @@ OLD
 OUT
 *.pyc
 *.o
+*.so
 *.mod
 *.a
 *.ini

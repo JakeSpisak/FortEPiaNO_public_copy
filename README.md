@@ -80,16 +80,14 @@ Additional commands for the makefile include:
 Moreover, some parts of the code can be enabled or disabled using precompilation flags.
 For example (add the option to the `make` command):
 
+* `DO_MUONS=1` enables the contribution of muons to the energy budget of the universe.
 * `GLR_ZERO_MOMENTUM=1` uses the `G_L` and `G_R` values at zero-momentum transfer from [https://doi.org/10.1016/j.ppnp.2013.03.004](https://doi.org/10.1016/j.ppnp.2013.03.004) instead of the default ones.
 * `FULL_F_AB=1` allows to use the full matrix product in the F_ab functions that appear in the collision integrals.
 * `FULL_F_NU=1` allows to use the full matrix product in the F_nu phase space functions that compute nunu scattering and pair annihilation. If not used, only diagonal elements of the neutrino density matrix will be used.
-* `NO_MUONS=1` disables the contribution of muons to the energy budget of the universe.
 * `NO_NUE_ANNIHILATION=1` disables the contribution from neutrino to electron annihilation processes to collision integrals.
 * `RHO_OFFDIAG_INTERP_DIV_FD=1` enables to interpolate all the entries of the neutrino density matrix after dividing by a Fermi-Dirac distribution (by default, this is done only for diagonal entries).
 * `SINSQTHW=x` to set a custom value equal to `x` for the weak mixing angle (for example SINSQTHW=0.23).
 
-
-**WARNING**: the test suite will not work if the flag `NO_MUONS=1` is activated, or even if some modules have been compiled with that option. You will need to use `make clean` before `make tests` in order to be sure that everything works.
 
 ### 1.2.Interpolations
 The code, in the default compilation setup, is designed to avoid computing several integrals at each step and to use an interpolation instead.
@@ -135,6 +133,7 @@ Possible plotting functions include:
 * `plotEntropy`: plot the evolution of the entropy density of the different components and their sum;
 * `plotDeltaEntropy`: plot the evolution of the non-conservation of the total entropy density.
 * `plotNumberDensity`: plot the evolution of the number density of the different components and their sum;
+* `plotPArthENoPE`: plot quantities relevant for the BBN calculations performed by PArthENoPE;
 * `doAllPlots`: it will create a series of pdf plots in the output folder, calling
 `plotZ`, `plotW`, `plotRhoFin`, `plotRhoDiagY`, `plotRhoOffDiagY`, `plotdRhoOffDiagY`,
 for flavor and mass eigenstates if available.
@@ -160,6 +159,7 @@ Should you need to edit the source codes, this is more or less the content of ea
 * `fortepiano.f90`: main program;
 * `ftqed.f90`: functions and utilities to compute finite-temperature QED corrections;
 * `interactions.f90`: functions that define the neutrino interactions and the collision terms;
+* `matter.f90`: functions for the matter potential terms and rotation to the mass basis;
 * `tests.f90`: numerical tests for the software.
 
 Auxiliary files, which in principle you should not need to edit:
@@ -168,9 +168,11 @@ Auxiliary files, which in principle you should not need to edit:
 * `errors.f90`: error and log management;
 * `heigensystem.f90`: complex matrix diagonalization;
 * `iniFile.f90`: functions to read the input file;
+* `input.f90`: read the configuration parameters from the ini file;
 * `linear_interpolation_module.f90`: linear interpolation utilities;
 * `matrix_utils.f90`: utilities for creating and manipulating matrices;
 * `odepack*`: DLSODA and related utilities;
+* `output.f90`: store and print output of the code;
 * `stuff.f90`: old functions that were used in previous versions of the code and now enter only the tests;
 * `test_utils.f90`: assertion functions and test counts;
 * `utilities.f90`: utilities for integration, interpolation, checkpointing, log file manipulation, time measurements.

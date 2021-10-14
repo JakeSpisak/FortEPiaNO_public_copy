@@ -4,6 +4,7 @@ module fpConfig
 	use variables
 	use fpErrors
 	use FileIni
+	use fpinput
 	use fpMatrices
 	use fpInteractions
 	use fpEquations
@@ -12,18 +13,88 @@ module fpConfig
 
 	integer :: num_args, ixa
 	character(len=300), dimension(:), allocatable :: args
+	character(len=300) :: inilogname
 
 	contains
 
+	subroutine initialOperations(logname)
+		character(len=*), intent(in) :: logname
+
+		logFile = logname
+		call openLogFile
+
+#ifdef FULL_F_AB
+		call addToLog("[precompiler] Compiled to compute the full products of rho, G_L and G_R matrices")
+#endif
+#ifdef FULL_F_NU
+		call addToLog("[precompiler] Compiled to compute the F factors using the full neutrino density matrix")
+#endif
+#ifdef NO_INTERPOLATION
+		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
+#endif
+#ifdef DO_MUONS
+		call addToLog("[precompiler] Compiled with contributions from muons")
+#endif
+#ifdef NO_NUE_ANNIHILATION
+		call addToLog("[precompiler] Compiled without contributions from nunu<->ee annihilation to collision integrals")
+#endif
+#ifdef TESTSPEED
+		call addToLog("[precompiler] Will execute speed test")
+#endif
+	end subroutine initialOperations
+
+	subroutine endConfig
+		call ini_file_close()
+		call rename(trim(inilogname), trim(outputFolder)//'/ini.log')
+		call addToLog("[config] Read configuration from ini file: complete.")
+	end subroutine endConfig
+
+	subroutine checkIniFile(ininame)
+		character(len=*), intent(in) :: ininame
+
+		if(num_args.eq.0) &
+			call criticalError("You are not passing a configuration file, please provide one.")
+
+		call addToLog("[config] reading additional configuration from "//trim(ininame))
+        inilogname=trim(ininame)//".log"
+		call ini_file_open(trim(ininame), trim(inilogname))
+	end subroutine checkIniFile
+
+	subroutine checkOutputFolder
+		logical :: file_exist
+
+		inquire(file=trim(outputFolder)//"/resume.dat", exist=file_exist)
+		if (file_exist .and. .not. force_replace) then
+			call criticalError("[config] resume.dat already exists! No need to proceed.")
+		end if
+		call addToLog("[config] Writing to: "//trim(outputFolder)//"/...")
+		call system('mkdir -p '//trim(outputFolder))
+	end subroutine checkOutputFolder
+
+	subroutine checkNumThreads
+		use omp_lib
+
+		if (num_threads .gt.0) &
+			CALL OMP_SET_NUM_THREADS(num_threads)
+	end subroutine checkNumThreads
+
 	subroutine allocateStuff()
 		integer :: nf, ix
+
+		if (has_offdiagonal()) then
+			flavNumSqu = flavorNumber**2
+		else
+			flavNumSqu = flavorNumber
+		end if
+
 		nf = flavorNumber
-		allocate(nuMasses(nf), nuFactor(nf), sterile(nf))
+		allocate(nuMasses(nf), nuFactor(nf), sterile(nf), Gs(nf))
 		allocate(mixMat(nf,nf), mixMatInv(nf,nf))
 		allocate(nuMassesMat(nf,nf), leptonDensities(nf,nf))
 		call allocateCmplxMat(nuDensities)
 		allocate(dampTermMatrixCoeffNue(nf,nf))
 		allocate(dampTermMatrixCoeffNunu(nf,nf))
+		allocate(dampingSetZero(nf,nf))
 		allocate(GL_mat(nf,nf), GR_mat(nf,nf), GLR_vec(2, nf,nf))
 		allocate(massSplittings(nf))
 		allocate(mixingAngles(nf,nf))
@@ -110,8 +181,7 @@ module fpConfig
 		if (damping_read_zero) then
 			do ix=1, flavorNumber
 				do iy=ix+1, flavorNumber
-					write(tmpstr,"('damping_',2I1,'_zero')") ix, iy
-					if (read_ini_logical(trim(tmpstr), .false.)) then
+					if (dampingSetZero(ix, iy)) then
 						dampTermMatrixCoeffNue(ix, iy) = 0.d0
 						dampTermMatrixCoeffNunu(ix, iy) = 0.d0
 					end if
@@ -210,20 +280,27 @@ module fpConfig
 
 		!nu density matrix
 		allocate(nuDensMatVec(Ny), nuDensMatVecFD(Ny))
-		ntot = Ny*(flavNumSqu) + 2 !independent elements in nuDensity(y) + w,z
+		ntotrho = Ny*(flavNumSqu) !independent elements in nuDensity(y)
+		ntot = ntotrho + 2 ! + w,z
+		ixw = ntotrho+1
+		ixz = ntotrho+2
 
 		allocate(nuDensVec(ntot))
+		if (save_BBN .and. trim(outputFolder).ne."")&
+			call openFile(3978, trim(outputFolder)//"/y_grid.dat", .true.)
 		if(save_fd .and. trim(outputFolder).ne."")&
 			call openFile(3154, trim(outputFolder)//"/fd.dat", .true.)
 		do ix=1, Ny
-			allocate(nuDensMatVec(ix)%re(flavorNumber,flavorNumber), nuDensMatVec(ix)%im(flavorNumber,flavorNumber))
-			allocate(nuDensMatVecFD(ix)%re(flavorNumber,flavorNumber), nuDensMatVecFD(ix)%im(flavorNumber,flavorNumber))
+			call allocateCmplxMat(nuDensMatVec(ix))
+			call allocateCmplxMat(nuDensMatVecFD(ix))
 			nuDensMatVec(ix)%y = y_arr(ix)
 			nuDensMatVecFD(ix)%y = y_arr(ix)
 			nuDensMatVec(ix)%re(:,:) = 0.d0
 			nuDensMatVec(ix)%im(:,:) = 0.d0
 			fdme = fermiDirac(y_arr(ix)/z_in)
 			fdm = fermiDirac(y_arr(ix))
+			if (save_BBN .and. trim(outputFolder).ne."")&
+				write(3978, multidblfmt) y_arr(ix)
 			if(save_fd .and. trim(outputFolder).ne."")&
 				write(3154, multidblfmt) y_arr(ix), fdm * y_arr(ix)*y_arr(ix)
 			do iy=2, flavorNumber
@@ -239,8 +316,24 @@ module fpConfig
 		end do
 		if(save_fd .and. trim(outputFolder).ne."")&
 			close(3154)
+		if(save_BBN .and. trim(outputFolder).ne."")&
+			close(3978)
 
 		deallocate(diag_el)
+
+		!quantities used to save intermediate steps
+		allocate(intermediateSteps%Heff(Ny))
+		allocate(intermediateSteps%commutator(Ny))
+		allocate(intermediateSteps%colltermsNue(Ny))
+		allocate(intermediateSteps%colltermsNunu(Ny))
+		allocate(intermediateSteps%yvec(ntot))
+		allocate(intermediateSteps%ydot(ntot))
+		do ix=1, Ny
+			call allocateCmplxMat(intermediateSteps%Heff(ix))
+			call allocateCmplxMat(intermediateSteps%commutator(ix))
+			call allocateCmplxMat(intermediateSteps%colltermsNue(ix))
+			call allocateCmplxMat(intermediateSteps%colltermsNunu(ix))
+		end do
 	end subroutine init_matrices
 
 	subroutine init_fermions
@@ -249,7 +342,7 @@ module fpConfig
 #endif
 		call fermions(1)%initialize("electrons", .true., 1.d0, 1d3)
 		electrons => fermions(1)
-#ifndef NO_MUONS
+#ifdef DO_MUONS
 		call fermions(2)%initialize("muons", .false., m_mu_o_m_e, x_muon_cut)
 		muons => fermions(2)
 #endif
@@ -280,98 +373,28 @@ module fpConfig
 		end do
 	end subroutine
 
-	subroutine initConfig()
-		use omp_lib
+	subroutine setInterp
+		allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
+		interp_xvec = logspace(interp_logx_in, logx_fin, interp_nx)
+		interp_yvec = logspace(interp_logy_min, interp_logy_max, interp_ny)
+		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
+		low_xoz = very_early_x/interp_zmax
+		interp_xozvec = logspace(log10(low_xoz), logx_fin, interp_nxz)
+	end subroutine setInterp
+
+	subroutine setXYVectors
 		character(len=300) :: tmparg, tmpstr
-		integer :: ix, iy, num_threads
-		logical :: file_exist
 		real(dl), dimension(:), allocatable :: fake
 
-		if (verbose>0) write(*,*) '[config] init configuration'
-		num_args = command_argument_count()
-
-		allocate(args(num_args))
-		do ixa = 1, num_args
-			call get_command_argument(ixa,args(ixa))
-		end do
-		if(num_args.gt.1) then
-			logFile = trim(args(2))
-		end if
-		call openLogFile
-
-#ifdef FULL_F_AB
-		call addToLog("[precompiler] Compiled to compute the full products of rho, G_L and G_R matrices")
-#endif
-#ifdef FULL_F_NU
-		call addToLog("[precompiler] Compiled to compute the F factors using the full neutrino density matrix")
-#endif
-#ifdef NO_INTERPOLATION
-		call addToLog("[precompiler] Compiled without interpolations for lepton densities and other quantities")
-#endif
-#ifdef NO_MUONS
-		call addToLog("[precompiler] Compiled without contributions from muons")
-#endif
-#ifdef NO_NUE_ANNIHILATION
-		call addToLog("[precompiler] Compiled without contributions from nunu<->ee annihilation to collision integrals")
-#endif
-#ifdef TESTSPEED
-		call addToLog("[precompiler] Will execute speed test")
-#endif
-
-		if(num_args.eq.0) &
-			call criticalError("You are not passing a configuration file, please provide one.")
-
-		call addToLog("[config] reading additional configuration from "//trim(args(1)))
-		call ini_file_open(trim(args(1)), trim(args(1))//".log")
-
-		force_replace = read_ini_logical('force_replace', .false.)
-		tmparg=trim(read_ini_char('outputFolder'))
-		if (trim(tmparg)/="") outputFolder=tmparg
-		inquire(file=trim(outputFolder)//"/resume.dat", exist=file_exist)
-		if (file_exist .and. .not. force_replace) then
-			call criticalError("[config] resume.dat already exists! No need to proceed.")
-		end if
-		call addToLog("[config] Writing to: "//trim(outputFolder)//"/...")
-		call system('mkdir -p '//trim(outputFolder))
-
-		num_threads = read_ini_int("num_threads", 0)
-		if (num_threads .gt.0) &
-			CALL OMP_SET_NUM_THREADS(num_threads)
-
-		verbose = read_ini_int('verbose', verbose)
-		Nprintderivs = read_ini_real('Nprintderivs', Nprintderivs)
-		checkpoint = read_ini_logical('checkpoint', .true.)
-		maxiter = read_ini_int('maxiter', 100)
-		toler_jkyg = read_ini_real('tolerance_jkyg', 1.d-7)
-		dlsoda_atol_z = read_ini_real('dlsoda_atol_z', 1.d-6)
-		dlsoda_atol_d = read_ini_real('dlsoda_atol_d', 1.d-6)
-		dlsoda_atol_o = read_ini_real('dlsoda_atol_o', 1.d-6)
-		dlsoda_rtol = read_ini_real('dlsoda_rtol', 1.d-6)
-
-		interp_nx = read_ini_int('interp_nx', interp_nx0)
-		interp_nz = read_ini_int('interp_nz', interp_nz0)
-		interp_nxz = read_ini_int('interp_nxz', interp_nxz0)
-		interp_zmin = read_ini_real('interp_zmin', interp_zmin0)
-		interp_zmax = read_ini_real('interp_zmax', interp_zmax0)
-
-		Nx = read_ini_int('Nx',100)
-		use_gauss_laguerre = read_ini_logical('use_gauss_laguerre', .true.)
-		Ny = read_ini_int('Ny',30)
-
-		allocate(x_arr(Nx))
-
-		x_in    = read_ini_real('x_in', 0.01d0)
+		z_in=1.d0
 		if (x_in.lt.very_early_x) then
 			write(tmparg, multidblfmt) very_early_x
 			call criticalError("initial x is too early: x_in cannot be smaller than "//tmparg)
 		end if
-		x_fin   = read_ini_real('x_fin', 40.d0)
+		allocate(x_arr(Nx))
 		logx_in  = log10(x_in)
 		logx_fin = log10(x_fin)
 		x_arr = logspace(logx_in, logx_fin, Nx)
-
-		y_min = read_ini_real('y_min', 0.01d0)
-		y_max = read_ini_real('y_max', 20.0d0)
 
 		if (use_gauss_laguerre) then
 			write(tmpstr,"('[config] Configuring Gauss-Laguerre with Ny=',I3,' and y_max=',"//dblfmt//")") Ny, y_max
@@ -387,61 +410,19 @@ module fpConfig
 		call finish_y_arrays
 		call get_GLq_vectors(N_opt_y, opt_y, opt_y_w, fake, .true., 2, opt_y_cut)
 		call get_GLq_vectors(N_opt_xoz, opt_xoz, opt_xoz_w, fake, .true., 2, opt_xoz_cut)
+	end subroutine setXYVectors
 
-		!read mixing parameters and create matrices
-		giveSinSq = read_ini_logical('givesinsq', .true.)
-
-		!settings for collisional
-		collint_damping_type = read_ini_int("collint_damping_type", 1)
-		collint_diagonal_zero = read_ini_logical("collint_diagonal_zero", .false.)
-		collint_offdiag_damping = read_ini_logical("collint_offdiag_damping", .true.)
-		collint_d_no_nue = read_ini_logical("collint_d_no_nue", .false.)
-		collint_d_no_nunu = read_ini_logical("collint_d_no_nunu", .false.)
-		collint_od_no_nue = read_ini_logical("collint_od_no_nue", .false.)
-		collint_od_no_nunu = read_ini_logical("collint_od_no_nunu", .false.)
-		damping_read_zero = .true.
-		ftqed_temperature_corr = read_ini_logical("ftqed_temperature_corr",.true.)
-		ftqed_log_term = read_ini_logical("ftqed_log_term",.false.)
-		ftqed_ord3 = read_ini_logical("ftqed_ord3",.true.)
-		ftqed_e_mth_leptondens = read_ini_logical("ftqed_e_mth_leptondens",.true.)
-
-		!settings for saving files
-		save_fd = read_ini_logical("save_fd", .true.)
-		save_energy_entropy_evolution = read_ini_logical("save_energy_entropy_evolution", .true.)
-		save_Neff = read_ini_logical("save_Neff", .true.)
-		save_nuDens_evolution = read_ini_logical("save_nuDens_evolution", .true.)
-		save_number_evolution = read_ini_logical("save_number_evolution", .true.)
-		save_w_evolution = read_ini_logical("save_w_evolution", .true.)
-		save_z_evolution = read_ini_logical("save_z_evolution", .true.)
-
-		z_in=1.d0
-		allocate(interp_xvec(interp_nx), interp_yvec(interp_ny), interp_zvec(interp_nz), interp_xozvec(interp_nxz))
-		interp_xvec = logspace(interp_logx_in, logx_fin, interp_nx)
-		interp_yvec = logspace(interp_logy_min, interp_logy_max, interp_ny)
-		interp_zvec = linspace(interp_zmin, interp_zmax, interp_nz)
-		low_xoz = very_early_x/interp_zmax
-		interp_xozvec = logspace(log10(low_xoz), logx_fin, interp_nxz)
-
-		flavorNumber = read_ini_int('flavorNumber', i_flavorNumber)
-		if (has_offdiagonal()) then
-			flavNumSqu = flavorNumber**2
-		else
-			flavNumSqu = flavorNumber
-		end if
-		call allocateStuff
+	subroutine setNuProperties
+		integer :: ix
+		character(len=300) :: tmparg, tmpstr
 
 		do ix=1, flavorNumber
-			write(tmparg,"('nuFactor',I1)") ix
-			nuFactor(ix) = read_ini_real(trim(tmparg), 1.d0)
-			write(tmparg,"('sterile',I1)") ix
-			if (ix.le.3) then
-				sterile(ix) = read_ini_logical(trim(tmparg), .false.)
+			if(sterile(ix)) then
+				Gs(ix) = 0.d0
 			else
-				sterile(ix) = read_ini_logical(trim(tmparg), .true.)
-			end if
+				Gs(ix) = 1.d0
+			endif
 		end do
-		if (any(sterile) .and. .not.collint_d_no_nunu) &
-			call criticalError("Diagonal neutrino-neutrino collision terms do not work with sterile neutrinos yet.")
 		tot_factor_active_nu = 0.d0
 		tot_factor_nu = 0.d0
 		do ix=1, flavorNumber
@@ -459,53 +440,57 @@ module fpConfig
 			call error(tmpstr)
 			flavorNumber = maxFlavorNumber
 		end if
+	end subroutine setNuProperties
+
+	subroutine initConfig()
+		character(len=300) :: logname
+
+		if (verbose>0) write(*,*) '[config] init configuration'
+		logname = "ini.log"
+		num_args = command_argument_count()
+
+		allocate(args(num_args))
+		do ixa = 1, num_args
+			call get_command_argument(ixa,args(ixa))
+		end do
+		if(num_args.gt.1) then
+			logname = trim(args(2))
+		end if
+		call initialOperations(logname)
+		call checkIniFile(args(1))
+
+		call readBasicParams
+		call checkOutputFolder
+
+		call checkNumThreads
+
+		call readVerbosity
+
+		call readXY
+		call setXYVectors
+
+		call readPrecision
+		call setInterp
+
+		call readOutputConfig
+
+		call allocateStuff
+
+		call readCollint
+		call readFTQED
+
+		call readNuDef
+		call setNuProperties
 
 		call init_fermions
 		call zin_solver
 
-		massSplittings = 0.d0
-		massSplittings(2) = read_ini_real('dm21', i_dm21)
-		if (flavorNumber .gt. 2) then
-			massSplittings(3) = read_ini_real('dm31', i_dm31)
-		end if
-		do ix = 4, flavorNumber
-			write(tmpstr,"('dm',I1,'1')") ix
-			massSplittings(ix) = read_ini_real(trim(tmpstr), zero)
-		end do
-		if (giveSinSq) then
-			mixingAngles(1,2) = asin(sqrt(read_ini_real('theta12', i_theta12)))
-			if (flavorNumber .gt. 2) then
-				mixingAngles(1,3) = asin(sqrt(read_ini_real('theta13', i_theta13)))
-				mixingAngles(2,3) = asin(sqrt(read_ini_real('theta23', i_theta23)))
-			end if
-			do ix=4, flavorNumber
-				do iy=1, ix-1
-					write(tmpstr,"('theta',2I1)") iy, ix
-					mixingAngles(iy, ix) = asin(sqrt(read_ini_real(trim(tmpstr), zero)))
-				end do
-			end do
-		else
-			mixingAngles(1,2) = read_ini_real('theta12', asin(sqrt(i_theta12)))
-			if (flavorNumber .gt. 2) then
-				mixingAngles(1,3) = read_ini_real('theta13', asin(sqrt(i_theta13)))
-				mixingAngles(2,3) = read_ini_real('theta23', asin(sqrt(i_theta23)))
-			end if
-			do ix=4, flavorNumber
-				do iy=1, ix-1
-					write(tmpstr,"('theta',2I1)") iy, ix
-					mixingAngles(iy, ix) = read_ini_real(trim(tmpstr), zero)
-				end do
-			end do
-		end if
+		call readNuMixing
 
-		call setMixingMatrix()
-		call setMassMatrix()
-		!create other matrices
+		call setMixingMatrix
+		call setMassMatrix
 		call init_matrices
 
-		call ini_file_close()
-		call rename(trim(args(1))//".log", trim(outputFolder)//'/ini.log')
-		call addToLog("[config] Read configuration from ini file: complete.")
-
+		call endConfig
 	end subroutine initconfig
 end module fpConfig
