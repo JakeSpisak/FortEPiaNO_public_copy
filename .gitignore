@@ -6,7 +6,6 @@ OUT
 *.so
 *.mod
 *.a
-*.ini
 !ini/explanatory.ini
 *.log
 *.dat
