@@ -304,7 +304,9 @@ module fpEquations
 		z_in = cvec(n) + 1.d0
 	end subroutine zin_solver
 
-	pure subroutine drhoy_dx_fullMat( &
+! Jake modified: removed pure subroutine
+!	pure subroutine drhoy_dx_fullMat( &
+	subroutine drhoy_dx_fullMat( &
 		matrix, x, w, z, iy, dme2, sqrtraddens, Fint_nue, Fint_nunu, &
 		Heff, comm, colltermsNue, colltermsNunu &
 	)
@@ -318,7 +320,14 @@ module fpEquations
 		type(cmplxMatNN), intent(inout) :: Heff, comm, colltermsNue, colltermsNunu
 		real(dl) :: y, overallNorm, cf
 		integer :: ix
-		type(coll_args) :: collArgs
+		type(coll_args) :: collArgs  
+! Jake added
+		complex(dl), dimension(maxFlavorNumber, maxFlavorNumber) :: tmpComplMat, transfMat
+		complex(dl), dimension(FlavorNumber, FlavorNumber) :: dflavor_matrix, flavor_matrix, mixing_matrix, dmass_matrix, mass_matrix
+		real(dl), dimension(maxFlavorNumber) :: tmpvec
+		integer :: i
+		type(cmplxMatNN), dimension(:), allocatable :: rho_mass_dummy
+! Jake added
 
 		y = nuDensMatVecFD(iy)%y
 
@@ -351,9 +360,54 @@ module fpEquations
 			matrix%re(ix,ix) = matrix%re(ix,ix) / feq_arr(iy)
 			matrix%im(ix,ix) = 0.d0
 		end do
-	end subroutine drhoy_dx_fullMat
+        
+! Jake added
+		if (print_derivatives .and. iy==10) then
+			print *, 'y-value is:', y
+       
+! Make the flavor derivative matrix
+			dflavor_matrix = matrix%re + complex(0,1)*matrix%im
+			print *, 'flavor derivative matrix is:'
+			call print_complex_matrix(flavorNumber, dflavor_matrix)
+            
+! Make the flavor density matrix
+			flavor_matrix = reshape(nuDensMatVecFD(iy)%re + complex(0,1)*nuDensMatVecFD(iy)%im, shape(flavor_matrix))
+			print *, 'flavor density matrix is:'
+			call print_complex_matrix(flavorNumber, flavor_matrix)
+    
+! Diagonalize the hamiltonian to find the mixing matrix
+			tmpvec = 0.d0
+			transfMat(:,:) = cmplx(0.d0, 0.d0)
+			tmpComplMat = H_eff_cmplx(y)
+			call HEigensystem(flavorNumber, tmpComplMat, flavorNumber, tmpvec, transfMat, flavorNumber, 0)
+			mixing_matrix = conjg(transpose(transfMat(1:flavorNumber, 1:flavorNumber)))
+			print *, "mixing matrix is: "
+			call print_complex_matrix(flavorNumber, mixing_matrix)
 
-	pure subroutine drho_y_dx( &
+! Make the mass derivative matrix
+			dmass_matrix = matmul(matmul(conjg(transpose(mixing_matrix)), dflavor_matrix), mixing_matrix)
+			print *, "mass derivative matrix is: "
+			call print_complex_matrix(flavorNumber, dmass_matrix)
+           
+! Make the mass density matrix
+			mass_matrix = matmul(matmul(conjg(transpose(mixing_matrix)), flavor_matrix), mixing_matrix)
+			print *, 'mass density matrix is:'
+			call print_complex_matrix(flavorNumber, mass_matrix)
+            
+! Compare to the function 'rho_diag_mass'
+			allocate(rho_mass_dummy(1))
+			rho_mass_dummy(1) = rho_diag_mass(iy)
+
+			print_derivatives = .false.    
+		end if
+!End Jake added
+
+	end subroutine drhoy_dx_fullMat
+    
+
+! Jake modified: removed pure subroutine
+!	pure subroutine drho_y_dx( &
+	subroutine drho_y_dx( &
 		x, w, z, m, dme2, sqrtraddens, n, ydot, &
 		Heff, comm, colltermsNue, colltermsNunu &
 	)
@@ -363,8 +417,8 @@ module fpEquations
 		real(dl), dimension(n), intent(out) :: ydot
 		type(cmplxMatNN), intent(inout) :: Heff, comm, colltermsNue, colltermsNunu
 		integer :: i, j, k
-		type(cmplxMatNN) :: mat
-
+		type(cmplxMatNN) :: mat    
+        
 		call drhoy_dx_fullMat(&
 			mat, x, w, z, m, dme2, sqrtraddens, &
 			coll_nue_int, coll_nunu_int, &
@@ -439,6 +493,12 @@ module fpEquations
 			)
 			s=(m-1)*flavNumSqu
 			ydot(s+1:s+flavNumSqu) = tmpvec(:)
+! Jake added
+!			if (m == 1) then
+!				write(*,*) "Matrix:"
+!				call printVec(tmpvec, size(tmpvec))
+!			end if
+! End Jake added 
 		end do
 		!$omp end do
 		deallocate(tmpvec)
@@ -552,6 +612,10 @@ module fpEquations
 				//"' - DLSODA x_start =',"//dblfmt//",' - x_end =',"//dblfmt//")") &
 				values(3), values(2), values(1), values(5),values(6),values(7), xstart, xend
 			close(timefileu)
+            
+! Jake added
+			print_derivatives = .true.
+! End Jake added
 
 			call dlsoda(derivatives,ntot,nuDensVec,xstart,xend,&
 						itol,rtol,atol,itask,istate, &

@@ -94,7 +94,10 @@ module variables
 	use precision
 	use constants
 	implicit none
-
+    
+!Jake added
+	logical :: print_derivatives = .true.
+!End Jake added
 	logical :: timing_tests = .false.
 	character(len=300) :: outputFolder
 	logical :: firstWrite = .true.

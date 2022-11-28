@@ -261,6 +261,21 @@ module fpMatrices
 			write (*,frmt) m(i,:)
 		end do
 	end subroutine printMat
+    
+	subroutine print_complex_matrix(n, matrix)
+		implicit none
+		integer :: i, j, n
+		complex(dl) :: matrix(n, n)
+		CHARACTER(LEN=3),DIMENSION(n, n) :: imag_unit
+
+		imag_unit = '+i*'
+		WHERE(AIMAG(matrix)<0.)imag_unit = '-i*'
+
+		DO i=1,n
+			write(*,'(100(e9.2,a,e9.2,2x))') ( REAL(matrix(i,j)),imag_unit(i,j), ABS(AIMAG(matrix(i,j))), j=1,n)
+		END DO
+        
+	end subroutine
 
 	subroutine printVec(vec,n)
 		real(dl), dimension(:), intent(in) :: vec

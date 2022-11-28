@@ -5,6 +5,9 @@ module fpMatter
 	use fpInterfaces1
 	use fpCosmology
 	use diagonalize
+!Jake added
+	use fpMatrices
+! Jake added
 	implicit none
 
 	contains
@@ -87,12 +90,17 @@ module fpMatter
 		end do
 	end function H_eff_cmplx
 
-	pure function rho_diag_mass(iy)
+!	pure function rho_diag_mass(iy)
+!Jake removed the 'pure'
+	function rho_diag_mass(iy)
 		type(cmplxMatNN) :: rho_diag_mass
 		integer, intent(in) :: iy
 		complex(dl), dimension(maxFlavorNumber, maxFlavorNumber) :: tmpComplMat, transfMat
 		real(dl), dimension(maxFlavorNumber) :: tmpvec
 		integer :: i, k
+!Jake added
+		integer :: j
+!End Jake added
 
 		call allocateCmplxMat(rho_diag_mass)
 		rho_diag_mass%re(:,:) = 0.d0
@@ -109,6 +117,24 @@ module fpMatter
 						* nuDensMatVecFD(iy)%re(i, i)
 			end do
 		end do
+! Jake added
+		print *, ' original fortepiano diagonal mass matrix is:'
+		call printMat(rho_diag_mass%re)
+
+		rho_diag_mass%re(:,:) = 0.d0
+		do k=1, flavorNumber
+			do i=1, flavorNumber
+				do j=1, flavorNumber
+					rho_diag_mass%re(k, k) = rho_diag_mass%re(k, k) &
+						+ real(dble(transfMat(k, i))*dble(conjg(transfMat(k, j))) &
+							* (nuDensMatVecFD(iy)%re(i, j)+complex(0,1)*nuDensMatVecFD(iy)%im(i, j)))
+				end do
+			end do
+		end do
+            
+		print *, ' corrected fortepiano diagonal mass matrix is:'
+		call printMat(rho_diag_mass%re)
+! End Jake added
 	end function rho_diag_mass
 
 end module fpMatter
